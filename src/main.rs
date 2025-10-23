@@ -11,6 +11,7 @@ mod dev_tools;
 mod menus;
 mod screens;
 mod theme;
+mod gamepad;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 
@@ -50,6 +51,7 @@ impl Plugin for AppPlugin {
             demo::plugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
+            gamepad::plugin,
             menus::plugin,
             screens::plugin,
             theme::plugin,
