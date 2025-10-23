@@ -159,7 +159,6 @@ mod gamepad {
         // If we don't have a gamepad registered yet, check if any are already connected
         if my_gamepad.is_none() {
             if let Some(gamepad_entity) = gamepads.iter().next() {
-                debug!("Using already-connected gamepad: {:?}", gamepad_entity);
                 commands.insert_resource(MyGamepad(gamepad_entity));
             }
         }
@@ -173,17 +172,12 @@ mod gamepad {
                 GamepadConnection::Connected {
                     name, ..
                 } => {
-                    debug!(
-                        "New gamepad connected: {:?}, name: {}",
-                        ev_conn.gamepad, name,
-                    );
                     // if we don't have any gamepad yet, use this one
                     if my_gamepad.is_none() {
                         commands.insert_resource(MyGamepad(ev_conn.gamepad));
                     }
                 }
                 GamepadConnection::Disconnected => {
-                    debug!("Lost connection with gamepad: {:?}", ev_conn.gamepad);
                     // if it's the one we previously used for the player, remove it:
                     if let Some(MyGamepad(old_id)) = my_gamepad.as_deref() {
                         if *old_id == ev_conn.gamepad {
