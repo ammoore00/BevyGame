@@ -1,9 +1,11 @@
+use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::prelude::*;
 
 use crate::{asset_tracking::LoadResource, audio::sound_effect};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, apply_interaction_palette);
+    //app.add_systems(Update, apply_interaction_palette);
+    app.add_systems(Update, apply_gamepad_interaction_palette);
 
     app.load_resource::<InteractionAssets>();
     app.add_observer(play_on_hover_sound_effect);
@@ -26,14 +28,35 @@ fn apply_interaction_palette(
         (&Interaction, &InteractionPalette, &mut BackgroundColor),
         Changed<Interaction>,
     >,
+    mut input_focus_visible: ResMut<InputFocusVisible>,
 ) {
     for (interaction, palette, mut background) in &mut palette_query {
         *background = match interaction {
             Interaction::None => palette.none,
-            Interaction::Hovered => palette.hovered,
+            Interaction::Hovered => {
+                //input_focus_visible.set(Box::new(false)).expect("Failed to set InputFocusVisible");
+                palette.hovered
+            },
             Interaction::Pressed => palette.pressed,
         }
         .into();
+    }
+}
+
+fn apply_gamepad_interaction_palette(
+    input_focus: Res<InputFocus>,
+    input_focus_visible: Res<InputFocusVisible>,
+    mut palette_query: Query<
+        (Entity, &InteractionPalette, &mut BackgroundColor),
+    >,
+) {
+    for (entity, palette, mut background) in palette_query.iter_mut() {
+        if input_focus.0 == Some(entity) {//&& input_focus_visible.0 {
+            println!("Focused element is {entity}");
+            *background = palette.hovered.into();
+        } else {
+            *background = palette.none.into();
+        }
     }
 }
 

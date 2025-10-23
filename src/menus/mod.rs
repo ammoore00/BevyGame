@@ -4,6 +4,7 @@ mod credits;
 mod main;
 mod pause;
 mod settings;
+mod gamepad_navigation;
 
 use bevy::prelude::*;
 
@@ -15,6 +16,7 @@ pub(super) fn plugin(app: &mut App) {
         main::plugin,
         settings::plugin,
         pause::plugin,
+        gamepad_navigation::plugin,
     ));
 }
 

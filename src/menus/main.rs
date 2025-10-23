@@ -1,32 +1,82 @@
 //! The main menu (seen on the title screen).
 
+use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
+use bevy::input_focus::InputFocus;
+use bevy::math::CompassOctant;
 use bevy::prelude::*;
-
 use crate::{asset_tracking::ResourceHandles, menus::Menu, screens::Screen, theme::widget};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Main), spawn_main_menu);
 }
 
-fn spawn_main_menu(mut commands: Commands) {
-    commands.spawn((
+fn spawn_main_menu(
+    mut commands: Commands,
+    mut directional_nav_map: ResMut<DirectionalNavigationMap>,
+    mut input_focus: ResMut<InputFocus>,
+) {
+    let ui_root = commands.spawn((
         widget::ui_root("Main Menu"),
         GlobalZIndex(2),
         DespawnOnExit(Menu::Main),
-        #[cfg(not(target_family = "wasm"))]
-        children![
-            widget::button("Play", enter_loading_or_gameplay_screen),
-            widget::button("Settings", open_settings_menu),
-            widget::button("Credits", open_credits_menu),
-            widget::button("Exit", exit_app),
-        ],
-        #[cfg(target_family = "wasm")]
-        children![
-            widget::button("Play", enter_loading_or_gameplay_screen),
-            widget::button("Settings", open_settings_menu),
-            widget::button("Credits", open_credits_menu),
-        ],
-    ));
+    )).id();
+
+    #[cfg(not(target_family = "wasm"))]
+    {
+        let play_button = commands.spawn(
+            widget::button("Play", enter_loading_or_gameplay_screen)
+        ).id();
+        commands.entity(ui_root).add_child(play_button);
+
+        let settings_button = commands.spawn(
+            widget::button("Settings", open_settings_menu)
+        ).id();
+        commands.entity(ui_root).add_child(settings_button);
+
+        let credits_button = commands.spawn(
+            widget::button("Credits", open_credits_menu)
+        ).id();
+        commands.entity(ui_root).add_child(credits_button);
+
+        let exit_button = commands.spawn(
+            widget::button("Exit", exit_app)
+        ).id();
+        commands.entity(ui_root).add_child(exit_button);
+
+        directional_nav_map.add_looping_edges(&[
+            play_button,
+            settings_button,
+            credits_button,
+            exit_button,
+        ], CompassOctant::South);
+
+        input_focus.0 = Some(play_button);
+    }
+    #[cfg(target_family = "wasm")]
+    {
+        let play_button = commands.spawn(
+            widget::button("Play", crate::menus::main::enter_loading_or_gameplay_screen)
+        ).id();
+        commands.entity(ui_root).add_child(play_button);
+
+        let settings_button = commands.spawn(
+            widget::button("Settings", crate::menus::main::open_settings_menu)
+        ).id();
+        commands.entity(ui_root).add_child(settings_button);
+
+        let credits_button = commands.spawn(
+            widget::button("Credits", crate::menus::main::open_credits_menu)
+        ).id();
+        commands.entity(ui_root).add_child(credits_button);
+
+        directional_nav_map.add_looping_edges(&[
+            play_button,
+            settings_button,
+            credits_button,
+        ], CompassOctant::South);
+
+        input_focus.0 = Some(play_button);
+    }
 }
 
 fn enter_loading_or_gameplay_screen(
