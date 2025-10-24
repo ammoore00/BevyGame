@@ -37,6 +37,7 @@ pub fn player(
     max_speed: f32,
     player_assets: &PlayerAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    scale: f32,
 ) -> impl Bundle {
     // A texture atlas is a way to split a single image into a grid of related images.
     // You can learn more in this example: https://github.com/bevyengine/bevy/blob/latest/examples/2d/texture_atlas.rs
@@ -54,7 +55,7 @@ pub fn player(
                 index: player_animation.get_atlas_index(),
             },
         ),
-        Transform::from_scale(Vec2::splat(6.0).extend(1.0)),
+        Transform::from_scale(Vec2::splat(scale).extend(1.0)),
         WorldPosition(Vec3::ZERO.into()),
         MovementController {
             max_speed,

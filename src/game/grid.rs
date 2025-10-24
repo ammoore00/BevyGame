@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+use std::sync::{Arc, RwLock};
 use crate::ReflectResource;
 use bevy::prelude::*;
 use crate::asset_tracking::LoadResource;
@@ -10,14 +12,18 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 #[derive(Component)]
-struct Grid;
+pub struct Grid(pub Arc<RwLock<BTreeMap<TileCoords, Entity>>>);
 
 pub fn grid(
-    tile_debug_assets: TileDebugAssets
+    tile_debug_assets: TileDebugAssets,
+    scale: f32,
 ) -> impl Bundle {
+    let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
+    let grid = Grid(tile_map.clone());
+    
     (
-        Grid,
-        Transform::from_scale(Vec2::splat(6.0).extend(1.0)),
+        grid,
+        Transform::from_scale(Vec2::splat(scale).extend(1.0)),
         InheritedVisibility::default(),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             let size_x = 2;
@@ -25,12 +31,16 @@ pub fn grid(
 
             for i in -size_x..=size_x {
                 for k in -size_z..=size_z {
-                    parent.spawn((
+                    let coords = IVec3::from([i, 0, k]);
+                    
+                    let tile = parent.spawn((
                         tile(
-                            IVec3::from([i, 0, k]),
+                            coords,
                             &tile_debug_assets
                         ),
-                    ));
+                    )).id();
+                    
+                    tile_map.write().unwrap().insert(coords.into(), tile);
                 }
             }
         })),
@@ -72,9 +82,11 @@ impl FromWorld for TileDebugAssets {
 }
 
 pub mod coords {
+    use std::cmp::Ordering;
     use std::ops::Deref;
     use bevy::prelude::*;
     use crate::game::grid::{TILE_HEIGHT, TILE_WIDTH};
+    use crate::Scale;
 
     pub(super) fn plugin(app: &mut App) {
         app.add_systems(PreUpdate,
@@ -87,10 +99,13 @@ pub mod coords {
     #[derive(Component, Debug)]
     pub struct WorldPosition(pub WorldCoords);
     pub fn convert_world_to_screen_coords(
+        scale: Res<Scale>,
         mut query: Query<(&WorldPosition, &mut Transform), Changed<WorldPosition>>,
     ) {
         for (world_position, mut transform) in query.iter_mut() {
-            let screen_coords = ScreenCoords::from(&world_position.0);
+            let scaled_coords: WorldCoords = (*world_position.0 * scale.0).into();
+            
+            let screen_coords = ScreenCoords::from(scaled_coords);
             transform.translation = screen_coords.extend(0.0);
         }
     }
@@ -98,19 +113,22 @@ pub mod coords {
     #[derive(Component, Debug)]
     pub struct TilePosition(pub TileCoords);
     pub fn convert_tile_to_screen_coords(
+        scale: Res<Scale>,
         mut query: Query<(&TilePosition, &mut Transform), Changed<TilePosition>>,
     ) {
         for (tile_position, mut transform) in query.iter_mut() {
+            let scaled_coords: WorldCoords = (tile_position.0.as_vec3() * scale.0).into();
+            
             let screen_coords = ScreenCoords::from(&tile_position.0);
             transform.translation = screen_coords.extend(0.0);
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq, Eq, Hash, Clone, Reflect)]
     pub struct TileCoords(pub IVec3);
     impl From<WorldCoords> for TileCoords {
         fn from(value: WorldCoords) -> Self {
-            Self(value.0.as_ivec3())
+            Self::from(value.0)
         }
     }
     impl From<&WorldCoords> for TileCoords {
@@ -123,6 +141,16 @@ pub mod coords {
             TileCoords(value)
         }
     }
+    impl From<Vec3> for TileCoords  {
+        fn from(value: Vec3) -> Self {
+            // Use round() instead of as_ivec3() to get proper rounding
+            TileCoords(IVec3::new(
+                value.x.round() as i32,
+                value.y.round() as i32,
+                value.z.round() as i32,
+            ))
+        }
+    }
     impl Deref for TileCoords {
         type Target = IVec3;
         fn deref(&self) -> &Self::Target {
@@ -130,11 +158,28 @@ pub mod coords {
         }
     }
 
+    impl Ord for TileCoords {
+        fn cmp(&self, other: &Self) -> Ordering {
+            match self.y.cmp(&other.y) {
+                Ordering::Equal => match self.z.cmp(&other.z) {
+                    Ordering::Equal => self.x.cmp(&other.x),
+                    ordering => ordering,
+                },
+                ordering => ordering,
+            }
+        }
+    }
+    impl PartialOrd for TileCoords {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            Some(self.cmp(other))
+        }
+    }
+    
     #[derive(Debug)]
     pub struct WorldCoords(pub Vec3);
     impl From<TileCoords> for WorldCoords {
         fn from(value: TileCoords) -> Self {
-            Self(value.0.as_vec3())
+            Self::from(value.0)
         }
     }
     impl From<&TileCoords> for WorldCoords {
@@ -145,6 +190,11 @@ pub mod coords {
     impl From<Vec3> for WorldCoords  {
         fn from(value: Vec3) -> Self {
             WorldCoords(value)
+        }
+    }
+    impl From<IVec3> for WorldCoords  {
+        fn from(value: IVec3) -> Self {
+            WorldCoords(value.as_vec3())
         }
     }
     impl Deref for WorldCoords {

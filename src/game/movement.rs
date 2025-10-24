@@ -16,7 +16,8 @@
 use bevy::prelude::*;
 
 use crate::{AppSystems, PausableSystems};
-use crate::game::grid::coords::WorldPosition;
+use crate::game::grid::coords::{TileCoords, WorldPosition};
+use crate::game::grid::Grid;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -46,17 +47,84 @@ impl Default for MovementController {
     fn default() -> Self {
         Self {
             intent: Vec3::ZERO,
-            max_speed: 20.0,
+            max_speed: 3.5,
         }
     }
 }
 
+pub const TILE_BOUNDARY_SIZE: f32 = 0.02;
+
 fn apply_movement(
     time: Res<Time>,
     mut movement_query: Query<(&MovementController, &mut WorldPosition)>,
+    grid_query: Query<&Grid>,
 ) {
     for (controller, mut world_position) in &mut movement_query {
-        let velocity = controller.max_speed * controller.intent;
-        world_position.0.0 += velocity * time.delta_secs();
+        if let Ok(grid) = grid_query.single() {
+            let tile_map = grid.0.read().unwrap();
+
+            let velocity = controller.intent * controller.max_speed;
+
+            // Position we intend to move to
+            let intended_position = world_position.0.0 + velocity * time.delta_secs();
+
+            // Actual position we will move to
+            let mut final_position = world_position.0.0;
+
+            // Try X axis
+            let test_x = Vec3::new(intended_position.x, world_position.0.0.y, world_position.0.0.z);
+            let test_x_tile: TileCoords = test_x.into();
+
+            if tile_map.contains_key(&test_x_tile.0.into()) {
+                final_position.x = intended_position.x;
+            }
+            else {
+                // Clamp to current tile boundary on X axis
+                let current_tile_x = world_position.0.0.x.round();
+                let direction = (intended_position.x - world_position.0.0.x).signum();
+
+                let boundary_x = current_tile_x + direction * (0.5 - TILE_BOUNDARY_SIZE);
+
+                if direction > 0.0 {
+                    final_position.x = intended_position.x.min(boundary_x);
+                }
+                else if direction < 0.0 {
+                    final_position.x = intended_position.x.max(boundary_x);
+                }
+                else {
+                    final_position.x = world_position.0.0.x;
+                }
+            }
+
+            // Try Z axis
+            let test_z = Vec3::new(final_position.x, world_position.0.0.y, intended_position.z);
+            let test_z_tile: TileCoords = test_z.into();
+
+            if tile_map.contains_key(&test_z_tile.0.into()) {
+                final_position.z = intended_position.z;
+            }
+            else {
+                // Clamp to current tile boundary on Z axis
+                let current_tile_z = world_position.0.0.z.round();
+                let direction = (intended_position.z - world_position.0.0.z).signum();
+
+                let boundary_z = current_tile_z + direction * (0.5 - TILE_BOUNDARY_SIZE);
+
+                if direction > 0.0 {
+                    final_position.z = intended_position.z.min(boundary_z);
+                }
+                else if direction < 0.0 {
+                    final_position.z = intended_position.z.max(boundary_z);
+                }
+                else {
+                    final_position.z = world_position.0.0.z;
+                }
+            }
+
+            // Y axis can move freely (for jumping, etc.)
+            final_position.y = intended_position.y;
+
+            world_position.0.0 = final_position;
+        }
     }
 }

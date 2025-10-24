@@ -68,6 +68,8 @@ impl Plugin for AppPlugin {
             )
                 .chain(),
         );
+        
+        app.insert_resource(Scale(6.0));
 
         // Set up the `Pause` state.
         app.init_state::<Pause>();
@@ -105,3 +107,6 @@ fn spawn_camera(mut commands: Commands) {
         Camera2d,
     ));
 }
+
+#[derive(Resource, Debug)]
+pub struct Scale(pub f32);
