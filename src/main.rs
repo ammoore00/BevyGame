@@ -68,7 +68,7 @@ impl Plugin for AppPlugin {
             )
                 .chain(),
         );
-        
+
         app.insert_resource(Scale(6.0));
 
         // Set up the `Pause` state.
@@ -105,6 +105,11 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Name::new("Camera"),
         Camera2d,
+        Projection::Orthographic(OrthographicProjection {
+            near: -10000000.0,
+            far: 10000000.0,
+            ..OrthographicProjection::default_2d()
+        }),
     ));
 }
 

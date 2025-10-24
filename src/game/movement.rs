@@ -72,10 +72,10 @@ fn apply_movement(
             let mut final_position = world_position.0.0;
 
             // Try X axis
-            let test_x = Vec3::new(intended_position.x, world_position.0.0.y, world_position.0.0.z);
-            let test_x_tile: TileCoords = test_x.into();
+            let test_x: TileCoords = Vec3::new(intended_position.x, world_position.0.0.y, world_position.0.0.z).into();
+            let test_x_above: TileCoords = Vec3::new(intended_position.x, world_position.0.0.y + 1.0, world_position.0.0.z).into();
 
-            if tile_map.contains_key(&test_x_tile.0.into()) {
+            if tile_map.contains_key(&test_x.0.into()) && !tile_map.contains_key(&test_x_above.0.into()) {
                 final_position.x = intended_position.x;
             }
             else {
@@ -97,10 +97,10 @@ fn apply_movement(
             }
 
             // Try Z axis
-            let test_z = Vec3::new(final_position.x, world_position.0.0.y, intended_position.z);
-            let test_z_tile: TileCoords = test_z.into();
+            let test_z: TileCoords = Vec3::new(final_position.x, world_position.0.0.y, intended_position.z).into();
+            let test_z_above: TileCoords = Vec3::new(final_position.x, world_position.0.0.y + 1.0, intended_position.z).into();
 
-            if tile_map.contains_key(&test_z_tile.0.into()) {
+            if tile_map.contains_key(&test_z.0.into()) && !tile_map.contains_key(&test_z_above.0.into()) {
                 final_position.z = intended_position.z;
             }
             else {

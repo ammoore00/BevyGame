@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use crate::ReflectResource;
 use bevy::prelude::*;
 use crate::asset_tracking::LoadResource;
-use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition};
+use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, SCREEN_Z_SCALE};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<TileDebugAssets>();
@@ -20,39 +20,45 @@ pub fn grid(
 ) -> impl Bundle {
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
 
-    let tile_coords = vec![
-        IVec3::new(0, 0, 0),
-        IVec3::new(0, 0, 1),
-        IVec3::new(0, 0, 2),
-
-        IVec3::new(1, 0, 2),
-        IVec3::new(2, 0, 2),
-
-        IVec3::new(2, 0, 1),
-        IVec3::new(2, 0, 0),
-        IVec3::new(2, 0, -1),
-        IVec3::new(2, 0, -2),
-
-        IVec3::new(1, 0, -2),
-        IVec3::new(0, 0, -2),
-        IVec3::new(-1, 0, -2),
-        IVec3::new(-2, 0, -2),
-
-        IVec3::new(-2, 0, -1),
-        IVec3::new(-2, 0, 0),
-        IVec3::new(-2, 0, 1),
-        IVec3::new(-2, 0, 2),
+    let level = [
+        "XXXXX..XXXXXX.",
+        "XXXXX..X....X.",
+        "XXXXXXXX.XXXX.",
+        "XXXXX....X....",
+        "..X......XXXX.",
+        "..X.........X.",
+        ".XXX.......XXX",
+        ".XXXXXXXXXXXXX",
+        ".XXX.......XXX",
     ];
+
+    let mut tile_coords = Vec::new();
+
+    let mut x = 0;
+
+    for &row in level.iter() {
+        let mut z = 0;
+
+        for col in String::from(row).chars() {
+            if col == 'X' {
+                tile_coords.push(TileCoords(IVec3::new(x, 0, z)));
+            }
+            z += 1;
+        }
+        x += 1;
+    }
+
+    tile_coords.push(TileCoords(IVec3::new(2, 1, 2)));
 
     (
         Grid(tile_map.clone()),
-        Transform::from_scale(Vec2::splat(scale).extend(1.0)),
+        Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
         InheritedVisibility::default(),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             for coord in tile_coords {
                 let tile = parent.spawn((
                     tile(
-                        coord,
+                        coord.clone(),
                         &tile_debug_assets
                     ),
                 )).id();
@@ -104,6 +110,8 @@ pub mod coords {
     use crate::game::grid::{TILE_HEIGHT, TILE_WIDTH};
     use crate::Scale;
 
+    pub(super) const SCREEN_Z_SCALE: f32 = 2.0;
+
     pub(super) fn plugin(app: &mut App) {
         app.add_systems(PreUpdate,
             (
@@ -119,12 +127,13 @@ pub mod coords {
         mut query: Query<(&WorldPosition, &mut Transform), Changed<WorldPosition>>,
     ) {
         for (world_position, mut transform) in query.iter_mut() {
-            let scaled_coords: WorldCoords = (*world_position.0 * scale.0).into();
-
-            let screen_coords = ScreenCoords::from(scaled_coords);
+            let screen_coords = ScreenCoords::from(&world_position.0);
             transform.translation = *screen_coords;
-            // Force objects to render in front of tiles
-            transform.translation.z += 500.0;
+            transform.translation.x *= scale.0;
+            transform.translation.y *= scale.0;
+            transform.translation.z;
+            // Offset to render in front of tiles
+            transform.translation.z += SCREEN_Z_SCALE;
         }
     }
 
@@ -226,9 +235,9 @@ pub mod coords {
     impl From<WorldCoords> for ScreenCoords {
         fn from(value: WorldCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
-            let screen_y = value.y * TILE_HEIGHT as f32 - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
+            let screen_y = (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
-            let screen_z = value.x + value.z;
+            let screen_z = (value.x + value.z + value.y) * SCREEN_Z_SCALE;
 
             Vec3::new(screen_x, screen_y, screen_z).into()
         }
@@ -236,9 +245,9 @@ pub mod coords {
     impl From<&WorldCoords> for ScreenCoords {
         fn from(value: &WorldCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
-            let screen_y = value.y * TILE_HEIGHT as f32 - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
+            let screen_y = (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
-            let screen_z = value.x + value.z;
+            let screen_z = (value.x + value.z + value.y) * SCREEN_Z_SCALE;
 
             Vec3::new(screen_x, screen_y, screen_z).into()
         }
@@ -246,21 +255,21 @@ pub mod coords {
     impl From<TileCoords> for ScreenCoords {
         fn from(value: TileCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH / 2;
-            let screen_y = value.y * TILE_HEIGHT - (value.x + value.z) * TILE_HEIGHT / 2;
+            let screen_y = (value.y * TILE_HEIGHT) - (value.x + value.z) * TILE_HEIGHT / 2;
 
-            let screen_z = value.x + value.z;
+            let screen_z = value.x as f32 + value.z as f32 + value.y as f32;
 
-            Vec3::new(screen_x as f32, screen_y as f32, screen_z as f32).into()
+            Vec3::new(screen_x as f32, screen_y as f32, screen_z).into()
         }
     }
     impl From<&TileCoords> for ScreenCoords {
         fn from(value: &TileCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH / 2;
-            let screen_y = value.y * TILE_HEIGHT - (value.x + value.z) * TILE_HEIGHT / 2;
+            let screen_y = (value.y * TILE_HEIGHT) - (value.x + value.z) * TILE_HEIGHT / 2;
 
-            let screen_z = value.x + value.z;
+            let screen_z = value.x as f32 + value.z as f32 + value.y as f32;
 
-            Vec3::new(screen_x as f32, screen_y as f32, screen_z as f32).into()
+            Vec3::new(screen_x as f32, screen_y as f32, screen_z).into()
         }
     }
     impl From<Vec3> for ScreenCoords  {
