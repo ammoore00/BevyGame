@@ -1,7 +1,7 @@
 //! The credits menu.
 
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
-
+use bevy::input_focus::InputFocus;
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
@@ -15,8 +15,11 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), start_credits_music);
 }
 
-fn spawn_credits_menu(mut commands: Commands) {
-    commands.spawn((
+fn spawn_credits_menu(
+    mut input_focus: ResMut<InputFocus>,
+    mut commands: Commands,
+) {
+    let ui_root = commands.spawn((
         widget::ui_root("Credits Menu"),
         GlobalZIndex(2),
         DespawnOnExit(Menu::Credits),
@@ -25,9 +28,14 @@ fn spawn_credits_menu(mut commands: Commands) {
             created_by(),
             widget::header("Assets"),
             assets(),
-            widget::button("Back", go_back_on_click),
         ],
-    ));
+    )).id();
+    
+    let back_button = commands.spawn(
+        widget::button("Back", go_back_on_click)
+    ).id();
+    commands.entity(ui_root).add_child(back_button);
+    input_focus.0 = Some(back_button);
 }
 
 fn created_by() -> impl Bundle {

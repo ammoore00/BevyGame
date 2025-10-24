@@ -11,9 +11,9 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_main_menu(
-    mut commands: Commands,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
+    mut commands: Commands,
 ) {
     let ui_root = commands.spawn((
         widget::ui_root("Main Menu"),

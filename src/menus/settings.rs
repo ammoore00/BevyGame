@@ -2,9 +2,13 @@
 //!
 //! Additional settings and accessibility options should go here.
 
+use std::cmp::min;
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
-
+use bevy::asset::AssetContainer;
+use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
+use bevy::input_focus::InputFocus;
 use crate::{menus::Menu, screens::Screen, theme::prelude::*};
+use crate::theme::widget;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu);
@@ -19,21 +23,45 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn spawn_settings_menu(mut commands: Commands) {
-    commands.spawn((
+fn spawn_settings_menu(
+    mut directional_nav_map: ResMut<DirectionalNavigationMap>,
+    mut input_focus: ResMut<InputFocus>,
+    mut commands: Commands,
+) {
+    let grid = settings_grid(
+        directional_nav_map,
+        &mut commands
+    );
+
+    let ui_root = commands.spawn((
         widget::ui_root("Settings Menu"),
         GlobalZIndex(2),
         DespawnOnExit(Menu::Settings),
         children![
             widget::header("Settings"),
-            settings_grid(),
-            widget::button("Back", go_back_on_click),
         ],
-    ));
+    )).id();
+
+    commands.entity(ui_root).add_child(grid);
+
+    let back_button = commands.spawn(
+        widget::button("Back", go_back_on_click)
+    ).id();
+    commands.entity(ui_root).add_child(back_button);
+
+    input_focus.0 = Some(back_button);
 }
 
-fn settings_grid() -> impl Bundle {
-    (
+fn settings_grid(
+    directional_nav_map: ResMut<DirectionalNavigationMap>,
+    commands: &mut Commands,
+) -> Entity {
+    let volume_widget = global_volume_widget(
+        directional_nav_map,
+        commands,
+    );
+
+    let ui_root = commands.spawn((
         Name::new("Settings Grid"),
         Node {
             display: Display::Grid,
@@ -50,32 +78,50 @@ fn settings_grid() -> impl Bundle {
                     ..default()
                 }
             ),
-            global_volume_widget(),
         ],
-    )
+    )).id();
+
+    commands.entity(ui_root).add_child(volume_widget);
+
+    ui_root
 }
 
-fn global_volume_widget() -> impl Bundle {
-    (
+fn global_volume_widget(
+    mut directional_nav_map: ResMut<DirectionalNavigationMap>,
+    commands: &mut Commands,
+) -> Entity {
+    let ui_root = commands.spawn((
         Name::new("Global Volume Widget"),
         Node {
             justify_self: JustifySelf::Start,
             ..default()
         },
-        children![
-            widget::button_small("-", lower_global_volume),
-            (
-                Name::new("Current Volume"),
-                Node {
-                    padding: UiRect::horizontal(px(10)),
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                children![(widget::label(""), GlobalVolumeLabel)],
-            ),
-            widget::button_small("+", raise_global_volume),
-        ],
-    )
+    )).id();
+
+    let minus_button = commands.spawn(
+        widget::button_small("-", lower_global_volume)
+    ).id();
+    commands.entity(ui_root).add_child(minus_button);
+
+    let current_volume_display = commands.spawn((
+        Name::new("Current Volume"),
+        Node {
+            padding: UiRect::horizontal(px(10)),
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        children![(widget::label(""), GlobalVolumeLabel)],
+    )).id();
+    commands.entity(ui_root).add_child(current_volume_display);
+
+    let plus_button = commands.spawn(
+        widget::button_small("+", raise_global_volume)
+    ).id();
+    commands.entity(ui_root).add_child(plus_button);
+
+    // TODO: Proper nav grid for buttons
+
+    ui_root
 }
 
 const MIN_VOLUME: f32 = 0.0;

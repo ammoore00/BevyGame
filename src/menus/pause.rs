@@ -1,7 +1,9 @@
 //! The pause menu.
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
-
+use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
+use bevy::input_focus::InputFocus;
+use bevy::math::CompassOctant;
 use crate::{menus::Menu, screens::Screen, theme::widget};
 
 pub(super) fn plugin(app: &mut App) {
@@ -12,18 +14,42 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn spawn_pause_menu(mut commands: Commands) {
-    commands.spawn((
+fn spawn_pause_menu(
+    mut directional_nav_map: ResMut<DirectionalNavigationMap>,
+    mut input_focus: ResMut<InputFocus>,
+    mut commands: Commands,
+) {
+    let ui_root = commands.spawn((
         widget::ui_root("Pause Menu"),
         GlobalZIndex(2),
         DespawnOnExit(Menu::Pause),
         children![
-            widget::header("Game paused"),
-            widget::button("Continue", close_menu),
-            widget::button("Settings", open_settings_menu),
-            widget::button("Quit to title", quit_to_title),
-        ],
-    ));
+            widget::header("Game paused")
+        ]
+    )).id();
+
+    let continue_button = commands.spawn(
+        widget::button("Continue", close_menu
+    )).id();
+    commands.entity(ui_root).add_child(continue_button);
+
+    let settings_button = commands.spawn(
+        widget::button("Settings", open_settings_menu
+    )).id();
+    commands.entity(ui_root).add_child(settings_button);
+
+    let quit_button = commands.spawn(
+        widget::button("Quit to title", quit_to_title
+    )).id();
+    commands.entity(ui_root).add_child(quit_button);
+
+    directional_nav_map.add_looping_edges(&[
+        continue_button,
+        settings_button,
+        quit_button,
+    ], CompassOctant::South);
+
+    input_focus.0 = Some(continue_button);
 }
 
 fn open_settings_menu(_: On<Pointer<Click>>, mut next_menu: ResMut<NextState<Menu>>) {
