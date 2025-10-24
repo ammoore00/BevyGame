@@ -13,6 +13,7 @@ use crate::{
         movement::MovementController,
     },
 };
+use crate::game::grid::coords::WorldPosition;
 use crate::gamepad::GamepadRes;
 
 pub(super) fn plugin(app: &mut App) {
@@ -52,6 +53,7 @@ pub fn player(
             },
         ),
         Transform::from_scale(Vec2::splat(6.0).extend(1.0)),
+        WorldPosition(Vec3::ZERO.into()),
         MovementController {
             max_speed,
             ..default()
@@ -70,7 +72,7 @@ fn record_player_directional_input(
     gamepads: Query<&Gamepad>,
     mut controller_query: Query<&mut MovementController, With<Player>>,
 ) {
-    let mut intent = Vec2::ZERO;
+    let mut intent = Vec3::ZERO;
 
     // Add gamepad input if available
     if let Some(gamepad_res) = gamepad_res {
@@ -83,17 +85,17 @@ fn record_player_directional_input(
             // Apply deadzone
             if left_stick_x.abs() > 0.1 || left_stick_y.abs() > 0.1 {
                 intent.x += left_stick_x;
-                intent.y += left_stick_y;
+                intent.z += left_stick_y;
             }
         }
     }
     else {
         // Collect directional input.
         if input.pressed(KeyCode::KeyW) || input.pressed(KeyCode::ArrowUp) {
-            intent.y += 1.0;
+            intent.z += 1.0;
         }
         if input.pressed(KeyCode::KeyS) || input.pressed(KeyCode::ArrowDown) {
-            intent.y -= 1.0;
+            intent.z -= 1.0;
         }
         if input.pressed(KeyCode::KeyA) || input.pressed(KeyCode::ArrowLeft) {
             intent.x -= 1.0;
@@ -105,8 +107,6 @@ fn record_player_directional_input(
         // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
         intent = intent.normalize_or_zero()
     }
-
-    intent.y *= 0.707;
 
     // Apply movement intent to controllers.
     for mut controller in &mut controller_query {

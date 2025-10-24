@@ -43,7 +43,7 @@ fn update_animation_movement(
             sprite.flip_x = dx < 0.0;
         }
 
-        let animation_state = if controller.intent == Vec2::ZERO {
+        let animation_state = if controller.intent == Vec3::ZERO {
             PlayerAnimationState::Idling
         } else {
             PlayerAnimationState::Walking

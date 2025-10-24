@@ -16,6 +16,7 @@
 use bevy::prelude::*;
 
 use crate::{AppSystems, PausableSystems};
+use crate::game::grid::coords::WorldPosition;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -34,7 +35,7 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct MovementController {
     /// The direction the character wants to move in.
-    pub intent: Vec2,
+    pub intent: Vec3,
 
     /// Maximum speed in world units per second.
     /// 1 world unit = 1 pixel when using the default 2D camera and no physics engine.
@@ -44,19 +45,18 @@ pub struct MovementController {
 impl Default for MovementController {
     fn default() -> Self {
         Self {
-            intent: Vec2::ZERO,
-            // 400 pixels per second is a nice default, but we can still vary this per character.
-            max_speed: 400.0,
+            intent: Vec3::ZERO,
+            max_speed: 30.0,
         }
     }
 }
 
 fn apply_movement(
     time: Res<Time>,
-    mut movement_query: Query<(&MovementController, &mut Transform)>,
+    mut movement_query: Query<(&MovementController, &mut WorldPosition)>,
 ) {
-    for (controller, mut transform) in &mut movement_query {
+    for (controller, mut world_position) in &mut movement_query {
         let velocity = controller.max_speed * controller.intent;
-        transform.translation += velocity.extend(0.0) * time.delta_secs();
+        world_position.0.0 += velocity * time.delta_secs();
     }
 }
