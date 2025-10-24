@@ -5,12 +5,17 @@ use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::InputFocus;
 use bevy::math::CompassOctant;
 use crate::{menus::Menu, screens::Screen, theme::widget};
+use crate::gamepad::gamepad_just_pressed;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Pause), spawn_pause_menu);
     app.add_systems(
         Update,
-        go_back.run_if(in_state(Menu::Pause).and(input_just_pressed(KeyCode::Escape))),
+        go_back.run_if(in_state(Menu::Pause).and(
+            input_just_pressed(KeyCode::Escape)
+                .or(gamepad_just_pressed(GamepadButton::East))
+                .or(gamepad_just_pressed(GamepadButton::Start))
+        )),
     );
 }
 

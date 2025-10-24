@@ -3,6 +3,7 @@
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
 use crate::{Pause, demo::level::spawn_level, menus::Menu, screens::Screen};
+use crate::gamepad::{gamepad_just_pressed, GamepadRes};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Gameplay), spawn_level);
@@ -14,7 +15,10 @@ pub(super) fn plugin(app: &mut App) {
             (pause, spawn_pause_overlay, open_pause_menu).run_if(
                 in_state(Screen::Gameplay)
                     .and(in_state(Menu::None))
-                    .and(input_just_pressed(KeyCode::KeyP).or(input_just_pressed(KeyCode::Escape))),
+                    .and(input_just_pressed(KeyCode::KeyP)
+                        .or(input_just_pressed(KeyCode::Escape))
+                        .or(gamepad_just_pressed(GamepadButton::Start))
+                    )
             ),
             close_menu.run_if(
                 in_state(Screen::Gameplay)

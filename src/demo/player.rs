@@ -13,7 +13,7 @@ use crate::{
         movement::{MovementController, ScreenWrap},
     },
 };
-use crate::gamepad::MyGamepad;
+use crate::gamepad::GamepadRes;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -67,14 +67,14 @@ struct Player;
 
 fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
-    my_gamepad: Option<Res<MyGamepad>>,
+    gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
     mut controller_query: Query<&mut MovementController, With<Player>>,
 ) {
     let mut intent = Vec2::ZERO;
 
     // Add gamepad input if available
-    if let Some(gamepad_res) = my_gamepad {
+    if let Some(gamepad_res) = gamepad_res {
         if let Ok(gamepad) = gamepads.get(gamepad_res.0) {
             let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
             let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
@@ -104,7 +104,7 @@ fn record_player_directional_input(
         }
 
         // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
-        let intent = intent.normalize_or_zero();
+        intent = intent.normalize_or_zero()
     }
 
     // Apply movement intent to controllers.

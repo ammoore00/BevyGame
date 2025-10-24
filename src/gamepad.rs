@@ -12,18 +12,18 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 #[derive(Resource)]
-pub struct MyGamepad(pub Entity);
+pub struct GamepadRes(pub Entity);
 
 pub fn gamepad_connections(
     mut commands: Commands,
-    my_gamepad: Option<Res<MyGamepad>>,
+    my_gamepad: Option<Res<GamepadRes>>,
     mut evr_gamepad: MessageReader<GamepadEvent>,
     gamepads: Query<Entity, With<Gamepad>>,
 ) {
     // If we don't have a gamepad registered yet, check if any are already connected
     if my_gamepad.is_none() {
         if let Some(gamepad_entity) = gamepads.iter().next() {
-            commands.insert_resource(MyGamepad(gamepad_entity));
+            commands.insert_resource(GamepadRes(gamepad_entity));
         }
     }
 
@@ -36,14 +36,14 @@ pub fn gamepad_connections(
             GamepadConnection::Connected { .. } => {
                 // if we don't have any gamepad yet, use this one
                 if my_gamepad.is_none() {
-                    commands.insert_resource(MyGamepad(ev_conn.gamepad));
+                    commands.insert_resource(GamepadRes(ev_conn.gamepad));
                 }
             }
             GamepadConnection::Disconnected => {
                 // if it's the one we previously used for the player, remove it:
-                if let Some(MyGamepad(old_id)) = my_gamepad.as_deref() {
+                if let Some(GamepadRes(old_id)) = my_gamepad.as_deref() {
                     if *old_id == ev_conn.gamepad {
-                        commands.remove_resource::<MyGamepad>();
+                        commands.remove_resource::<GamepadRes>();
                     }
                 }
                 
@@ -51,4 +51,21 @@ pub fn gamepad_connections(
             }
         }
     }
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GamepadButtonConditionMarker;
+
+pub fn gamepad_just_pressed(
+    button: GamepadButton,
+) -> impl SystemCondition<()> {
+    IntoSystem::into_system(move |gamepad_res: Option<Res<GamepadRes>>, gamepad: Query<&Gamepad>| {
+        if let Some(gamepad_res) = gamepad_res {
+            if let Ok(gamepad) = gamepad.get(gamepad_res.0) {
+                return gamepad.just_pressed(button)
+            }
+        }
+
+        false
+    })
 }

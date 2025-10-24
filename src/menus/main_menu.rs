@@ -55,17 +55,17 @@ fn spawn_main_menu(
     #[cfg(target_family = "wasm")]
     {
         let play_button = commands.spawn(
-            widget::button("Play", crate::menus::main::enter_loading_or_gameplay_screen)
+            widget::button("Play", crate::menus::main_menu::enter_loading_or_gameplay_screen)
         ).id();
         commands.entity(ui_root).add_child(play_button);
 
         let settings_button = commands.spawn(
-            widget::button("Settings", crate::menus::main::open_settings_menu)
+            widget::button("Settings", crate::menus::main_menu::open_settings_menu)
         ).id();
         commands.entity(ui_root).add_child(settings_button);
 
         let credits_button = commands.spawn(
-            widget::button("Credits", crate::menus::main::open_credits_menu)
+            widget::button("Credits", crate::menus::main_menu::open_credits_menu)
         ).id();
         commands.entity(ui_root).add_child(credits_button);
 

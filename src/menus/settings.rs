@@ -8,13 +8,17 @@ use bevy::asset::AssetContainer;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::InputFocus;
 use crate::{menus::Menu, screens::Screen, theme::prelude::*};
+use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widget;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu);
     app.add_systems(
         Update,
-        go_back.run_if(in_state(Menu::Settings).and(input_just_pressed(KeyCode::Escape))),
+        go_back.run_if(in_state(Menu::Settings).and(
+            input_just_pressed(KeyCode::Escape)
+                .or(gamepad_just_pressed(GamepadButton::East))
+        )),
     );
 
     app.add_systems(

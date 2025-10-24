@@ -3,12 +3,16 @@
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
 use bevy::input_focus::InputFocus;
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
+use crate::gamepad::gamepad_just_pressed;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu);
     app.add_systems(
         Update,
-        go_back.run_if(in_state(Menu::Credits).and(input_just_pressed(KeyCode::Escape))),
+        go_back.run_if(in_state(Menu::Credits).and(
+            input_just_pressed(KeyCode::Escape)
+                .or(gamepad_just_pressed(GamepadButton::East))
+        )),
     );
 
     app.load_resource::<CreditsAssets>();
