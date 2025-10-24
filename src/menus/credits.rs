@@ -63,12 +63,10 @@ fn assets() -> impl Bundle {
 }
 
 fn license() -> impl Bundle {
-    (
-        grid(vec![
-            ["More Information", "https://www.mozilla.org/en-US/MPL/2.0/FAQ/"],
-            ["Full License Text", "https://www.mozilla.org/en-US/MPL/2.0/"],
-        ])
-    )
+    grid(vec![
+        ["More Information", "https://www.mozilla.org/en-US/MPL/2.0/FAQ/"],
+        ["Full License Text", "https://www.mozilla.org/en-US/MPL/2.0/"],
+    ])
 }
 
 fn grid(content: Vec<[&'static str; 2]>) -> impl Bundle {

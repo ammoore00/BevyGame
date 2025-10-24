@@ -2,12 +2,10 @@
 //!
 //! Additional settings and accessibility options should go here.
 
-use std::cmp::min;
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
-use bevy::asset::AssetContainer;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::InputFocus;
-use crate::{menus::Menu, screens::Screen, theme::prelude::*};
+use crate::{menus::Menu, screens::Screen};
 use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widget;
 
@@ -28,7 +26,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_settings_menu(
-    mut directional_nav_map: ResMut<DirectionalNavigationMap>,
+    directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
 ) {
@@ -91,7 +89,7 @@ fn settings_grid(
 }
 
 fn global_volume_widget(
-    mut directional_nav_map: ResMut<DirectionalNavigationMap>,
+    _directional_nav_map: ResMut<DirectionalNavigationMap>,
     commands: &mut Commands,
 ) -> Entity {
     let ui_root = commands.spawn((

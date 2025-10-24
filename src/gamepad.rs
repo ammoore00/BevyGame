@@ -53,9 +53,6 @@ pub fn gamepad_connections(
     }
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct GamepadButtonConditionMarker;
-
 pub fn gamepad_just_pressed(
     button: GamepadButton,
 ) -> impl SystemCondition<()> {

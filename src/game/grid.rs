@@ -3,7 +3,7 @@ use bevy::app::App;
 use bevy::asset::{Asset, AssetServer, Handle};
 use bevy::image::Image;
 use bevy::math::Vec2;
-use bevy::prelude::{Bundle, Component, FromWorld, Reflect, Resource, Sprite, Transform, Vec3, World};
+use bevy::prelude::{Bundle, Component, FromWorld, Reflect, Resource, Sprite, Transform, World};
 use crate::asset_tracking::LoadResource;
 
 pub(super) fn plugin(app: &mut App) {
