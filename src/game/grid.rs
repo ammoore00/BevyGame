@@ -77,7 +77,7 @@ pub fn tile(
         Tile,
         TilePosition(tile_coords.clone().into()),
         Sprite::from(tile_debug_assets.grass.clone()),
-        Transform::from_translation(Into::<ScreenCoords>::into(tile_coords.into()).extend(0.0)),
+        Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
     )
 }
 
@@ -122,21 +122,22 @@ pub mod coords {
             let scaled_coords: WorldCoords = (*world_position.0 * scale.0).into();
 
             let screen_coords = ScreenCoords::from(scaled_coords);
-            transform.translation = screen_coords.extend(0.0);
+            transform.translation = *screen_coords;
+            // Force objects to render in front of tiles
+            transform.translation.z += 500.0;
         }
     }
 
     #[derive(Component, Debug)]
     pub struct TilePosition(pub TileCoords);
     pub fn convert_tile_to_screen_coords(
-        scale: Res<Scale>,
         mut query: Query<(&TilePosition, &mut Transform), Changed<TilePosition>>,
     ) {
         for (tile_position, mut transform) in query.iter_mut() {
-            let scaled_coords: WorldCoords = (tile_position.0.as_vec3() * scale.0).into();
-
             let screen_coords = ScreenCoords::from(&tile_position.0);
-            transform.translation = screen_coords.extend(0.0);
+            transform.translation = *screen_coords;
+
+            transform.translation.y -= TILE_HEIGHT as f32 / 2.0;
         }
     }
 
@@ -221,13 +222,15 @@ pub mod coords {
     }
 
     #[derive(Debug)]
-    pub struct ScreenCoords(pub Vec2);
+    pub struct ScreenCoords(pub Vec3);
     impl From<WorldCoords> for ScreenCoords {
         fn from(value: WorldCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
             let screen_y = value.y * TILE_HEIGHT as f32 - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
-            Vec2::new(screen_x, screen_y).into()
+            let screen_z = value.x + value.z;
+
+            Vec3::new(screen_x, screen_y, screen_z).into()
         }
     }
     impl From<&WorldCoords> for ScreenCoords {
@@ -235,7 +238,9 @@ pub mod coords {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
             let screen_y = value.y * TILE_HEIGHT as f32 - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
-            Vec2::new(screen_x, screen_y).into()
+            let screen_z = value.x + value.z;
+
+            Vec3::new(screen_x, screen_y, screen_z).into()
         }
     }
     impl From<TileCoords> for ScreenCoords {
@@ -243,7 +248,9 @@ pub mod coords {
             let screen_x = (value.x - value.z) * TILE_WIDTH / 2;
             let screen_y = value.y * TILE_HEIGHT - (value.x + value.z) * TILE_HEIGHT / 2;
 
-            Vec2::new(screen_x as f32, screen_y as f32).into()
+            let screen_z = value.x + value.z;
+
+            Vec3::new(screen_x as f32, screen_y as f32, screen_z as f32).into()
         }
     }
     impl From<&TileCoords> for ScreenCoords {
@@ -251,16 +258,18 @@ pub mod coords {
             let screen_x = (value.x - value.z) * TILE_WIDTH / 2;
             let screen_y = value.y * TILE_HEIGHT - (value.x + value.z) * TILE_HEIGHT / 2;
 
-            Vec2::new(screen_x as f32, screen_y as f32).into()
+            let screen_z = value.x + value.z;
+
+            Vec3::new(screen_x as f32, screen_y as f32, screen_z as f32).into()
         }
     }
-    impl From<Vec2> for ScreenCoords  {
-        fn from(value: Vec2) -> Self {
+    impl From<Vec3> for ScreenCoords  {
+        fn from(value: Vec3) -> Self {
             ScreenCoords(value)
         }
     }
     impl Deref for ScreenCoords {
-        type Target = Vec2;
+        type Target = Vec3;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
