@@ -32,6 +32,9 @@ fn spawn_credits_menu(
             created_by(),
             widget::header("Assets"),
             assets(),
+            widget::header("License"),
+            widget::label("This game is provided under the Mozilla Public License 2.0"),
+            license(),
         ],
     )).id();
 
@@ -44,8 +47,7 @@ fn spawn_credits_menu(
 
 fn created_by() -> impl Bundle {
     grid(vec![
-        ["Joe Shmoe", "Implemented alligator wrestling AI"],
-        ["Jane Doe", "Made the music for the alien invasion"],
+        ["The Lady Dawn", "Art, Programming"],
     ])
 }
 
@@ -60,6 +62,15 @@ fn assets() -> impl Bundle {
     ])
 }
 
+fn license() -> impl Bundle {
+    (
+        grid(vec![
+            ["More Information", "https://www.mozilla.org/en-US/MPL/2.0/FAQ/"],
+            ["Full License Text", "https://www.mozilla.org/en-US/MPL/2.0/"],
+        ])
+    )
+}
+
 fn grid(content: Vec<[&'static str; 2]>) -> impl Bundle {
     (
         Name::new("Grid"),
@@ -67,7 +78,7 @@ fn grid(content: Vec<[&'static str; 2]>) -> impl Bundle {
             display: Display::Grid,
             row_gap: px(10),
             column_gap: px(30),
-            grid_template_columns: RepeatedGridTrack::px(2, 400.0),
+            grid_template_columns: RepeatedGridTrack::px(2, 500.0),
             ..default()
         },
         Children::spawn(SpawnIter(content.into_iter().flatten().enumerate().map(
