@@ -27,8 +27,7 @@ pub fn plugin(app: &mut App) {
                 // Pressing the "Interact" button while we have a focused element should simulate a click
                 interact_with_focused_button,
             ),
-        )
-        .add_observer(click_event_debug);
+        );
 }
 
 // The indirection between inputs and actions allows us to easily remap inputs
@@ -85,8 +84,8 @@ struct ActionState {
 fn process_inputs(
     mut action_state: ResMut<ActionState>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut input_focus_visible: ResMut<InputFocusVisible>,
     gamepad_input: Query<&Gamepad>,
+    mut commands: Commands,
 ) {
     // Reset the set of pressed actions each frame
     // to ensure that we only process each action once
@@ -96,7 +95,7 @@ fn process_inputs(
         // Use just_pressed to ensure that we only process each action once
         // for each time it is pressed
         if keyboard_input.just_pressed(action.keycode()) {
-            //input_focus_visible.set(Box::new(true)).expect("Failed to set InputFocusVisible");
+            commands.insert_resource(InputFocusVisible(true));
             action_state.pressed_actions.insert(action);
         }
     }
@@ -200,10 +199,4 @@ fn interact_with_focused_button(
             });
         });
     }
-}
-
-fn click_event_debug(
-    click: On<Pointer<Click>>,
-) {
-    println!("Click event: {:?}", click);
 }

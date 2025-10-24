@@ -5,8 +5,12 @@ use crate::{asset_tracking::LoadResource, audio::sound_effect};
 use crate::theme::widget::ButtonRoot;
 
 pub(super) fn plugin(app: &mut App) {
-    //app.add_systems(Update, apply_interaction_palette);
-    app.add_systems(Update, apply_gamepad_interaction_palette);
+    app.add_systems(
+        Update, (
+            apply_gamepad_interaction_palette,
+            apply_interaction_palette,
+        ).chain()
+    );
 
     app.load_resource::<InteractionAssets>();
     app.add_observer(play_on_hover_sound_effect);
@@ -29,13 +33,19 @@ fn apply_interaction_palette(
         (&Interaction, &InteractionPalette, &mut BackgroundColor),
         Changed<Interaction>,
     >,
-    mut input_focus_visible: ResMut<InputFocusVisible>,
+    input_focus_visible: Res<InputFocusVisible>,
+    mut commands: Commands,
 ) {
+    // If there are any mouse interactions, disable the focus indicator
+    let mut reset_focus = || if input_focus_visible.0 {
+        commands.insert_resource(InputFocusVisible(false));
+    };
+
     for (interaction, palette, mut background) in &mut palette_query {
         *background = match interaction {
             Interaction::None => palette.none,
             Interaction::Hovered => {
-                //input_focus_visible.set(Box::new(false)).expect("Failed to set InputFocusVisible");
+                reset_focus();
                 palette.hovered
             },
             Interaction::Pressed => palette.pressed,
@@ -48,24 +58,34 @@ fn apply_gamepad_interaction_palette(
     input_focus: Res<InputFocus>,
     input_focus_visible: Res<InputFocusVisible>,
     mut palette_query: Query<
-        (Entity, &InteractionPalette, &mut BackgroundColor),
+        (Entity, &Interaction, &InteractionPalette, &mut BackgroundColor),
     >,
     button_query: Query<(Entity, &Children), With<ButtonRoot>>
 ) {
-    for (entity, palette, mut background) in palette_query.iter_mut() {
-        button_query.iter().for_each(|(parent, children)| {
-            if input_focus.0 == Some(parent) { //&& input_focus_visible.0 {
-                children.iter().for_each(|child| {
-                    if child == entity {
-                        println!("Focused element is {child}");
-                        *background = palette.hovered.into();
-                    }
-                    else {
-                        *background = palette.none.into();
-                    }
-                })
-            }
-        });
+    // For everything with a background color palette
+    for (entity, interaction, palette, mut background) in palette_query.iter_mut() {
+        // If we are rendering the current focused element
+        if input_focus_visible.0 {
+            // Iterate through each button that has children
+            button_query.iter().for_each(|(parent, children)| {
+                // If the button is the focused element
+                if input_focus.0 == Some(parent) {
+                    children.iter().for_each(|child| {
+                        // If the entity we are currently looking at is a child of the focused button
+                        if child == entity {
+                            // Then update the color
+                            *background = palette.hovered.into();
+                        } else {
+                            *background = palette.none.into();
+                        }
+                    })
+                }
+            });
+        }
+        else if input_focus_visible.is_changed() && matches!(interaction, Interaction::None) {
+            // If the input is false, and has changed since the last frame, disable highlighting
+            *background = palette.none.into();
+        }
     }
 }
 
