@@ -5,9 +5,10 @@ use bevy::prelude::*;
 use crate::{
     asset_tracking::LoadResource,
     audio::music,
-    demo::player::{PlayerAssets, player},
+    game::player::{PlayerAssets, player},
     screens::Screen,
 };
+use crate::game::grid::{grid, TileDebugAssets};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -34,6 +35,7 @@ pub fn spawn_level(
     mut commands: Commands,
     level_assets: Res<LevelAssets>,
     player_assets: Res<PlayerAssets>,
+    tile_assets: Res<TileDebugAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     commands.spawn((
@@ -46,7 +48,8 @@ pub fn spawn_level(
             (
                 Name::new("Gameplay Music"),
                 music(level_assets.music.clone())
-            )
+            ),
+            grid(&tile_assets),
         ],
     ));
 }

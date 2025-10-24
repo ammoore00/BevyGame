@@ -2,7 +2,7 @@
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
-use crate::{Pause, demo::level::spawn_level, menus::Menu, screens::Screen};
+use crate::{Pause, game::level::spawn_level, menus::Menu, screens::Screen};
 use crate::gamepad::{gamepad_just_pressed, GamepadRes};
 
 pub(super) fn plugin(app: &mut App) {

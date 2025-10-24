@@ -34,7 +34,7 @@ fn spawn_credits_menu(
             assets(),
         ],
     )).id();
-    
+
     let back_button = commands.spawn(
         widget::button("Back", go_back_on_click)
     ).id();
@@ -51,7 +51,6 @@ fn created_by() -> impl Bundle {
 
 fn assets() -> impl Bundle {
     grid(vec![
-        ["Ducky sprite", "CC0 by Caz Creates Games"],
         ["Button SFX", "CC0 by Jaszunio15"],
         ["Music", "CC BY 3.0 by Kevin MacLeod"],
         [
