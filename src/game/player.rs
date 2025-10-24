@@ -13,7 +13,7 @@ use crate::{
         movement::MovementController,
     },
 };
-use crate::game::grid::coords::WorldPosition;
+use crate::game::grid::coords::{rotate_screen_space_to_movement, WorldPosition};
 use crate::gamepad::GamepadRes;
 
 pub(super) fn plugin(app: &mut App) {
@@ -85,10 +85,7 @@ fn record_player_directional_input(
                 intent.x += left_stick_x;
                 intent.z -= left_stick_y;
 
-                // Rotate input by 45 degrees to match the direction of the screen.
-                let angle = std::f32::consts::FRAC_PI_4;
-                let rotation = Quat::from_rotation_y(angle);
-                intent = rotation * intent;
+                intent = rotate_screen_space_to_movement(intent);
             }
         }
     }
@@ -96,10 +93,10 @@ fn record_player_directional_input(
     if intent == Vec3::ZERO {
         // Collect directional input.
         if input.pressed(KeyCode::KeyW) || input.pressed(KeyCode::ArrowUp) {
-            intent.z += 1.0;
+            intent.z -= 1.0;
         }
         if input.pressed(KeyCode::KeyS) || input.pressed(KeyCode::ArrowDown) {
-            intent.z -= 1.0;
+            intent.z += 1.0;
         }
         if input.pressed(KeyCode::KeyA) || input.pressed(KeyCode::ArrowLeft) {
             intent.x -= 1.0;
@@ -109,7 +106,8 @@ fn record_player_directional_input(
         }
 
         // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
-        intent = intent.normalize_or_zero()
+        intent = intent.normalize_or_zero();
+        intent = rotate_screen_space_to_movement(intent);
     }
 
     // Apply movement intent to controllers.

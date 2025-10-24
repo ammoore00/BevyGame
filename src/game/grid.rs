@@ -200,4 +200,16 @@ pub mod coords {
             &self.0
         }
     }
+
+    pub fn rotate_movement_to_screen_space(movement: Vec3) -> Vec3 {
+        let angle = -std::f32::consts::FRAC_PI_4;
+        let rotation = Quat::from_rotation_y(angle);
+        rotation * movement
+    }
+
+    pub fn rotate_screen_space_to_movement(screen_space: Vec3) -> Vec3 {
+        let angle = std::f32::consts::FRAC_PI_4;
+        let rotation = Quat::from_rotation_y(angle);
+        rotation * screen_space
+    }
 }

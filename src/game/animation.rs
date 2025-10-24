@@ -13,6 +13,7 @@ use crate::{
     audio::sound_effect,
     game::{movement::MovementController, player::PlayerAssets},
 };
+use crate::game::grid::coords::rotate_movement_to_screen_space;
 
 pub(super) fn plugin(app: &mut App) {
     // Animate and play sound effects based on controls.
@@ -38,7 +39,7 @@ fn update_animation_movement(
     mut player_query: Query<(&MovementController, &mut Sprite, &mut PlayerAnimation)>,
 ) {
     for (controller, mut sprite, mut animation) in &mut player_query {
-        let dx = controller.intent.x;
+        let dx = rotate_movement_to_screen_space(controller.intent).x;
         if dx != 0.0 {
             sprite.flip_x = dx < 0.0;
         }
