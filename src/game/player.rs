@@ -10,7 +10,7 @@ use crate::{
     asset_tracking::LoadResource,
     game::{
         animation::PlayerAnimation,
-        movement::{MovementController, ScreenWrap},
+        movement::MovementController,
     },
 };
 use crate::gamepad::GamepadRes;
@@ -56,7 +56,6 @@ pub fn player(
             max_speed,
             ..default()
         },
-        ScreenWrap,
         player_animation,
     )
 }
