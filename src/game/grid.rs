@@ -88,7 +88,7 @@ pub mod coords {
     #[derive(Component, Debug)]
     pub struct WorldPosition(pub WorldCoords);
     pub fn convert_world_to_screen_coords(
-        mut query: Query<(&WorldPosition, &mut Transform)>,
+        mut query: Query<(&WorldPosition, &mut Transform), Changed<WorldPosition>>,
     ) {
         for (world_position, mut transform) in query.iter_mut() {
             let screen_coords = ScreenCoords::from(&world_position.0);
@@ -99,7 +99,7 @@ pub mod coords {
     #[derive(Component, Debug)]
     pub struct TilePosition(pub TileCoords);
     pub fn convert_tile_to_screen_coords(
-        mut query: Query<(&TilePosition, &mut Transform)>,
+        mut query: Query<(&TilePosition, &mut Transform), Changed<TilePosition>>,
     ) {
         for (tile_position, mut transform) in query.iter_mut() {
             let screen_coords = ScreenCoords::from(&tile_position.0);
