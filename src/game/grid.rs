@@ -20,6 +20,8 @@ pub fn grid(
 ) -> impl Bundle {
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
 
+    let start_x = -2;
+    let start_z = -2;
     let level = [
         "XXXXX..XXXXXX.",
         "XXXXX..X....X.",
@@ -34,21 +36,25 @@ pub fn grid(
 
     let mut tile_coords = Vec::new();
 
-    let mut x = 0;
+    let mut z = start_z;
 
     for &row in level.iter() {
-        let mut z = 0;
+        let mut x = start_x;
 
         for col in String::from(row).chars() {
             if col == 'X' {
                 tile_coords.push(TileCoords(IVec3::new(x, 0, z)));
             }
-            z += 1;
+            x += 1;
         }
-        x += 1;
+        z += 1;
     }
 
-    tile_coords.push(TileCoords(IVec3::new(2, 1, 2)));
+    tile_coords.push(TileCoords(IVec3::new(0, 1, -2)));
+    tile_coords.push(TileCoords(IVec3::new(1, 1, -2)));
+    tile_coords.push(TileCoords(IVec3::new(2, 1, -2)));
+
+    tile_coords.push(TileCoords(IVec3::new(0, 1, 5)));
 
     (
         Grid(tile_map.clone()),
