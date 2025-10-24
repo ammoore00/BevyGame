@@ -80,16 +80,20 @@ fn record_player_directional_input(
             let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
             let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
 
-            debug!("Left stick x: {}, y: {}", left_stick_x, left_stick_y);
-
             // Apply deadzone
             if left_stick_x.abs() > 0.1 || left_stick_y.abs() > 0.1 {
                 intent.x += left_stick_x;
-                intent.z += left_stick_y;
+                intent.z -= left_stick_y;
+
+                // Rotate input by 45 degrees to match the direction of the screen.
+                let angle = std::f32::consts::FRAC_PI_4;
+                let rotation = Quat::from_rotation_y(angle);
+                intent = rotation * intent;
             }
         }
     }
-    else {
+
+    if intent == Vec3::ZERO {
         // Collect directional input.
         if input.pressed(KeyCode::KeyW) || input.pressed(KeyCode::ArrowUp) {
             intent.z += 1.0;
