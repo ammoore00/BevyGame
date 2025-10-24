@@ -19,29 +19,45 @@ pub fn grid(
     scale: f32,
 ) -> impl Bundle {
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
-    let grid = Grid(tile_map.clone());
-    
+
+    let tile_coords = vec![
+        IVec3::new(0, 0, 0),
+        IVec3::new(0, 0, 1),
+        IVec3::new(0, 0, 2),
+
+        IVec3::new(1, 0, 2),
+        IVec3::new(2, 0, 2),
+
+        IVec3::new(2, 0, 1),
+        IVec3::new(2, 0, 0),
+        IVec3::new(2, 0, -1),
+        IVec3::new(2, 0, -2),
+
+        IVec3::new(1, 0, -2),
+        IVec3::new(0, 0, -2),
+        IVec3::new(-1, 0, -2),
+        IVec3::new(-2, 0, -2),
+
+        IVec3::new(-2, 0, -1),
+        IVec3::new(-2, 0, 0),
+        IVec3::new(-2, 0, 1),
+        IVec3::new(-2, 0, 2),
+    ];
+
     (
-        grid,
+        Grid(tile_map.clone()),
         Transform::from_scale(Vec2::splat(scale).extend(1.0)),
         InheritedVisibility::default(),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            let size_x = 2;
-            let size_z = 2;
+            for coord in tile_coords {
+                let tile = parent.spawn((
+                    tile(
+                        coord,
+                        &tile_debug_assets
+                    ),
+                )).id();
 
-            for i in -size_x..=size_x {
-                for k in -size_z..=size_z {
-                    let coords = IVec3::from([i, 0, k]);
-                    
-                    let tile = parent.spawn((
-                        tile(
-                            coords,
-                            &tile_debug_assets
-                        ),
-                    )).id();
-                    
-                    tile_map.write().unwrap().insert(coords.into(), tile);
-                }
+                tile_map.write().unwrap().insert(coord.into(), tile);
             }
         })),
     )
@@ -104,7 +120,7 @@ pub mod coords {
     ) {
         for (world_position, mut transform) in query.iter_mut() {
             let scaled_coords: WorldCoords = (*world_position.0 * scale.0).into();
-            
+
             let screen_coords = ScreenCoords::from(scaled_coords);
             transform.translation = screen_coords.extend(0.0);
         }
@@ -118,7 +134,7 @@ pub mod coords {
     ) {
         for (tile_position, mut transform) in query.iter_mut() {
             let scaled_coords: WorldCoords = (tile_position.0.as_vec3() * scale.0).into();
-            
+
             let screen_coords = ScreenCoords::from(&tile_position.0);
             transform.translation = screen_coords.extend(0.0);
         }
