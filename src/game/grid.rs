@@ -1,8 +1,7 @@
-use std::ops::Deref;
 use crate::ReflectResource;
 use bevy::prelude::*;
 use crate::asset_tracking::LoadResource;
-use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldPosition};
+use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<TileDebugAssets>();
