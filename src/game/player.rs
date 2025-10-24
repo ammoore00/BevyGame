@@ -26,6 +26,8 @@ pub(super) fn plugin(app: &mut App) {
             record_player_directional_input
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
+            camera_follow_player
+                .in_set(AppSystems::Update),
         )
     );
 }
@@ -114,6 +116,22 @@ fn record_player_directional_input(
     for mut controller in &mut controller_query {
         controller.intent = intent;
     }
+}
+
+fn camera_follow_player(
+    player_query: Query<&mut Transform, (With<Player>, Without<Camera2d>)>,
+    mut camera_query: Query<&mut Transform, With<Camera2d>>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+
+    let Ok(mut camera_transform) = camera_query.single_mut() else {
+        return;
+    };
+
+    // Update camera position to match player position
+    camera_transform.translation = player_transform.translation;
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]
