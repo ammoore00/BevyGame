@@ -107,6 +107,8 @@ fn record_player_directional_input(
         intent = intent.normalize_or_zero()
     }
 
+    intent.y *= 0.707;
+
     // Apply movement intent to controllers.
     for mut controller in &mut controller_query {
         controller.intent = intent;

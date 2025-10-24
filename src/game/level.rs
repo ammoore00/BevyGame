@@ -49,7 +49,7 @@ pub fn spawn_level(
                 Name::new("Gameplay Music"),
                 music(level_assets.music.clone())
             ),
-            grid(&tile_assets),
+            grid(tile_assets.clone()),
         ],
     ));
 }
