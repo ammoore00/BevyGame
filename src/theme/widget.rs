@@ -9,6 +9,9 @@ use bevy::{
 
 use crate::theme::{interaction::InteractionPalette, palette::*};
 
+#[derive(Component, Debug)]
+pub struct ButtonRoot;
+
 /// A root UI node that fills the window and centers its content.
 pub fn ui_root(name: impl Into<Cow<'static, str>>) -> impl Bundle {
     (
@@ -106,6 +109,7 @@ where
     let action = IntoObserverSystem::into_system(action);
     (
         Name::new("Button"),
+        ButtonRoot,
         Node::default(),
         Children::spawn(SpawnWith(|parent: &mut ChildSpawner| {
             parent

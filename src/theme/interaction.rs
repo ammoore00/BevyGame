@@ -2,6 +2,7 @@ use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::prelude::*;
 
 use crate::{asset_tracking::LoadResource, audio::sound_effect};
+use crate::theme::widget::ButtonRoot;
 
 pub(super) fn plugin(app: &mut App) {
     //app.add_systems(Update, apply_interaction_palette);
@@ -49,14 +50,22 @@ fn apply_gamepad_interaction_palette(
     mut palette_query: Query<
         (Entity, &InteractionPalette, &mut BackgroundColor),
     >,
+    button_query: Query<(Entity, &Children), With<ButtonRoot>>
 ) {
     for (entity, palette, mut background) in palette_query.iter_mut() {
-        if input_focus.0 == Some(entity) {//&& input_focus_visible.0 {
-            println!("Focused element is {entity}");
-            *background = palette.hovered.into();
-        } else {
-            *background = palette.none.into();
-        }
+        button_query.iter().for_each(|(parent, children)| {
+            if input_focus.0 == Some(parent) { //&& input_focus_visible.0 {
+                children.iter().for_each(|child| {
+                    if child == entity {
+                        println!("Focused element is {child}");
+                        *background = palette.hovered.into();
+                    }
+                    else {
+                        *background = palette.none.into();
+                    }
+                })
+            }
+        });
     }
 }
 

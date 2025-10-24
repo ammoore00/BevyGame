@@ -113,7 +113,10 @@ fn process_inputs(
     }
 }
 
-fn navigate(action_state: Res<ActionState>, mut directional_navigation: DirectionalNavigation) {
+fn navigate(
+    action_state: Res<ActionState>,
+    mut directional_navigation: DirectionalNavigation,
+) {
     // If the user is pressing both left and right, or up and down,
     // we should not move in either direction.
     let net_east_west = action_state
@@ -161,8 +164,8 @@ fn navigate(action_state: Res<ActionState>, mut directional_navigation: Directio
 fn interact_with_focused_button(
     action_state: Res<ActionState>,
     input_focus: Res<InputFocus>,
-    mut commands: Commands,
     children: Query<&Children>,
+    mut commands: Commands,
 ) {
     if action_state
         .pressed_actions
