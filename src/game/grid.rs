@@ -97,6 +97,7 @@ struct Tile {
     tile_material: TileMaterial,
 }
 
+#[derive(Clone, Debug)]
 pub enum TileType {
     Full,
     Half,
@@ -106,6 +107,26 @@ pub enum TileType {
     Stairs(TileFacing),
 }
 
+impl TileType {
+    fn get_collision(&self) -> TileCollision {
+        match self {
+            TileType::Half => TileCollision::level(0.5),
+            TileType::SlopeLower(_) => todo!(),
+            TileType::SlopeUpper(_) => todo!(),
+            TileType::Stairs(facing) => {
+                match facing {
+                    TileFacing::PosX => todo!(),
+                    TileFacing::NegX => TileCollision::new(0.0, 0.0, 1.0, 1.0),
+                    TileFacing::PosZ => todo!(),
+                    TileFacing::NegZ => todo!(),
+                }
+            }
+            _ => TileCollision::default(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum TileFacing {
     PosX,
     NegX,
@@ -113,9 +134,54 @@ pub enum TileFacing {
     NegZ,
 }
 
+#[derive(Clone, Debug)]
 pub enum TileMaterial {
     Grass,
     Stone,
+}
+
+#[derive(Clone, Debug, Component)]
+pub struct TileCollision {
+    pub pp: f32,
+    pub pn: f32,
+    pub np: f32,
+    pub nn: f32,
+}
+
+impl TileCollision {
+    fn level(height: f32) -> Self {
+        Self::new(height, height, height, height)
+    }
+    
+    fn new(pp: f32, pn: f32, np: f32, nn: f32) -> Self {
+        Self {
+            pp, pn, np, nn,
+        }
+    }
+    
+    pub fn get_height(&self, x: f32, z: f32) -> f32 {
+        let frac_x = x.fract() + 0.5;
+        let frac_z = z.fract() + 0.5;
+        
+        self.bilerp(frac_x, frac_z)
+    }
+    
+    fn bilerp(&self, x: f32, z: f32) -> f32 {
+        // Bilinear interpolation between four corners
+        let x = x.clamp(0.0, 1.0);
+        let z = z.clamp(0.0, 1.0);
+
+        let x1 = self.nn + x * (self.pn - self.nn);
+        let x2 = self.np + x * (self.pp - self.np);
+
+        x1 + z * (x2 - x1)
+    }
+}
+
+impl Default for TileCollision {
+    fn default() -> Self {
+        Self::level(1.0)
+    }
 }
 
 pub fn tile(
@@ -129,10 +195,11 @@ pub fn tile(
 
     (
         Tile {
-            tile_type,
+            tile_type: tile_type.clone(),
             tile_material,
         },
         TilePosition(tile_coords.clone().into()),
+        tile_type.get_collision(),
         Sprite::from(sprite),
         Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
     )
@@ -196,12 +263,8 @@ impl TileAssetSet {
             TileType::Full => self.full.clone(),
             TileType::Half => self.half.clone(),
             TileType::Layer => self.layer.clone(),
-            TileType::SlopeLower(facing) => {
-                todo!()
-            }
-            TileType::SlopeUpper(facing) => {
-                todo!()
-            }
+            TileType::SlopeLower(_) => todo!(),
+            TileType::SlopeUpper(_) => todo!(),
             TileType::Stairs(facing) => {
                 match facing {
                     TileFacing::PosX => self.stairs_pos_x.clone(),
