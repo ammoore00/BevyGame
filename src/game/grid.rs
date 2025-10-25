@@ -29,10 +29,11 @@ pub fn grid(
         "XXXXXXXX.XXXX.",
         "XXXXX....X....",
         "..X......XXXX.",
-        "..X.........X.",
-        ".XXX.......XXX",
-        ".XXXXXXXXXXXXX",
-        ".XXX.......XXX",
+        "XXXXX.......X.",
+        "XXXXX......XXX",
+        "XXXXXXXXXXXXXX",
+        "XXXXX......XXX",
+        "XXXXX.........",
     ];
 
     let mut tile_coords = Vec::new();
@@ -71,6 +72,15 @@ pub fn grid(
     tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, 1))));
 
     tile_coords.push((TileMaterial::Stone, TileType::Full, TileCoords(IVec3::new(0, 1, 5))));
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegZ), TileCoords(IVec3::new(0, 1, 6))));
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegX), TileCoords(IVec3::new(1, 1, 5))));
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::PosZ), TileCoords(IVec3::new(0, 1, 4))));
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::PosX), TileCoords(IVec3::new(-1, 1, 5))));
+
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::PosX), TileCoords(IVec3::new(6, 1, -3))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(7, 1, -3))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(8, 1, -3))));
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegX), TileCoords(IVec3::new(9, 1, -3))));
 
     (
         Grid(tile_map.clone()),
