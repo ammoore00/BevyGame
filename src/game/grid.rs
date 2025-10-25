@@ -6,7 +6,7 @@ use crate::asset_tracking::LoadResource;
 use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, SCREEN_Z_SCALE};
 
 pub(super) fn plugin(app: &mut App) {
-    app.load_resource::<TileDebugAssets>();
+    app.load_resource::<TileAssets>();
 
     app.add_plugins(coords::plugin);
 }
@@ -15,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
 pub struct Grid(pub Arc<RwLock<BTreeMap<TileCoords, Entity>>>);
 
 pub fn grid(
-    tile_debug_assets: TileDebugAssets,
+    tile_assets: TileAssets,
     scale: f32,
 ) -> impl Bundle {
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
@@ -43,33 +43,35 @@ pub fn grid(
 
         for col in String::from(row).chars() {
             if col == 'X' {
-                tile_coords.push(TileCoords(IVec3::new(x, 0, z)));
+                tile_coords.push((TileMaterial::Grass, TileCoords(IVec3::new(x, 0, z))));
             }
             x += 1;
         }
         z += 1;
     }
 
-    tile_coords.push(TileCoords(IVec3::new(0, 1, -2)));
-    tile_coords.push(TileCoords(IVec3::new(1, 1, -2)));
-    tile_coords.push(TileCoords(IVec3::new(2, 1, -2)));
+    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(0, 1, -2))));
+    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(1, 1, -2))));
+    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(2, 1, -2))));
 
-    tile_coords.push(TileCoords(IVec3::new(0, 1, 5)));
+    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(0, 1, 5))));
 
     (
         Grid(tile_map.clone()),
         Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
         InheritedVisibility::default(),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            for coord in tile_coords {
+            for (material, coords) in tile_coords {
                 let tile = parent.spawn((
                     tile(
-                        coord.clone(),
-                        &tile_debug_assets
+                        TileType::Full,
+                        material,
+                        coords.clone(),
+                        &tile_assets
                     ),
                 )).id();
 
-                tile_map.write().unwrap().insert(coord.into(), tile);
+                tile_map.write().unwrap().insert(coords.into(), tile);
             }
         })),
     )
@@ -79,32 +81,130 @@ pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;
 
 #[derive(Component)]
-struct Tile;
+struct Tile {
+    tile_type: TileType,
+    tile_material: TileMaterial,
+}
+
+pub enum TileType {
+    Full,
+    Half,
+    SlopeLower(TileFacing),
+    SlopeUpper(TileFacing),
+    Stairs(TileFacing),
+}
+
+pub enum TileFacing {
+    PosX,
+    NegX,
+    PosZ,
+    NegZ,
+}
+
+pub enum TileMaterial {
+    Grass,
+    Stone,
+}
 
 pub fn tile(
+    tile_type: TileType,
+    tile_material: TileMaterial,
     tile_coords: impl Into<TileCoords> + Clone,
-    tile_debug_assets: &TileDebugAssets,
+    tile_assets: &TileAssets,
 ) -> impl Bundle {
+    let asset_set = tile_assets.get_asset_set_for_material(&tile_material);
+    let sprite = asset_set.get_sprite_for_type(&tile_type);
+
     (
-        Tile,
+        Tile {
+            tile_type,
+            tile_material,
+        },
         TilePosition(tile_coords.clone().into()),
-        Sprite::from(tile_debug_assets.grass.clone()),
+        Sprite::from(sprite),
         Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
     )
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
-pub struct TileDebugAssets {
+pub struct TileAssets {
     #[dependency]
-    grass: Handle<Image>,
+    grass: TileAssetSet,
+    #[dependency]
+    stone: TileAssetSet,
 }
 
-impl FromWorld for TileDebugAssets {
+impl TileAssets {
+    fn get_asset_set_for_material(&self, material: &TileMaterial) -> &TileAssetSet {
+        match material {
+            TileMaterial::Grass => &self.grass,
+            TileMaterial::Stone => &self.stone,
+        }
+    }
+}
+
+#[derive(Asset, Clone, Reflect)]
+struct TileAssetSet {
+    full: Handle<Image>,
+    half: Handle<Image>,
+
+    //slope_lower_pos_x: Handle<Image>,
+    //slope_lower_neg_x: Handle<Image>,
+    //slope_lower_pos_z: Handle<Image>,
+    //slope_lower_neg_z: Handle<Image>,
+
+    //slope_upper_pos_x: Handle<Image>,
+    //slope_upper_neg_x: Handle<Image>,
+    //slope_upper_pos_z: Handle<Image>,
+    //slope_upper_neg_z: Handle<Image>,
+
+    stairs_pos_x: Handle<Image>,
+    stairs_neg_x: Handle<Image>,
+    stairs_pos_z: Handle<Image>,
+    stairs_neg_z: Handle<Image>,
+}
+
+impl TileAssetSet {
+    fn new(name: &str, assets: &AssetServer) -> Self {
+        Self {
+            full: assets.load(format!{"images/{name}.png"}),
+            half: assets.load(format!{"images/{name}_half.png"}),
+            stairs_pos_x: assets.load(format!{"images/{name}_stairs_pos_x.png"}),
+            stairs_neg_x: assets.load(format!{"images/{name}_stairs_neg_x.png"}),
+            stairs_pos_z: assets.load(format!{"images/{name}_stairs_pos_z.png"}),
+            stairs_neg_z: assets.load(format!{"images/{name}_stairs_neg_z.png"}),
+        }
+    }
+
+    fn get_sprite_for_type(&self, tile_type: &TileType) -> Handle<Image> {
+        match tile_type {
+            TileType::Full => self.full.clone(),
+            TileType::Half => self.half.clone(),
+            TileType::SlopeLower(facing) => {
+                todo!()
+            }
+            TileType::SlopeUpper(facing) => {
+                todo!()
+            }
+            TileType::Stairs(facing) => {
+                match facing {
+                    TileFacing::PosX => self.stairs_pos_x.clone(),
+                    TileFacing::NegX => self.stairs_neg_x.clone(),
+                    TileFacing::PosZ => self.stairs_pos_z.clone(),
+                    TileFacing::NegZ => self.stairs_neg_z.clone(),
+                }
+            }
+        }
+    }
+}
+
+impl FromWorld for TileAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
-        TileDebugAssets {
-            grass: assets.load("images/grass.png"),
+        TileAssets {
+            grass: TileAssetSet::new("grass", assets),
+            stone: TileAssetSet::new("stone", assets),
         }
     }
 }
@@ -151,7 +251,7 @@ pub mod coords {
             let screen_coords = ScreenCoords::from(&tile_position.0);
             transform.translation = *screen_coords;
 
-            transform.translation.y -= TILE_HEIGHT as f32 / 2.0;
+            transform.translation.y -= TILE_HEIGHT as f32;
         }
     }
 
