@@ -175,8 +175,10 @@ impl TileCollision {
     }
     
     pub fn get_height(&self, x: f32, z: f32) -> f32 {
-        let mut frac_x = x.fract() + 0.5;
-        let mut frac_z = z.fract() + 0.5;
+        //println!("x: {}, z: {}", x, z);
+
+        let mut frac_x = (x + 0.5).fract();
+        let mut frac_z = (z + 0.5).fract();
 
         if frac_x < 0.0 {
             frac_x += 1.0;
@@ -185,6 +187,8 @@ impl TileCollision {
         if frac_z < 0.0 {
             frac_z += 1.0;
         }
+
+        //println!("frac_x: {}, frac_z: {}", frac_x, frac_z);
 
         self.bilerp(frac_x, frac_z)
     }
