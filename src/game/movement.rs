@@ -79,12 +79,11 @@ fn apply_movement(
 
                 // Set height to collision height of current tile
                 let current_tile = tile_map.get(&world_position.into());
-                println!("Current tile coords: {:?}", TileCoords::from(world_position));
                 if let Some(tile) = current_tile {
                     for (entity, tile_collision) in tile_query.iter() {
                         if &entity == tile {
-                            let collision_height = tile_collision.get_height(intended_position.x, intended_position.z) - 1.0;
-                            final_position.y += collision_height;
+                            let collision_height = tile_collision.get_height(intended_position.x, intended_position.z) + world_position.y - 1.0;
+                            final_position.y = collision_height;
                         }
                     }
                 }
@@ -118,7 +117,7 @@ fn apply_movement(
                     for (entity, tile_collision) in tile_query.iter() {
                         if &entity == tile {
                             // Check collision
-                            let test_height = tile_collision.get_height(intended_position.x, intended_position.z) + test_position.y as f32 - 1.0;
+                            let test_height = tile_collision.get_height(intended_position.x, world_position.z) + test_position.y as f32 - 1.0;
                             if test_height <= world_position.y + STEP_UP_THRESHOLD {
                                 final_position.x = intended_position.x;
                                 final_position.y = test_height;
@@ -130,7 +129,7 @@ fn apply_movement(
                     for (entity, tile_collision) in tile_query.iter() {
                         if &entity == tile_above {
                             // Check collision
-                            let test_height = tile_collision.get_height(intended_position.x, intended_position.z) + test_position_above.y as f32 - 1.0;
+                            let test_height = tile_collision.get_height(intended_position.x, world_position.z) + test_position_above.y as f32 - 1.0;
                             if test_height <= world_position.y + STEP_UP_THRESHOLD {
                                 final_position.x = intended_position.x;
                                 final_position.y = test_height;
@@ -146,12 +145,12 @@ fn apply_movement(
                     let current_tile_x = world_position.x.round();
                     let direction = (intended_position.x - world_position.x).signum();
 
-                    let boundary_x = current_tile_x + direction * (0.5 - TILE_BOUNDARY_SIZE);
+                    let boundary = current_tile_x + direction * (0.5 - TILE_BOUNDARY_SIZE);
 
                     if direction > 0.0 {
-                        final_position.x = intended_position.x.min(boundary_x);
+                        final_position.x = intended_position.x.min(boundary);
                     } else if direction < 0.0 {
-                        final_position.x = intended_position.x.max(boundary_x);
+                        final_position.x = intended_position.x.max(boundary);
                     } else {
                         final_position.x = world_position.x;
                     }
@@ -159,30 +158,67 @@ fn apply_movement(
 
                 //------ Z Axis Movement ------//
 
-                let test_z: TileCoords =
-                    Vec3::new(final_position.x, world_position.y, intended_position.z).into();
-                let test_z_above: TileCoords = Vec3::new(
+                // Position we intend to walk onto
+                let test_position: TileCoords = Vec3::new(
+                    final_position.x,
+                    world_position.y,
+                    intended_position.z,
+                )
+                    .into();
+                let test_tile = tile_map.get(&test_position.0.into());
+
+                // Position above the tile we intend to walk onto
+                let test_position_above: TileCoords = Vec3::new(
                     final_position.x,
                     world_position.y + 1.0,
                     intended_position.z,
                 )
                     .into();
+                let test_tile_above = tile_map.get(&test_position_above.0.into());
 
-                if tile_map.contains_key(&test_z.0.into())
-                    && !tile_map.contains_key(&test_z_above.0.into())
+                let mut moved = false;
+
+                // If there is a tile to walk onto, and nothing above it, move as normal
+                if let Some(tile) = test_tile
+                    && let None = test_tile_above
                 {
-                    final_position.z = intended_position.z;
-                } else {
-                    // Clamp to current tile boundary on Z axis
+                    for (entity, tile_collision) in tile_query.iter() {
+                        if &entity == tile {
+                            // Check collision
+                            let test_height = tile_collision.get_height(final_position.x, intended_position.z) + test_position.y as f32 - 1.0;
+                            if test_height <= world_position.y + STEP_UP_THRESHOLD {
+                                final_position.z = intended_position.z;
+                                final_position.y = test_height;
+                                moved = true;
+                            }
+                        }
+                    }
+                } else if let Some(tile_above) = test_tile_above {
+                    for (entity, tile_collision) in tile_query.iter() {
+                        if &entity == tile_above {
+                            // Check collision
+                            let test_height = tile_collision.get_height(final_position.x, intended_position.z) + test_position_above.y as f32 - 1.0;
+                            if test_height <= world_position.y + STEP_UP_THRESHOLD {
+                                final_position.z = intended_position.z;
+                                final_position.y = test_height;
+                                moved = true;
+                            }
+                        }
+                    }
+                }
+
+                // If we haven't moved yet, then move up to the boundary as far as we are able to
+                if !moved {
+                    // Clamp to current tile boundary on X axis
                     let current_tile_z = world_position.z.round();
                     let direction = (intended_position.z - world_position.z).signum();
 
-                    let boundary_z = current_tile_z + direction * (0.5 - TILE_BOUNDARY_SIZE);
+                    let boundary = current_tile_z + direction * (0.5 - TILE_BOUNDARY_SIZE);
 
                     if direction > 0.0 {
-                        final_position.z = intended_position.z.min(boundary_z);
+                        final_position.z = intended_position.z.min(boundary);
                     } else if direction < 0.0 {
-                        final_position.z = intended_position.z.max(boundary_z);
+                        final_position.z = intended_position.z.max(boundary);
                     } else {
                         final_position.z = world_position.z;
                     }

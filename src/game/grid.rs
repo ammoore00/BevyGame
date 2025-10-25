@@ -61,6 +61,11 @@ pub fn grid(
     tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-1, 1, -2))));
     tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegX), TileCoords(IVec3::new(0, 1, -2))));
 
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-1, 1, -1))));
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegZ), TileCoords(IVec3::new(-1, 1, 0))));
+
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegZ), TileCoords(IVec3::new(2, 1, -2))));
+
     tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, -1))));
     tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, 0))));
     tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, 1))));
@@ -115,10 +120,10 @@ impl TileType {
             TileType::SlopeUpper(_) => todo!(),
             TileType::Stairs(facing) => {
                 match facing {
-                    TileFacing::PosX => todo!(),
+                    TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.0, 0.0),
                     TileFacing::NegX => TileCollision::new(0.0, 0.0, 1.0, 1.0),
-                    TileFacing::PosZ => todo!(),
-                    TileFacing::NegZ => todo!(),
+                    TileFacing::PosZ => TileCollision::new(1.0, 0.0, 1.0, 0.0),
+                    TileFacing::NegZ => TileCollision::new(0.0, 1.0, 0.0, 1.0),
                 }
             }
             _ => TileCollision::default(),
@@ -160,12 +165,20 @@ impl TileCollision {
     }
     
     pub fn get_height(&self, x: f32, z: f32) -> f32 {
-        let frac_x = x.fract() + 0.5;
-        let frac_z = z.fract() + 0.5;
-        
+        let mut frac_x = x.fract() + 0.5;
+        let mut frac_z = z.fract() + 0.5;
+
+        if frac_x < 0.0 {
+            frac_x += 1.0;
+        }
+
+        if frac_z < 0.0 {
+            frac_z += 1.0;
+        }
+
         self.bilerp(frac_x, frac_z)
     }
-    
+
     fn bilerp(&self, x: f32, z: f32) -> f32 {
         // Bilinear interpolation between four corners
         let x = x.clamp(0.0, 1.0);
