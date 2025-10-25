@@ -21,8 +21,9 @@ pub fn grid(
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
 
     let start_x = -2;
-    let start_z = -2;
+    let start_z = -3;
     let level = [
+        "XXXXX..XXXXXX.",
         "XXXXX..XXXXXX.",
         "XXXXX..X....X.",
         "XXXXXXXX.XXXX.",
@@ -43,28 +44,38 @@ pub fn grid(
 
         for col in String::from(row).chars() {
             if col == 'X' {
-                tile_coords.push((TileMaterial::Grass, TileCoords(IVec3::new(x, 0, z))));
+                tile_coords.push((TileMaterial::Grass, TileType::Layer, TileCoords(IVec3::new(x, 0, z))));
             }
             x += 1;
         }
         z += 1;
     }
 
-    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(0, 1, -2))));
-    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(1, 1, -2))));
-    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(2, 1, -2))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, -3))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-1, 1, -3))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(0, 1, -3))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(1, 1, -3))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(2, 1, -3))));
 
-    tile_coords.push((TileMaterial::Stone, TileCoords(IVec3::new(0, 1, 5))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, -2))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-1, 1, -2))));
+    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegX), TileCoords(IVec3::new(0, 1, -2))));
+
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, -1))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, 0))));
+    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, 1))));
+
+    tile_coords.push((TileMaterial::Stone, TileType::Full, TileCoords(IVec3::new(0, 1, 5))));
 
     (
         Grid(tile_map.clone()),
         Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
         InheritedVisibility::default(),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            for (material, coords) in tile_coords {
+            for (material, tile_type, coords) in tile_coords {
                 let tile = parent.spawn((
                     tile(
-                        TileType::Full,
+                        tile_type,
                         material,
                         coords.clone(),
                         &tile_assets
@@ -89,6 +100,7 @@ struct Tile {
 pub enum TileType {
     Full,
     Half,
+    Layer,
     SlopeLower(TileFacing),
     SlopeUpper(TileFacing),
     Stairs(TileFacing),
@@ -148,6 +160,7 @@ impl TileAssets {
 struct TileAssetSet {
     full: Handle<Image>,
     half: Handle<Image>,
+    layer: Handle<Image>,
 
     //slope_lower_pos_x: Handle<Image>,
     //slope_lower_neg_x: Handle<Image>,
@@ -170,6 +183,7 @@ impl TileAssetSet {
         Self {
             full: assets.load(format!{"images/{name}.png"}),
             half: assets.load(format!{"images/{name}_half.png"}),
+            layer: assets.load(format!{"images/{name}_layer.png"}),
             stairs_pos_x: assets.load(format!{"images/{name}_stairs_pos_x.png"}),
             stairs_neg_x: assets.load(format!{"images/{name}_stairs_neg_x.png"}),
             stairs_pos_z: assets.load(format!{"images/{name}_stairs_pos_z.png"}),
@@ -181,6 +195,7 @@ impl TileAssetSet {
         match tile_type {
             TileType::Full => self.full.clone(),
             TileType::Half => self.half.clone(),
+            TileType::Layer => self.layer.clone(),
             TileType::SlopeLower(facing) => {
                 todo!()
             }
