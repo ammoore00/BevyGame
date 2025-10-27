@@ -14,6 +14,7 @@ use crate::{
     },
 };
 use crate::game::grid::coords::{rotate_screen_space_to_movement, WorldPosition};
+use crate::game::object::Collider;
 use crate::gamepad::GamepadRes;
 
 pub(super) fn plugin(app: &mut App) {
@@ -64,6 +65,7 @@ pub fn player(
             ..default()
         },
         player_animation,
+        Collider::cylinder(0.25, 0.75),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
                 Sprite {

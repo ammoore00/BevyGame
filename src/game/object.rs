@@ -58,3 +58,25 @@ pub fn object(
         })),
     )
 }
+
+#[derive(Debug, Clone, Reflect)]
+pub enum ColliderType {
+    Rectangle(Vec3),
+    Cylinder {
+        radius: f32,
+        height: f32,
+    }
+}
+
+#[derive(Component, Debug, Clone, Reflect)]
+pub struct Collider(pub ColliderType);
+
+impl Collider {
+    pub fn rectangle(size: impl Into<Vec3>) -> Self {
+        Self(ColliderType::Rectangle(size.into()))
+    }
+
+    pub fn cylinder(radius: f32, height: f32) -> Self {
+        Self(ColliderType::Cylinder { radius, height })
+    }
+}

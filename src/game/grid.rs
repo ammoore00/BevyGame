@@ -190,7 +190,7 @@ impl TileCollision {
 
         //println!("frac_x: {}, frac_z: {}", frac_x, frac_z);
 
-        self.bilerp(frac_x, frac_z)
+        self.bilerp(frac_x, frac_z).max(0.0).min(1.0)
     }
 
     fn bilerp(&self, x: f32, z: f32) -> f32 {
