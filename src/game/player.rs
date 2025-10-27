@@ -45,6 +45,8 @@ pub fn player(
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     let player_animation = PlayerAnimation::new();
 
+    let shadow = player_assets.shadow.clone();
+
     (
         Name::new("Player"),
         Player,
@@ -62,6 +64,16 @@ pub fn player(
             ..default()
         },
         player_animation,
+        Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
+            parent.spawn((
+                Sprite {
+                    image: shadow,
+                    color: Color::srgba(1.0, 1.0, 1.0, 0.75),
+                    ..default()
+                },
+                Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
+            ));
+        })),
     )
 }
 
@@ -141,6 +153,8 @@ pub struct PlayerAssets {
     #[dependency]
     ducky: Handle<Image>,
     #[dependency]
+    shadow: Handle<Image>,
+    #[dependency]
     pub steps: Vec<Handle<AudioSource>>,
 }
 
@@ -148,13 +162,8 @@ impl FromWorld for PlayerAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            ducky: assets.load_with_settings(
-                "images/ducky2.png",
-                |settings: &mut ImageLoaderSettings| {
-                    // Use `nearest` image sampling to preserve pixel art style.
-                    settings.sampler = ImageSampler::nearest();
-                },
-            ),
+            ducky: assets.load("images/ducky2.png"),
+            shadow: assets.load("images/ducky_shadow.png"),
             steps: vec![
                 assets.load("audio/sound_effects/step1.ogg"),
                 assets.load("audio/sound_effects/step2.ogg"),

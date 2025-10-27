@@ -10,6 +10,7 @@ pub mod level;
 mod movement;
 pub mod player;
 mod grid;
+mod object;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
@@ -17,6 +18,7 @@ pub(super) fn plugin(app: &mut App) {
         grid::plugin,
         level::plugin,
         movement::plugin,
+        object::plugin,
         player::plugin,
     ));
 }

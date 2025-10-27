@@ -4,6 +4,7 @@ use bevy::prelude::*;
 
 use crate::{asset_tracking::LoadResource, audio::music, game::player::{PlayerAssets, player}, screens::Screen, Scale};
 use crate::game::grid::{grid, TileAssets};
+use crate::game::object::{object, ObjectAssets, ObjectType};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -31,6 +32,7 @@ pub fn spawn_level(
     level_assets: Res<LevelAssets>,
     player_assets: Res<PlayerAssets>,
     tile_assets: Res<TileAssets>,
+    object_assets: Res<ObjectAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     scale: Res<Scale>,
 ) {
@@ -46,6 +48,7 @@ pub fn spawn_level(
                 music(level_assets.music.clone())
             ),
             grid(tile_assets.clone(), scale.0),
+            object(ObjectType::Rock, &object_assets, -1.25, 1.0, -1.25, scale.0),
         ],
     ));
 }
