@@ -17,8 +17,8 @@ use bevy::prelude::*;
 
 use crate::game::grid::coords::{TileCoords, WorldPosition};
 use crate::game::grid::{Grid, TileCollision};
-use crate::{AppSystems, PausableSystems};
 use crate::game::object::{Collider, ColliderType};
+use crate::{AppSystems, PausableSystems};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -60,15 +60,8 @@ pub const GRAVITY: f32 = 4.5;
 
 fn apply_movement(
     time: Res<Time>,
-    mut movement_query: Query<(
-        &MovementController,
-        &mut WorldPosition,
-        &Collider
-    )>,
-    tile_query: Query<(
-        Entity,
-        &TileCollision
-    )>,
+    mut movement_query: Query<(&MovementController, &mut WorldPosition, &Collider)>,
+    tile_query: Query<(Entity, &TileCollision)>,
     grid_query: Query<&Grid>,
 ) {
     for (controller, mut controller_position, collider) in &mut movement_query {
@@ -76,11 +69,12 @@ fn apply_movement(
             let tile_map = grid.0.read().unwrap();
 
             let velocity = controller.intent * controller.max_speed;
-            let velocity = if velocity.x.abs() < 0.01 && velocity.y.abs() < 0.01 && velocity.z.abs() < 0.01 {
-                Vec3::ZERO
-            } else {
-                velocity
-            };
+            let velocity =
+                if velocity.x.abs() < 0.01 && velocity.y.abs() < 0.01 && velocity.z.abs() < 0.01 {
+                    Vec3::ZERO
+                } else {
+                    velocity
+                };
 
             let world_position = controller_position.0.0;
 
@@ -96,8 +90,12 @@ fn apply_movement(
             let direction_z = velocity.z.signum();
 
             // Leading collider edge position
-            let intended_collider_edge_position_x = world_position + velocity * Vec3::X * time.delta_secs() + Vec3::new(collider_offset_x, 0.0, 0.0) * direction_x;
-            let intended_collider_edge_position_z = world_position + velocity * Vec3::Z * time.delta_secs() + Vec3::new(0.0, 0.0, collider_offset_z) * direction_z;
+            let intended_collider_edge_position_x = world_position
+                + velocity * Vec3::X * time.delta_secs()
+                + Vec3::new(collider_offset_x, 0.0, 0.0) * direction_x;
+            let intended_collider_edge_position_z = world_position
+                + velocity * Vec3::Z * time.delta_secs()
+                + Vec3::new(0.0, 0.0, collider_offset_z) * direction_z;
 
             // Actual position we will move to
             let mut final_position = world_position;
@@ -112,7 +110,7 @@ fn apply_movement(
                 collider_offset_x,
                 direction_x,
                 Vec3::X,
-                tile_query
+                tile_query,
             );
 
             // For Z axis:
@@ -125,7 +123,7 @@ fn apply_movement(
                 collider_offset_z,
                 direction_z,
                 Vec3::Z,
-                tile_query
+                tile_query,
             );
 
             final_position.x = final_pos_x.x;
@@ -140,7 +138,10 @@ fn apply_movement(
             if let Some(tile) = current_tile {
                 for (entity, tile_collision) in tile_query.iter() {
                     if &entity == tile {
-                        let collision_height = tile_collision.get_height(intended_center_position.x, intended_center_position.z) + final_position.y - 1.0;
+                        let collision_height = tile_collision
+                            .get_height(intended_center_position.x, intended_center_position.z)
+                            + final_position.y
+                            - 1.0;
                         target_height = collision_height;
                     }
                 }
@@ -179,13 +180,15 @@ fn check_axis_movement(
         intended_center_position.x,
         world_position.y,
         intended_center_position.z,
-    ).into();
+    )
+    .into();
 
     let test_collider_position: TileCoords = Vec3::new(
         intended_collider_edge_position.x,
         world_position.y,
         intended_collider_edge_position.z,
-    ).into();
+    )
+    .into();
     let test_collider_tile = tile_map.get(&test_collider_position.0.into());
 
     // Position above the tile we intend to walk onto
@@ -193,57 +196,85 @@ fn check_axis_movement(
         intended_center_position.x,
         world_position.y + 1.0,
         intended_center_position.z,
-    ).into();
+    )
+    .into();
     let test_tile_above = tile_map.get(&test_position_above.0.into());
 
     let test_collider_position_above: TileCoords = Vec3::new(
         intended_collider_edge_position.x,
         world_position.y + 1.0,
         intended_collider_edge_position.z,
-    ).into();
+    )
+    .into();
     let test_collider_tile_above = tile_map.get(&test_collider_position_above.0.into());
 
     let mut target_height = world_position.y;
 
-    let moved = match (test_collider_tile, test_tile_above, test_collider_tile_above) {
+    let moved = match (
+        test_collider_tile,
+        test_tile_above,
+        test_collider_tile_above,
+    ) {
         // There is something for us to run into or to walk onto
         (Some(_), Some(tile_above), _) => {
             if let Ok((_, tile_collision)) = tile_query.get(*tile_above) {
                 // Check collision
-                let test_height = tile_collision.get_height(intended_center_position.x, intended_center_position.z) + test_position_above.y as f32 - 1.0;
+                let test_height = tile_collision
+                    .get_height(intended_center_position.x, intended_center_position.z)
+                    + test_position_above.y as f32
+                    - 1.0;
                 if test_height.clamp(0.0, 1.0) <= world_position.y + STEP_UP_THRESHOLD {
                     final_position.x = intended_center_position.x;
                     final_position.z = intended_center_position.z;
                     target_height = test_height;
                     true
-                } else { false }
-            } else { false }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
         }
         // We are approaching something to run into or to walk onto but haven't reached it yet
         (Some(_), _, Some(collider_tile_above)) => {
             if let Ok((_, tile_collision)) = tile_query.get(*collider_tile_above) {
                 // Check collision
-                let test_height = tile_collision.get_height(intended_collider_edge_position.x, intended_collider_edge_position.z) + test_position_above.y as f32 - 1.0;
+                let test_height = tile_collision.get_height(
+                    intended_collider_edge_position.x,
+                    intended_collider_edge_position.z,
+                ) + test_position_above.y as f32
+                    - 1.0;
 
                 if test_height <= world_position.y + STEP_UP_THRESHOLD {
                     final_position.x = intended_center_position.x;
                     final_position.z = intended_center_position.z;
                     true
-                } else { false }
-            } else { false }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
         }
         // There is nothing to run into at our level, and there is ground to walk onto
         (Some(collider_tile), None, None) => {
             if let Ok((_, tile_collision)) = tile_query.get(*collider_tile) {
                 // Check collision
-                let test_height = tile_collision.get_height(intended_center_position.x, intended_center_position.z) + test_position.y as f32 - 1.0;
+                let test_height = tile_collision
+                    .get_height(intended_center_position.x, intended_center_position.z)
+                    + test_position.y as f32
+                    - 1.0;
                 if test_height <= world_position.y + STEP_UP_THRESHOLD {
                     final_position.x = intended_center_position.x;
                     final_position.z = intended_center_position.z;
                     target_height = test_height;
                     true
-                } else { false }
-            } else { false }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
         }
         // All other cases
         (_, _, _) => false,
@@ -252,7 +283,8 @@ fn check_axis_movement(
     if !moved {
         // Clamp to current tile boundary
         let current_tile_coord = (world_position * axis_mask).dot(axis_mask).round();
-        let boundary = current_tile_coord + direction * (0.5 - TILE_BOUNDARY_SIZE) - collider_offset * direction;
+        let boundary = current_tile_coord + direction * (0.5 - TILE_BOUNDARY_SIZE)
+            - collider_offset * direction;
         let intended_coord = (intended_center_position * axis_mask).dot(axis_mask);
 
         let clamped_coord = if direction > 0.0 {

@@ -1,10 +1,10 @@
 //! The game's menus and transitions between them.
 
 mod credits;
+mod gamepad_navigation;
 mod main_menu;
 mod pause;
 mod settings;
-mod gamepad_navigation;
 
 use bevy::prelude::*;
 

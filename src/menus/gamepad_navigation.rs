@@ -1,20 +1,19 @@
-use std::time::Duration;
 use bevy::camera::NormalizedRenderTarget;
-use bevy::input_focus::directional_navigation::{DirectionalNavigation, DirectionalNavigationPlugin};
+use bevy::input_focus::directional_navigation::{
+    DirectionalNavigation, DirectionalNavigationPlugin,
+};
 use bevy::input_focus::{InputDispatchPlugin, InputFocus, InputFocusVisible};
 use bevy::math::CompassOctant;
 use bevy::picking::backend::HitData;
 use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
+use std::time::Duration;
 
 pub fn plugin(app: &mut App) {
     app
         // Input focus is not enabled by default, so we need to add the corresponding plugins
-        .add_plugins((
-            InputDispatchPlugin,
-            DirectionalNavigationPlugin,
-        ))
+        .add_plugins((InputDispatchPlugin, DirectionalNavigationPlugin))
         // This resource is canonically used to track whether or not to render a focus indicator
         // It starts as false, but we set it to true here as we would like to see the focus indicator
         .insert_resource(InputFocusVisible(true))
@@ -112,25 +111,22 @@ fn process_inputs(
     }
 }
 
-fn navigate(
-    action_state: Res<ActionState>,
-    mut directional_navigation: DirectionalNavigation,
-) {
+fn navigate(action_state: Res<ActionState>, mut directional_navigation: DirectionalNavigation) {
     // If the user is pressing both left and right, or up and down,
     // we should not move in either direction.
     let net_east_west = action_state
         .pressed_actions
         .contains(&DirectionalNavigationAction::Right) as i8
         - action_state
-        .pressed_actions
-        .contains(&DirectionalNavigationAction::Left) as i8;
+            .pressed_actions
+            .contains(&DirectionalNavigationAction::Left) as i8;
 
     let net_north_south = action_state
         .pressed_actions
         .contains(&DirectionalNavigationAction::Up) as i8
         - action_state
-        .pressed_actions
-        .contains(&DirectionalNavigationAction::Down) as i8;
+            .pressed_actions
+            .contains(&DirectionalNavigationAction::Down) as i8;
 
     // Compute the direction that the user is trying to navigate in
     let maybe_direction = match (net_east_west, net_north_south) {

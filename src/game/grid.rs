@@ -1,9 +1,9 @@
+use crate::ReflectResource;
+use crate::asset_tracking::LoadResource;
+use crate::game::grid::coords::{SCREEN_Z_SCALE, ScreenCoords, TileCoords, TilePosition};
+use bevy::prelude::*;
 use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
-use crate::ReflectResource;
-use bevy::prelude::*;
-use crate::asset_tracking::LoadResource;
-use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, SCREEN_Z_SCALE};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<TileAssets>();
@@ -14,10 +14,7 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component)]
 pub struct Grid(pub Arc<RwLock<BTreeMap<TileCoords, Entity>>>);
 
-pub fn grid(
-    tile_assets: TileAssets,
-    scale: f32,
-) -> impl Bundle {
+pub fn grid(tile_assets: TileAssets, scale: f32) -> impl Bundle {
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
 
     let start_x = -2;
@@ -45,42 +42,138 @@ pub fn grid(
 
         for col in String::from(row).chars() {
             if col == 'X' {
-                tile_coords.push((TileMaterial::Grass, TileType::Layer, TileCoords(IVec3::new(x, 0, z))));
+                tile_coords.push((
+                    TileMaterial::Grass,
+                    TileType::Layer,
+                    TileCoords(IVec3::new(x, 0, z)),
+                ));
             }
             x += 1;
         }
         z += 1;
     }
 
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, -3))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-1, 1, -3))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(0, 1, -3))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(1, 1, -3))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(2, 1, -3))));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-2, 1, -3)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-1, 1, -3)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(0, 1, -3)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(1, 1, -3)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(2, 1, -3)),
+    ));
 
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, -2))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-1, 1, -2))));
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegX), TileCoords(IVec3::new(0, 1, -2))));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-2, 1, -2)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-1, 1, -2)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::NegX),
+        TileCoords(IVec3::new(0, 1, -2)),
+    ));
 
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-1, 1, -1))));
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegZ), TileCoords(IVec3::new(-1, 1, 0))));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-1, 1, -1)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::NegZ),
+        TileCoords(IVec3::new(-1, 1, 0)),
+    ));
 
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegZ), TileCoords(IVec3::new(2, 1, -2))));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::NegZ),
+        TileCoords(IVec3::new(2, 1, -2)),
+    ));
 
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, -1))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, 0))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(-2, 1, 1))));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-2, 1, -1)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-2, 1, 0)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(-2, 1, 1)),
+    ));
 
-    tile_coords.push((TileMaterial::Stone, TileType::Full, TileCoords(IVec3::new(0, 1, 5))));
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegZ), TileCoords(IVec3::new(0, 1, 6))));
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegX), TileCoords(IVec3::new(1, 1, 5))));
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::PosZ), TileCoords(IVec3::new(0, 1, 4))));
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::PosX), TileCoords(IVec3::new(-1, 1, 5))));
+    tile_coords.push((
+        TileMaterial::Stone,
+        TileType::Full,
+        TileCoords(IVec3::new(0, 1, 5)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::NegZ),
+        TileCoords(IVec3::new(0, 1, 6)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::NegX),
+        TileCoords(IVec3::new(1, 1, 5)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::PosZ),
+        TileCoords(IVec3::new(0, 1, 4)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::PosX),
+        TileCoords(IVec3::new(-1, 1, 5)),
+    ));
 
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::PosX), TileCoords(IVec3::new(6, 1, -3))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(7, 1, -3))));
-    tile_coords.push((TileMaterial::Grass, TileType::Full, TileCoords(IVec3::new(8, 1, -3))));
-    tile_coords.push((TileMaterial::Grass, TileType::Stairs(TileFacing::NegX), TileCoords(IVec3::new(9, 1, -3))));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::PosX),
+        TileCoords(IVec3::new(6, 1, -3)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(7, 1, -3)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Full,
+        TileCoords(IVec3::new(8, 1, -3)),
+    ));
+    tile_coords.push((
+        TileMaterial::Grass,
+        TileType::Stairs(TileFacing::NegX),
+        TileCoords(IVec3::new(9, 1, -3)),
+    ));
 
     (
         Grid(tile_map.clone()),
@@ -88,14 +181,9 @@ pub fn grid(
         InheritedVisibility::default(),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             for (material, tile_type, coords) in tile_coords {
-                let tile = parent.spawn((
-                    tile(
-                        tile_type,
-                        material,
-                        coords.clone(),
-                        &tile_assets
-                    ),
-                )).id();
+                let tile = parent
+                    .spawn((tile(tile_type, material, coords.clone(), &tile_assets),))
+                    .id();
 
                 tile_map.write().unwrap().insert(coords, tile);
             }
@@ -107,10 +195,7 @@ pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;
 
 #[derive(Component)]
-struct Tile {
-    tile_type: TileType,
-    tile_material: TileMaterial,
-}
+struct Tile;
 
 #[derive(Clone, Debug)]
 pub enum TileType {
@@ -128,14 +213,12 @@ impl TileType {
             TileType::Half => TileCollision::level(0.5),
             TileType::SlopeLower(_) => todo!(),
             TileType::SlopeUpper(_) => todo!(),
-            TileType::Stairs(facing) => {
-                match facing {
-                    TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.0, 0.0),
-                    TileFacing::NegX => TileCollision::new(0.0, 0.0, 1.0, 1.0),
-                    TileFacing::PosZ => TileCollision::new(1.0, 0.0, 1.0, 0.0),
-                    TileFacing::NegZ => TileCollision::new(0.0, 1.0, 0.0, 1.0),
-                }
-            }
+            TileType::Stairs(facing) => match facing {
+                TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.0, 0.0),
+                TileFacing::NegX => TileCollision::new(0.0, 0.0, 1.0, 1.0),
+                TileFacing::PosZ => TileCollision::new(1.0, 0.0, 1.0, 0.0),
+                TileFacing::NegZ => TileCollision::new(0.0, 1.0, 0.0, 1.0),
+            },
             _ => TileCollision::default(),
         }
     }
@@ -167,13 +250,11 @@ impl TileCollision {
     fn level(height: f32) -> Self {
         Self::new(height, height, height, height)
     }
-    
+
     fn new(pp: f32, pn: f32, np: f32, nn: f32) -> Self {
-        Self {
-            pp, pn, np, nn,
-        }
+        Self { pp, pn, np, nn }
     }
-    
+
     pub fn get_height(&self, x: f32, z: f32) -> f32 {
         //println!("x: {}, z: {}", x, z);
 
@@ -221,10 +302,7 @@ pub fn tile(
     let sprite = asset_set.get_sprite_for_type(&tile_type);
 
     (
-        Tile {
-            tile_type: tile_type.clone(),
-            tile_material,
-        },
+        Tile,
         TilePosition(tile_coords.clone().into()),
         tile_type.get_collision(),
         Sprite::from(sprite),
@@ -265,7 +343,6 @@ struct TileAssetSet {
     //slope_upper_neg_x: Handle<Image>,
     //slope_upper_pos_z: Handle<Image>,
     //slope_upper_neg_z: Handle<Image>,
-
     stairs_pos_x: Handle<Image>,
     stairs_neg_x: Handle<Image>,
     stairs_pos_z: Handle<Image>,
@@ -292,14 +369,12 @@ impl TileAssetSet {
             TileType::Layer => self.layer.clone(),
             TileType::SlopeLower(_) => todo!(),
             TileType::SlopeUpper(_) => todo!(),
-            TileType::Stairs(facing) => {
-                match facing {
-                    TileFacing::PosX => self.stairs_pos_x.clone(),
-                    TileFacing::NegX => self.stairs_neg_x.clone(),
-                    TileFacing::PosZ => self.stairs_pos_z.clone(),
-                    TileFacing::NegZ => self.stairs_neg_z.clone(),
-                }
-            }
+            TileType::Stairs(facing) => match facing {
+                TileFacing::PosX => self.stairs_pos_x.clone(),
+                TileFacing::NegX => self.stairs_neg_x.clone(),
+                TileFacing::PosZ => self.stairs_pos_z.clone(),
+                TileFacing::NegZ => self.stairs_neg_z.clone(),
+            },
         }
     }
 }
@@ -315,20 +390,22 @@ impl FromWorld for TileAssets {
 }
 
 pub mod coords {
+    use crate::Scale;
+    use crate::game::grid::{TILE_HEIGHT, TILE_WIDTH};
+    use bevy::prelude::*;
     use std::cmp::Ordering;
     use std::ops::Deref;
-    use bevy::prelude::*;
-    use crate::game::grid::{TILE_HEIGHT, TILE_WIDTH};
-    use crate::Scale;
 
     pub(super) const SCREEN_Z_SCALE: f32 = 2.0;
 
     pub(super) fn plugin(app: &mut App) {
-        app.add_systems(PreUpdate,
+        app.add_systems(
+            PreUpdate,
             (
                 convert_world_to_screen_coords,
-                convert_tile_to_screen_coords
-            ));
+                convert_tile_to_screen_coords,
+            ),
+        );
     }
 
     #[derive(Component, Debug)]
@@ -372,12 +449,12 @@ pub mod coords {
             Self(value.0.as_ivec3())
         }
     }
-    impl From<IVec3> for TileCoords  {
+    impl From<IVec3> for TileCoords {
         fn from(value: IVec3) -> Self {
             TileCoords(value)
         }
     }
-    impl From<Vec3> for TileCoords  {
+    impl From<Vec3> for TileCoords {
         fn from(value: Vec3) -> Self {
             // Use round() instead of as_ivec3() to get proper rounding
             TileCoords(IVec3::new(
@@ -410,7 +487,7 @@ pub mod coords {
             Some(self.cmp(other))
         }
     }
-    
+
     #[derive(Debug)]
     pub struct WorldCoords(pub Vec3);
     impl From<TileCoords> for WorldCoords {
@@ -423,12 +500,12 @@ pub mod coords {
             Self(value.0.as_vec3())
         }
     }
-    impl From<Vec3> for WorldCoords  {
+    impl From<Vec3> for WorldCoords {
         fn from(value: Vec3) -> Self {
             WorldCoords(value)
         }
     }
-    impl From<IVec3> for WorldCoords  {
+    impl From<IVec3> for WorldCoords {
         fn from(value: IVec3) -> Self {
             WorldCoords(value.as_vec3())
         }
@@ -445,7 +522,8 @@ pub mod coords {
     impl From<WorldCoords> for ScreenCoords {
         fn from(value: WorldCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
-            let screen_y = (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
+            let screen_y =
+                (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
             let screen_z = (value.x + value.z + value.y) * SCREEN_Z_SCALE;
 
@@ -455,7 +533,8 @@ pub mod coords {
     impl From<&WorldCoords> for ScreenCoords {
         fn from(value: &WorldCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
-            let screen_y = (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
+            let screen_y =
+                (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
             let screen_z = (value.x + value.z + value.y) * SCREEN_Z_SCALE;
 
@@ -482,7 +561,7 @@ pub mod coords {
             Vec3::new(screen_x as f32, screen_y as f32, screen_z).into()
         }
     }
-    impl From<Vec3> for ScreenCoords  {
+    impl From<Vec3> for ScreenCoords {
         fn from(value: Vec3) -> Self {
             ScreenCoords(value)
         }

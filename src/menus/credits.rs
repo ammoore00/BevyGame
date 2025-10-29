@@ -1,17 +1,16 @@
 //! The credits menu.
 
-use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
-use bevy::input_focus::InputFocus;
-use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
 use crate::gamepad::gamepad_just_pressed;
+use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
+use bevy::input_focus::InputFocus;
+use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu);
     app.add_systems(
         Update,
         go_back.run_if(in_state(Menu::Credits).and(
-            input_just_pressed(KeyCode::Escape)
-                .or(gamepad_just_pressed(GamepadButton::East))
+            input_just_pressed(KeyCode::Escape).or(gamepad_just_pressed(GamepadButton::East)),
         )),
     );
 
@@ -19,36 +18,33 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), start_credits_music);
 }
 
-fn spawn_credits_menu(
-    mut input_focus: ResMut<InputFocus>,
-    mut commands: Commands,
-) {
-    let ui_root = commands.spawn((
-        widget::ui_root("Credits Menu"),
-        GlobalZIndex(2),
-        DespawnOnExit(Menu::Credits),
-        children![
-            widget::header("Created by"),
-            created_by(),
-            widget::header("Assets"),
-            assets(),
-            widget::header("License"),
-            widget::label("This game is provided under the Mozilla Public License 2.0"),
-            license(),
-        ],
-    )).id();
+fn spawn_credits_menu(mut input_focus: ResMut<InputFocus>, mut commands: Commands) {
+    let ui_root = commands
+        .spawn((
+            widget::ui_root("Credits Menu"),
+            GlobalZIndex(2),
+            DespawnOnExit(Menu::Credits),
+            children![
+                widget::header("Created by"),
+                created_by(),
+                widget::header("Assets"),
+                assets(),
+                widget::header("License"),
+                widget::label("This game is provided under the Mozilla Public License 2.0"),
+                license(),
+            ],
+        ))
+        .id();
 
-    let back_button = commands.spawn(
-        widget::button("Back", go_back_on_click)
-    ).id();
+    let back_button = commands
+        .spawn(widget::button("Back", go_back_on_click))
+        .id();
     commands.entity(ui_root).add_child(back_button);
     input_focus.0 = Some(back_button);
 }
 
 fn created_by() -> impl Bundle {
-    grid(vec![
-        ["The Lady Dawn", "Art, Programming"],
-    ])
+    grid(vec![["The Lady Dawn", "Art, Programming"]])
 }
 
 fn assets() -> impl Bundle {
@@ -64,8 +60,14 @@ fn assets() -> impl Bundle {
 
 fn license() -> impl Bundle {
     grid(vec![
-        ["More Information", "https://www.mozilla.org/en-US/MPL/2.0/FAQ/"],
-        ["Full License Text", "https://www.mozilla.org/en-US/MPL/2.0/"],
+        [
+            "More Information",
+            "https://www.mozilla.org/en-US/MPL/2.0/FAQ/",
+        ],
+        [
+            "Full License Text",
+            "https://www.mozilla.org/en-US/MPL/2.0/",
+        ],
     ])
 }
 

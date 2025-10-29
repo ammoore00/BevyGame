@@ -1,15 +1,13 @@
 use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::prelude::*;
 
-use crate::{asset_tracking::LoadResource, audio::sound_effect};
 use crate::theme::widget::ButtonRoot;
+use crate::{asset_tracking::LoadResource, audio::sound_effect};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        Update, (
-            apply_gamepad_interaction_palette,
-            apply_interaction_palette,
-        ).chain()
+        Update,
+        (apply_gamepad_interaction_palette, apply_interaction_palette).chain(),
     );
 
     app.load_resource::<InteractionAssets>();
@@ -37,8 +35,10 @@ fn apply_interaction_palette(
     mut commands: Commands,
 ) {
     // If there are any mouse interactions, disable the focus indicator
-    let mut reset_focus = || if input_focus_visible.0 {
-        commands.insert_resource(InputFocusVisible(false));
+    let mut reset_focus = || {
+        if input_focus_visible.0 {
+            commands.insert_resource(InputFocusVisible(false));
+        }
     };
 
     for (interaction, palette, mut background) in &mut palette_query {
@@ -47,7 +47,7 @@ fn apply_interaction_palette(
             Interaction::Hovered => {
                 reset_focus();
                 palette.hovered
-            },
+            }
             Interaction::Pressed => palette.pressed,
         }
         .into();
@@ -58,9 +58,12 @@ fn apply_gamepad_interaction_palette(
     input_focus: Res<InputFocus>,
     input_focus_visible: Res<InputFocusVisible>,
     mut palette_query: Query<
-        (Entity, &Interaction, &InteractionPalette, &mut BackgroundColor),
+        (Entity, &Interaction, &InteractionPalette, &mut BackgroundColor)
     >,
-    button_query: Query<(Entity, &Children), With<ButtonRoot>>
+    button_query: Query<
+        (Entity, &Children),
+        With<ButtonRoot>
+    >,
 ) {
     // For everything with a background color palette
     for (entity, interaction, palette, mut background) in palette_query.iter_mut() {
@@ -81,8 +84,7 @@ fn apply_gamepad_interaction_palette(
                     })
                 }
             });
-        }
-        else if input_focus_visible.is_changed() && matches!(interaction, Interaction::None) {
+        } else if input_focus_visible.is_changed() && matches!(interaction, Interaction::None) {
             // If the input is false, and has changed since the last frame, disable highlighting
             *background = palette.none.into();
         }

@@ -2,17 +2,14 @@
 
 use bevy::prelude::*;
 
+use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
+use crate::game::object::Collider;
+use crate::gamepad::GamepadRes;
 use crate::{
     AppSystems, PausableSystems,
     asset_tracking::LoadResource,
-    game::{
-        animation::PlayerAnimation,
-        movement::MovementController,
-    },
+    game::{animation::PlayerAnimation, movement::MovementController},
 };
-use crate::game::grid::coords::{rotate_screen_space_to_movement, WorldPosition};
-use crate::game::object::Collider;
-use crate::gamepad::GamepadRes;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -24,9 +21,8 @@ pub(super) fn plugin(app: &mut App) {
             record_player_directional_input
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
-            camera_follow_player
-                .in_set(AppSystems::Update),
-        )
+            camera_follow_player.in_set(AppSystems::Update),
+        ),
     );
 }
 
@@ -90,7 +86,7 @@ fn record_player_directional_input(
 
     // Add gamepad input if available
     if let Some(gamepad_res) = gamepad_res
-            && let Ok(gamepad) = gamepads.get(gamepad_res.0)
+        && let Ok(gamepad) = gamepads.get(gamepad_res.0)
     {
         let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
         let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);

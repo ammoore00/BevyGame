@@ -6,11 +6,11 @@
 use bevy::prelude::*;
 
 mod animation;
+mod grid;
 pub mod level;
 mod movement;
-pub mod player;
-mod grid;
 mod object;
+pub mod player;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((

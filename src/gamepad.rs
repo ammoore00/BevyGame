@@ -1,13 +1,11 @@
+use crate::AppSystems;
 use bevy::input::gamepad::{GamepadConnection, GamepadEvent};
 use bevy::prelude::*;
-use crate::AppSystems;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            gamepad_connections.in_set(AppSystems::RecordInput),
-        )
+        (gamepad_connections.in_set(AppSystems::RecordInput),),
     );
 }
 
@@ -22,7 +20,7 @@ pub fn gamepad_connections(
 ) {
     // If we don't have a gamepad registered yet, check if any are already connected
     if my_gamepad.is_none()
-            && let Some(gamepad_entity) = gamepads.iter().next()
+        && let Some(gamepad_entity) = gamepads.iter().next()
     {
         commands.insert_resource(GamepadRes(gamepad_entity));
     }
@@ -42,27 +40,27 @@ pub fn gamepad_connections(
             GamepadConnection::Disconnected => {
                 // if it's the one we previously used for the player, remove it:
                 if let Some(GamepadRes(old_id)) = my_gamepad.as_deref()
-                        && *old_id == ev_conn.gamepad
+                    && *old_id == ev_conn.gamepad
                 {
                     commands.remove_resource::<GamepadRes>();
                 }
-                
+
                 //TODO: fallback to another gamepad if this one is disconnected
             }
         }
     }
 }
 
-pub fn gamepad_just_pressed(
-    button: GamepadButton,
-) -> impl SystemCondition<()> {
-    IntoSystem::into_system(move |gamepad_res: Option<Res<GamepadRes>>, gamepad: Query<&Gamepad>| {
-        if let Some(gamepad_res) = gamepad_res
+pub fn gamepad_just_pressed(button: GamepadButton) -> impl SystemCondition<()> {
+    IntoSystem::into_system(
+        move |gamepad_res: Option<Res<GamepadRes>>, gamepad: Query<&Gamepad>| {
+            if let Some(gamepad_res) = gamepad_res
                 && let Ok(gamepad) = gamepad.get(gamepad_res.0)
-        {
-            return gamepad.just_pressed(button)
-        }
+            {
+                return gamepad.just_pressed(button);
+            }
 
-        false
-    })
+            false
+        },
+    )
 }

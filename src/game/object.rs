@@ -1,6 +1,6 @@
-use bevy::prelude::*;
 use crate::asset_tracking::LoadResource;
 use crate::game::grid::coords::WorldPosition;
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<ObjectAssets>();
@@ -36,7 +36,9 @@ impl FromWorld for ObjectAssets {
 pub fn object(
     object_type: ObjectType,
     assets: &ObjectAssets,
-    x: f32, y: f32, z: f32,
+    x: f32,
+    y: f32,
+    z: f32,
     scale: f32,
 ) -> impl Bundle {
     let shadow = assets.boulder_shadow.clone();
@@ -62,10 +64,7 @@ pub fn object(
 #[derive(Debug, Clone, Reflect)]
 pub enum ColliderType {
     Rectangle(Vec3),
-    Cylinder {
-        radius: f32,
-        height: f32,
-    }
+    Cylinder { radius: f32, height: f32 },
 }
 
 #[derive(Component, Debug, Clone, Reflect)]
