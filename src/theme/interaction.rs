@@ -57,13 +57,13 @@ fn apply_interaction_palette(
 fn apply_gamepad_interaction_palette(
     input_focus: Res<InputFocus>,
     input_focus_visible: Res<InputFocusVisible>,
-    mut palette_query: Query<
-        (Entity, &Interaction, &InteractionPalette, &mut BackgroundColor)
-    >,
-    button_query: Query<
-        (Entity, &Children),
-        With<ButtonRoot>
-    >,
+    mut palette_query: Query<(
+        Entity,
+        &Interaction,
+        &InteractionPalette,
+        &mut BackgroundColor,
+    )>,
+    button_query: Query<(Entity, &Children), With<ButtonRoot>>,
 ) {
     // For everything with a background color palette
     for (entity, interaction, palette, mut background) in palette_query.iter_mut() {

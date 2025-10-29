@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 
 use crate::game::grid::{TileAssets, grid};
-use crate::game::object::{ObjectAssets, ObjectType, object};
+use crate::game::object::{ColliderType, ObjectAssets, ObjectType, object};
 use crate::{
     Scale,
     asset_tracking::LoadResource,
@@ -54,7 +54,18 @@ pub fn spawn_level(
                 music(level_assets.music.clone())
             ),
             grid(tile_assets.clone(), scale.0),
-            object(ObjectType::Rock, &object_assets, -1.25, 1.0, -1.25, scale.0),
+            object(
+                ObjectType::Rock,
+                &object_assets,
+                -1.25,
+                1.0,
+                -1.25,
+                scale.0,
+                ColliderType::Cylinder {
+                    radius: 0.375,
+                    height: 0.5
+                }
+            ),
         ],
     ));
 }

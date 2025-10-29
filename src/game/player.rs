@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
-use crate::game::object::Collider;
+use crate::game::object::{Collider, ColliderType};
 use crate::gamepad::GamepadRes;
 use crate::{
     AppSystems, PausableSystems,
@@ -58,7 +58,10 @@ pub fn player(
             ..default()
         },
         player_animation,
-        Collider::cylinder(0.25, 0.75),
+        Collider(ColliderType::Cylinder {
+            radius: 0.25,
+            height: 0.75,
+        }),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
                 Sprite {

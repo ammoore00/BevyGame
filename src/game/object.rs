@@ -40,12 +40,14 @@ pub fn object(
     y: f32,
     z: f32,
     scale: f32,
+    collider: ColliderType,
 ) -> impl Bundle {
     let shadow = assets.boulder_shadow.clone();
 
     (
         Object(object_type),
         WorldPosition(Vec3::new(x, y, z).into()),
+        Collider(collider),
         Sprite::from(assets.boulder.clone()),
         Transform::from_scale(Vec3::splat(scale)),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
@@ -69,13 +71,3 @@ pub enum ColliderType {
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct Collider(pub ColliderType);
-
-impl Collider {
-    pub fn rectangle(size: impl Into<Vec3>) -> Self {
-        Self(ColliderType::Rectangle(size.into()))
-    }
-
-    pub fn cylinder(radius: f32, height: f32) -> Self {
-        Self(ColliderType::Cylinder { radius, height })
-    }
-}

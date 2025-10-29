@@ -200,19 +200,13 @@ struct Tile;
 #[derive(Clone, Debug)]
 pub enum TileType {
     Full,
-    Half,
     Layer,
-    SlopeLower(TileFacing),
-    SlopeUpper(TileFacing),
     Stairs(TileFacing),
 }
 
 impl TileType {
     fn get_collision(&self) -> TileCollision {
         match self {
-            TileType::Half => TileCollision::level(0.5),
-            TileType::SlopeLower(_) => todo!(),
-            TileType::SlopeUpper(_) => todo!(),
             TileType::Stairs(facing) => match facing {
                 TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.0, 0.0),
                 TileFacing::NegX => TileCollision::new(0.0, 0.0, 1.0, 1.0),
@@ -331,18 +325,7 @@ impl TileAssets {
 #[derive(Asset, Clone, Reflect)]
 struct TileAssetSet {
     full: Handle<Image>,
-    half: Handle<Image>,
     layer: Handle<Image>,
-
-    //slope_lower_pos_x: Handle<Image>,
-    //slope_lower_neg_x: Handle<Image>,
-    //slope_lower_pos_z: Handle<Image>,
-    //slope_lower_neg_z: Handle<Image>,
-
-    //slope_upper_pos_x: Handle<Image>,
-    //slope_upper_neg_x: Handle<Image>,
-    //slope_upper_pos_z: Handle<Image>,
-    //slope_upper_neg_z: Handle<Image>,
     stairs_pos_x: Handle<Image>,
     stairs_neg_x: Handle<Image>,
     stairs_pos_z: Handle<Image>,
@@ -353,7 +336,6 @@ impl TileAssetSet {
     fn new(name: &str, assets: &AssetServer) -> Self {
         Self {
             full: assets.load(format!("images/{name}.png")),
-            half: assets.load(format!("images/{name}_half.png")),
             layer: assets.load(format!("images/{name}_layer.png")),
             stairs_pos_x: assets.load(format!("images/{name}_stairs_pos_x.png")),
             stairs_neg_x: assets.load(format!("images/{name}_stairs_neg_x.png")),
@@ -365,10 +347,7 @@ impl TileAssetSet {
     fn get_sprite_for_type(&self, tile_type: &TileType) -> Handle<Image> {
         match tile_type {
             TileType::Full => self.full.clone(),
-            TileType::Half => self.half.clone(),
             TileType::Layer => self.layer.clone(),
-            TileType::SlopeLower(_) => todo!(),
-            TileType::SlopeUpper(_) => todo!(),
             TileType::Stairs(facing) => match facing {
                 TileFacing::PosX => self.stairs_pos_x.clone(),
                 TileFacing::NegX => self.stairs_neg_x.clone(),
