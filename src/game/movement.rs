@@ -92,10 +92,10 @@ fn apply_movement(
             // Leading collider edge position
             let intended_collider_edge_position_x = world_position
                 + velocity * Vec3::X * time.delta_secs()
-                + Vec3::new(collider_offset_x, 0.0, 0.0) * direction_x;
+                + Vec3::X * collider_offset_x * direction_x;
             let intended_collider_edge_position_z = world_position
                 + velocity * Vec3::Z * time.delta_secs()
-                + Vec3::new(0.0, 0.0, collider_offset_z) * direction_z;
+                + Vec3::Z * collider_offset_z * direction_z;
 
             // Actual position we will move to
             let mut final_position = world_position;
