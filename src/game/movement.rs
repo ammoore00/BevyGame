@@ -223,7 +223,7 @@ fn check_axis_movement(
             continue;
         }
 
-        if check_collider_collision(intended_collider_edge_position, collider_offset, other_collider) {
+        if check_collider_collision(intended_collider_edge_position, collider_offset / 2.0, other_collider) {
             object_collision = true;
             break;
         }
@@ -337,8 +337,11 @@ fn check_collider_collision(
     player_collider_offset: f32,
     other_collider: &Collider,
 ) -> bool {
-    let other_position = other_collider.1.0.0;
+    let mut other_position = other_collider.1.0.0;
     let other_size = other_collider.0;
+
+    other_position.x -= other_size.x / 2.0;
+    other_position.z -= other_size.z / 2.0;
 
     let closest_x = intended_position.x.clamp(
         other_position.x - other_size.x,
