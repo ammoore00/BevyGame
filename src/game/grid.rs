@@ -14,180 +14,16 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component)]
 pub struct Grid(pub Arc<RwLock<BTreeMap<TileCoords, Entity>>>);
 
-pub fn grid(tile_assets: TileAssets, scale: f32) -> impl Bundle {
-    let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
-
-    let start_x = -2;
-    let start_z = -3;
-    let level = [
-        "XXXXX..XXXXXX.",
-        "XXXXX..XXXXXX.",
-        "XXXXX..X....X.",
-        "XXXXXXXX.XXXX.",
-        "XXXXX....X....",
-        "..X......XXXX.",
-        "XXXXX.......X.",
-        "XXXXX......XXX",
-        "XXXXXXXXXXXXXX",
-        "XXXXX......XXX",
-        "XXXXX.........",
-    ];
-
-    let mut tile_coords = Vec::new();
-
-    let mut z = start_z;
-
-    for &row in level.iter() {
-        let mut x = start_x;
-
-        for col in String::from(row).chars() {
-            if col == 'X' {
-                tile_coords.push((
-                    TileMaterial::Grass,
-                    TileType::Layer,
-                    TileCoords(IVec3::new(x, 0, z)),
-                ));
-            }
-            x += 1;
-        }
-        z += 1;
-    }
-
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-2, 1, -3)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-1, 1, -3)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(0, 1, -3)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(1, 1, -3)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(2, 1, -3)),
-    ));
-
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-2, 1, -2)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-1, 1, -2)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::NegX),
-        TileCoords(IVec3::new(0, 1, -2)),
-    ));
-
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-1, 1, -1)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::NegZ),
-        TileCoords(IVec3::new(-1, 1, 0)),
-    ));
-
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::NegZ),
-        TileCoords(IVec3::new(2, 1, -2)),
-    ));
-
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-2, 1, -1)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-2, 1, 0)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(-2, 1, 1)),
-    ));
-
-    tile_coords.push((
-        TileMaterial::Stone,
-        TileType::Full,
-        TileCoords(IVec3::new(0, 1, 5)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::NegZ),
-        TileCoords(IVec3::new(0, 1, 6)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::NegX),
-        TileCoords(IVec3::new(1, 1, 5)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::PosZ),
-        TileCoords(IVec3::new(0, 1, 4)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::PosX),
-        TileCoords(IVec3::new(-1, 1, 5)),
-    ));
-
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::PosX),
-        TileCoords(IVec3::new(6, 1, -3)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(7, 1, -3)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Full,
-        TileCoords(IVec3::new(8, 1, -3)),
-    ));
-    tile_coords.push((
-        TileMaterial::Grass,
-        TileType::Stairs(TileFacing::NegX),
-        TileCoords(IVec3::new(9, 1, -3)),
-    ));
-
+pub fn grid(
+    tile_map: Arc<RwLock<BTreeMap<TileCoords, Entity>>>,
+    tile_assets: TileAssets,
+    scale: f32,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+) -> impl Bundle {
     (
         Grid(tile_map.clone()),
         Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
-        InheritedVisibility::default(),
-        Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            for (material, tile_type, coords) in tile_coords {
-                let tile = parent
-                    .spawn((tile(tile_type, material, coords.clone(), &tile_assets),))
-                    .id();
-
-                tile_map.write().unwrap().insert(coords, tile);
-            }
-        })),
+        InheritedVisibility::default()
     )
 }
 
@@ -202,6 +38,7 @@ pub enum TileType {
     Full,
     Layer,
     Stairs(TileFacing),
+    Bridge(Option<TileFacing>),
 }
 
 impl TileType {
@@ -216,6 +53,34 @@ impl TileType {
             _ => TileCollision::default(),
         }
     }
+
+    fn get_atlas_index(&self) -> usize {
+        match self {
+            TileType::Full => 0,
+            TileType::Layer => 1,
+            TileType::Stairs(facing) => {
+                match facing {
+                    TileFacing::NegX => 16,
+                    TileFacing::NegZ => 17,
+                    TileFacing::PosX => 18,
+                    TileFacing::PosZ => 19,
+                }
+            },
+            TileType::Bridge(facing) => {
+                match facing {
+                    Some(facing) => {
+                        match facing {
+                            TileFacing::NegX => 25,
+                            TileFacing::NegZ => 26,
+                            TileFacing::PosX => 27,
+                            TileFacing::PosZ => 28,
+                        }
+                    }
+                    None => 24,
+                }
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -224,12 +89,6 @@ pub enum TileFacing {
     NegX,
     PosZ,
     NegZ,
-}
-
-#[derive(Clone, Debug)]
-pub enum TileMaterial {
-    Grass,
-    Stone,
 }
 
 #[derive(Clone, Debug, Component)]
@@ -291,69 +150,51 @@ pub fn tile(
     tile_material: TileMaterial,
     tile_coords: impl Into<TileCoords> + Clone,
     tile_assets: &TileAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
 ) -> impl Bundle {
-    let asset_set = tile_assets.get_asset_set_for_material(&tile_material);
-    let sprite = asset_set.get_sprite_for_type(&tile_type);
+    let sprite_sheet = tile_assets.get_asset_set_for_material(&tile_material);
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
     (
         Tile,
         TilePosition(tile_coords.clone().into()),
         tile_type.get_collision(),
-        Sprite::from(sprite),
+        Sprite::from_atlas_image(
+            sprite_sheet.clone(),
+            TextureAtlas {
+                layout: texture_atlas_layout,
+                index: tile_type.get_atlas_index(),
+            },
+        ),
         Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
     )
+}
+
+#[derive(Clone, Debug)]
+pub enum TileMaterial {
+    Grass,
+    Stone,
+    Planks,
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct TileAssets {
     #[dependency]
-    grass: TileAssetSet,
+    grass: Handle<Image>,
     #[dependency]
-    stone: TileAssetSet,
+    stone: Handle<Image>,
+    #[dependency]
+    planks: Handle<Image>,
 }
 
 impl TileAssets {
-    fn get_asset_set_for_material(&self, material: &TileMaterial) -> &TileAssetSet {
+    fn get_asset_set_for_material(&self, material: &TileMaterial) -> Handle<Image> {
         match material {
-            TileMaterial::Grass => &self.grass,
-            TileMaterial::Stone => &self.stone,
-        }
-    }
-}
-
-#[derive(Asset, Clone, Reflect)]
-struct TileAssetSet {
-    full: Handle<Image>,
-    layer: Handle<Image>,
-    stairs_pos_x: Handle<Image>,
-    stairs_neg_x: Handle<Image>,
-    stairs_pos_z: Handle<Image>,
-    stairs_neg_z: Handle<Image>,
-}
-
-impl TileAssetSet {
-    fn new(name: &str, assets: &AssetServer) -> Self {
-        Self {
-            full: assets.load(format!("images/{name}.png")),
-            layer: assets.load(format!("images/{name}_layer.png")),
-            stairs_pos_x: assets.load(format!("images/{name}_stairs_pos_x.png")),
-            stairs_neg_x: assets.load(format!("images/{name}_stairs_neg_x.png")),
-            stairs_pos_z: assets.load(format!("images/{name}_stairs_pos_z.png")),
-            stairs_neg_z: assets.load(format!("images/{name}_stairs_neg_z.png")),
-        }
-    }
-
-    fn get_sprite_for_type(&self, tile_type: &TileType) -> Handle<Image> {
-        match tile_type {
-            TileType::Full => self.full.clone(),
-            TileType::Layer => self.layer.clone(),
-            TileType::Stairs(facing) => match facing {
-                TileFacing::PosX => self.stairs_pos_x.clone(),
-                TileFacing::NegX => self.stairs_neg_x.clone(),
-                TileFacing::PosZ => self.stairs_pos_z.clone(),
-                TileFacing::NegZ => self.stairs_neg_z.clone(),
-            },
+            TileMaterial::Grass => self.grass.clone(),
+            TileMaterial::Stone => self.stone.clone(),
+            TileMaterial::Planks => self.planks.clone(),
         }
     }
 }
@@ -362,8 +203,9 @@ impl FromWorld for TileAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         TileAssets {
-            grass: TileAssetSet::new("grass", assets),
-            stone: TileAssetSet::new("stone", assets),
+            grass: assets.load("images/grass.png"),
+            stone: assets.load("images/stone.png"),
+            planks: assets.load("images/planks.png"),
         }
     }
 }
