@@ -36,7 +36,9 @@ struct Tile;
 #[derive(Clone, Debug)]
 pub enum TileType {
     Full,
+    FullStacked,
     Layer,
+    LayerStacked,
     Stairs(TileFacing),
     Bridge(Option<TileFacing>),
 }
@@ -58,6 +60,8 @@ impl TileType {
         match self {
             TileType::Full => 0,
             TileType::Layer => 1,
+            TileType::FullStacked => 2,
+            TileType::LayerStacked => 3,
             TileType::Stairs(facing) => {
                 match facing {
                     TileFacing::NegX => 16,

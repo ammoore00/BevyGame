@@ -54,7 +54,12 @@ pub fn spawn_level(
             Visibility::default(),
             DespawnOnExit(Screen::Gameplay),
             children![
-                player(3.5, &player_assets, &mut texture_atlas_layouts, scale.0),
+                player(
+                    Vec3::new(2.0, 0.0, 3.0),
+                    3.5,
+                    &player_assets,
+                    &mut texture_atlas_layouts,
+                    scale.0),
                 (
                     Name::new("Gameplay Music"),
                     music(level_assets.music.clone())
@@ -62,9 +67,9 @@ pub fn spawn_level(
                 object(
                     ObjectType::Rock,
                     &object_assets,
-                    -1.25,
-                    1.0,
-                    -1.25,
+                    1.75,
+                    0.0,
+                    7.75,
                     scale.0,
                     ColliderType::Cylinder {
                         radius: 0.375,
@@ -93,23 +98,21 @@ fn create_level(
 ) -> Entity {
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
 
-    let start_x = -2;
-    let start_z = -3;
     let level_layout_1 = [
         "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
         "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
         "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
         "__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,__L:G,_____,_____,_____,_____,",
-        "_____,_____,__L:G,_____,_____,_____,_____,_____,_____,__L:G,__L:G,__L:G,__L:G,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_____,__L:G,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:G,__L:G,__L:G,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:G,__L:G,__L:G,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:G,__L:G,__L:G,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_LS:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,__L:P,_____,_____,_____,_____,",
+        "_____,_____,__L:G,_____,_____,_____,_____,_____,_____,__L:P,__L:P,__L:P,_____,_____,",
+        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:P,_____,_____,",
+        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:P,__L:P,__L:P,",
+        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:P,__L:P,__L:P,",
+        "_LS:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_LS:P,__L:P,__L:P,",
+        "_LS:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
     ];
     let level_layout_2 = [
-        "__F:G,__F:G,__F:P,_____,_____,_____,_____,__F:P,__F:P,__F:P,__F:P,__F:P,_____,_____,",
+        "__F:G,__F:G,_FS:P,_____,_____,_____,_____,__F:P,__F:P,__F:P,__F:P,__F:P,_____,_____,",
         "__F:G,__F:G,S-x:G,_____,_____,_____,_____,__F:P,__F:P,__F:P,__F:P,S-z:P,_____,_____,",
         "__F:G,__F:G,_____,_____,_____,_____,_____,__F:P,__F:P,__F:P,__F:P,_____,_____,_____,",
         "__F:G,S-z:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
@@ -117,8 +120,8 @@ fn create_level(
         "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
         "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
         "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,S+x:P,B-x:P,__B:P,__B:P,__B:P,__B:P,B+x:P,S-x:P,_____,_____,",
-        "S+z:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,S+z:P,_____,_____,",
+        "S+z:G,_____,_____,_____,S+x:P,B-x:P,__B:P,__B:P,__B:P,__B:P,B+x:P,__F:P,_____,_____,",
         "__F:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
     ];
     let level_layout_3 = [
@@ -144,24 +147,18 @@ fn create_level(
     let mut tile_coords = Vec::new();
 
     for (y, layer) in level_layout.into_iter().enumerate() {
-        let mut z = start_z;
-
-        for row in layer {
-            let mut x = start_x;
-
+        for (z, row) in layer.into_iter().enumerate() {
             let chars = row.split(',');
 
-            for col in chars {
+            for (x, col) in chars.into_iter().enumerate() {
                 if let Ok(tile_settings) = col.parse::<TileSettings>() {
                     tile_coords.push((
                         tile_settings.tile_material,
                         tile_settings.tile_type,
-                        TileCoords(IVec3::new(x, y as i32, z)),
+                        TileCoords(IVec3::new(x as i32, y as i32, z as i32)),
                     ));
                 }
-                x += 1;
             }
-            z += 1;
         }
     }
 
@@ -231,10 +228,14 @@ impl FromStr for TileType {
     type Err = TileSettingsParseError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s {
-            "F" | "_F" | "__F" => Ok(TileType::Full),
-            "L" | "_L" | "__L" => Ok(TileType::Layer),
-            "B" | "_B" | "__B" => Ok(TileType::Bridge(None)),
+        let s = s.replace("_", "");
+
+        match s.as_str() {
+            "F" => Ok(TileType::Full),
+            "FS" => Ok(TileType::FullStacked),
+            "L" => Ok(TileType::Layer),
+            "LS" => Ok(TileType::LayerStacked),
+            "B" => Ok(TileType::Bridge(None)),
 
             "B+x" => Ok(TileType::Bridge(Some(TileFacing::PosX))),
             "B-x" => Ok(TileType::Bridge(Some(TileFacing::NegX))),

@@ -28,6 +28,7 @@ pub(super) fn plugin(app: &mut App) {
 
 /// The player character.
 pub fn player(
+    world_coords: Vec3,
     max_speed: f32,
     player_assets: &PlayerAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
@@ -51,8 +52,8 @@ pub fn player(
                 index: player_animation.get_atlas_index(),
             },
         ),
-        Transform::from_scale(Vec2::splat(scale).extend(1.0)),
-        WorldPosition(Vec3::ZERO.into()),
+        WorldPosition(world_coords.into()),
+        Transform::from_scale(Vec3::splat(scale)),
         MovementController {
             max_speed,
             ..default()
