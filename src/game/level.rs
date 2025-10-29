@@ -8,7 +8,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::game::grid::coords::TileCoords;
 use crate::game::grid::{TileAssets, TileFacing, TileMaterial, TileType, grid, tile};
-use crate::game::object::{ColliderType, ObjectAssets, ObjectType, object};
+use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{
     Scale,
     asset_tracking::LoadResource,
@@ -69,10 +69,7 @@ pub fn spawn_level(
                     &object_assets,
                     Vec3::new(1.75, 0.0, 7.75),
                     scale.0,
-                    ColliderType::Cylinder {
-                        radius: 0.375,
-                        height: 0.5
-                    }
+                    Vec3::new(0.5, 0.5, 0.5),
                 ),
             ],
         ))

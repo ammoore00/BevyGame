@@ -17,7 +17,7 @@ use bevy::prelude::*;
 
 use crate::game::grid::coords::{TileCoords, WorldPosition};
 use crate::game::grid::{Grid, TileCollision};
-use crate::game::object::{Collider, ColliderType};
+use crate::game::object::Collider;
 use crate::{AppSystems, PausableSystems};
 
 pub(super) fn plugin(app: &mut App) {
@@ -65,7 +65,8 @@ fn apply_movement(
     tile_query: Query<(Entity, &TileCollision)>,
     grid_query: Query<&Grid>,
 ) {
-    for (entity_for_movement, controller, mut controller_position, collider) in &mut movement_query {
+    for (entity_for_movement, controller, mut controller_position, collider) in &mut movement_query
+    {
         if let Ok(grid) = grid_query.single() {
             let tile_map = grid.0.read().unwrap();
 
@@ -83,10 +84,7 @@ fn apply_movement(
             let intended_center_position = world_position + velocity * time.delta_secs();
 
             // Get collider information
-            let (collider_offset_x, collider_offset_z) = match collider.0 {
-                ColliderType::Rectangle(size) => (size.x, size.z),
-                ColliderType::Cylinder { radius, .. } => (radius, radius),
-            };
+            let (collider_offset_x, collider_offset_z) = (collider.0.x, collider.0.z);
             let direction_x = velocity.x.signum();
             let direction_z = velocity.z.signum();
 
@@ -225,11 +223,7 @@ fn check_axis_movement(
             continue;
         }
 
-        if check_collider_collision(
-            intended_center_position,
-            collider_offset,
-            other_collider,
-        ) {
+        if check_collider_collision(intended_collider_edge_position, collider_offset, other_collider) {
             object_collision = true;
             break;
         }
@@ -344,28 +338,22 @@ fn check_collider_collision(
     other_collider: &Collider,
 ) -> bool {
     let other_position = other_collider.1.0.0;
+    let other_size = other_collider.0;
 
-    match (&other_collider.0, player_collider_offset) {
-        // Cylinder vs Cylinder collision
-        (ColliderType::Cylinder { radius: other_radius, .. }, player_radius) => {
-            let distance_xz = ((intended_position.x - other_position.x).powi(2)
-                + (intended_position.z - other_position.z).powi(2))
-                .sqrt();
+    let closest_x = intended_position.x.clamp(
+        other_position.x - other_size.x,
+        other_position.x + other_size.x,
+    );
+    let closest_z = intended_position.z.clamp(
+        other_position.z - other_size.z,
+        other_position.z + other_size.z,
+    );
 
-            distance_xz < (player_radius + other_radius)
-        }
-        // Cylinder vs Rectangle collision (approximate with circle vs AABB)
-        (ColliderType::Rectangle(other_size), player_radius) => {
-            let closest_x = (intended_position.x)
-                .clamp(other_position.x - other_size.x, other_position.x + other_size.x);
-            let closest_z = (intended_position.z)
-                .clamp(other_position.z - other_size.z, other_position.z + other_size.z);
+    let distance = ((intended_position.x - closest_x).powi(2)
+        + (intended_position.z - closest_z).powi(2))
+    .sqrt();
 
-            let distance = ((intended_position.x - closest_x).powi(2)
-                + (intended_position.z - closest_z).powi(2))
-                .sqrt();
+    println!("Distance: {}", distance);
 
-            distance < player_radius
-        }
-    }
+    distance < player_collider_offset
 }

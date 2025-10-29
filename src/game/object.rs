@@ -38,7 +38,7 @@ pub fn object(
     assets: &ObjectAssets,
     position: Vec3,
     scale: f32,
-    collider: ColliderType,
+    collider: Vec3,
 ) -> impl Bundle {
     let shadow = assets.boulder_shadow.clone();
 
@@ -61,17 +61,5 @@ pub fn object(
     )
 }
 
-#[derive(Debug, Clone, Reflect)]
-pub enum ColliderType {
-    Rectangle(Vec3),
-    Cylinder { radius: f32, height: f32 },
-}
-
 #[derive(Component, Debug, Clone, Reflect)]
-pub struct Collider(pub ColliderType, pub WorldPosition);
-
-impl Collider {
-    pub fn is_pos_within_collider(&self, pos: impl Into<WorldCoords>) -> bool {
-        false
-    }
-}
+pub struct Collider(pub Vec3, pub WorldPosition);
