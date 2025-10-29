@@ -216,20 +216,22 @@ fn check_axis_movement(
     let mut target_height = world_position.y;
 
     // Check collision with other objects
-    let mut object_collision = false;
+    let player_collider = collider_query.get(player_entity).unwrap().1;
+    
+    let mut collided_with_object = false;
     for (other_entity, other_collider) in collider_query.iter() {
         // Skip self
         if other_entity == player_entity {
             continue;
         }
 
-        if check_collider_collision(intended_collider_edge_position, collider_offset / 2.0, other_collider) {
-            object_collision = true;
+        if check_collider_collision(intended_collider_edge_position, player_collider, other_collider) {
+            collided_with_object = true;
             break;
         }
     }
 
-    let moved = if object_collision {
+    let moved = if collided_with_object {
         false
     } else {
         match (
@@ -304,13 +306,14 @@ fn check_axis_movement(
             (_, _, _) => false,
         }
     };
-
-    if !moved {
+    
+    if !moved && !collided_with_object {
         // Clamp to current tile boundary
         let current_tile_coord = (world_position * axis_mask).dot(axis_mask).round();
+        let intended_coord = (intended_center_position * axis_mask).dot(axis_mask);
+
         let boundary = current_tile_coord + direction * (0.5 - TILE_BOUNDARY_SIZE)
             - collider_offset * direction;
-        let intended_coord = (intended_center_position * axis_mask).dot(axis_mask);
 
         let clamped_coord = if direction > 0.0 {
             intended_coord.min(boundary)
@@ -334,29 +337,22 @@ fn check_axis_movement(
 
 fn check_collider_collision(
     intended_position: Vec3,
-    player_collider_offset: f32,
+    player_collider: &Collider,
     other_collider: &Collider,
 ) -> bool {
-    let mut other_position = other_collider.1.0.0;
-    let other_size = other_collider.0;
+    // Calculate box bounds for both colliders
+    let player_min = intended_position - player_collider.0 / 2.0;
+    let player_max = intended_position + player_collider.0 / 2.0;
 
-    other_position.x -= other_size.x / 2.0;
-    other_position.z -= other_size.z / 2.0;
+    let other_pos = other_collider.1.0.0;
+    let other_min = other_pos - other_collider.0 / 2.0;
+    let other_max = other_pos + other_collider.0 / 2.0;
 
-    let closest_x = intended_position.x.clamp(
-        other_position.x - other_size.x,
-        other_position.x + other_size.x,
-    );
-    let closest_z = intended_position.z.clamp(
-        other_position.z - other_size.z,
-        other_position.z + other_size.z,
-    );
-
-    let distance = ((intended_position.x - closest_x).powi(2)
-        + (intended_position.z - closest_z).powi(2))
-    .sqrt();
-
-    println!("Distance: {}", distance);
-
-    distance < player_collider_offset
+    // Check overlap on all axes
+    player_min.x <= other_max.x &&
+        player_max.x >= other_min.x &&
+        player_min.y <= other_max.y &&
+        player_max.y >= other_min.y &&
+        player_min.z <= other_max.z &&
+        player_max.z >= other_min.z
 }
