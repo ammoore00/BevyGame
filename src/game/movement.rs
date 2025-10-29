@@ -54,7 +54,7 @@ impl Default for MovementController {
 }
 
 pub const TILE_BOUNDARY_SIZE: f32 = 0.02;
-pub const STEP_UP_THRESHOLD: f32 = 0.25;
+pub const STEP_UP_THRESHOLD: f32 = 0.3;
 
 pub const GRAVITY: f32 = 4.5;
 
@@ -95,25 +95,6 @@ fn apply_movement(
             // Actual position we will move to
             let mut final_position = world_position;
 
-            let mut target_height = world_position.y;
-
-            // Set height to collision height of current tile
-            let current_tile = tile_map.get(&world_position.into());
-            if let Some(tile) = current_tile {
-                for (entity, tile_collision) in tile_query.iter() {
-                    if &entity == tile {
-                        let collision_height = tile_collision.get_height(intended_center_position.x, intended_center_position.z) + world_position.y - 1.0;
-                        target_height = collision_height;
-                    }
-                }
-            }
-
-            if world_position.y - target_height > GRAVITY * time.delta_secs() {
-                final_position.y = world_position.y - GRAVITY * time.delta_secs();
-            } else {
-                final_position.y = target_height;
-            }
-
             // For X axis:
             let final_pos_x = check_axis_movement(
                 grid,
@@ -144,6 +125,27 @@ fn apply_movement(
             final_position.z = final_pos_z.z;
 
             final_position.y = final_pos_x.y.max(final_pos_z.y);
+
+            let mut target_height = final_position.y;
+
+            // Set height to collision height of current tile
+            let current_tile = tile_map.get(&final_position.into());
+            if let Some(tile) = current_tile {
+                for (entity, tile_collision) in tile_query.iter() {
+                    if &entity == tile {
+                        let collision_height = tile_collision.get_height(intended_center_position.x, intended_center_position.z) + final_position.y - 1.0;
+                        target_height = collision_height;
+                    }
+                }
+            }
+
+            if target_height < final_position.y {
+                if final_position.y - target_height > GRAVITY * time.delta_secs() {
+                    final_position.y = final_position.y - GRAVITY * time.delta_secs();
+                } else {
+                    final_position.y = target_height;
+                }
+            }
 
             controller_position.0.0 = final_position;
         }
