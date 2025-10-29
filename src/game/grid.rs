@@ -233,7 +233,7 @@ pub mod coords {
         );
     }
 
-    #[derive(Component, Debug)]
+    #[derive(Component, Debug, Clone, Reflect)]
     pub struct WorldPosition(pub WorldCoords);
     pub fn convert_world_to_screen_coords(
         scale: Res<Scale>,
@@ -249,7 +249,7 @@ pub mod coords {
         }
     }
 
-    #[derive(Component, Debug)]
+    #[derive(Component, Debug, Clone, Reflect)]
     pub struct TilePosition(pub TileCoords);
     pub fn convert_tile_to_screen_coords(
         mut query: Query<(&TilePosition, &mut Transform), Changed<TilePosition>>,
@@ -313,7 +313,7 @@ pub mod coords {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq, Clone, Reflect)]
     pub struct WorldCoords(pub Vec3);
     impl From<TileCoords> for WorldCoords {
         fn from(value: TileCoords) -> Self {

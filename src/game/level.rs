@@ -67,9 +67,7 @@ pub fn spawn_level(
                 object(
                     ObjectType::Rock,
                     &object_assets,
-                    1.75,
-                    0.0,
-                    7.75,
+                    Vec3::new(1.75, 0.0, 7.75),
                     scale.0,
                     ColliderType::Cylinder {
                         radius: 0.375,

@@ -28,7 +28,7 @@ pub(super) fn plugin(app: &mut App) {
 
 /// The player character.
 pub fn player(
-    world_coords: Vec3,
+    position: Vec3,
     max_speed: f32,
     player_assets: &PlayerAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
@@ -52,17 +52,20 @@ pub fn player(
                 index: player_animation.get_atlas_index(),
             },
         ),
-        WorldPosition(world_coords.into()),
+        WorldPosition(position.into()),
         Transform::from_scale(Vec3::splat(scale)),
         MovementController {
             max_speed,
             ..default()
         },
         player_animation,
-        Collider(ColliderType::Cylinder {
-            radius: 0.25,
-            height: 0.75,
-        }),
+        Collider(
+            ColliderType::Cylinder {
+                radius: 0.25,
+                height: 0.75,
+            },
+            WorldPosition(position.into()),
+        ),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
                 Sprite {

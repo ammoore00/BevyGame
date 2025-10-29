@@ -60,11 +60,12 @@ pub const GRAVITY: f32 = 4.5;
 
 fn apply_movement(
     time: Res<Time>,
-    mut movement_query: Query<(&MovementController, &mut WorldPosition, &Collider)>,
+    mut movement_query: Query<(Entity, &MovementController, &mut WorldPosition, &Collider)>,
+    collider_query: Query<(Entity, &Collider)>,
     tile_query: Query<(Entity, &TileCollision)>,
     grid_query: Query<&Grid>,
 ) {
-    for (controller, mut controller_position, collider) in &mut movement_query {
+    for (entity_for_movement, controller, mut controller_position, collider) in &mut movement_query {
         if let Ok(grid) = grid_query.single() {
             let tile_map = grid.0.read().unwrap();
 
@@ -110,7 +111,9 @@ fn apply_movement(
                 collider_offset_x,
                 direction_x,
                 Vec3::X,
+                collider_query,
                 tile_query,
+                entity_for_movement,
             );
 
             // For Z axis:
@@ -123,7 +126,9 @@ fn apply_movement(
                 collider_offset_z,
                 direction_z,
                 Vec3::Z,
+                collider_query,
                 tile_query,
+                entity_for_movement,
             );
 
             final_position.x = final_pos_x.x;
@@ -169,7 +174,9 @@ fn check_axis_movement(
     collider_offset: f32,
     direction: f32,
     axis_mask: Vec3,
+    collider_query: Query<(Entity, &Collider)>,
     tile_query: Query<(Entity, &TileCollision)>,
+    player_entity: Entity,
 ) -> Vec3 {
     let mut final_position = world_position;
 
@@ -210,74 +217,98 @@ fn check_axis_movement(
 
     let mut target_height = world_position.y;
 
-    let moved = match (
-        test_collider_tile,
-        test_tile_above,
-        test_collider_tile_above,
-    ) {
-        // There is something for us to run into or to walk onto
-        (Some(_), Some(tile_above), _) => {
-            if let Ok((_, tile_collision)) = tile_query.get(*tile_above) {
-                // Check collision
-                let test_height = tile_collision
-                    .get_height(intended_center_position.x, intended_center_position.z)
-                    + test_position_above.y as f32
-                    - 1.0;
-                if test_height.clamp(0.0, 1.0) <= world_position.y + STEP_UP_THRESHOLD {
-                    final_position.x = intended_center_position.x;
-                    final_position.z = intended_center_position.z;
-                    target_height = test_height;
-                    true
-                } else {
-                    false
-                }
-            } else {
-                false
-            }
+    // Check collision with other objects
+    let mut object_collision = false;
+    for (other_entity, other_collider) in collider_query.iter() {
+        // Skip self
+        if other_entity == player_entity {
+            continue;
         }
-        // We are approaching something to run into or to walk onto but haven't reached it yet
-        (Some(_), _, Some(collider_tile_above)) => {
-            if let Ok((_, tile_collision)) = tile_query.get(*collider_tile_above) {
-                // Check collision
-                let test_height = tile_collision.get_height(
-                    intended_collider_edge_position.x,
-                    intended_collider_edge_position.z,
-                ) + test_position_above.y as f32
-                    - 1.0;
 
-                if test_height <= world_position.y + STEP_UP_THRESHOLD {
-                    final_position.x = intended_center_position.x;
-                    final_position.z = intended_center_position.z;
-                    true
+        if check_collider_collision(
+            intended_center_position,
+            collider_offset,
+            other_collider,
+        ) {
+            object_collision = true;
+            break;
+        }
+    }
+
+    let moved = if object_collision {
+        false
+    } else {
+        match (
+            test_collider_tile,
+            test_tile_above,
+            test_collider_tile_above,
+        ) {
+            // There is something for us to run into or to walk onto
+            (Some(_), Some(tile_above), _) => {
+                if let Ok((_, tile_collision)) = tile_query.get(*tile_above) {
+                    // Check collision
+                    let test_height = tile_collision
+                        .get_height(intended_center_position.x, intended_center_position.z)
+                        + test_position_above.y as f32
+                        - 1.0;
+
+                    if test_height.clamp(0.0, 1.0) <= world_position.y + STEP_UP_THRESHOLD {
+                        final_position.x = intended_center_position.x;
+                        final_position.z = intended_center_position.z;
+                        target_height = test_height;
+                        true
+                    } else {
+                        false
+                    }
                 } else {
                     false
                 }
-            } else {
-                false
             }
-        }
-        // There is nothing to run into at our level, and there is ground to walk onto
-        (Some(collider_tile), None, None) => {
-            if let Ok((_, tile_collision)) = tile_query.get(*collider_tile) {
-                // Check collision
-                let test_height = tile_collision
-                    .get_height(intended_center_position.x, intended_center_position.z)
-                    + test_position.y as f32
-                    - 1.0;
-                if test_height <= world_position.y + STEP_UP_THRESHOLD {
-                    final_position.x = intended_center_position.x;
-                    final_position.z = intended_center_position.z;
-                    target_height = test_height;
-                    true
+            // We are approaching something to run into or to walk onto but haven't reached it yet
+            (Some(_), _, Some(collider_tile_above)) => {
+                if let Ok((_, tile_collision)) = tile_query.get(*collider_tile_above) {
+                    // Check collision
+                    let test_height = tile_collision.get_height(
+                        intended_collider_edge_position.x,
+                        intended_collider_edge_position.z,
+                    ) + test_position_above.y as f32
+                        - 1.0;
+
+                    if test_height <= world_position.y + STEP_UP_THRESHOLD {
+                        final_position.x = intended_center_position.x;
+                        final_position.z = intended_center_position.z;
+                        true
+                    } else {
+                        false
+                    }
                 } else {
                     false
                 }
-            } else {
-                false
             }
+            // There is nothing to run into at our level, and there is ground to walk onto
+            (Some(collider_tile), None, None) => {
+                if let Ok((_, tile_collision)) = tile_query.get(*collider_tile) {
+                    // Check collision
+                    let test_height = tile_collision
+                        .get_height(intended_center_position.x, intended_center_position.z)
+                        + test_position.y as f32
+                        - 1.0;
+
+                    if test_height <= world_position.y + STEP_UP_THRESHOLD {
+                        final_position.x = intended_center_position.x;
+                        final_position.z = intended_center_position.z;
+                        target_height = test_height;
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            }
+            // All other cases
+            (_, _, _) => false,
         }
-        // All other cases
-        (_, _, _) => false,
     };
 
     if !moved {
@@ -305,4 +336,36 @@ fn check_axis_movement(
     }
 
     final_position
+}
+
+fn check_collider_collision(
+    intended_position: Vec3,
+    player_collider_offset: f32,
+    other_collider: &Collider,
+) -> bool {
+    let other_position = other_collider.1.0.0;
+
+    match (&other_collider.0, player_collider_offset) {
+        // Cylinder vs Cylinder collision
+        (ColliderType::Cylinder { radius: other_radius, .. }, player_radius) => {
+            let distance_xz = ((intended_position.x - other_position.x).powi(2)
+                + (intended_position.z - other_position.z).powi(2))
+                .sqrt();
+
+            distance_xz < (player_radius + other_radius)
+        }
+        // Cylinder vs Rectangle collision (approximate with circle vs AABB)
+        (ColliderType::Rectangle(other_size), player_radius) => {
+            let closest_x = (intended_position.x)
+                .clamp(other_position.x - other_size.x, other_position.x + other_size.x);
+            let closest_z = (intended_position.z)
+                .clamp(other_position.z - other_size.z, other_position.z + other_size.z);
+
+            let distance = ((intended_position.x - closest_x).powi(2)
+                + (intended_position.z - closest_z).powi(2))
+                .sqrt();
+
+            distance < player_radius
+        }
+    }
 }

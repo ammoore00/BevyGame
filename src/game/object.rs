@@ -1,5 +1,5 @@
 use crate::asset_tracking::LoadResource;
-use crate::game::grid::coords::WorldPosition;
+use crate::game::grid::coords::{WorldCoords, WorldPosition};
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
@@ -36,9 +36,7 @@ impl FromWorld for ObjectAssets {
 pub fn object(
     object_type: ObjectType,
     assets: &ObjectAssets,
-    x: f32,
-    y: f32,
-    z: f32,
+    position: Vec3,
     scale: f32,
     collider: ColliderType,
 ) -> impl Bundle {
@@ -46,8 +44,8 @@ pub fn object(
 
     (
         Object(object_type),
-        WorldPosition(Vec3::new(x, y, z).into()),
-        Collider(collider),
+        WorldPosition(position.into()),
+        Collider(collider, WorldPosition(position.into())),
         Sprite::from(assets.boulder.clone()),
         Transform::from_scale(Vec3::splat(scale)),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
@@ -70,4 +68,10 @@ pub enum ColliderType {
 }
 
 #[derive(Component, Debug, Clone, Reflect)]
-pub struct Collider(pub ColliderType);
+pub struct Collider(pub ColliderType, pub WorldPosition);
+
+impl Collider {
+    pub fn is_pos_within_collider(&self, pos: impl Into<WorldCoords>) -> bool {
+        false
+    }
+}
