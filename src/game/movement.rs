@@ -173,7 +173,6 @@ fn check_axis_movement(
         world_position.y,
         intended_center_position.z,
     ).into();
-    let test_tile = tile_map.get(&test_position.0.into());
 
     let test_collider_position: TileCoords = Vec3::new(
         intended_collider_edge_position.x,

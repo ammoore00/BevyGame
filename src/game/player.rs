@@ -1,9 +1,6 @@
 //! Player-specific behavior.
 
-use bevy::{
-    image::{ImageLoaderSettings, ImageSampler},
-    prelude::*,
-};
+use bevy::prelude::*;
 
 use crate::{
     AppSystems, PausableSystems,
