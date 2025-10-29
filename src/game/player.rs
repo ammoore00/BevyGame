@@ -89,18 +89,18 @@ fn record_player_directional_input(
     let mut intent = Vec3::ZERO;
 
     // Add gamepad input if available
-    if let Some(gamepad_res) = gamepad_res {
-        if let Ok(gamepad) = gamepads.get(gamepad_res.0) {
-            let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
-            let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
+    if let Some(gamepad_res) = gamepad_res
+            && let Ok(gamepad) = gamepads.get(gamepad_res.0)
+    {
+        let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
+        let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
 
-            // Apply deadzone
-            if left_stick_x.abs() > 0.1 || left_stick_y.abs() > 0.1 {
-                intent.x += left_stick_x;
-                intent.z -= left_stick_y;
+        // Apply deadzone
+        if left_stick_x.abs() > 0.1 || left_stick_y.abs() > 0.1 {
+            intent.x += left_stick_x;
+            intent.z -= left_stick_y;
 
-                intent = rotate_screen_space_to_movement(intent);
-            }
+            intent = rotate_screen_space_to_movement(intent);
         }
     }
 

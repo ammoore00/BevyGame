@@ -60,8 +60,15 @@ pub const GRAVITY: f32 = 4.5;
 
 fn apply_movement(
     time: Res<Time>,
-    mut movement_query: Query<(&MovementController, &mut WorldPosition, &Collider)>,
-    tile_query: Query<(Entity, &TileCollision)>,
+    mut movement_query: Query<(
+        &MovementController,
+        &mut WorldPosition,
+        &Collider
+    )>,
+    tile_query: Query<(
+        Entity,
+        &TileCollision
+    )>,
     grid_query: Query<&Grid>,
 ) {
     for (controller, mut controller_position, collider) in &mut movement_query {
@@ -141,7 +148,7 @@ fn apply_movement(
 
             if target_height < final_position.y {
                 if final_position.y - target_height > GRAVITY * time.delta_secs() {
-                    final_position.y = final_position.y - GRAVITY * time.delta_secs();
+                    final_position.y -= GRAVITY * time.delta_secs();
                 } else {
                     final_position.y = target_height;
                 }
@@ -204,7 +211,7 @@ fn check_axis_movement(
             if let Ok((_, tile_collision)) = tile_query.get(*tile_above) {
                 // Check collision
                 let test_height = tile_collision.get_height(intended_center_position.x, intended_center_position.z) + test_position_above.y as f32 - 1.0;
-                if test_height.max(0.0).min(1.0) <= world_position.y + STEP_UP_THRESHOLD {
+                if test_height.clamp(0.0, 1.0) <= world_position.y + STEP_UP_THRESHOLD {
                     final_position.x = intended_center_position.x;
                     final_position.z = intended_center_position.z;
                     target_height = test_height;
@@ -256,12 +263,8 @@ fn check_axis_movement(
             (world_position * axis_mask).dot(axis_mask)
         };
 
-        final_position = final_position + axis_mask * (clamped_coord - (world_position * axis_mask).dot(axis_mask));
+        final_position += axis_mask * (clamped_coord - (world_position * axis_mask).dot(axis_mask));
     }
-
-    println!("Target height: {:?}, current height: {:?}", target_height, world_position.y);
-    println!("Diff: {:?}", world_position.y - target_height);
-    println!("Gravity: {:?}", GRAVITY * delta_secs);
 
     if world_position.y - target_height > GRAVITY * delta_secs {
         final_position.y = world_position.y - GRAVITY * delta_secs;

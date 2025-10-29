@@ -97,7 +97,7 @@ pub fn grid(
                     ),
                 )).id();
 
-                tile_map.write().unwrap().insert(coords.into(), tile);
+                tile_map.write().unwrap().insert(coords, tile);
             }
         })),
     )
@@ -190,7 +190,7 @@ impl TileCollision {
 
         //println!("frac_x: {}, frac_z: {}", frac_x, frac_z);
 
-        self.bilerp(frac_x, frac_z).max(0.0).min(1.0)
+        self.bilerp(frac_x, frac_z).clamp(0.0, 1.0)
     }
 
     fn bilerp(&self, x: f32, z: f32) -> f32 {
@@ -275,13 +275,13 @@ struct TileAssetSet {
 impl TileAssetSet {
     fn new(name: &str, assets: &AssetServer) -> Self {
         Self {
-            full: assets.load(format!{"images/{name}.png"}),
-            half: assets.load(format!{"images/{name}_half.png"}),
-            layer: assets.load(format!{"images/{name}_layer.png"}),
-            stairs_pos_x: assets.load(format!{"images/{name}_stairs_pos_x.png"}),
-            stairs_neg_x: assets.load(format!{"images/{name}_stairs_neg_x.png"}),
-            stairs_pos_z: assets.load(format!{"images/{name}_stairs_pos_z.png"}),
-            stairs_neg_z: assets.load(format!{"images/{name}_stairs_neg_z.png"}),
+            full: assets.load(format!("images/{name}.png")),
+            half: assets.load(format!("images/{name}_half.png")),
+            layer: assets.load(format!("images/{name}_layer.png")),
+            stairs_pos_x: assets.load(format!("images/{name}_stairs_pos_x.png")),
+            stairs_neg_x: assets.load(format!("images/{name}_stairs_neg_x.png")),
+            stairs_pos_z: assets.load(format!("images/{name}_stairs_pos_z.png")),
+            stairs_neg_z: assets.load(format!("images/{name}_stairs_neg_z.png")),
         }
     }
 
