@@ -7,7 +7,8 @@ use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
 use crate::game::grid::coords::TileCoords;
-use crate::game::grid::{FullTileType, TileAssets, TileFacing, TileMaterial, TileType, grid, tile};
+use crate::game::grid::tile::{FullTileType, TileFacing, TileMaterial, TileType, tile};
+use crate::game::grid::{TileAssets, grid};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{
     Scale,

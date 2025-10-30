@@ -15,8 +15,9 @@
 
 use bevy::prelude::*;
 
+use crate::game::grid::Grid;
 use crate::game::grid::coords::{TileCoords, WorldPosition};
-use crate::game::grid::{Grid, TileCollision};
+use crate::game::grid::tile::TileCollision;
 use crate::game::object::Collider;
 use crate::{AppSystems, PausableSystems};
 
