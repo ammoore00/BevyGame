@@ -1,6 +1,7 @@
 use crate::asset_tracking::LoadResource;
 use crate::game::grid::coords::WorldPosition;
 use bevy::prelude::*;
+use crate::game::physics::components::Collider;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<ObjectAssets>();
@@ -45,7 +46,7 @@ pub fn object(
     (
         Object(object_type),
         WorldPosition(position.into()),
-        Collider(collider, WorldPosition(position.into())),
+        Collider::aabb(collider),
         Sprite::from(assets.boulder.clone()),
         Transform::from_scale(Vec3::splat(scale)),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
@@ -60,6 +61,3 @@ pub fn object(
         })),
     )
 }
-
-#[derive(Component, Debug, Clone, Reflect)]
-pub struct Collider(pub Vec3, pub WorldPosition);

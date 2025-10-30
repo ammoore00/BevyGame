@@ -4,13 +4,14 @@
 //! to get a feeling for the template.
 
 use bevy::prelude::*;
+use physics::movement;
 
 mod animation;
 mod grid;
 pub mod level;
-mod movement;
 mod object;
 pub mod player;
+mod physics;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((

@@ -18,10 +18,10 @@ use bevy::prelude::*;
 use crate::game::grid::Grid;
 use crate::game::grid::coords::{TileCoords, WorldPosition};
 use crate::game::grid::tile::TileCollision;
-use crate::game::object::Collider;
 use crate::{AppSystems, PausableSystems};
+use crate::game::physics::components::{Collider, ColliderType};
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::game) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (apply_movement)
@@ -62,7 +62,7 @@ pub const GRAVITY: f32 = 4.5;
 fn apply_movement(
     time: Res<Time>,
     mut movement_query: Query<(Entity, &MovementController, &mut WorldPosition, &Collider)>,
-    collider_query: Query<(Entity, &Collider)>,
+    collider_query: Query<(Entity, &Collider, &WorldPosition), Without<MovementController>>,
     tile_query: Query<(Entity, &TileCollision)>,
     grid_query: Query<&Grid>,
 ) {
@@ -85,7 +85,12 @@ fn apply_movement(
             let intended_center_position = world_position + velocity * time.delta_secs();
 
             // Get collider information
-            let (collider_offset_x, collider_offset_z) = (collider.0.x, collider.0.z);
+            let collider_vec = match collider.get() {
+                ColliderType::AABB(collider) => collider,
+                _ => continue,
+            };
+
+            let (collider_offset_x, collider_offset_z) = (collider_vec.x, collider_vec.z);
             let direction_x = velocity.x.signum();
             let direction_z = velocity.z.signum();
 
@@ -113,6 +118,7 @@ fn apply_movement(
                 collider_query,
                 tile_query,
                 entity_for_movement,
+                collider,
             );
 
             // For Z axis:
@@ -128,6 +134,7 @@ fn apply_movement(
                 collider_query,
                 tile_query,
                 entity_for_movement,
+                collider,
             );
 
             final_position.x = final_pos_x.x;
@@ -173,9 +180,10 @@ fn check_axis_movement(
     collider_offset: f32,
     direction: f32,
     axis_mask: Vec3,
-    collider_query: Query<(Entity, &Collider)>,
+    collider_query: Query<(Entity, &Collider, &WorldPosition), Without<MovementController>>,
     tile_query: Query<(Entity, &TileCollision)>,
     player_entity: Entity,
+    player_collider: &Collider,
 ) -> Vec3 {
     let mut final_position = world_position;
 
@@ -217,10 +225,8 @@ fn check_axis_movement(
     let mut target_height = world_position.y;
 
     // Check collision with other objects
-    let player_collider = collider_query.get(player_entity).unwrap().1;
-
     let mut collided_with_object = false;
-    for (other_entity, other_collider) in collider_query.iter() {
+    for (other_entity, other_collider, other_position) in collider_query.iter() {
         // Skip self
         if other_entity == player_entity {
             continue;
@@ -230,6 +236,7 @@ fn check_axis_movement(
             intended_collider_edge_position,
             player_collider,
             other_collider,
+            other_position,
         ) {
             collided_with_object = true;
             break;
@@ -341,14 +348,25 @@ fn check_collider_collision(
     intended_position: Vec3,
     player_collider: &Collider,
     other_collider: &Collider,
+    other_position: &WorldPosition,
 ) -> bool {
-    // Calculate box bounds for both colliders
-    let player_min = intended_position - player_collider.0 / 2.0;
-    let player_max = intended_position + player_collider.0 / 2.0;
+    let player_collider = match player_collider.get() {
+        ColliderType::AABB(collider) => collider,
+        _ => panic!(),
+    };
 
-    let other_pos = other_collider.1.0.0;
-    let other_min = other_pos - other_collider.0 / 2.0;
-    let other_max = other_pos + other_collider.0 / 2.0;
+    // Calculate box bounds for both colliders
+    let player_min = intended_position - player_collider / 2.0;
+    let player_max = intended_position + player_collider / 2.0;
+
+    let other_collider = match other_collider.get() {
+        ColliderType::AABB(collider) => collider,
+        _ => panic!(),
+    };
+
+    let other_position = other_position.0.0;
+    let other_min = other_position - other_collider / 2.0;
+    let other_max = other_position + other_collider / 2.0;
 
     // Check overlap on all axes
     player_min.x <= other_max.x

@@ -2,14 +2,15 @@
 
 use bevy::prelude::*;
 
-use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
-use crate::game::object::Collider;
+use crate::game::grid::coords::{rotate_screen_space_to_movement, WorldPosition};
 use crate::gamepad::GamepadRes;
 use crate::{
-    AppSystems, PausableSystems,
-    asset_tracking::LoadResource,
-    game::{animation::PlayerAnimation, movement::MovementController},
+    asset_tracking::LoadResource, game::animation::PlayerAnimation,
+    AppSystems,
+    PausableSystems,
 };
+use crate::game::physics::components::Collider;
+use crate::game::physics::movement::MovementController;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -59,7 +60,7 @@ pub fn player(
             ..default()
         },
         player_animation,
-        Collider(Vec3::new(0.25, 0.75, 0.25), WorldPosition(position.into())),
+        Collider::aabb(Vec3::new(0.25, 0.75, 0.25)),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
                 Sprite {

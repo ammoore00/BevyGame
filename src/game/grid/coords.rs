@@ -27,8 +27,6 @@ pub fn convert_world_to_screen_coords(
         transform.translation = *screen_coords;
         transform.translation.x *= scale.0;
         transform.translation.y *= scale.0;
-        // Offset to render in front of tiles
-        transform.translation.z += SCREEN_Z_SCALE;
     }
 }
 
