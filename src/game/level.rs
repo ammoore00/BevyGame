@@ -67,7 +67,7 @@ pub fn spawn_level(
                 object(
                     ObjectType::Rock,
                     &object_assets,
-                    Vec3::new(3.0, 0.0, 7.0),
+                    Vec3::new(2.0, 0.0, 7.0),
                     scale.0,
                     Vec3::new(0.75, 0.5, 0.75),
                 ),
