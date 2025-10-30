@@ -34,11 +34,46 @@ pub const TILE_HEIGHT: i32 = 16;
 struct Tile;
 
 #[derive(Clone, Debug)]
+pub enum FullTileType {
+    Boundary {
+        x: bool,
+        z: bool,
+    },
+    Stacked,
+}
+
+impl FullTileType {
+    pub fn none() -> Self {
+        Self::Boundary { x: false, z: false }
+    }
+    pub fn boundary(x: bool, z: bool) -> Self {
+        Self::Boundary { x, z }
+    }
+    pub fn stacked() -> Self {
+        Self::Stacked
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum TileFacing {
+    PosX,
+    NegX,
+    PosZ,
+    NegZ,
+}
+
+#[derive(Clone, Debug)]
 pub enum TileType {
-    Full,
-    FullStacked,
-    Layer,
-    LayerStacked,
+    Full(FullTileType),
+    Layer(FullTileType),
+    SlopeLower {
+        facing: TileFacing,
+        has_edge: bool,
+    },
+    SlopeUpper {
+        facing: TileFacing,
+        has_edge: bool,
+    },
     Stairs(TileFacing),
     Bridge(Option<TileFacing>),
 }
@@ -46,6 +81,18 @@ pub enum TileType {
 impl TileType {
     fn get_collision(&self) -> TileCollision {
         match self {
+            TileType::SlopeLower { facing, .. } => match facing {
+                TileFacing::PosX => TileCollision::new(0.5, 0.5, 0.0, 0.0),
+                TileFacing::NegX => TileCollision::new(0.0, 0.0, 0.5, 0.5),
+                TileFacing::PosZ => TileCollision::new(0.5, 0.0, 0.5, 0.0),
+                TileFacing::NegZ => TileCollision::new(0.0, 0.5, 0.0, 0.5),
+            },
+            TileType::SlopeUpper { facing, .. } => match facing {
+                TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.5, 0.5),
+                TileFacing::NegX => TileCollision::new(0.5, 0.5, 1.0, 1.0),
+                TileFacing::PosZ => TileCollision::new(1.0, 0.5, 1.0, 0.5),
+                TileFacing::NegZ => TileCollision::new(0.5, 1.0, 0.5, 1.0),
+            },
             TileType::Stairs(facing) => match facing {
                 TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.0, 0.0),
                 TileFacing::NegX => TileCollision::new(0.0, 0.0, 1.0, 1.0),
@@ -58,41 +105,65 @@ impl TileType {
 
     fn get_atlas_index(&self) -> usize {
         match self {
-            TileType::Full => 0,
-            TileType::Layer => 1,
-            TileType::FullStacked => 2,
-            TileType::LayerStacked => 3,
-            TileType::Stairs(facing) => {
-                match facing {
-                    TileFacing::NegX => 16,
-                    TileFacing::NegZ => 17,
-                    TileFacing::PosX => 18,
-                    TileFacing::PosZ => 19,
+            TileType::Full(tile_type) => match tile_type {
+                FullTileType::Boundary { x, z } => match (x, z) {
+                    (false, false) => 0,
+                    (true, false) => 1,
+                    (false, true) => 2,
+                    (true, true) => 3,
                 }
+                FullTileType::Stacked => 4,
             },
-            TileType::Bridge(facing) => {
-                match facing {
-                    Some(facing) => {
-                        match facing {
-                            TileFacing::NegX => 25,
-                            TileFacing::NegZ => 26,
-                            TileFacing::PosX => 27,
-                            TileFacing::PosZ => 28,
-                        }
-                    }
-                    None => 24,
+            TileType::SlopeLower { facing, has_edge: false } => match facing {
+                TileFacing::NegX => 8,
+                TileFacing::NegZ => 9,
+                TileFacing::PosX => 10,
+                TileFacing::PosZ => 11,
+            },
+            TileType::SlopeUpper { facing, has_edge: false } => match facing {
+                TileFacing::NegX => 12,
+                TileFacing::NegZ => 13,
+                TileFacing::PosX => 14,
+                TileFacing::PosZ => 15,
+            },
+            TileType::SlopeLower { facing, has_edge: true } => match facing {
+                TileFacing::NegX => 16,
+                TileFacing::NegZ => 17,
+                TileFacing::PosX => 18,
+                TileFacing::PosZ => 19,
+            },
+            TileType::SlopeUpper { facing, has_edge: true } => match facing {
+                TileFacing::NegX => 20,
+                TileFacing::NegZ => 21,
+                TileFacing::PosX => 22,
+                TileFacing::PosZ => 23,
+            },
+            TileType::Stairs(facing) => match facing {
+                TileFacing::NegX => 24,
+                TileFacing::NegZ => 25,
+                TileFacing::PosX => 26,
+                TileFacing::PosZ => 27,
+            },
+            TileType::Bridge(facing) => match facing {
+                Some(facing) => match facing {
+                    TileFacing::NegX => 33,
+                    TileFacing::NegZ => 34,
+                    TileFacing::PosX => 35,
+                    TileFacing::PosZ => 36,
                 }
-            }
+                None => 32,
+            },
+            TileType::Layer(tile_type) => match tile_type {
+                FullTileType::Boundary { x, z } => match (x, z) {
+                    (false, false) => 40,
+                    (true, false) => 41,
+                    (false, true) => 42,
+                    (true, true) => 43,
+                }
+                FullTileType::Stacked => 44,
+            },
         }
     }
-}
-
-#[derive(Clone, Debug)]
-pub enum TileFacing {
-    PosX,
-    NegX,
-    PosZ,
-    NegZ,
 }
 
 #[derive(Clone, Debug, Component)]

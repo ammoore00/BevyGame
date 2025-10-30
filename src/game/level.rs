@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
 use crate::game::grid::coords::TileCoords;
-use crate::game::grid::{TileAssets, TileFacing, TileMaterial, TileType, grid, tile};
+use crate::game::grid::{TileAssets, TileFacing, TileMaterial, TileType, grid, tile, FullTileType};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{
     Scale,
@@ -55,7 +55,7 @@ pub fn spawn_level(
             DespawnOnExit(Screen::Gameplay),
             children![
                 player(
-                    Vec3::new(2.0, 0.0, 3.0),
+                    Vec3::new(3.0, 0.0, 3.0),
                     3.5,
                     &player_assets,
                     &mut texture_atlas_layouts,
@@ -67,7 +67,7 @@ pub fn spawn_level(
                 object(
                     ObjectType::Rock,
                     &object_assets,
-                    Vec3::new(1.75, 0.0, 7.75),
+                    Vec3::new(3.0, 0.0, 7.0),
                     scale.0,
                     Vec3::new(0.75, 0.5, 0.75),
                 ),
@@ -94,43 +94,43 @@ fn create_level(
     let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
 
     let level_layout_1 = [
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,",
-        "_LS:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,__L:P,_____,_____,_____,_____,",
-        "_____,_____,__L:G,_____,_____,_____,_____,_____,_____,__L:P,__L:P,__L:P,_____,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:P,_____,_____,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:P,__L:P,__L:P,",
-        "__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,__L:P,__L:P,__L:P,",
-        "_LS:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_LS:P,__L:P,__L:P,",
-        "_LS:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_LB:G,_LZ:G,_LZ:G,_LZ:G,_LB:G,_LZ:G,_____,_____,_LB:G,_LZ:G,_LZ:G,_LZ:G,_LZ:G,_LB:G,_____,",
+        "_LX:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_LX:G,__L:G,__L:G,__L:G,__L:G,_LX:G,_____,",
+        "_LX:G,__L:G,__L:G,_LB:G,__L:G,__L:G,_____,_____,_LX:G,__L:G,__L:G,__L:G,_LX:G,__L:G,_____,",
+        "_LX:G,__L:G,__L:G,_LX:G,__L:G,__L:G,_LZ:G,_LZ:G,_LZ:G,_LZ:G,_LZ:G,_LZ:G,__L:G,__L:G,_____,",
+        "_LX:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_LX:P,_____,_____,_____,_____,",
+        "_LX:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_LX:P,_LZ:P,_LZ:P,_____,_____,",
+        "_LX:G,__L:G,__L:G,__L:G,__L:G,_LX:G,_____,_____,_____,_____,_____,_____,_LX:P,_____,_____,",
+        "_LX:G,__L:G,__L:G,__L:G,_LZ:G,__L:G,_____,_____,_____,_____,_____,_____,_LX:P,_LZ:P,_LZ:P,",
+        "_LX:G,__L:G,__L:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_LX:P,_LX:P,__L:P,",
+        "_LS:G,_LS:G,_LX:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_LS:P,_LX:P,__L:P,",
+        "_LS:G,_LS:G,_LX:G,__L:G,__L:G,__L:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
     ];
     let level_layout_2 = [
-        "__F:G,__F:G,_FS:P,_____,_____,_____,_____,__F:P,__F:P,__F:P,__F:P,__F:P,_____,_____,",
-        "__F:G,__F:G,S-x:G,_____,_____,_____,_____,__F:P,__F:P,__F:P,__F:P,S-z:P,_____,_____,",
-        "__F:G,__F:G,_____,_____,_____,_____,_____,__F:P,__F:P,__F:P,__F:P,_____,_____,_____,",
-        "__F:G,S-z:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "__F:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,S+z:P,_____,_____,",
-        "S+z:G,_____,_____,_____,S+x:P,B-x:P,__B:P,__B:P,__B:P,__B:P,B+x:P,__F:P,_____,_____,",
-        "__F:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_FB:G,_FZ:G,_FZ:G,_FS:P,_____,_____,_____,_____,_FB:P,_FZ:P,_FZ:P,_FZ:P,_FZ:P,_____,_____,",
+        "_FX:G,__F:G,__F:G,S-x:G,_____,_____,_____,_____,_FX:P,__F:P,__F:P,__F:P,S-z:P,_____,_____,",
+        "_____,O-z:G,P-z:G,_____,_____,_____,_____,_____,_FX:P,__F:P,__F:P,__F:P,_____,_____,_____,",
+        "_____,o-z:G,p-z:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_FB:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,S+z:P,_____,_____,",
+        "S+z:G,S+z:G,_____,_____,_____,S+x:P,B-x:P,__B:P,__B:P,__B:P,__B:P,B+x:P,__F:P,_____,_____,",
+        "_FX:G,__F:G,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
     ];
     let level_layout_3 = [
-        "_____,_____,S+x:P,B-x:P,__B:P,__B:P,B+x:P,S-x:P,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
-        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,S+x:P,B-x:P,__B:P,__B:P,B+x:P,S-x:P,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
+        "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
     ];
 
     let level_layout = [
@@ -146,12 +146,16 @@ fn create_level(
             let chars = row.split(',');
 
             for (x, col) in chars.into_iter().enumerate() {
-                if let Ok(tile_settings) = col.parse::<TileSettings>() {
+                let result = col.parse::<TileSettings>();
+                if let Ok(tile_settings) = result {
                     tile_coords.push((
                         tile_settings.tile_material,
                         tile_settings.tile_type,
                         TileCoords(IVec3::new(x as i32, y as i32, z as i32)),
                     ));
+                }
+                else if !col.replace("_", "").is_empty() && !col.replace(" ", "").is_empty() {
+                    println!("Invalid tile settings: {}", col);
                 }
             }
         }
@@ -226,21 +230,46 @@ impl FromStr for TileType {
         let s = s.replace("_", "");
 
         match s.as_str() {
-            "F" => Ok(TileType::Full),
-            "FS" => Ok(TileType::FullStacked),
-            "L" => Ok(TileType::Layer),
-            "LS" => Ok(TileType::LayerStacked),
-            "B" => Ok(TileType::Bridge(None)),
+            "F" => Ok(TileType::Full(FullTileType::none())),
+            "FX" => Ok(TileType::Full(FullTileType::boundary(true, false))),
+            "FZ" => Ok(TileType::Full(FullTileType::boundary(false, true))),
+            "FB" => Ok(TileType::Full(FullTileType::boundary(true, true))),
+            "FS" => Ok(TileType::Full(FullTileType::stacked())),
 
-            "B+x" => Ok(TileType::Bridge(Some(TileFacing::PosX))),
-            "B-x" => Ok(TileType::Bridge(Some(TileFacing::NegX))),
-            "B+z" => Ok(TileType::Bridge(Some(TileFacing::PosZ))),
-            "B-z" => Ok(TileType::Bridge(Some(TileFacing::NegZ))),
+            "p+x" => Ok(TileType::SlopeLower { facing: TileFacing::PosX, has_edge: false }),
+            "p-x" => Ok(TileType::SlopeLower { facing: TileFacing::NegX, has_edge: false }),
+            "p+z" => Ok(TileType::SlopeLower { facing: TileFacing::PosZ, has_edge: false }),
+            "p-z" => Ok(TileType::SlopeLower { facing: TileFacing::NegZ, has_edge: false }),
+            "o+x" => Ok(TileType::SlopeLower { facing: TileFacing::PosX, has_edge: true }),
+            "o-x" => Ok(TileType::SlopeLower { facing: TileFacing::NegX, has_edge: true }),
+            "o+z" => Ok(TileType::SlopeLower { facing: TileFacing::PosZ, has_edge: true }),
+            "o-z" => Ok(TileType::SlopeLower { facing: TileFacing::NegZ, has_edge: true }),
+
+            "P+x" => Ok(TileType::SlopeUpper { facing: TileFacing::PosX, has_edge: false }),
+            "P-x" => Ok(TileType::SlopeUpper { facing: TileFacing::NegX, has_edge: false }),
+            "P+z" => Ok(TileType::SlopeUpper { facing: TileFacing::PosZ, has_edge: false }),
+            "P-z" => Ok(TileType::SlopeUpper { facing: TileFacing::NegZ, has_edge: false }),
+            "O+x" => Ok(TileType::SlopeUpper { facing: TileFacing::PosX, has_edge: true }),
+            "O-x" => Ok(TileType::SlopeUpper { facing: TileFacing::NegX, has_edge: true }),
+            "O+z" => Ok(TileType::SlopeUpper { facing: TileFacing::PosZ, has_edge: true }),
+            "O-z" => Ok(TileType::SlopeUpper { facing: TileFacing::NegZ, has_edge: true }),
 
             "S+x" => Ok(TileType::Stairs(TileFacing::PosX)),
             "S-x" => Ok(TileType::Stairs(TileFacing::NegX)),
             "S+z" => Ok(TileType::Stairs(TileFacing::PosZ)),
             "S-z" => Ok(TileType::Stairs(TileFacing::NegZ)),
+
+            "B" => Ok(TileType::Bridge(None)),
+            "B+x" => Ok(TileType::Bridge(Some(TileFacing::PosX))),
+            "B-x" => Ok(TileType::Bridge(Some(TileFacing::NegX))),
+            "B+z" => Ok(TileType::Bridge(Some(TileFacing::PosZ))),
+            "B-z" => Ok(TileType::Bridge(Some(TileFacing::NegZ))),
+
+            "L" => Ok(TileType::Layer(FullTileType::none())),
+            "LX" => Ok(TileType::Layer(FullTileType::boundary(true, false))),
+            "LZ" => Ok(TileType::Layer(FullTileType::boundary(false, true))),
+            "LB" => Ok(TileType::Layer(FullTileType::boundary(true, true))),
+            "LS" => Ok(TileType::Layer(FullTileType::stacked())),
 
             _ => Err(TileSettingsParseError("Invalid tile type".to_string())),
         }
