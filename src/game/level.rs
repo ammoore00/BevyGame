@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
 use crate::game::grid::coords::TileCoords;
-use crate::game::grid::{TileAssets, TileFacing, TileMaterial, TileType, grid, tile, FullTileType};
+use crate::game::grid::{FullTileType, TileAssets, TileFacing, TileMaterial, TileType, grid, tile};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{
     Scale,
@@ -59,7 +59,8 @@ pub fn spawn_level(
                     3.5,
                     &player_assets,
                     &mut texture_atlas_layouts,
-                    scale.0),
+                    scale.0
+                ),
                 (
                     Name::new("Gameplay Music"),
                     music(level_assets.music.clone())
@@ -133,11 +134,7 @@ fn create_level(
         "_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,_____,",
     ];
 
-    let level_layout = [
-        level_layout_1,
-        level_layout_2,
-        level_layout_3,
-    ];
+    let level_layout = [level_layout_1, level_layout_2, level_layout_3];
 
     let mut tile_coords = Vec::new();
 
@@ -153,20 +150,14 @@ fn create_level(
                         tile_settings.tile_type,
                         TileCoords(IVec3::new(x as i32, y as i32, z as i32)),
                     ));
-                }
-                else if !col.replace("_", "").is_empty() && !col.replace(" ", "").is_empty() {
+                } else if !col.replace("_", "").is_empty() && !col.replace(" ", "").is_empty() {
                     println!("Invalid tile settings: {}", col);
                 }
             }
         }
     }
 
-    let grid = grid(
-        tile_map.clone(),
-        tile_assets.clone(),
-        scale.0,
-        &mut texture_atlas_layouts,
-    );
+    let grid = grid(tile_map.clone(), scale.0);
     let grid = commands.spawn(grid).id();
 
     for (material, tile_type, coords) in tile_coords {
@@ -236,23 +227,71 @@ impl FromStr for TileType {
             "FB" => Ok(TileType::Full(FullTileType::boundary(true, true))),
             "FS" => Ok(TileType::Full(FullTileType::stacked())),
 
-            "p+x" => Ok(TileType::SlopeLower { facing: TileFacing::PosX, has_edge: false }),
-            "p-x" => Ok(TileType::SlopeLower { facing: TileFacing::NegX, has_edge: false }),
-            "p+z" => Ok(TileType::SlopeLower { facing: TileFacing::PosZ, has_edge: false }),
-            "p-z" => Ok(TileType::SlopeLower { facing: TileFacing::NegZ, has_edge: false }),
-            "o+x" => Ok(TileType::SlopeLower { facing: TileFacing::PosX, has_edge: true }),
-            "o-x" => Ok(TileType::SlopeLower { facing: TileFacing::NegX, has_edge: true }),
-            "o+z" => Ok(TileType::SlopeLower { facing: TileFacing::PosZ, has_edge: true }),
-            "o-z" => Ok(TileType::SlopeLower { facing: TileFacing::NegZ, has_edge: true }),
+            "p+x" => Ok(TileType::SlopeLower {
+                facing: TileFacing::PosX,
+                has_edge: false,
+            }),
+            "p-x" => Ok(TileType::SlopeLower {
+                facing: TileFacing::NegX,
+                has_edge: false,
+            }),
+            "p+z" => Ok(TileType::SlopeLower {
+                facing: TileFacing::PosZ,
+                has_edge: false,
+            }),
+            "p-z" => Ok(TileType::SlopeLower {
+                facing: TileFacing::NegZ,
+                has_edge: false,
+            }),
+            "o+x" => Ok(TileType::SlopeLower {
+                facing: TileFacing::PosX,
+                has_edge: true,
+            }),
+            "o-x" => Ok(TileType::SlopeLower {
+                facing: TileFacing::NegX,
+                has_edge: true,
+            }),
+            "o+z" => Ok(TileType::SlopeLower {
+                facing: TileFacing::PosZ,
+                has_edge: true,
+            }),
+            "o-z" => Ok(TileType::SlopeLower {
+                facing: TileFacing::NegZ,
+                has_edge: true,
+            }),
 
-            "P+x" => Ok(TileType::SlopeUpper { facing: TileFacing::PosX, has_edge: false }),
-            "P-x" => Ok(TileType::SlopeUpper { facing: TileFacing::NegX, has_edge: false }),
-            "P+z" => Ok(TileType::SlopeUpper { facing: TileFacing::PosZ, has_edge: false }),
-            "P-z" => Ok(TileType::SlopeUpper { facing: TileFacing::NegZ, has_edge: false }),
-            "O+x" => Ok(TileType::SlopeUpper { facing: TileFacing::PosX, has_edge: true }),
-            "O-x" => Ok(TileType::SlopeUpper { facing: TileFacing::NegX, has_edge: true }),
-            "O+z" => Ok(TileType::SlopeUpper { facing: TileFacing::PosZ, has_edge: true }),
-            "O-z" => Ok(TileType::SlopeUpper { facing: TileFacing::NegZ, has_edge: true }),
+            "P+x" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::PosX,
+                has_edge: false,
+            }),
+            "P-x" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::NegX,
+                has_edge: false,
+            }),
+            "P+z" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::PosZ,
+                has_edge: false,
+            }),
+            "P-z" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::NegZ,
+                has_edge: false,
+            }),
+            "O+x" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::PosX,
+                has_edge: true,
+            }),
+            "O-x" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::NegX,
+                has_edge: true,
+            }),
+            "O+z" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::PosZ,
+                has_edge: true,
+            }),
+            "O-z" => Ok(TileType::SlopeUpper {
+                facing: TileFacing::NegZ,
+                has_edge: true,
+            }),
 
             "S+x" => Ok(TileType::Stairs(TileFacing::PosX)),
             "S-x" => Ok(TileType::Stairs(TileFacing::NegX)),

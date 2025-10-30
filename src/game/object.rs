@@ -1,5 +1,5 @@
 use crate::asset_tracking::LoadResource;
-use crate::game::grid::coords::{WorldCoords, WorldPosition};
+use crate::game::grid::coords::WorldPosition;
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {

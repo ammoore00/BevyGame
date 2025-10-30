@@ -217,7 +217,7 @@ fn check_axis_movement(
 
     // Check collision with other objects
     let player_collider = collider_query.get(player_entity).unwrap().1;
-    
+
     let mut collided_with_object = false;
     for (other_entity, other_collider) in collider_query.iter() {
         // Skip self
@@ -225,7 +225,11 @@ fn check_axis_movement(
             continue;
         }
 
-        if check_collider_collision(intended_collider_edge_position, player_collider, other_collider) {
+        if check_collider_collision(
+            intended_collider_edge_position,
+            player_collider,
+            other_collider,
+        ) {
             collided_with_object = true;
             break;
         }
@@ -306,7 +310,7 @@ fn check_axis_movement(
             (_, _, _) => false,
         }
     };
-    
+
     if !moved && !collided_with_object {
         // Clamp to current tile boundary
         let current_tile_coord = (world_position * axis_mask).dot(axis_mask).round();
@@ -349,10 +353,10 @@ fn check_collider_collision(
     let other_max = other_pos + other_collider.0 / 2.0;
 
     // Check overlap on all axes
-    player_min.x <= other_max.x &&
-        player_max.x >= other_min.x &&
-        player_min.y <= other_max.y &&
-        player_max.y >= other_min.y &&
-        player_min.z <= other_max.z &&
-        player_max.z >= other_min.z
+    player_min.x <= other_max.x
+        && player_max.x >= other_min.x
+        && player_min.y <= other_max.y
+        && player_max.y >= other_min.y
+        && player_min.z <= other_max.z
+        && player_max.z >= other_min.z
 }

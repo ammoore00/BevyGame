@@ -14,16 +14,11 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component)]
 pub struct Grid(pub Arc<RwLock<BTreeMap<TileCoords, Entity>>>);
 
-pub fn grid(
-    tile_map: Arc<RwLock<BTreeMap<TileCoords, Entity>>>,
-    tile_assets: TileAssets,
-    scale: f32,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
-) -> impl Bundle {
+pub fn grid(tile_map: Arc<RwLock<BTreeMap<TileCoords, Entity>>>, scale: f32) -> impl Bundle {
     (
         Grid(tile_map.clone()),
         Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
-        InheritedVisibility::default()
+        InheritedVisibility::default(),
     )
 }
 
@@ -35,10 +30,7 @@ struct Tile;
 
 #[derive(Clone, Debug)]
 pub enum FullTileType {
-    Boundary {
-        x: bool,
-        z: bool,
-    },
+    Boundary { x: bool, z: bool },
     Stacked,
 }
 
@@ -66,14 +58,8 @@ pub enum TileFacing {
 pub enum TileType {
     Full(FullTileType),
     Layer(FullTileType),
-    SlopeLower {
-        facing: TileFacing,
-        has_edge: bool,
-    },
-    SlopeUpper {
-        facing: TileFacing,
-        has_edge: bool,
-    },
+    SlopeLower { facing: TileFacing, has_edge: bool },
+    SlopeUpper { facing: TileFacing, has_edge: bool },
     Stairs(TileFacing),
     Bridge(Option<TileFacing>),
 }
@@ -111,28 +97,40 @@ impl TileType {
                     (true, false) => 1,
                     (false, true) => 2,
                     (true, true) => 3,
-                }
+                },
                 FullTileType::Stacked => 4,
             },
-            TileType::SlopeLower { facing, has_edge: false } => match facing {
+            TileType::SlopeLower {
+                facing,
+                has_edge: false,
+            } => match facing {
                 TileFacing::NegX => 8,
                 TileFacing::NegZ => 9,
                 TileFacing::PosX => 10,
                 TileFacing::PosZ => 11,
             },
-            TileType::SlopeUpper { facing, has_edge: false } => match facing {
+            TileType::SlopeUpper {
+                facing,
+                has_edge: false,
+            } => match facing {
                 TileFacing::NegX => 12,
                 TileFacing::NegZ => 13,
                 TileFacing::PosX => 14,
                 TileFacing::PosZ => 15,
             },
-            TileType::SlopeLower { facing, has_edge: true } => match facing {
+            TileType::SlopeLower {
+                facing,
+                has_edge: true,
+            } => match facing {
                 TileFacing::NegX => 16,
                 TileFacing::NegZ => 17,
                 TileFacing::PosX => 18,
                 TileFacing::PosZ => 19,
             },
-            TileType::SlopeUpper { facing, has_edge: true } => match facing {
+            TileType::SlopeUpper {
+                facing,
+                has_edge: true,
+            } => match facing {
                 TileFacing::NegX => 20,
                 TileFacing::NegZ => 21,
                 TileFacing::PosX => 22,
@@ -150,7 +148,7 @@ impl TileType {
                     TileFacing::NegZ => 34,
                     TileFacing::PosX => 35,
                     TileFacing::PosZ => 36,
-                }
+                },
                 None => 32,
             },
             TileType::Layer(tile_type) => match tile_type {
@@ -159,7 +157,7 @@ impl TileType {
                     (true, false) => 41,
                     (false, true) => 42,
                     (true, true) => 43,
-                }
+                },
                 FullTileType::Stacked => 44,
             },
         }
