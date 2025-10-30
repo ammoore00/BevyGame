@@ -15,16 +15,14 @@
 
 use bevy::prelude::*;
 
-use crate::game::grid::Grid;
-use crate::game::grid::coords::{TileCoords, WorldPosition};
-use crate::game::grid::tile::TileCollision;
+use crate::game::grid::coords::WorldPosition;
+use crate::game::physics::components::{Collider, PhysicsData};
 use crate::{AppSystems, PausableSystems};
-use crate::game::physics::components::{Collider, ColliderType};
 
-pub(in crate::game) fn plugin(app: &mut App) {
+pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (apply_movement)
+        (set_intended_velocity, check_collisions, apply_movement)
             .chain()
             .in_set(AppSystems::Update)
             .in_set(PausableSystems),
@@ -59,7 +57,33 @@ pub const STEP_UP_THRESHOLD: f32 = 0.3;
 
 pub const GRAVITY: f32 = 4.5;
 
-fn apply_movement(
+fn set_intended_velocity(query: Query<(&MovementController, &mut PhysicsData)>) {
+    for (controller, mut physics) in query {
+        if let PhysicsData::Kinematic { ref mut velocity } = *physics {
+            *velocity = controller.intent * controller.max_speed;
+        }
+    }
+}
+
+fn check_collisions(query: Query<(Entity, &PhysicsData, &Collider)>) {
+    // Detect collisions
+    // Clamp velocity to prevent intersections
+    // Account for slopes
+    // Account for steps
+}
+
+fn apply_movement(time: Res<Time>, query: Query<(&PhysicsData, &mut WorldPosition)>) {
+    for (physics, mut position) in query {
+        let new_position = if let PhysicsData::Kinematic { velocity } = *physics {
+            position.as_vec3() + (velocity * time.delta_secs())
+        } else { continue };
+        
+        position.set(new_position);
+    }
+}
+
+/*
+fn apply_movement_legacy(
     time: Res<Time>,
     mut movement_query: Query<(Entity, &MovementController, &mut WorldPosition, &Collider)>,
     collider_query: Query<(Entity, &Collider, &WorldPosition), Without<MovementController>>,
@@ -376,3 +400,4 @@ fn check_collider_collision(
         && player_min.z <= other_max.z
         && player_max.z >= other_min.z
 }
+*/

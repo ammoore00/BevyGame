@@ -2,8 +2,9 @@ use crate::ReflectResource;
 use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::image::{Image, TextureAtlas, TextureAtlasLayout};
-use bevy::math::UVec2;
+use bevy::math::{UVec2, Vec3};
 use bevy::prelude::{Bundle, Component, FromWorld, Reflect, Resource, Sprite, Transform, World};
+use crate::game::physics::components::{Collider, PhysicsData};
 
 pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;
@@ -48,27 +49,27 @@ pub enum TileType {
 }
 
 impl TileType {
-    fn get_collision(&self) -> TileCollision {
+    fn get_collision(&self) -> Collider {
         match self {
             TileType::SlopeLower { facing, .. } => match facing {
-                TileFacing::PosX => TileCollision::new(0.5, 0.5, 0.0, 0.0),
-                TileFacing::NegX => TileCollision::new(0.0, 0.0, 0.5, 0.5),
-                TileFacing::PosZ => TileCollision::new(0.5, 0.0, 0.5, 0.0),
-                TileFacing::NegZ => TileCollision::new(0.0, 0.5, 0.0, 0.5),
+                TileFacing::PosX => get_tile_collider_hull(0.5, 0.5, 0.0, 0.0),
+                TileFacing::NegX => get_tile_collider_hull(0.0, 0.0, 0.5, 0.5),
+                TileFacing::PosZ => get_tile_collider_hull(0.5, 0.0, 0.5, 0.0),
+                TileFacing::NegZ => get_tile_collider_hull(0.0, 0.5, 0.0, 0.5),
             },
             TileType::SlopeUpper { facing, .. } => match facing {
-                TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.5, 0.5),
-                TileFacing::NegX => TileCollision::new(0.5, 0.5, 1.0, 1.0),
-                TileFacing::PosZ => TileCollision::new(1.0, 0.5, 1.0, 0.5),
-                TileFacing::NegZ => TileCollision::new(0.5, 1.0, 0.5, 1.0),
+                TileFacing::PosX => get_tile_collider_hull(1.0, 1.0, 0.5, 0.5),
+                TileFacing::NegX => get_tile_collider_hull(0.5, 0.5, 1.0, 1.0),
+                TileFacing::PosZ => get_tile_collider_hull(1.0, 0.5, 1.0, 0.5),
+                TileFacing::NegZ => get_tile_collider_hull(0.5, 1.0, 0.5, 1.0),
             },
             TileType::Stairs(facing) => match facing {
-                TileFacing::PosX => TileCollision::new(1.0, 1.0, 0.0, 0.0),
-                TileFacing::NegX => TileCollision::new(0.0, 0.0, 1.0, 1.0),
-                TileFacing::PosZ => TileCollision::new(1.0, 0.0, 1.0, 0.0),
-                TileFacing::NegZ => TileCollision::new(0.0, 1.0, 0.0, 1.0),
+                TileFacing::PosX => get_tile_collider_hull(1.0, 1.0, 0.0, 0.0),
+                TileFacing::NegX => get_tile_collider_hull(0.0, 0.0, 1.0, 1.0),
+                TileFacing::PosZ => get_tile_collider_hull(1.0, 0.0, 1.0, 0.0),
+                TileFacing::NegZ => get_tile_collider_hull(0.0, 1.0, 0.0, 1.0),
             },
-            _ => TileCollision::default(),
+            _ => Collider::aabb(Vec3::ONE),
         }
     }
 
@@ -147,58 +148,20 @@ impl TileType {
     }
 }
 
-#[derive(Clone, Debug, Component)]
-pub struct TileCollision {
-    pub pp: f32,
-    pub pn: f32,
-    pub np: f32,
-    pub nn: f32,
-}
-
-impl TileCollision {
-    fn level(height: f32) -> Self {
-        Self::new(height, height, height, height)
-    }
-
-    fn new(pp: f32, pn: f32, np: f32, nn: f32) -> Self {
-        Self { pp, pn, np, nn }
-    }
-
-    pub fn get_height(&self, x: f32, z: f32) -> f32 {
-        //println!("x: {}, z: {}", x, z);
-
-        let mut frac_x = (x + 0.5).fract();
-        let mut frac_z = (z + 0.5).fract();
-
-        if frac_x < 0.0 {
-            frac_x += 1.0;
-        }
-
-        if frac_z < 0.0 {
-            frac_z += 1.0;
-        }
-
-        //println!("frac_x: {}, frac_z: {}", frac_x, frac_z);
-
-        self.bilerp(frac_x, frac_z).clamp(0.0, 1.0)
-    }
-
-    fn bilerp(&self, x: f32, z: f32) -> f32 {
-        // Bilinear interpolation between four corners
-        let x = x.clamp(0.0, 1.0);
-        let z = z.clamp(0.0, 1.0);
-
-        let x1 = self.nn + x * (self.pn - self.nn);
-        let x2 = self.np + x * (self.pp - self.np);
-
-        x1 + z * (x2 - x1)
-    }
-}
-
-impl Default for TileCollision {
-    fn default() -> Self {
-        Self::level(1.0)
-    }
+fn get_tile_collider_hull(pp: f32, pn: f32, np: f32, nn: f32) -> Collider {
+    Collider::hull(vec![
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, nn, 0.0),
+        
+        Vec3::new(0.0, np, 1.0),
+        Vec3::new(0.0, 0.0, 1.0),
+        
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, pn, 0.0),
+        
+        Vec3::new(1.0, 1.0, 1.0),
+        Vec3::new(1.0, pp, 1.0),
+    ])
 }
 
 pub fn tile(
@@ -215,7 +178,11 @@ pub fn tile(
     (
         Tile,
         TilePosition(tile_coords.clone().into()),
+        Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
+        // Physics
         tile_type.get_collision(),
+        PhysicsData::Static,
+        // Rendering
         Sprite::from_atlas_image(
             sprite_sheet.clone(),
             TextureAtlas {
@@ -223,7 +190,6 @@ pub fn tile(
                 index: tile_type.get_atlas_index(),
             },
         ),
-        Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
     )
 }
 

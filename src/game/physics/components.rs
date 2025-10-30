@@ -1,6 +1,20 @@
 use bevy::prelude::*;
 
 #[derive(Component, Debug, Clone, Reflect)]
+pub enum PhysicsData {
+    Static,
+    Kinematic {
+        velocity: Vec3,
+    },
+}
+
+impl PhysicsData {
+    pub fn kinematic(velocity: Vec3) -> Self {
+        Self::Kinematic { velocity }
+    }
+}
+
+#[derive(Component, Debug, Clone, Reflect)]
 pub struct Collider {
     collider_type: ColliderType,
 }

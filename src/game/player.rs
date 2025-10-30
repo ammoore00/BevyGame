@@ -9,7 +9,7 @@ use crate::{
     AppSystems,
     PausableSystems,
 };
-use crate::game::physics::components::Collider;
+use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 
 pub(super) fn plugin(app: &mut App) {
@@ -46,6 +46,16 @@ pub fn player(
     (
         Name::new("Player"),
         Player,
+        WorldPosition(position.into()),
+        Transform::from_scale(Vec3::splat(scale)),
+        // Physics
+        MovementController {
+            max_speed,
+            ..default()
+        },
+        Collider::aabb(Vec3::new(0.25, 0.75, 0.25)),
+        PhysicsData::kinematic(Vec3::ZERO),
+        // Rendering
         Sprite::from_atlas_image(
             player_assets.ducky.clone(),
             TextureAtlas {
@@ -53,14 +63,7 @@ pub fn player(
                 index: player_animation.get_atlas_index(),
             },
         ),
-        WorldPosition(position.into()),
-        Transform::from_scale(Vec3::splat(scale)),
-        MovementController {
-            max_speed,
-            ..default()
-        },
         player_animation,
-        Collider::aabb(Vec3::new(0.25, 0.75, 0.25)),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
                 Sprite {

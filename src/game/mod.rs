@@ -18,7 +18,7 @@ pub(super) fn plugin(app: &mut App) {
         animation::plugin,
         grid::plugin,
         level::plugin,
-        movement::plugin,
+        physics::plugin,
         object::plugin,
         player::plugin,
     ));

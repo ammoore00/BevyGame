@@ -18,6 +18,17 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct WorldPosition(pub WorldCoords);
+
+impl WorldPosition {
+    pub fn as_vec3(&self) -> Vec3 {
+        self.0.0
+    }
+
+    pub fn set(&mut self, value: Vec3) {
+        self.0.0 = value;
+    }
+}
+
 pub fn convert_world_to_screen_coords(
     scale: Res<Scale>,
     mut query: Query<(&WorldPosition, &mut Transform), Changed<WorldPosition>>,
