@@ -55,7 +55,7 @@ pub fn spawn_level(
             DespawnOnExit(Screen::Gameplay),
             children![
                 player(
-                    Vec3::new(3.0, 0.0, 3.0),
+                    Vec3::new(3.0, 1.0, 3.0),
                     3.5,
                     &player_assets,
                     &mut texture_atlas_layouts,
@@ -68,7 +68,7 @@ pub fn spawn_level(
                 object(
                     ObjectType::Rock,
                     &object_assets,
-                    Vec3::new(2.0, 0.0, 7.0),
+                    Vec3::new(2.0, 1.0, 7.0),
                     scale.0,
                     Vec3::new(0.75, 0.5, 0.75),
                 ),

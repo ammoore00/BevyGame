@@ -183,14 +183,14 @@ fn check_axis_movement(
     // Position we intend to walk onto
     let test_position: TileCoords = Vec3::new(
         intended_center_position.x,
-        world_position.y,
+        world_position.y - 1.0,
         intended_center_position.z,
     )
     .into();
 
     let test_collider_position: TileCoords = Vec3::new(
         intended_collider_edge_position.x,
-        world_position.y,
+        world_position.y - 1.0,
         intended_collider_edge_position.z,
     )
     .into();
@@ -199,7 +199,7 @@ fn check_axis_movement(
     // Position above the tile we intend to walk onto
     let test_position_above: TileCoords = Vec3::new(
         intended_center_position.x,
-        world_position.y + 1.0,
+        world_position.y,
         intended_center_position.z,
     )
     .into();
@@ -207,7 +207,7 @@ fn check_axis_movement(
 
     let test_collider_position_above: TileCoords = Vec3::new(
         intended_collider_edge_position.x,
-        world_position.y + 1.0,
+        world_position.y,
         intended_collider_edge_position.z,
     )
     .into();
@@ -249,8 +249,7 @@ fn check_axis_movement(
                     // Check collision
                     let test_height = tile_collision
                         .get_height(intended_center_position.x, intended_center_position.z)
-                        + test_position_above.y as f32
-                        - 1.0;
+                        + test_position_above.y as f32;
 
                     if test_height.clamp(0.0, 1.0) <= world_position.y + STEP_UP_THRESHOLD {
                         final_position.x = intended_center_position.x;
@@ -271,8 +270,7 @@ fn check_axis_movement(
                     let test_height = tile_collision.get_height(
                         intended_collider_edge_position.x,
                         intended_collider_edge_position.z,
-                    ) + test_position_above.y as f32
-                        - 1.0;
+                    ) + test_position_above.y as f32;
 
                     if test_height <= world_position.y + STEP_UP_THRESHOLD {
                         final_position.x = intended_center_position.x;
@@ -291,8 +289,7 @@ fn check_axis_movement(
                     // Check collision
                     let test_height = tile_collision
                         .get_height(intended_center_position.x, intended_center_position.z)
-                        + test_position.y as f32
-                        - 1.0;
+                        + test_position.y as f32;
 
                     if test_height <= world_position.y + STEP_UP_THRESHOLD {
                         final_position.x = intended_center_position.x;

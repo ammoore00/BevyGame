@@ -417,9 +417,9 @@ pub mod coords {
         fn from(value: WorldCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
             let screen_y =
-                (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
+                ((value.y - 1.0) * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
-            let screen_z = (value.x + value.z + (value.y + 1.0)) * SCREEN_Z_SCALE;
+            let screen_z = (value.x + value.z + (value.y)) * SCREEN_Z_SCALE;
 
             Vec3::new(screen_x, screen_y, screen_z).into()
         }
@@ -428,9 +428,9 @@ pub mod coords {
         fn from(value: &WorldCoords) -> Self {
             let screen_x = (value.x - value.z) * TILE_WIDTH as f32 / 2.0;
             let screen_y =
-                (value.y * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
+                ((value.y - 1.0) * TILE_HEIGHT as f32) - (value.x + value.z) * TILE_HEIGHT as f32 / 2.0;
 
-            let screen_z = (value.x + value.z + (value.y + 1.0)) * SCREEN_Z_SCALE;
+            let screen_z = (value.x + value.z + (value.y)) * SCREEN_Z_SCALE;
 
             Vec3::new(screen_x, screen_y, screen_z).into()
         }
