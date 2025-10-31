@@ -149,19 +149,23 @@ impl TileType {
 }
 
 fn get_tile_collider_hull(pp: f32, pn: f32, np: f32, nn: f32) -> Box<dyn Fn(WorldCoords) -> Collider> {
-    Box::new(move |position| Collider::hull(vec![
-        Vec3::new(-0.5, -0.5, -0.5),
-        Vec3::new(-0.5, nn - 0.5, -0.5),
+    Box::new(move |position| {
+        let mut points = vec![
+            Vec3::new(-0.5, -0.5, -0.5),
+            Vec3::new(-0.5, nn - 0.5, -0.5),
 
-        Vec3::new(-0.5, -0.5, 0.5),
-        Vec3::new(-0.5, np - 0.5, 0.5),
+            Vec3::new(-0.5, -0.5, 0.5),
+            Vec3::new(-0.5, np - 0.5, 0.5),
 
-        Vec3::new(0.5, -0.5, -0.5),
-        Vec3::new(0.5, pn - 0.5, -0.5),
+            Vec3::new(0.5, -0.5, -0.5),
+            Vec3::new(0.5, pn - 0.5, -0.5),
 
-        Vec3::new(0.5, -0.5, 0.5),
-        Vec3::new(0.5, pp - 0.5, 0.5),
-    ], position))
+            Vec3::new(0.5, -0.5, 0.5),
+            Vec3::new(0.5, pp - 0.5, 0.5),
+        ];
+        points.dedup();
+        Collider::hull(points, position)
+    })
 }
 
 pub fn tile(
