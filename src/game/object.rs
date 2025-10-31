@@ -39,7 +39,8 @@ pub fn object(
     assets: &ObjectAssets,
     position: Vec3,
     scale: f32,
-    collider: Vec3,
+    collider_radius: f32,
+    collider_height: f32,
 ) -> impl Bundle {
     let shadow = assets.boulder_shadow.clone();
 
@@ -48,7 +49,7 @@ pub fn object(
         WorldPosition(position.into()),
         Transform::from_scale(Vec3::splat(scale)),
         // Physics
-        Collider::aabb(collider),
+        Collider::capsule(collider_radius, collider_height, position.into()),
         PhysicsData::kinematic(Vec3::ZERO),
         // Rendering
         Sprite::from(assets.boulder.clone()),

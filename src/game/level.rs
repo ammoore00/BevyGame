@@ -71,7 +71,8 @@ pub fn spawn_level(
                     &object_assets,
                     Vec3::new(2.0, 1.0, 7.0),
                     scale.0,
-                    Vec3::new(0.75, 0.5, 0.75),
+                    0.75,
+                    0.5,
                 ),
             ],
         ))

@@ -53,7 +53,7 @@ pub fn player(
             max_speed,
             ..default()
         },
-        Collider::aabb(Vec3::new(0.25, 0.75, 0.25)),
+        Collider::capsule(0.25, 0.75, position.into()),
         PhysicsData::kinematic(Vec3::ZERO),
         // Rendering
         Sprite::from_atlas_image(

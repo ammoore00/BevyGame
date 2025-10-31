@@ -1,5 +1,5 @@
 use crate::ReflectResource;
-use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition};
+use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords, WorldPosition};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::image::{Image, TextureAtlas, TextureAtlasLayout};
 use bevy::math::{UVec2, Vec3};
@@ -49,7 +49,7 @@ pub enum TileType {
 }
 
 impl TileType {
-    fn get_collision(&self) -> Collider {
+    fn get_collision(&self) -> impl Fn(WorldCoords) -> Collider {
         match self {
             TileType::SlopeLower { facing, .. } => match facing {
                 TileFacing::PosX => get_tile_collider_hull(0.5, 0.5, 0.0, 0.0),
@@ -69,7 +69,7 @@ impl TileType {
                 TileFacing::PosZ => get_tile_collider_hull(1.0, 0.0, 1.0, 0.0),
                 TileFacing::NegZ => get_tile_collider_hull(0.0, 1.0, 0.0, 1.0),
             },
-            _ => Collider::aabb(Vec3::ONE),
+            _ => Box::new(move |position| Collider::aabb(Vec3::ONE, position)),
         }
     }
 
@@ -148,20 +148,20 @@ impl TileType {
     }
 }
 
-fn get_tile_collider_hull(pp: f32, pn: f32, np: f32, nn: f32) -> Collider {
-    Collider::hull(vec![
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(0.0, nn, 0.0),
-        
-        Vec3::new(0.0, np, 1.0),
-        Vec3::new(0.0, 0.0, 1.0),
-        
-        Vec3::new(1.0, 0.0, 0.0),
-        Vec3::new(1.0, pn, 0.0),
-        
-        Vec3::new(1.0, 1.0, 1.0),
-        Vec3::new(1.0, pp, 1.0),
-    ])
+fn get_tile_collider_hull(pp: f32, pn: f32, np: f32, nn: f32) -> Box<dyn Fn(WorldCoords) -> Collider> {
+    Box::new(move |position| Collider::hull(vec![
+        Vec3::new(-0.5, -0.5, -0.5),
+        Vec3::new(-0.5, nn - 0.5, -0.5),
+
+        Vec3::new(-0.5, -0.5, 0.5),
+        Vec3::new(-0.5, np - 0.5, 0.5),
+
+        Vec3::new(0.5, -0.5, -0.5),
+        Vec3::new(0.5, pn - 0.5, -0.5),
+
+        Vec3::new(0.5, -0.5, 0.5),
+        Vec3::new(0.5, pp - 0.5, 0.5),
+    ], position))
 }
 
 pub fn tile(
@@ -175,12 +175,14 @@ pub fn tile(
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
+    let world_coords = Into::<WorldCoords>::into(tile_coords.clone().into());
+
     (
         Tile,
         TilePosition(tile_coords.clone().into()),
         Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
         // Physics
-        tile_type.get_collision(),
+        tile_type.get_collision()(world_coords),
         PhysicsData::Static,
         // Rendering
         Sprite::from_atlas_image(
