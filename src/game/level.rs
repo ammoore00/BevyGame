@@ -56,7 +56,7 @@ pub fn spawn_level(
             DespawnOnExit(Screen::Gameplay),
             children![
                 player(
-                    Vec3::new(3.0, 1.0, 3.0),
+                    Vec3::new(0.0, 1.0, 0.0),
                     3.5,
                     &player_assets,
                     &mut texture_atlas_layouts,
@@ -66,14 +66,14 @@ pub fn spawn_level(
                     Name::new("Gameplay Music"),
                     music(level_assets.music.clone())
                 ),
-                object(
-                    ObjectType::Rock,
-                    &object_assets,
-                    Vec3::new(2.0, 1.0, 7.0),
-                    scale.0,
-                    0.75,
-                    0.5,
-                ),
+                //object(
+                //    ObjectType::Rock,
+                //    &object_assets,
+                //    Vec3::new(2.0, 1.0, 7.0),
+                //    scale.0,
+                //    0.75,
+                //    0.5,
+                //),
             ],
         ))
         .id();
@@ -137,6 +137,8 @@ fn create_level(
     ];
 
     let level_layout = [level_layout_1, level_layout_2, level_layout_3];
+
+    let level_layout = [["F:G"]];
 
     let mut tile_coords = Vec::new();
 

@@ -52,32 +52,66 @@ impl Default for MovementController {
     }
 }
 
-pub const TILE_BOUNDARY_SIZE: f32 = 0.02;
-pub const STEP_UP_THRESHOLD: f32 = 0.3;
-
-pub const GRAVITY: f32 = 4.5;
-
-fn set_intended_velocity(query: Query<(&MovementController, &mut PhysicsData)>) {
+fn set_intended_velocity(
+    time: Res<Time>,
+    query: Query<(&MovementController, &mut PhysicsData)>
+) {
     for (controller, mut physics) in query {
         if let PhysicsData::Kinematic { ref mut velocity } = *physics {
-            *velocity = controller.intent * controller.max_speed;
+            let intent = controller.intent * controller.max_speed * time.delta_secs();
+            velocity.x = intent.x;
+            velocity.z = intent.z;
+            velocity.y += intent.y;
         }
     }
 }
 
-fn check_collisions(query: Query<(Entity, &PhysicsData, &Collider)>) {
-    // Detect collisions
-    // Clamp velocity to prevent intersections
-    // Account for slopes
-    // Account for steps
+pub const GRAVITY: f32 = 1.0;
+
+fn check_collisions(
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut PhysicsData, &Collider)>,
+    query2: Query<(Entity, &Collider)>
+) {
+    query
+        .iter_mut()
+        .for_each(|(entity, mut physics, collider)| {
+            if let PhysicsData::Kinematic { ref mut velocity } = *physics {
+                // Apply gravity
+                velocity.y -= GRAVITY * time.delta_secs();
+
+                // For each other collision object, check for collisions
+                query2
+                    .iter()
+                    .filter_map(|(other_entity, other_collider)| {
+                        if entity == other_entity {
+                            None
+                        } else {
+                            Collider::check_collision(collider, other_collider)
+                        }
+                    })
+                    // Clamp velocity to prevent intersections
+                    .for_each(|collision| {
+                        // Project velocity onto collision normal
+                        let velocity_along_normal = velocity.dot(collision.normal);
+
+                        // Only correct if moving into the collision
+                        if velocity_along_normal < 0.0 {
+                            // Remove the component of velocity going into the surface
+                            *velocity -= collision.normal * velocity_along_normal;
+                        }
+                    });
+            }
+        });
 }
 
-fn apply_movement(time: Res<Time>, query: Query<(&PhysicsData, &mut WorldPosition)>) {
+fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
     for (physics, mut position) in query {
         let new_position = if let PhysicsData::Kinematic { velocity } = *physics {
-            position.as_vec3() + (velocity * time.delta_secs())
-        } else { continue };
-
+            position.as_vec3() + velocity
+        } else {
+            continue;
+        };
         position.set(new_position);
     }
 }

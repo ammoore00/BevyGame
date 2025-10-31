@@ -1,5 +1,10 @@
-use crate::game::grid::coords::WorldCoords;
+use crate::game::grid::coords::{WorldCoords, WorldPosition};
+use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
+
+pub(super) fn plugin(app: &mut App) {
+    app.add_systems(PreUpdate, update_collider_position);
+}
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub enum PhysicsData {
@@ -10,6 +15,12 @@ pub enum PhysicsData {
 impl PhysicsData {
     pub fn kinematic(velocity: Vec3) -> Self {
         Self::Kinematic { velocity }
+    }
+}
+
+fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
+    for (mut collider, world_position) in query {
+        collider.position = world_position.0.clone();
     }
 }
 
@@ -25,6 +36,10 @@ impl Collider {
             collider_type: ColliderType::AABB(size),
             position,
         }
+    }
+
+    pub fn sphere(radius: f32, position: WorldCoords) -> Self {
+        Self::capsule(radius, radius, position)
     }
 
     pub fn capsule(radius: f32, height: f32, position: WorldCoords) -> Self {
@@ -46,18 +61,27 @@ impl Collider {
     }
 
     pub fn check_collision(&self, other: &Self) -> Option<Collision> {
-        let rough_collision = self.check_collision_rough(other)?;
-
         use ColliderType as C;
         match (&self.collider_type, &other.collider_type) {
-            (C::AABB(size), C::AABB(other_size)) => Self::check_collision_aabb(size, &self.position, other_size, &other.position),
+            //self.check_collision_rough(other)?;
+
+            (C::AABB(size), C::AABB(other_size)) => {
+                Self::check_collision_aabb(size, &self.position, other_size, &other.position)
+            }
             (
                 C::Capsule { radius, height },
                 C::Capsule {
                     radius: other_radius,
                     height: other_height,
                 },
-            ) => Self::check_collision_capsule(*radius, *height, &self.position, *other_radius, *other_height, &other.position),
+            ) => Self::check_collision_capsule(
+                *radius,
+                *height,
+                &self.position,
+                *other_radius,
+                *other_height,
+                &other.position,
+            ),
             (
                 C::Hull { points },
                 C::Hull {
@@ -71,9 +95,21 @@ impl Collider {
                     radius: other_radius,
                     height: other_height,
                 },
-            ) => Self::check_collision_aabb_capsule(size, &self.position, *other_radius, *other_height, &other.position),
+            ) => Self::check_collision_aabb_capsule(
+                size,
+                &self.position,
+                *other_radius,
+                *other_height,
+                &other.position,
+            ),
             (C::Capsule { radius, height }, C::AABB(other_size)) => {
-                Self::check_collision_aabb_capsule(other_size, &other.position, *radius, *height, &self.position)
+                Self::check_collision_aabb_capsule(
+                    other_size,
+                    &other.position,
+                    *radius,
+                    *height,
+                    &self.position,
+                )
             }
 
             (
@@ -81,7 +117,9 @@ impl Collider {
                 C::Hull {
                     points: other_points,
                 },
-            ) => Self::check_collision_aabb_hull(size, &self.position, other_points, &other.position),
+            ) => {
+                Self::check_collision_aabb_hull(size, &self.position, other_points, &other.position)
+            }
             (C::Hull { points }, C::AABB(other_size)) => {
                 Self::check_collision_aabb_hull(other_size, &other.position, points, &self.position)
             }
@@ -91,30 +129,41 @@ impl Collider {
                 C::Hull {
                     points: other_points,
                 },
-            ) => Self::check_collision_capsule_hull(*radius, *height, &self.position, other_points, &other.position),
+            ) => Self::check_collision_capsule_hull(
+                *radius,
+                *height,
+                &self.position,
+                other_points,
+                &other.position,
+            ),
             (
                 C::Hull { points },
                 C::Capsule {
                     radius: other_radius,
                     height: other_height,
                 },
-            ) => Self::check_collision_capsule_hull(*other_radius, *other_height, &other.position, points, &self.position),
-        };
-
-        // Temporarily just return rough collision
-        Some(rough_collision)
+            ) => Self::check_collision_capsule_hull(
+                *other_radius,
+                *other_height,
+                &other.position,
+                points,
+                &self.position,
+            ),
+        }
     }
 
     fn check_collision_rough(&self, other: &Self) -> Option<Collision> {
         let dist = (*self.position - *other.position).length();
 
-        if dist > self.get_largest_radius() + other.get_largest_radius() {
+        if dist < self.get_largest_radius() + other.get_largest_radius() {
             Some(Collision {
                 position: WorldCoords((*self.position + *other.position) / 2.0),
-                normal: (*self.position - *other.position).normalize(),
+                normal: -(*self.position - *other.position).normalize(),
                 depth: dist - self.get_largest_radius() - other.get_largest_radius(),
             })
-        } else { None }
+        } else {
+            None
+        }
     }
 
     fn get_largest_radius(&self) -> f32 {
@@ -140,10 +189,10 @@ impl Collider {
         other_size: &Vec3,
         other_position: &WorldCoords,
     ) -> Option<Collision> {
-        let min_pos = **position + size / 2.0;
+        let min_pos = **position - size / 2.0;
         let max_pos = **position + size / 2.0;
 
-        let min_other_pos = **other_position + other_size / 2.0;
+        let min_other_pos = **other_position - other_size / 2.0;
         let max_other_pos = **other_position + other_size / 2.0;
 
         // If there is a collision
@@ -155,9 +204,9 @@ impl Collider {
             && max_pos.z >= min_other_pos.z
         {
             // Get the overlap in each axis
-            let total_dist_x = (max_pos.x - min_other_pos.x).abs();
-            let total_dist_y = (max_pos.y - min_other_pos.y).abs();
-            let total_dist_z = (max_pos.z - min_other_pos.z).abs();
+            let total_dist_x = max_pos.x - min_other_pos.x;
+            let total_dist_y = max_pos.y - min_other_pos.y;
+            let total_dist_z = max_pos.z - min_other_pos.z;
 
             let combined_size_x = size.x + other_size.x;
             let combined_size_y = size.y + other_size.y;
@@ -169,23 +218,37 @@ impl Collider {
                 combined_size_z - total_dist_z,
             );
 
+            println!("{:?}", overlaps);
+
             // Find the largest overlap
-            let position = ((**position + **other_position) / 2.0).into();
-            let depth = overlaps.max_element();
+            let collision_pos = ((**position + **other_position) / 2.0).into();
+            let depth = overlaps.min_element();
             let normal = if depth == overlaps.x {
-                Vec3::X
+                if position.x > other_position.x {
+                    Vec3::X
+                } else {
+                    Vec3::X * -1.0
+                }
             } else if depth == overlaps.y {
-                Vec3::Y
-            } else {
+                if position.y > other_position.y {
+                    Vec3::Y
+                } else {
+                    Vec3::Y * -1.0
+                }
+            } else if position.z > other_position.z {
                 Vec3::Z
+            } else {
+                Vec3::Z * -1.0
             };
 
             Some(Collision {
-                position,
+                position: collision_pos,
                 normal,
                 depth,
             })
-        } else { None }
+        } else {
+            None
+        }
     }
 
     fn check_collision_capsule(
@@ -245,8 +308,9 @@ pub enum ColliderType {
     Hull { points: Vec<Vec3> },
 }
 
+#[derive(Debug, Clone)]
 pub struct Collision {
-    position: WorldCoords,
-    normal: Vec3,
-    depth: f32,
+    pub position: WorldCoords,
+    pub normal: Vec3,
+    pub depth: f32,
 }
