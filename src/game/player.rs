@@ -76,6 +76,9 @@ pub fn player(
     )
 }
 
+const COYOTE_TIME: f32 = 0.2;
+const JUMP_VELOCITY: f32 = 4.0;
+
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
 #[reflect(Component)]
 struct Player;
@@ -136,8 +139,8 @@ fn record_player_directional_input(
     // Apply movement intent to controllers.
     for (mut controller, physics) in &mut controller_query {
         controller.intent = intent;
-        if let PhysicsData::Kinematic { time_since_grounded, .. } = *physics && time_since_grounded < 0.2 && jump {
-            controller.intent.y += 4.0;
+        if let PhysicsData::Kinematic { time_since_grounded, .. } = *physics && time_since_grounded < COYOTE_TIME && jump {
+            controller.intent.y += JUMP_VELOCITY;
         }
     }
 }
