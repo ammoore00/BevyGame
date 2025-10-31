@@ -176,7 +176,7 @@ impl Collider {
 
     fn get_largest_radius(&self) -> f32 {
         match &self.collider_type {
-            ColliderType::Aabb(aabb) => aabb.0.x.max(aabb.0.y).max(aabb.0.z),
+            ColliderType::Aabb(aabb) => (aabb.0 / 2.0).length(),
             ColliderType::Capsule(capsule) => {
                 (capsule.start - capsule.end).length() / 2.0 + capsule.radius
             }
@@ -261,7 +261,114 @@ fn check_collision_capsule(
     other_capsule: &Capsule,
     other_position: &WorldCoords,
 ) -> Option<Collision> {
-    None
+    let start = capsule.start + position.0;
+    let end = capsule.end + position.0;
+    let other_start = other_capsule.start + other_position.0;
+    let other_end = other_capsule.end + other_position.0;
+
+    let (closest_point, closest_point_on_other) =
+        closest_points_between_segments(start, end, other_start, other_end);
+    let offset = closest_point - closest_point_on_other;
+    let distance = offset.length();
+
+    let combined_radius = capsule.radius + other_capsule.radius;
+
+    if distance < combined_radius {
+        let depth = combined_radius - distance;
+
+        // Collision normal points from capsule1 -> capsule2
+        let normal = if distance > 1e-6 {
+            offset.normalize()
+        } else {
+            // arbitrary fallback if perfectly overlapping
+            Vec3::Y
+        };
+
+        Some(Collision {
+            position: ((closest_point + closest_point_on_other) * 0.5).into(),
+            normal,
+            depth,
+        })
+    } else {
+        None
+    }
+}
+
+fn closest_points_between_segments(
+    start: Vec3,
+    end: Vec3,
+    other_start: Vec3,
+    other_end: Vec3,
+) -> (Vec3, Vec3) {
+    // Direction vectors of both segments
+    let segment = end - start;
+    let other_segment = other_end - other_start;
+
+    // Vector between the two starting points
+    let start_diff = start - other_start;
+
+    // Squared lengths of each segment
+    let length_sq = segment.dot(segment);
+    let other_length_sq = other_segment.dot(other_segment);
+
+    // Handle degenerate cases where one or both segments collapse into points
+    const EPS: f32 = 1e-6;
+    if length_sq <= EPS && other_length_sq <= EPS {
+        return (start, other_start);
+    }
+
+    let (mut segment_t, other_segment_t);
+
+    if length_sq <= EPS {
+        // Segment 1 is just a point
+        segment_t = 0.0;
+        other_segment_t = (other_segment.dot(start_diff) / other_length_sq).clamp(0.0, 1.0);
+    } else {
+        let segment_to_other = segment.dot(start_diff);
+
+        if other_length_sq <= EPS {
+            // Segment 2 is just a point
+            other_segment_t = 0.0;
+            segment_t = (-segment_to_other / length_sq).clamp(0.0, 1.0);
+        } else {
+            // Both are valid segments
+            let seg_dot = segment.dot(other_segment);
+            let denom = length_sq * other_length_sq - seg_dot * seg_dot;
+
+            if denom.abs() > EPS {
+                // Compute the projected parameter along segment 1
+                segment_t = (seg_dot * other_segment.dot(start_diff)
+                    - segment_to_other * other_length_sq)
+                    / denom;
+                segment_t = segment_t.clamp(0.0, 1.0);
+            } else {
+                // Segments are nearly parallel
+                segment_t = 0.0;
+            }
+
+            // Compute where segment 2 lies relative to segment 1’s point
+            let proj_on_seg2 = seg_dot * segment_t + other_segment.dot(start_diff);
+
+            if proj_on_seg2 < 0.0 {
+                // Closest point lies before seg2_start
+                other_segment_t = 0.0;
+                segment_t = (-segment_to_other / length_sq).clamp(0.0, 1.0);
+            } else if proj_on_seg2 > other_length_sq {
+                // Closest point lies after seg2_end
+                other_segment_t = 1.0;
+                segment_t = (seg_dot - segment_to_other) / length_sq;
+                segment_t = segment_t.clamp(0.0, 1.0);
+            } else {
+                other_segment_t = proj_on_seg2 / other_length_sq;
+            }
+        }
+    }
+
+    // Calculate actual closest points
+    let closest_point_seg1 = start + segment * segment_t;
+    let closest_point_seg2 = other_start + other_segment * other_segment_t;
+
+    (closest_point_seg1, closest_point_seg2)
 }
 
 //------ AABB-Capsule collision ------//
