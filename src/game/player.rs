@@ -9,7 +9,7 @@ use crate::{
     AppSystems,
     PausableSystems,
 };
-use crate::game::physics::components::{Collider, Collision, PhysicsData};
+use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 
 pub(super) fn plugin(app: &mut App) {
@@ -53,8 +53,8 @@ pub fn player(
             max_speed,
             ..default()
         },
-        Collider::aabb(Vec3::splat(0.5), position.into()),
         //Collider::capsule(0.25, 0.75, position.into()),
+        Collider::aabb(Vec3::splat(0.5), position.into()),
         PhysicsData::kinematic(Vec3::ZERO),
         // Rendering
         Sprite::from_atlas_image(

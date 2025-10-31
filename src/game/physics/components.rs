@@ -9,12 +9,15 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Debug, Clone, Reflect)]
 pub enum PhysicsData {
     Static,
-    Kinematic { velocity: Vec3 },
+    Kinematic {
+        displacement: Vec3,
+        grounded: bool,
+    },
 }
 
 impl PhysicsData {
     pub fn kinematic(velocity: Vec3) -> Self {
-        Self::Kinematic { velocity }
+        Self::Kinematic { displacement: velocity, grounded: false }
     }
 }
 
