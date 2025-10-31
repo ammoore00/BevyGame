@@ -18,13 +18,38 @@ pub enum PhysicsData {
 }
 
 impl PhysicsData {
-    pub fn kinematic(velocity: Vec3) -> Self {
+    pub fn kinematic(displacement: Vec3) -> Self {
         Self::Kinematic {
-            displacement: velocity,
+            displacement,
             grounded: false,
             time_since_grounded: f32::INFINITY,
         }
     }
+}
+
+#[derive(Debug, Clone, Reflect)]
+pub enum ColliderType {
+    Aabb(Aabb),
+    Capsule(Capsule),
+    Hull(Hull),
+}
+
+#[derive(Debug, Clone, Reflect)]
+pub struct Aabb(pub(super) Vec3);
+#[derive(Debug, Clone, Reflect)]
+pub struct Capsule {
+    pub(super) start: Vec3,
+    pub(super) end: Vec3,
+    pub(super) radius: f32,
+}
+#[derive(Debug, Clone, Reflect)]
+pub struct Hull(pub(super) Vec<Vec3>);
+
+#[derive(Debug, Clone)]
+pub struct Collision {
+    pub position: WorldCoords,
+    pub normal: Vec3,
+    pub depth: f32,
 }
 
 fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
@@ -107,9 +132,6 @@ impl Collider {
             (C::Capsule(capsule), C::Capsule(other_capsule)) => {
                 check_collision_capsule(capsule, &self.position, other_capsule, &other.position)
             }
-            (C::Hull(hull), C::Hull(other_hull)) => {
-                check_collision_hull(hull, &self.position, other_hull, &other.position)
-            }
 
             // AABB-Capsule
             (C::Aabb(aabb), C::Capsule(capsule)) => {
@@ -120,20 +142,19 @@ impl Collider {
             }
 
             // AABB-Hull
-            (C::Aabb(aabb), C::Hull(hull)) => {
-                check_collision_aabb_hull(aabb, &self.position, hull, &other.position, false)
-            }
-            (C::Hull(hull), C::Aabb(aabb)) => {
-                check_collision_aabb_hull(aabb, &other.position, hull, &self.position, true)
-            }
+            // TODO
+            (C::Aabb(_), C::Hull(_)) => None,
 
             // Capsule-Hull
             (C::Capsule(capsule), C::Hull(hull)) => {
-                check_collision_capsule_hull(capsule, &self.position, hull, &other.position, false)
+                check_collision_capsule_hull(capsule, &self.position, hull, &other.position)
             }
-            (C::Hull(hull), C::Capsule(capsule)) => {
-                check_collision_capsule_hull(capsule, &self.position, hull, &other.position, true)
-            }
+
+            // Only tiles use hull collision, and they will never be the source of a collision
+            (C::Hull(_), C::Capsule(_)) => None,
+            (C::Hull(_), C::Aabb(_)) => None,
+            // Only tiles use hull collision, and there is no need to check for collisions between them
+            (C::Hull(_), C::Hull(_)) => None,
         }
     }
 
@@ -238,17 +259,6 @@ fn check_collision_capsule(
     capsule: &Capsule,
     position: &WorldCoords,
     other_capsule: &Capsule,
-    other_position: &WorldCoords,
-) -> Option<Collision> {
-    None
-}
-
-//------ Hull-Hull collision ------//
-
-fn check_collision_hull(
-    hull: &Hull,
-    position: &WorldCoords,
-    other_hull: &Hull,
     other_position: &WorldCoords,
 ) -> Option<Collision> {
     None
@@ -416,9 +426,8 @@ fn closest_point_capsule_aabb(
 fn check_collision_aabb_hull(
     aabb: &Aabb,
     aabb_position: &WorldCoords,
-    hull: &Hull,
-    hull_position: &WorldCoords,
-    invert_normal: bool,
+    other_hull: &Hull,
+    other_hull_position: &WorldCoords,
 ) -> Option<Collision> {
     None
 }
@@ -428,34 +437,8 @@ fn check_collision_aabb_hull(
 fn check_collision_capsule_hull(
     capsule: &Capsule,
     capsule_position: &WorldCoords,
-    hull: &Hull,
-    hull_position: &WorldCoords,
-    invert_normal: bool,
+    other_hull: &Hull,
+    other_hull_position: &WorldCoords,
 ) -> Option<Collision> {
     None
-}
-
-#[derive(Debug, Clone, Reflect)]
-pub enum ColliderType {
-    Aabb(Aabb),
-    Capsule(Capsule),
-    Hull(Hull),
-}
-
-#[derive(Debug, Clone, Reflect)]
-pub(super) struct Aabb(pub(super) Vec3);
-#[derive(Debug, Clone, Reflect)]
-pub(super) struct Capsule {
-    pub(super) start: Vec3,
-    pub(super) end: Vec3,
-    pub(super) radius: f32,
-}
-#[derive(Debug, Clone, Reflect)]
-pub(super) struct Hull(pub(super) Vec<Vec3>);
-
-#[derive(Debug, Clone)]
-pub struct Collision {
-    pub position: WorldCoords,
-    pub normal: Vec3,
-    pub depth: f32,
 }
