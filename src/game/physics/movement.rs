@@ -74,9 +74,9 @@ fn check_collisions(
     query
         .iter_mut()
         .for_each(|(entity, mut physics, collider, position)| {
-            if let PhysicsData::Kinematic { ref mut velocity } = *physics {
+            if let PhysicsData::Kinematic { velocity: ref mut displacement } = *physics {
                 // Apply gravity
-                velocity.y -= GRAVITY * time.delta_secs();
+                displacement.y -= GRAVITY * time.delta_secs();
 
                 let current_position = position.as_vec3();
                 let mut grounded = false;
@@ -94,14 +94,16 @@ fn check_collisions(
                     .collect();
 
                 for collision in &collisions {
+                    println!("Collision: {:?}", collision);
+
                     // Project velocity onto collision normal
-                    let velocity_along_normal = velocity.dot(collision.normal);
+                    let velocity_along_normal = displacement.dot(collision.normal);
 
                     // Check if this is a horizontal collision (normal is mostly horizontal)
                     let is_horizontal = collision.normal.y.abs() < 0.7;
 
                     // Check if we're on the ground (collision from below)
-                    if collision.normal.y > 0.7 && velocity_along_normal < 0.0 {
+                    if collision.normal.y > 0.7 {
                         grounded = true;
                     }
 
@@ -139,19 +141,19 @@ fn check_collisions(
                             if !still_colliding {
                                 // Found a height where we can pass!
                                 // Set a small upward velocity to smoothly lift the character
-                                velocity.y = velocity.y.max(test_step * 10.0); // Multiply to convert to velocity
+                                displacement.y = displacement.y.max(test_step * time.delta_secs()); // Multiply to convert to velocity
                                 found_step_height = true;
                                 break;
                             }
                         }
 
                         // If we couldn't find a step-up height, block horizontal movement
-                        if !found_step_height {
-                            *velocity -= collision.normal * velocity_along_normal;
+                        if !found_step_height && velocity_along_normal < 0.0 {
+                            *displacement -= collision.normal * velocity_along_normal;
                         }
                     } else if velocity_along_normal < 0.0 {
                         // This is a vertical or other collision
-                        *velocity -= collision.normal * velocity_along_normal;
+                        *displacement -= collision.normal * velocity_along_normal;
                     }
                 }
             }
@@ -160,8 +162,8 @@ fn check_collisions(
 
 fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
     for (physics, mut position) in query {
-        let new_position = if let PhysicsData::Kinematic { velocity } = *physics {
-            position.as_vec3() + velocity
+        let new_position = if let PhysicsData::Kinematic { velocity: displacement } = *physics {
+            position.as_vec3() + displacement
         } else {
             continue;
         };

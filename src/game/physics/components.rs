@@ -203,44 +203,34 @@ impl Collider {
             && min_pos.z <= max_other_pos.z
             && max_pos.z >= min_other_pos.z
         {
-            // Get the overlap in each axis
-            let total_dist_x = max_pos.x - min_other_pos.x;
-            let total_dist_y = max_pos.y - min_other_pos.y;
-            let total_dist_z = max_pos.z - min_other_pos.z;
+            // Calculate center-to-center vector
+            let center_diff = **position - **other_position;
 
-            let combined_size_x = size.x + other_size.x;
-            let combined_size_y = size.y + other_size.y;
-            let combined_size_z = size.z + other_size.z;
+            // Get the combined half extents
+            let combined_half_extents = (size + other_size) / 2.0;
 
+            // Calculate overlap on each axis
+            // Overlap = combined size - distance between centers
             let overlaps = Vec3::new(
-                combined_size_x - total_dist_x,
-                combined_size_y - total_dist_y,
-                combined_size_z - total_dist_z,
+                combined_half_extents.x - center_diff.x.abs(),
+                combined_half_extents.y - center_diff.y.abs(),
+                combined_half_extents.z - center_diff.z.abs(),
             );
 
-            // Find the smallest overlap
-            let collision_pos = ((**position + **other_position) / 2.0).into();
-            let depth = overlaps.min_element();
-            let normal = if depth == overlaps.x {
-                if position.x > other_position.x {
-                    Vec3::X
-                } else {
-                    Vec3::X * -1.0
-                }
-            } else if depth == overlaps.y {
-                if position.y > other_position.y {
-                    Vec3::Y
-                } else {
-                    Vec3::Y * -1.0
-                }
-            } else if position.z > other_position.z {
-                Vec3::Z
+            // Find the axis with smallest overlap (minimum penetration)
+            let min_overlap = overlaps.min_element();
+
+            // Determine collision normal based on smallest overlap axis
+            let (normal, depth) = if min_overlap == overlaps.x {
+                (Vec3::X * center_diff.x.signum(), overlaps.x)
+            } else if min_overlap == overlaps.y {
+                (Vec3::Y * center_diff.y.signum(), overlaps.y)
             } else {
-                Vec3::Z * -1.0
+                (Vec3::Z * center_diff.z.signum(), overlaps.z)
             };
 
             Some(Collision {
-                position: collision_pos,
+                position: ((**position + **other_position) / 2.0).into(),
                 normal,
                 depth,
             })
