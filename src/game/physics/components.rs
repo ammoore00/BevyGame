@@ -12,12 +12,18 @@ pub enum PhysicsData {
     Kinematic {
         displacement: Vec3,
         grounded: bool,
+        // Used for coyote time
+        time_since_grounded: f32,
     },
 }
 
 impl PhysicsData {
     pub fn kinematic(velocity: Vec3) -> Self {
-        Self::Kinematic { displacement: velocity, grounded: false }
+        Self::Kinematic {
+            displacement: velocity,
+            grounded: false,
+            time_since_grounded: f32::INFINITY,
+        }
     }
 }
 

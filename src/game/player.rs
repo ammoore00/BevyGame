@@ -2,15 +2,13 @@
 
 use bevy::prelude::*;
 
-use crate::game::grid::coords::{rotate_screen_space_to_movement, WorldPosition};
-use crate::gamepad::GamepadRes;
-use crate::{
-    asset_tracking::LoadResource, game::animation::PlayerAnimation,
-    AppSystems,
-    PausableSystems,
-};
+use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
+use crate::gamepad::GamepadRes;
+use crate::{
+    AppSystems, PausableSystems, asset_tracking::LoadResource, game::animation::PlayerAnimation,
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -86,9 +84,10 @@ fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
-    mut controller_query: Query<&mut MovementController, With<Player>>,
+    mut controller_query: Query<(&mut MovementController, &PhysicsData), With<Player>>,
 ) {
     let mut intent = Vec3::ZERO;
+    let mut jump = false;
 
     // Add gamepad input if available
     if let Some(gamepad_res) = gamepad_res
@@ -103,6 +102,10 @@ fn record_player_directional_input(
             intent.z -= left_stick_y;
 
             intent = rotate_screen_space_to_movement(intent);
+        }
+
+        if gamepad.just_pressed(GamepadButton::South) {
+            jump = true;
         }
     }
 
@@ -121,14 +124,21 @@ fn record_player_directional_input(
             intent.x += 1.0;
         }
 
+        if input.just_pressed(KeyCode::Space) {
+            jump = true;
+        }
+
         // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
         intent = intent.normalize_or_zero();
         intent = rotate_screen_space_to_movement(intent);
     }
 
     // Apply movement intent to controllers.
-    for mut controller in &mut controller_query {
+    for (mut controller, physics) in &mut controller_query {
         controller.intent = intent;
+        if let PhysicsData::Kinematic { time_since_grounded, .. } = *physics && time_since_grounded < 0.2 && jump {
+            controller.intent.y += 4.0;
+        }
     }
 }
 
