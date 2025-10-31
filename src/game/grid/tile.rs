@@ -175,7 +175,9 @@ pub fn tile(
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
-    let world_coords = Into::<WorldCoords>::into(tile_coords.clone().into());
+    let mut world_coords: Vec3 = tile_coords.clone().into().as_vec3();
+    world_coords.y += 0.5;
+    let world_coords = world_coords.into();
 
     (
         Tile,

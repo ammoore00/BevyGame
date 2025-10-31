@@ -52,10 +52,7 @@ impl Default for MovementController {
     }
 }
 
-fn set_intended_velocity(
-    time: Res<Time>,
-    query: Query<(&MovementController, &mut PhysicsData)>
-) {
+fn set_intended_velocity(time: Res<Time>, query: Query<(&MovementController, &mut PhysicsData)>) {
     for (controller, mut physics) in query {
         if let PhysicsData::Kinematic { ref mut velocity } = *physics {
             let intent = controller.intent * controller.max_speed * time.delta_secs();
@@ -67,21 +64,25 @@ fn set_intended_velocity(
 }
 
 pub const GRAVITY: f32 = 1.0;
+pub const STEP_UP_HEIGHT: f32 = 0.3;
 
 fn check_collisions(
     time: Res<Time>,
-    mut query: Query<(Entity, &mut PhysicsData, &Collider)>,
-    query2: Query<(Entity, &Collider)>
+    mut query: Query<(Entity, &mut PhysicsData, &Collider, &WorldPosition)>,
+    query2: Query<(Entity, &Collider)>,
 ) {
     query
         .iter_mut()
-        .for_each(|(entity, mut physics, collider)| {
+        .for_each(|(entity, mut physics, collider, position)| {
             if let PhysicsData::Kinematic { ref mut velocity } = *physics {
                 // Apply gravity
                 velocity.y -= GRAVITY * time.delta_secs();
 
+                let current_position = position.as_vec3();
+                let mut grounded = false;
+
                 // For each other collision object, check for collisions
-                query2
+                let collisions: Vec<_> = query2
                     .iter()
                     .filter_map(|(other_entity, other_collider)| {
                         if entity == other_entity {
@@ -90,17 +91,69 @@ fn check_collisions(
                             Collider::check_collision(collider, other_collider)
                         }
                     })
-                    // Clamp velocity to prevent intersections
-                    .for_each(|collision| {
-                        // Project velocity onto collision normal
-                        let velocity_along_normal = velocity.dot(collision.normal);
+                    .collect();
 
-                        // Only correct if moving into the collision
-                        if velocity_along_normal < 0.0 {
-                            // Remove the component of velocity going into the surface
+                for collision in &collisions {
+                    // Project velocity onto collision normal
+                    let velocity_along_normal = velocity.dot(collision.normal);
+
+                    // Check if this is a horizontal collision (normal is mostly horizontal)
+                    let is_horizontal = collision.normal.y.abs() < 0.7;
+
+                    // Check if we're on the ground (collision from below)
+                    if collision.normal.y > 0.7 && velocity_along_normal < 0.0 {
+                        grounded = true;
+                    }
+
+                    if is_horizontal && velocity_along_normal < 0.0 && grounded {
+                        // This is a horizontal collision where we're moving into the obstacle while grounded
+                        // Try to step up by checking collision at a higher position
+                        let mut found_step_height = false;
+
+                        for test_height in 1..=10 {
+                            let test_step = (test_height as f32) * (STEP_UP_HEIGHT / 10.0);
+                            let test_position = current_position + Vec3::Y * test_step;
+
+                            // Create a test collider at the elevated position
+                            let test_collider = match collider.get() {
+                                crate::game::physics::components::ColliderType::AABB(size) => {
+                                    Collider::aabb(*size, test_position.into())
+                                }
+                                crate::game::physics::components::ColliderType::Capsule {
+                                    radius,
+                                    height,
+                                } => Collider::capsule(*radius, *height, test_position.into()),
+                                crate::game::physics::components::ColliderType::Hull { points } => {
+                                    Collider::hull(points.clone(), test_position.into())
+                                }
+                            };
+
+                            // Check if there's still a collision at this height
+                            let still_colliding = query2
+                                .iter()
+                                .filter(|(other_entity, _)| *other_entity != entity)
+                                .any(|(_, other_collider)| {
+                                    test_collider.check_collision(other_collider).is_some()
+                                });
+
+                            if !still_colliding {
+                                // Found a height where we can pass!
+                                // Set a small upward velocity to smoothly lift the character
+                                velocity.y = velocity.y.max(test_step * 10.0); // Multiply to convert to velocity
+                                found_step_height = true;
+                                break;
+                            }
+                        }
+
+                        // If we couldn't find a step-up height, block horizontal movement
+                        if !found_step_height {
                             *velocity -= collision.normal * velocity_along_normal;
                         }
-                    });
+                    } else if velocity_along_normal < 0.0 {
+                        // This is a vertical or other collision
+                        *velocity -= collision.normal * velocity_along_normal;
+                    }
+                }
             }
         });
 }
@@ -113,6 +166,7 @@ fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
             continue;
         };
         position.set(new_position);
+        println!("{:?}", new_position);
     }
 }
 

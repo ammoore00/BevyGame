@@ -218,9 +218,7 @@ impl Collider {
                 combined_size_z - total_dist_z,
             );
 
-            println!("{:?}", overlaps);
-
-            // Find the largest overlap
+            // Find the smallest overlap
             let collision_pos = ((**position + **other_position) / 2.0).into();
             let depth = overlaps.min_element();
             let normal = if depth == overlaps.x {
