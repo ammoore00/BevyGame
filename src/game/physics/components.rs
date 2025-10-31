@@ -44,21 +44,37 @@ impl Collider {
         let mut position = position.into();
         position.0.y += size.y / 2.0;
         Self {
-            collider_type: ColliderType::AABB(size),
+            collider_type: ColliderType::Aabb(Aabb(size)),
             position,
         }
     }
 
     pub fn sphere(radius: f32, position: impl Into<WorldCoords>) -> Self {
-        Self::capsule(radius, radius, position)
+        Self::capsule(Vec3::ZERO, Vec3::ZERO, radius, position.into())
     }
 
-    pub fn capsule(radius: f32, height: f32, position: impl Into<WorldCoords>) -> Self {
+    pub fn vertical_capsule(radius: f32, mut height: f32, position: impl Into<WorldCoords>) -> Self {
+        if height < radius * 2.0 {
+            height = radius * 2.0;
+        }
+        
+        height -= radius * 2.0;
+        
         let mut position = position.into();
-        position.0.y += height / 2.0;
-        Self {
-            collider_type: ColliderType::Capsule { radius, height },
+        position.0.y += radius;
+        
+        Self::capsule(
+            Vec3::Y * radius,
+            Vec3::Y * radius + Vec3::Y * height,
+            radius,
             position,
+        )
+    }
+
+    pub fn capsule(start: Vec3, end: Vec3, radius: f32, position: impl Into<WorldCoords>) -> Self {
+        Self {
+            collider_type: ColliderType::Capsule(Capsule { start, end, radius }),
+            position: position.into(),
         }
     }
 
@@ -66,7 +82,7 @@ impl Collider {
         let position = position.into();
         points.dedup();
         Self {
-            collider_type: ColliderType::Hull { points },
+            collider_type: ColliderType::Hull(Hull(points)),
             position,
         }
     }
@@ -76,103 +92,74 @@ impl Collider {
     }
 
     pub fn check_collision(&self, other: &Self) -> Option<Collision> {
+        self.check_collision_rough(other)?;
+        
         use ColliderType as C;
         match (&self.collider_type, &other.collider_type) {
-            //self.check_collision_rough(other)?;
-            (C::AABB(size), C::AABB(other_size)) => {
-                Self::check_collision_aabb(size, &self.position, other_size, &other.position)
+            (C::Aabb(aabb), C::Aabb(other_aabb)) => {
+                Self::check_collision_aabb(aabb, &self.position, other_aabb, &other.position)
             }
-            (
-                C::Capsule { radius, height },
-                C::Capsule {
-                    radius: other_radius,
-                    height: other_height,
-                },
-            ) => Self::check_collision_capsule(
-                *radius,
-                *height,
+            (C::Capsule(capsule), C::Capsule(other_capsule)) => Self::check_collision_capsule(
+                capsule,
                 &self.position,
-                *other_radius,
-                *other_height,
+                other_capsule,
                 &other.position,
             ),
-            (
-                C::Hull { points },
-                C::Hull {
-                    points: other_points,
-                },
-            ) => Self::check_collision_hull(points, &self.position, other_points, &other.position),
+            (C::Hull(hull), C::Hull(other_hull)) => {
+                Self::check_collision_hull(hull, &self.position, other_hull, &other.position)
+            }
 
-            (
-                C::AABB(size),
-                C::Capsule {
-                    radius: other_radius,
-                    height: other_height,
-                },
-            ) => Self::check_collision_aabb_capsule(
-                size,
+            (C::Aabb(aabb), C::Capsule(capsule)) => Self::check_collision_aabb_capsule(
+                aabb,
                 &self.position,
-                *other_radius,
-                *other_height,
+                capsule,
                 &other.position,
                 false,
             ),
-            (C::Capsule { radius, height }, C::AABB(other_size)) => {
-                Self::check_collision_aabb_capsule(
-                    other_size,
-                    &other.position,
-                    *radius,
-                    *height,
-                    &self.position,
-                    true,
-                )
-            }
+            (C::Capsule(capsule), C::Aabb(aabb)) => Self::check_collision_aabb_capsule(
+                aabb,
+                &self.position,
+                capsule,
+                &other.position,
+                true,
+            ),
 
             (
-                C::AABB(size),
-                C::Hull {
-                    points: other_points,
-                },
+                C::Aabb(aabb),
+                C::Hull(hull),
             ) => Self::check_collision_aabb_hull(
-                size,
+                aabb,
                 &self.position,
-                other_points,
+                hull,
                 &other.position,
                 false,
             ),
-            (C::Hull { points }, C::AABB(other_size)) => Self::check_collision_aabb_hull(
-                other_size,
+            (C::Hull(hull), C::Aabb(aabb)) => Self::check_collision_aabb_hull(
+                aabb,
                 &other.position,
-                points,
+                hull,
                 &self.position,
                 true,
             ),
 
             (
-                C::Capsule { radius, height },
-                C::Hull {
-                    points: other_points,
-                },
+                C::Capsule(capsule),
+                C::Hull(hull),
             ) => Self::check_collision_capsule_hull(
-                *radius,
-                *height,
+                capsule,
                 &self.position,
-                other_points,
+                hull,
                 &other.position,
                 false,
             ),
             (
-                C::Hull { points },
-                C::Capsule {
-                    radius: other_radius,
-                    height: other_height,
-                },
+                C::Hull(hull),
+                C::Capsule(capsule),
             ) => Self::check_collision_capsule_hull(
-                *other_radius,
-                *other_height,
-                &other.position,
-                points,
+                capsule,
                 &self.position,
+                hull,
+                &other.position,
                 true,
             ),
         }
@@ -196,9 +183,12 @@ impl Collider {
 
     fn get_largest_radius(&self) -> f32 {
         match &self.collider_type {
-            ColliderType::AABB(size) => size.x.max(size.y).max(size.z),
-            ColliderType::Capsule { height, .. } => height / 2.0,
-            ColliderType::Hull { points } => {
+            ColliderType::Aabb(aabb) => aabb.0.x.max(aabb.0.y).max(aabb.0.z),
+            ColliderType::Capsule(capsule) => {
+                (capsule.start - capsule.end).length() / 2.0 + capsule.radius
+            }
+            ColliderType::Hull(hull) => {
+                let points = &hull.0;
                 let mut largest_radius = 0.0;
                 for point in points {
                     let distance = point.length();
@@ -214,16 +204,16 @@ impl Collider {
     //------ AABB-AABB collision ------//
 
     fn check_collision_aabb(
-        size: &Vec3,
+        aabb: &Aabb,
         position: &WorldCoords,
-        other_size: &Vec3,
+        other_aabb: &Aabb,
         other_position: &WorldCoords,
     ) -> Option<Collision> {
-        let min_pos = **position - size / 2.0;
-        let max_pos = **position + size / 2.0;
+        let min_pos = **position - aabb.0 / 2.0;
+        let max_pos = **position + aabb.0 / 2.0;
 
-        let min_other_pos = **other_position - other_size / 2.0;
-        let max_other_pos = **other_position + other_size / 2.0;
+        let min_other_pos = **other_position - other_aabb.0 / 2.0;
+        let max_other_pos = **other_position + other_aabb.0 / 2.0;
 
         // If there is a collision
         if min_pos.x <= max_other_pos.x
@@ -237,7 +227,7 @@ impl Collider {
             let center_diff = **position - **other_position;
 
             // Get the combined half-extents
-            let combined_half_extents = (size + other_size) / 2.0;
+            let combined_half_extents = (aabb.0 + other_aabb.0) / 2.0;
 
             // Calculate overlap on each axis
             // Overlap = combined size - distance between centers
@@ -272,11 +262,9 @@ impl Collider {
     //------ Capsule-Capsule collision ------//
 
     fn check_collision_capsule(
-        radius: f32,
-        height: f32,
+        capsule: &Capsule,
         position: &WorldCoords,
-        other_radius: f32,
-        other_height: f32,
+        other_capsule: &Capsule,
         other_position: &WorldCoords,
     ) -> Option<Collision> {
         None
@@ -285,9 +273,9 @@ impl Collider {
     //------ Hull-Hull collision ------//
 
     fn check_collision_hull(
-        points: &[Vec3],
+        hull: &Hull,
         position: &WorldCoords,
-        other_points: &[Vec3],
+        other_hull: &Hull,
         other_position: &WorldCoords,
     ) -> Option<Collision> {
         None
@@ -296,109 +284,13 @@ impl Collider {
     //------ AABB-Capsule collision ------//
 
     fn check_collision_aabb_capsule(
-        aabb_size: &Vec3,
+        aabb: &Aabb,
         aabb_position: &WorldCoords,
-        capsule_radius: f32,
-        capsule_height: f32,
+        capsule: &Capsule,
         capsule_position: &WorldCoords,
         invert_normal: bool,
     ) -> Option<Collision> {
-        let min_aabb_pos = **aabb_position - aabb_size / 2.0;
-        let max_aabb_pos = **aabb_position + aabb_size / 2.0;
-
-        let capsule_segment_length = capsule_height - capsule_radius * 2.0;
-        let capsule_segment_bottom =
-            **capsule_position - Vec3::new(0.0, capsule_segment_length / 2.0, 0.0);
-        let capsule_segment_top =
-            **capsule_position + Vec3::new(0.0, capsule_segment_length / 2.0, 0.0);
-
-        // If the segment has overlap with the AABB along the y axis
-        let mut collision: Option<Collision> = if min_aabb_pos.y < capsule_segment_top.y
-            && max_aabb_pos.y > capsule_segment_bottom.y
-        {
-            // If the capsule segment is inside the AABB
-            if min_aabb_pos.x < capsule_segment_top.x
-                && capsule_segment_top.x < max_aabb_pos.x
-                && min_aabb_pos.z < capsule_segment_top.z
-                && capsule_segment_top.z < max_aabb_pos.z
-            {
-                // Calculate center-to-center distance
-                let center_to_center = **capsule_position - **aabb_position;
-
-                // Find the closest edge to the capsule segment
-                let mut dist_to_pos = (max_aabb_pos - center_to_center).abs();
-                let mut dist_to_neg = (center_to_center - min_aabb_pos).abs();
-
-                dist_to_pos.y += capsule_radius;
-                dist_to_neg.y += capsule_radius;
-
-                let min_position_pos = dist_to_pos.min_position();
-                let min_position_neg = dist_to_neg.min_position();
-
-                let min_dist_pos = dist_to_pos.min_element();
-                let min_dist_neg = dist_to_neg.min_element();
-
-                let depth = min_dist_pos.min(min_dist_neg);
-
-                let min_index = if min_dist_pos <= min_dist_neg {
-                    min_position_pos
-                } else {
-                    min_position_neg + 3
-                };
-
-                // Depth vectors are offset by the other dim from the normal by design
-                let (position, normal) = match min_index {
-                    0 => {
-                        let position = aabb_position.0 + max_aabb_pos - Vec3::new(0.0, 0.0, depth);
-                        (position, Vec3::X)
-                    }
-                    1 => {
-                        let position = aabb_position.0 + max_aabb_pos
-                            - Vec3::new(capsule_position.x, depth, capsule_position.z);
-                        (position, Vec3::Y)
-                    }
-                    2 => {
-                        let position = aabb_position.0 + max_aabb_pos - Vec3::new(depth, 0.0, 0.0);
-                        (position, Vec3::Z)
-                    }
-                    3 => {
-                        let position = aabb_position.0 + min_aabb_pos + Vec3::new(0.0, 0.0, depth);
-                        (position, Vec3::NEG_X)
-                    }
-                    4 => {
-                        let position = aabb_position.0
-                            + min_aabb_pos
-                            + Vec3::new(capsule_position.x, depth, capsule_position.z);
-                        (position, Vec3::Y)
-                    }
-                    5 => {
-                        let position = aabb_position.0 + min_aabb_pos + Vec3::new(depth, 0.0, 0.0);
-                        (position, Vec3::NEG_Z)
-                    }
-                    _ => unreachable!(),
-                };
-
-                let collision = Collision {
-                    position: position.into(),
-                    normal,
-                    depth,
-                };
-                println!("Collision: {collision:?}");
-                Some(collision)
-            }
-            // If the capsule segment is outside the AABB on one axis,
-            // but closer than the capsule radius
-
-            // If the capsule segment is outside the AABB on both axes,
-            // but closer than the capsule radius
-            else {
-                None
-            }
-        }
-        // If the segment is above or below the AABB, but closer than the capsule radius
-        else {
-            None
-        };
+        let mut collision: Option<Collision> = None;
 
         if invert_normal && let Some(ref mut collision) = collision {
             collision.normal *= -1.0;
@@ -410,9 +302,9 @@ impl Collider {
     //------ AABB-Hull collision ------//
 
     fn check_collision_aabb_hull(
-        aabb_size: &Vec3,
+        aabb: &Aabb,
         aabb_position: &WorldCoords,
-        hull_points: &[Vec3],
+        hull: &Hull,
         hull_position: &WorldCoords,
         invert_normal: bool,
     ) -> Option<Collision> {
@@ -422,10 +314,9 @@ impl Collider {
     //------ Capsule-Hull collision ------//
 
     fn check_collision_capsule_hull(
-        capsule_radius: f32,
-        capsule_height: f32,
+        capsule: &Capsule,
         capsule_position: &WorldCoords,
-        hull_points: &[Vec3],
+        hull: &Hull,
         hull_position: &WorldCoords,
         invert_normal: bool,
     ) -> Option<Collision> {
@@ -435,10 +326,21 @@ impl Collider {
 
 #[derive(Debug, Clone, Reflect)]
 pub enum ColliderType {
-    AABB(Vec3),
-    Capsule { radius: f32, height: f32 },
-    Hull { points: Vec<Vec3> },
+    Aabb(Aabb),
+    Capsule(Capsule),
+    Hull(Hull),
 }
+
+#[derive(Debug, Clone, Reflect)]
+pub(super) struct Aabb(pub(super) Vec3);
+#[derive(Debug, Clone, Reflect)]
+pub(super) struct Capsule {
+    pub(super) start: Vec3,
+    pub(super) end: Vec3,
+    pub(super) radius: f32,
+}
+#[derive(Debug, Clone, Reflect)]
+pub(super) struct Hull(pub(super) Vec<Vec3>);
 
 #[derive(Debug, Clone)]
 pub struct Collision {

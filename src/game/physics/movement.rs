@@ -123,14 +123,14 @@ fn check_collisions(
 
                                 // Create a test collider at the elevated position
                                 let test_collider = match collider.get() {
-                                    ColliderType::AABB(size) => {
-                                        Collider::aabb(*size, test_position)
+                                    ColliderType::Aabb(size) => {
+                                        Collider::aabb(size.0, test_position)
                                     }
-                                    ColliderType::Capsule { radius, height } => {
-                                        Collider::capsule(*radius, *height, test_position)
+                                    ColliderType::Capsule(capsule) => {
+                                        Collider::capsule(capsule.start, capsule.end, capsule.radius, test_position)
                                     }
-                                    ColliderType::Hull { points } => {
-                                        Collider::hull(points.clone(), test_position)
+                                    ColliderType::Hull(hull) => {
+                                        Collider::hull(hull.0.clone(), test_position)
                                     }
                                 };
 

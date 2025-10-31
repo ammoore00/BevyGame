@@ -49,7 +49,7 @@ pub fn object(
         WorldPosition(position.into()),
         Transform::from_scale(Vec3::splat(scale)),
         // Physics
-        Collider::capsule(collider_radius, collider_height, position),
+        Collider::vertical_capsule(collider_radius, collider_height, position),
         PhysicsData::Static,
         // Rendering
         Sprite::from(assets.boulder.clone()),
