@@ -150,7 +150,7 @@ impl TileType {
 
 fn get_tile_collider_hull(pp: f32, pn: f32, np: f32, nn: f32) -> Box<dyn Fn(WorldCoords) -> Collider> {
     Box::new(move |position| {
-        let mut points = vec![
+        Collider::hull(vec![
             Vec3::new(-0.5, -0.5, -0.5),
             Vec3::new(-0.5, nn - 0.5, -0.5),
 
@@ -162,9 +162,7 @@ fn get_tile_collider_hull(pp: f32, pn: f32, np: f32, nn: f32) -> Box<dyn Fn(Worl
 
             Vec3::new(0.5, -0.5, 0.5),
             Vec3::new(0.5, pp - 0.5, 0.5),
-        ];
-        points.dedup();
-        Collider::hull(points, position)
+        ], position)
     })
 }
 
@@ -179,8 +177,7 @@ pub fn tile(
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
-    let mut world_coords: Vec3 = tile_coords.clone().into().as_vec3();
-    world_coords.y += 0.5;
+    let world_coords: Vec3 = tile_coords.clone().into().as_vec3();
     let world_coords = world_coords.into();
 
     (

@@ -16,7 +16,7 @@
 use bevy::prelude::*;
 
 use crate::game::grid::coords::WorldPosition;
-use crate::game::physics::components::{Collider, PhysicsData};
+use crate::game::physics::components::{Collider, ColliderType, PhysicsData};
 use crate::{AppSystems, PausableSystems};
 
 pub(super) fn plugin(app: &mut App) {
@@ -123,16 +123,15 @@ fn check_collisions(
 
                                 // Create a test collider at the elevated position
                                 let test_collider = match collider.get() {
-                                    crate::game::physics::components::ColliderType::AABB(size) => {
-                                        Collider::aabb(*size, test_position.into())
+                                    ColliderType::AABB(size) => {
+                                        Collider::aabb(*size, test_position)
                                     }
-                                    crate::game::physics::components::ColliderType::Capsule {
-                                        radius,
-                                        height,
-                                    } => Collider::capsule(*radius, *height, test_position.into()),
-                                    crate::game::physics::components::ColliderType::Hull {
-                                        points,
-                                    } => Collider::hull(points.clone(), test_position.into()),
+                                    ColliderType::Capsule { radius, height } => {
+                                        Collider::capsule(*radius, *height, test_position)
+                                    }
+                                    ColliderType::Hull { points } => {
+                                        Collider::hull(points.clone(), test_position)
+                                    }
                                 };
 
                                 // Check if there's still a collision at this height
@@ -167,8 +166,7 @@ fn check_collisions(
 
                 if *grounded {
                     *time_since_grounded = 0.0;
-                }
-                else {
+                } else {
                     *time_since_grounded += time.delta_secs();
                 }
             }

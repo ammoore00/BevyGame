@@ -40,25 +40,31 @@ pub struct Collider {
 }
 
 impl Collider {
-    pub fn aabb(size: Vec3, position: WorldCoords) -> Self {
+    pub fn aabb(size: Vec3, position: impl Into<WorldCoords>) -> Self {
+        let mut position = position.into();
+        position.0.y += size.y / 2.0;
         Self {
             collider_type: ColliderType::AABB(size),
             position,
         }
     }
 
-    pub fn sphere(radius: f32, position: WorldCoords) -> Self {
+    pub fn sphere(radius: f32, position: impl Into<WorldCoords>) -> Self {
         Self::capsule(radius, radius, position)
     }
 
-    pub fn capsule(radius: f32, height: f32, position: WorldCoords) -> Self {
+    pub fn capsule(radius: f32, height: f32, position: impl Into<WorldCoords>) -> Self {
+        let mut position = position.into();
+        position.0.y += height / 2.0;
         Self {
             collider_type: ColliderType::Capsule { radius, height },
             position,
         }
     }
 
-    pub fn hull(points: Vec<Vec3>, position: WorldCoords) -> Self {
+    pub fn hull(mut points: Vec<Vec3>, position: impl Into<WorldCoords>) -> Self {
+        let position = position.into();
+        points.dedup();
         Self {
             collider_type: ColliderType::Hull { points },
             position,
