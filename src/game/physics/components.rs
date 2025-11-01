@@ -1094,6 +1094,51 @@ mod test {
             assert!(*actual_face1 == expected_face1 || *actual_face1 == expected_face2);
             assert!(*actual_face2 == expected_face2 || *actual_face2 == expected_face1);
         }
+
+        #[test]
+        fn test_sloped_hull() {
+            // Given a 45-degree slope along the x-axis
+            let points = [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+            ];
+
+            // When we make a hull from it
+            let hull = create_hull_from_points(points);
+
+            dbg!(&hull);
+
+            // There should be no faces towards positive X);
+            let pos_x_faces = hull
+                .faces
+                .iter()
+                .filter(|f| f.normal == Vec3::X)
+                .collect::<Vec<_>>();
+            assert_eq!(pos_x_faces.len(), 0);
+
+            // And there should only be a single face towards either z-axis
+            let pos_z_faces = hull
+                .faces
+                .iter()
+                .filter(|f| f.normal == Vec3::Z)
+                .collect::<Vec<_>>();
+            assert_eq!(pos_z_faces.len(), 1);
+            let neg_z_faces = hull
+                .faces
+                .iter()
+                .filter(|f| f.normal == Vec3::NEG_Z)
+                .collect::<Vec<_>>();
+            assert_eq!(neg_z_faces.len(), 1);
+
+            // For a total of 8 faces
+            assert_eq!(hull.faces.len(), 8);
+        }
     }
 
     mod hull_collision {
