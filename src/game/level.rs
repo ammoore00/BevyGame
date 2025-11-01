@@ -57,6 +57,7 @@ pub fn spawn_level(
             children![
                 player(
                     Vec3::new(3.0, 1.0, 3.0),
+                    //Vec3::new(0.0, 1.0, 0.0),
                     3.5,
                     &player_assets,
                     &mut texture_atlas_layouts,
@@ -137,6 +138,8 @@ fn create_level(
     ];
 
     let level_layout = [level_layout_1, level_layout_2, level_layout_3];
+
+    //let level_layout = [["F:G"]];
 
     let mut tile_coords = Vec::new();
 

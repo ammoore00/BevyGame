@@ -1,8 +1,9 @@
 use crate::Scale;
 use crate::game::grid::tile::{TILE_HEIGHT, TILE_WIDTH};
-use bevy::prelude::*;
 use std::cmp::Ordering;
 use std::ops::Deref;
+use bevy::prelude::*;
+use parry3d::math::Isometry;
 
 pub(super) const SCREEN_Z_SCALE: f32 = 2.0;
 
@@ -26,6 +27,13 @@ impl WorldPosition {
 
     pub fn set(&mut self, value: Vec3) {
         self.0.0 = value;
+    }
+}
+
+impl Into<Isometry<f32>> for WorldPosition {
+    fn into(self) -> Isometry<f32> {
+        let pos = self.0.0;
+        Isometry::translation(pos.x, pos.y, pos.z)
     }
 }
 

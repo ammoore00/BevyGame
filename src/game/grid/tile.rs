@@ -52,26 +52,28 @@ pub enum TileType {
 
 impl TileType {
     fn get_collision(&self, position: impl Into<WorldCoords>) -> Collider {
+        let position = position.into();
+
         match self {
-            TileType::SlopeLower { facing, .. } => match facing {
-                TileFacing::PosX => Collider::heightmap(0.5, 0.5, 0.0, 0.0, position),
-                TileFacing::NegX => Collider::heightmap(0.0, 0.0, 0.5, 0.5, position),
-                TileFacing::PosZ => Collider::heightmap(0.5, 0.0, 0.5, 0.0, position),
-                TileFacing::NegZ => Collider::heightmap(0.0, 0.5, 0.0, 0.5, position),
-            },
-            TileType::SlopeUpper { facing, .. } => match facing {
-                TileFacing::PosX => Collider::heightmap(1.0, 1.0, 0.5, 0.5, position),
-                TileFacing::NegX => Collider::heightmap(0.5, 0.5, 1.0, 1.0, position),
-                TileFacing::PosZ => Collider::heightmap(1.0, 0.5, 1.0, 0.5, position),
-                TileFacing::NegZ => Collider::heightmap(0.5, 1.0, 0.5, 1.0, position),
-            },
-            TileType::Stairs(facing) => match facing {
-                TileFacing::PosX => Collider::heightmap(1.0, 1.0, 0.0, 0.0, position),
-                TileFacing::NegX => Collider::heightmap(0.0, 0.0, 1.0, 1.0, position),
-                TileFacing::PosZ => Collider::heightmap(1.0, 0.0, 1.0, 0.0, position),
-                TileFacing::NegZ => Collider::heightmap(0.0, 1.0, 0.0, 1.0, position),
-            },
-            _ => Collider::aabb(Vec3::ONE, position),
+            //TileType::SlopeLower { facing, .. } => match facing {
+            //    TileFacing::PosX => Collider::heightmap(0.5, 0.5, 0.0, 0.0, position),
+            //    TileFacing::NegX => Collider::heightmap(0.0, 0.0, 0.5, 0.5, position),
+            //    TileFacing::PosZ => Collider::heightmap(0.5, 0.0, 0.5, 0.0, position),
+            //    TileFacing::NegZ => Collider::heightmap(0.0, 0.5, 0.0, 0.5, position),
+            //},
+            //TileType::SlopeUpper { facing, .. } => match facing {
+            //    TileFacing::PosX => Collider::heightmap(1.0, 1.0, 0.5, 0.5, position),
+            //    TileFacing::NegX => Collider::heightmap(0.5, 0.5, 1.0, 1.0, position),
+            //    TileFacing::PosZ => Collider::heightmap(1.0, 0.5, 1.0, 0.5, position),
+            //    TileFacing::NegZ => Collider::heightmap(0.5, 1.0, 0.5, 1.0, position),
+            //},
+            //TileType::Stairs(facing) => match facing {
+            //    TileFacing::PosX => Collider::heightmap(1.0, 1.0, 0.0, 0.0, position),
+            //    TileFacing::NegX => Collider::heightmap(0.0, 0.0, 1.0, 1.0, position),
+            //    TileFacing::PosZ => Collider::heightmap(1.0, 0.0, 1.0, 0.0, position),
+            //    TileFacing::NegZ => Collider::heightmap(0.0, 1.0, 0.0, 1.0, position),
+            //},
+            _ => Collider::cuboid(Vec3::splat(0.5), position),
         }
     }
 
@@ -148,37 +150,6 @@ impl TileType {
             },
         }
     }
-}
-
-fn get_tile_collider_hull_from_heightmap(
-    pp: f32,
-    pn: f32,
-    np: f32,
-    nn: f32,
-) -> Box<dyn Fn(WorldCoords) -> Collider> {
-    Box::new(move |position| {
-        Collider::hull(
-            [
-                // 000
-                Vec3::new(-0.5, -0.5, -0.5),
-                // 100
-                Vec3::new(0.5, -0.5, -0.5),
-                // 101
-                Vec3::new(0.5, -0.5, 0.5),
-                // 001
-                Vec3::new(-0.5, -0.5, 0.5),
-                // 010
-                Vec3::new(-0.5, nn - 0.5, -0.5),
-                // 011
-                Vec3::new(-0.5, np - 0.5, 0.5),
-                // 111
-                Vec3::new(0.5, pp - 0.5, 0.5),
-                // 110
-                Vec3::new(0.5, pn - 0.5, -0.5),
-            ],
-            *position + Vec3::splat(0.5),
-        )
-    })
 }
 
 pub fn tile(

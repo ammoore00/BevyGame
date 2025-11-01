@@ -101,14 +101,16 @@ fn check_collisions(
                         }
                     })
                     .for_each(|collision| {
+                        let normal = collision.normal();
+
                         // Project velocity onto collision normal
-                        let velocity_along_normal = displacement.dot(collision.normal);
+                        let velocity_along_normal = displacement.dot(normal);
 
                         // Check if this is a horizontal collision (normal is mostly horizontal)
-                        let is_horizontal = collision.normal.y.abs() < 0.7;
+                        let is_horizontal = normal.y.abs() < 0.7;
 
                         // Check if we're on the ground (collision from below)
-                        if collision.normal.y > 0.7 {
+                        if normal.y > 0.7 {
                             detected_ground_collision = true;
                         }
 
@@ -122,16 +124,7 @@ fn check_collisions(
                                 let test_position = current_position + Vec3::Y * test_step;
 
                                 // Create a test collider at the elevated position
-                                let test_collider = match collider.get() {
-                                    ColliderType::Aabb(size) => {
-                                        Collider::aabb(size.0, test_position)
-                                    }
-                                    ColliderType::Capsule(capsule) => {
-                                        Collider::capsule(capsule.start, capsule.end, capsule.radius, test_position)
-                                    }
-                                    // Only tiles have hull colliders
-                                    _ => unreachable!(),
-                                };
+                                let test_collider = Collider::with_collider(collider.collider_type().clone(), test_position);
 
                                 // Check if there's still a collision at this height
                                 let still_colliding = query2
@@ -153,11 +146,11 @@ fn check_collisions(
 
                             // If we couldn't find a step-up height, block horizontal movement
                             if !found_step_height {
-                                *displacement -= collision.normal * velocity_along_normal;
+                                *displacement -= normal * velocity_along_normal;
                             }
                         } else if velocity_along_normal < 0.0 {
                             // This is a vertical or other collision
-                            *displacement -= collision.normal * velocity_along_normal;
+                            *displacement -= normal * velocity_along_normal;
                         }
                     });
 
@@ -180,5 +173,6 @@ fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
             continue;
         };
         position.set(new_position);
+        println!("{:?}", new_position);
     }
 }
