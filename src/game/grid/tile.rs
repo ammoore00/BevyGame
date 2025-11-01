@@ -342,6 +342,7 @@ impl TileType {
                     *position - Vec3::splat(0.5),
                 ),
             },
+            TileType::Bridge { .. } => Collider::cuboid(Vec3::new(0.5, 0.25, 0.5), *position + Vec3::Y * 0.25),
             _ => Collider::cuboid(Vec3::splat(0.5), position),
         }
     }
@@ -439,6 +440,7 @@ pub enum TileMaterial {
     Grass,
     Stone,
     Planks,
+    FramedPlanks,
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]
@@ -450,6 +452,8 @@ pub struct TileAssets {
     stone: Handle<Image>,
     #[dependency]
     planks: Handle<Image>,
+    #[dependency]
+    framed_planks: Handle<Image>,
 }
 
 impl TileAssets {
@@ -458,6 +462,7 @@ impl TileAssets {
             TileMaterial::Grass => self.grass.clone(),
             TileMaterial::Stone => self.stone.clone(),
             TileMaterial::Planks => self.planks.clone(),
+            TileMaterial::FramedPlanks => self.framed_planks.clone(),
         }
     }
 }
@@ -469,6 +474,7 @@ impl FromWorld for TileAssets {
             grass: assets.load("images/grass.png"),
             stone: assets.load("images/stone.png"),
             planks: assets.load("images/planks.png"),
+            framed_planks: assets.load("images/framed_planks.png"),
         }
     }
 }
