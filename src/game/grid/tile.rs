@@ -176,7 +176,7 @@ fn get_tile_collider_hull_from_heightmap(
                 // 110
                 Vec3::new(0.5, pn - 0.5, -0.5),
             ],
-            position,
+            *position + Vec3::splat(0.5),
         )
     })
 }
