@@ -31,16 +31,26 @@ impl PhysicsData {
 pub enum ColliderType {
     Aabb(Aabb),
     Capsule(Capsule),
+    Heightmap(Heightmap),
     Hull(Hull),
 }
 
 #[derive(Debug, Clone, Reflect)]
 pub struct Aabb(pub(super) Vec3);
+
 #[derive(Debug, Clone, Reflect)]
 pub struct Capsule {
     pub(super) start: Vec3,
     pub(super) end: Vec3,
     pub(super) radius: f32,
+}
+
+#[derive(Debug, Clone, Reflect)]
+pub struct Heightmap {
+    h00: f32,
+    h01: f32,
+    h10: f32,
+    h11: f32,
 }
 
 #[derive(Debug, Clone, Reflect)]
@@ -128,21 +138,20 @@ impl Hull {
                     ([0, 2, 1], [0, 3, 2])
                 };
 
-                let construct_face = |face: [usize; 3]| {
-                    Face {
-                        vertices: [deduped_indices[face[0]], deduped_indices[face[1]], deduped_indices[face[2]]],
-                        normal: compute_normal(
-                            &deduped_points[face[0]],
-                            &deduped_points[face[1]],
-                            &deduped_points[face[2]],
-                        ),
-                    }
+                let construct_face = |face: [usize; 3]| Face {
+                    vertices: [
+                        deduped_indices[face[0]],
+                        deduped_indices[face[1]],
+                        deduped_indices[face[2]],
+                    ],
+                    normal: compute_normal(
+                        &deduped_points[face[0]],
+                        &deduped_points[face[1]],
+                        &deduped_points[face[2]],
+                    ),
                 };
 
-                vec![
-                    construct_face(face1),
-                    construct_face(face2),
-                ]
+                vec![construct_face(face1), construct_face(face2)]
             }
             // A single pair of points overlap, so just return one triangle
             3 => {
@@ -225,6 +234,23 @@ impl Collider {
         }
     }
 
+    pub fn heightmap(
+        h00: f32,
+        h01: f32,
+        h10: f32,
+        h11: f32,
+        position: impl Into<WorldCoords>,
+    ) -> Self {
+        let mut position = *position.into();
+        position += Vec3::new(0.5, 0.0, 0.5);
+        let position = position.into();
+
+        Self {
+            collider_type: ColliderType::Heightmap(Heightmap { h00, h01, h10, h11 }),
+            position,
+        }
+    }
+
     /// Provide points in counterclockwise order
     /// Lower points first, then upper
     ///
@@ -262,17 +288,33 @@ impl Collider {
                 check_collision_capsule_aabb(capsule, &self.position, aabb, &other.position)
             }
 
+            // AABB-Heightmap
+            (C::Aabb(aabb), C::Heightmap(heightmap)) => {
+                check_collision_aabb_heightmap(aabb, &self.position, heightmap, &other.position)
+            }
+
+            // Capsule-Heightmap
+            (C::Capsule(capsule), C::Heightmap(heightmap)) => check_collision_capsule_heightmap(
+                capsule,
+                &self.position,
+                heightmap,
+                &other.position,
+            ),
+
             // AABB-Hull
-            // TODO
-            (C::Aabb(_), C::Hull(_)) => None,
+            (C::Aabb(aabb), C::Hull(hull)) => {
+                check_collision_aabb_hull(aabb, &self.position, hull, &other.position)
+            }
 
             // Capsule-Hull
             (C::Capsule(capsule), C::Hull(hull)) => {
                 check_collision_capsule_hull(capsule, &self.position, hull, &other.position)
             }
 
-            // Only tiles use hull collision, and they will never be the source of a collision
-            (C::Hull(_), _) => unreachable!("Attempted collision check with hull as source"),
+            // Only tiles use hull or heightmap collision, and they will never be the source of a collision
+            (C::Hull(_), _) | (C::Heightmap(_), _) => {
+                unreachable!("Attempted collision check with hull as source")
+            }
         }
     }
 
@@ -298,6 +340,7 @@ impl Collider {
             ColliderType::Capsule(capsule) => {
                 (capsule.start - capsule.end).length() / 2.0 + capsule.radius
             }
+            ColliderType::Heightmap(heightmap) => 1.0,
             ColliderType::Hull(hull) => {
                 let mut points: Vec<Vec3> = Vec::new();
 
@@ -641,6 +684,164 @@ fn closest_point_capsule_aabb(
     }
 
     nearest_point
+}
+
+//------ AABB-Heightmap collision ------//
+
+fn check_collision_aabb_heightmap(
+    aabb: &Aabb,
+    aabb_position: &WorldCoords,
+    heightmap: &Heightmap,
+    heightmap_position: &WorldCoords,
+) -> Option<Collision> {
+    None
+}
+
+//------ Capsule-Heightmap collision ------//
+
+fn check_collision_capsule_heightmap(
+    capsule: &Capsule,
+    capsule_position: &WorldCoords,
+    heightmap: &Heightmap,
+    heightmap_position: &WorldCoords,
+) -> Option<Collision> {
+    // Capsule endpoints in heightmap-local space
+    let capsule_start_local = capsule.start + capsule_position.0 - heightmap_position.0;
+    let capsule_end_local   = capsule.end   + capsule_position.0 - heightmap_position.0;
+
+    // Heightmap corner points in local space
+    let p00 = Vec3::new(0.0, heightmap.h00, 0.0);
+    let p01 = Vec3::new(0.0, heightmap.h01, 1.0);
+    let p10 = Vec3::new(1.0, heightmap.h10, 0.0);
+    let p11 = Vec3::new(1.0, heightmap.h11, 1.0);
+
+    let triangles = [
+        (p00, p10, p11),
+        (p00, p11, p01),
+    ];
+
+    let mut closest_collision: Option<Collision> = None;
+    let mut smallest_distance = f32::INFINITY;
+
+    for &(v0, v1, v2) in &triangles {
+        // Get analytical closest points between capsule segment and triangle
+        let (point_on_capsule, point_on_triangle) = closest_points_segment_triangle(
+            capsule_start_local, capsule_end_local, v0, v1, v2,
+        );
+
+        let offset = point_on_capsule - point_on_triangle;
+        let distance = offset.length();
+
+        if distance < capsule.radius && distance < smallest_distance {
+            smallest_distance = distance;
+
+            let normal = if distance > 1e-6 {
+                offset.normalize()
+            } else {
+                compute_normal(&v0, &v1, &v2)
+            };
+
+            let penetration = capsule.radius - distance;
+            let contact_world_pos =
+                (point_on_capsule + point_on_triangle) * 0.5 + heightmap_position.0;
+
+            closest_collision = Some(Collision {
+                position: contact_world_pos.into(),
+                normal,
+                depth: penetration,
+            });
+        }
+    }
+
+    closest_collision
+}
+
+fn closest_points_segment_triangle(
+    seg_start: Vec3,
+    seg_end: Vec3,
+    tri_a: Vec3,
+    tri_b: Vec3,
+    tri_c: Vec3,
+) -> (Vec3, Vec3) {
+    // 1. Compute closest point on the triangle to the segment line (analytically)
+    // We'll find the closest point on the triangle for each endpoint and the line projection.
+    // Then clamp to the segment.
+
+    // Step 1: Find closest point on triangle to each endpoint
+    let closest_to_start = closest_point_on_triangle(seg_start, tri_a, tri_b, tri_c);
+    let closest_to_end   = closest_point_on_triangle(seg_end, tri_a, tri_b, tri_c);
+
+    // Step 2: Compute projection of the triangle plane onto the segment line
+    // and check for potential intersection
+    let seg_dir = seg_end - seg_start;
+    let tri_normal = compute_normal(&tri_a, &tri_b, &tri_c);
+    let plane_d = -tri_normal.dot(tri_a);
+    let denom = tri_normal.dot(seg_dir);
+
+    let intersection_point = if denom.abs() > 1e-6 {
+        let t = -(tri_normal.dot(seg_start) + plane_d) / denom;
+        if t >= 0.0 && t <= 1.0 {
+            Some(seg_start + seg_dir * t)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    // Step 3: Check if intersection lies inside the triangle
+    if let Some(p) = intersection_point && point_in_triangle(p, tri_a, tri_b, tri_c) {
+        return (p, p);
+    }
+
+    // Step 4: Otherwise, check all edges of the triangle vs the capsule segment
+    let edges = [(tri_a, tri_b), (tri_b, tri_c), (tri_c, tri_a)];
+    let mut min_distance = f32::INFINITY;
+    let mut best_pair = (seg_start, tri_a);
+
+    for &(edge_a, edge_b) in &edges {
+        let (a, b) = closest_points_between_segments(seg_start, seg_end, edge_a, edge_b);
+        let dist = (a - b).length();
+        if dist < min_distance {
+            min_distance = dist;
+            best_pair = (a, b);
+        }
+    }
+
+    best_pair
+}
+
+fn point_in_triangle(point: Vec3, a: Vec3, b: Vec3, c: Vec3) -> bool {
+    // Compute triangle edges
+    let edge_ab = b - a;
+    let edge_ac = c - a;
+    let edge_ap = point - a;
+
+    // Compute normal of the triangle
+    let triangle_normal = edge_ab.cross(edge_ac);
+
+    // Compute areas (via cross products) to get barycentric coordinates
+    let area_total = triangle_normal.length();
+
+    // If the triangle is degenerate, skip
+    if area_total < 1e-6 {
+        return false;
+    }
+
+    // Compute the area-weighted normals for each sub-triangle formed by 'point'
+    let area_pbc = (b - point).cross(c - point).length();
+    let area_pca = (c - point).cross(a - point).length();
+    let area_pab = (a - point).cross(b - point).length();
+
+    // Compute barycentric coordinates (normalized by total area)
+    let u = area_pbc / area_total;
+    let v = area_pca / area_total;
+    let w = area_pab / area_total;
+
+    // Check if the point is inside the triangle
+    // Allow for small floating-point errors with epsilon
+    let epsilon = 1e-4;
+    (u >= -epsilon) && (v >= -epsilon) && (w >= -epsilon) && ((u + v + w) <= 1.0 + epsilon)
 }
 
 //------ AABB-Hull collision ------//

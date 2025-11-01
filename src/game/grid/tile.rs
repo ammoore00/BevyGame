@@ -51,27 +51,27 @@ pub enum TileType {
 }
 
 impl TileType {
-    fn get_collision(&self) -> impl Fn(WorldCoords) -> Collider {
+    fn get_collision(&self, position: impl Into<WorldCoords>) -> Collider {
         match self {
             TileType::SlopeLower { facing, .. } => match facing {
-                TileFacing::PosX => get_tile_collider_hull_from_heightmap(0.5, 0.5, 0.0, 0.0),
-                TileFacing::NegX => get_tile_collider_hull_from_heightmap(0.0, 0.0, 0.5, 0.5),
-                TileFacing::PosZ => get_tile_collider_hull_from_heightmap(0.5, 0.0, 0.5, 0.0),
-                TileFacing::NegZ => get_tile_collider_hull_from_heightmap(0.0, 0.5, 0.0, 0.5),
+                TileFacing::PosX => Collider::heightmap(0.5, 0.5, 0.0, 0.0, position),
+                TileFacing::NegX => Collider::heightmap(0.0, 0.0, 0.5, 0.5, position),
+                TileFacing::PosZ => Collider::heightmap(0.5, 0.0, 0.5, 0.0, position),
+                TileFacing::NegZ => Collider::heightmap(0.0, 0.5, 0.0, 0.5, position),
             },
             TileType::SlopeUpper { facing, .. } => match facing {
-                TileFacing::PosX => get_tile_collider_hull_from_heightmap(1.0, 1.0, 0.5, 0.5),
-                TileFacing::NegX => get_tile_collider_hull_from_heightmap(0.5, 0.5, 1.0, 1.0),
-                TileFacing::PosZ => get_tile_collider_hull_from_heightmap(1.0, 0.5, 1.0, 0.5),
-                TileFacing::NegZ => get_tile_collider_hull_from_heightmap(0.5, 1.0, 0.5, 1.0),
+                TileFacing::PosX => Collider::heightmap(1.0, 1.0, 0.5, 0.5, position),
+                TileFacing::NegX => Collider::heightmap(0.5, 0.5, 1.0, 1.0, position),
+                TileFacing::PosZ => Collider::heightmap(1.0, 0.5, 1.0, 0.5, position),
+                TileFacing::NegZ => Collider::heightmap(0.5, 1.0, 0.5, 1.0, position),
             },
             TileType::Stairs(facing) => match facing {
-                TileFacing::PosX => get_tile_collider_hull_from_heightmap(1.0, 1.0, 0.0, 0.0),
-                TileFacing::NegX => get_tile_collider_hull_from_heightmap(0.0, 0.0, 1.0, 1.0),
-                TileFacing::PosZ => get_tile_collider_hull_from_heightmap(1.0, 0.0, 1.0, 0.0),
-                TileFacing::NegZ => get_tile_collider_hull_from_heightmap(0.0, 1.0, 0.0, 1.0),
+                TileFacing::PosX => Collider::heightmap(1.0, 1.0, 0.0, 0.0, position),
+                TileFacing::NegX => Collider::heightmap(0.0, 0.0, 1.0, 1.0, position),
+                TileFacing::PosZ => Collider::heightmap(1.0, 0.0, 1.0, 0.0, position),
+                TileFacing::NegZ => Collider::heightmap(0.0, 1.0, 0.0, 1.0, position),
             },
-            _ => Box::new(move |position| Collider::aabb(Vec3::ONE, position)),
+            _ => Collider::aabb(Vec3::ONE, position),
         }
     }
 
@@ -193,14 +193,13 @@ pub fn tile(
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
     let world_coords: Vec3 = tile_coords.clone().into().as_vec3();
-    let world_coords = world_coords.into();
 
     (
         Tile,
         TilePosition(tile_coords.clone().into()),
         Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
         // Physics
-        tile_type.get_collision()(world_coords),
+        tile_type.get_collision(world_coords),
         PhysicsData::Static,
         // Rendering
         Sprite::from_atlas_image(
