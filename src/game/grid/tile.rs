@@ -55,18 +55,106 @@ impl TileType {
         let position = position.into();
 
         match self {
-            //TileType::SlopeLower { facing, .. } => match facing {
-            //    TileFacing::PosX => Collider::heightmap(0.5, 0.5, 0.0, 0.0, position),
-            //    TileFacing::NegX => Collider::heightmap(0.0, 0.0, 0.5, 0.5, position),
-            //    TileFacing::PosZ => Collider::heightmap(0.5, 0.0, 0.5, 0.0, position),
-            //    TileFacing::NegZ => Collider::heightmap(0.0, 0.5, 0.0, 0.5, position),
-            //},
-            //TileType::SlopeUpper { facing, .. } => match facing {
-            //    TileFacing::PosX => Collider::heightmap(1.0, 1.0, 0.5, 0.5, position),
-            //    TileFacing::NegX => Collider::heightmap(0.5, 0.5, 1.0, 1.0, position),
-            //    TileFacing::PosZ => Collider::heightmap(1.0, 0.5, 1.0, 0.5, position),
-            //    TileFacing::NegZ => Collider::heightmap(0.5, 1.0, 0.5, 1.0, position),
-            //},
+            TileType::SlopeLower { facing, .. } => match facing {
+                TileFacing::PosX => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(1.0, 0.5, 0.0),
+                        Vec3::new(1.0, 0.5, 1.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+                TileFacing::NegX => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.5, 0.0),
+                        Vec3::new(0.0, 0.5, 1.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+                TileFacing::PosZ => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.5, 1.0),
+                        Vec3::new(1.0, 0.5, 1.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+                TileFacing::NegZ => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.5, 0.0),
+                        Vec3::new(1.0, 0.5, 0.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+            },
+            TileType::SlopeUpper { facing, .. } => match facing {
+                TileFacing::PosX => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.5, 0.0),
+                        Vec3::new(1.0, 1.0, 0.0),
+                        Vec3::new(1.0, 1.0, 1.0),
+                        Vec3::new(0.0, 0.5, 1.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+                TileFacing::NegX => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(0.0, 1.0, 0.0),
+                        Vec3::new(0.0, 1.0, 1.0),
+                        Vec3::new(1.0, 0.5, 1.0),
+                        Vec3::new(1.0, 0.5, 0.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+                TileFacing::PosZ => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.5, 0.0),
+                        Vec3::new(0.0, 1.0, 1.0),
+                        Vec3::new(1.0, 1.0, 1.0),
+                        Vec3::new(1.0, 0.5, 0.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+                TileFacing::NegZ => Collider::convex_hull(
+                    vec![
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::new(0.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 1.0),
+                        Vec3::new(1.0, 0.0, 0.0),
+                        Vec3::new(0.0, 1.0, 0.0),
+                        Vec3::new(1.0, 1.0, 0.0),
+                        Vec3::new(1.0, 0.5, 1.0),
+                        Vec3::new(0.0, 0.5, 1.0),
+                    ],
+                    *position - Vec3::splat(0.5),
+                ),
+            },
             TileType::Stairs(facing) => match facing {
                 TileFacing::PosX => Collider::convex_hull(
                     vec![
