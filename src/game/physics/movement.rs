@@ -70,6 +70,8 @@ fn set_intended_velocity(time: Res<Time>, query: Query<(&MovementController, &mu
 pub const GRAVITY: f32 = 1.0;
 pub const STEP_UP_HEIGHT: f32 = 0.3;
 
+pub const MAX_STABLE_SLOPE_ANGLE: f32 = 45.0_f32.to_radians();
+
 fn check_collisions(
     time: Res<Time>,
     query: Query<(Entity, &mut PhysicsData, &Collider, &WorldPosition)>,
@@ -88,13 +90,15 @@ fn check_collisions(
             let current_position = position.as_vec3();
             let mut detected_ground_collision = false;
 
+            let mut ground_normal = Vec3::ZERO;
+
             for (other_entity, other_collider) in collider_query {
                 if entity == other_entity {
                     continue;
                 }
 
                 if let Some(collision) = Collider::check_collision(collider, other_collider) {
-                    handle_collision_response(
+                    let new_ground_normal = handle_collision_response(
                         collision,
                         displacement,
                         &mut detected_ground_collision,
@@ -105,10 +109,16 @@ fn check_collisions(
                         &collider_query,
                         time.delta_secs(),
                     );
+
+                    if let Some(new_ground_normal) = new_ground_normal && new_ground_normal.y > ground_normal.y {
+                        ground_normal = new_ground_normal;
+                    }
                 }
             }
 
             update_ground_state(
+                ground_normal,
+                displacement,
                 grounded,
                 time_since_grounded,
                 last_grounded_height,
@@ -136,19 +146,21 @@ fn handle_collision_response(
     entity: Entity,
     query2: &Query<(Entity, &Collider)>,
     delta_time: f32,
-) {
+) -> Option<Vec3> {
     let normal = collision.normal();
     let velocity_along_normal = displacement.dot(normal);
-
     let is_horizontal = normal.y.abs() < 0.7;
 
-    // Mark as grounded if colliding from below
-    if normal.y > 0.7 {
+    // Detect ground contact
+    let grounded_normal = if normal.y > 0.7 {
         *detected_ground_collision = true;
-    }
+        Some(normal)
+    } else {
+        None
+    };
 
     if is_horizontal && velocity_along_normal < 0.0 && grounded {
-        // Handle step-up logic for grounded horizontal collisions
+        // Try stepping up first
         if !try_step_up(
             collider,
             current_position,
@@ -157,13 +169,13 @@ fn handle_collision_response(
             displacement,
             delta_time,
         ) {
-            // Could not step up; cancel velocity into obstacle
             *displacement -= normal * velocity_along_normal;
         }
     } else if velocity_along_normal < 0.0 {
-        // Standard vertical or sloped collision resolution
         *displacement -= normal * velocity_along_normal;
-    }
+    };
+
+    grounded_normal
 }
 
 /// Attempts to "step up" a small ledge if possible.
@@ -198,6 +210,8 @@ fn try_step_up(
 
 /// Updates grounded state and timer based on whether the entity was grounded this frame.
 fn update_ground_state(
+    ground_normal: Vec3,
+    displacement: &mut Vec3,
     grounded: &mut bool,
     time_since_grounded: &mut f32,
     last_grounded_height: &mut f32,
@@ -210,10 +224,45 @@ fn update_ground_state(
     if *grounded {
         *time_since_grounded = 0.0;
         *last_grounded_height = current_height;
+        stabilize_on_slope(displacement, ground_normal, delta_time);
     } else {
         *time_since_grounded += delta_time;
     }
 }
+
+/// Stops sliding by removing only the gravity-produced tangential displacement
+/// along the slope for this frame. Leaves player input intact.
+fn stabilize_on_slope(displacement: &mut Vec3, ground_normal: Vec3, delta_time: f32) {
+    if ground_normal == Vec3::ZERO {
+        return;
+    }
+
+    // Skip too-steep slopes.
+    let slope_angle = ground_normal.angle_between(Vec3::Y);
+    if slope_angle > MAX_STABLE_SLOPE_ANGLE {
+        return;
+    }
+
+    // 1) Compute how much gravity moved us this frame (world displacement caused by gravity).
+    //    This must match how you apply gravity in apply_gravity (i.e. GRAVITY * delta_time).
+    let gravity_frame = Vec3::new(0.0, -GRAVITY, 0.0) * delta_time;
+
+    // 2) Split that gravity displacement into normal and tangential parts relative to the ground.
+    let gravity_normal_comp = ground_normal * gravity_frame.dot(ground_normal);
+    let gravity_tangential = gravity_frame - gravity_normal_comp; // this is the downslope vector gravity would cause
+
+    // 3) Subtract THAT tangential gravity contribution from the final displacement.
+    //    This removes the passive sliding caused by gravity this frame while preserving
+    //    any non-gravity movement (player input, step push).
+    *displacement -= gravity_tangential;
+
+    // 4) Safety: remove penetration into the surface if any remains.
+    let into_surface = displacement.dot(ground_normal);
+    if into_surface < 0.0 {
+        *displacement -= ground_normal * into_surface;
+    }
+}
+
 
 fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
     for (physics, mut position) in query {
@@ -223,6 +272,5 @@ fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
             continue;
         };
         position.set(new_position);
-        println!("{:?}", new_position);
     }
 }
