@@ -19,6 +19,7 @@ pub enum PhysicsData {
         grounded: bool,
         // Used for coyote time
         time_since_grounded: f32,
+        last_grounded_height: f32,
     },
 }
 
@@ -28,6 +29,7 @@ impl PhysicsData {
             displacement,
             grounded: false,
             time_since_grounded: f32::INFINITY,
+            last_grounded_height: f32::NAN,
         }
     }
 }

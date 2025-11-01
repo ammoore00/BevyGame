@@ -77,6 +77,7 @@ pub fn player(
 }
 
 const COYOTE_TIME: f32 = 0.2;
+const COYOTE_TIME_HEIGHT_THRESHOLD: f32 = 0.1;
 const JUMP_VELOCITY: f32 = 4.0;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
@@ -87,10 +88,10 @@ fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
-    mut controller_query: Query<(&mut MovementController, &PhysicsData), With<Player>>,
+    mut controller_query: Query<(&mut MovementController, &PhysicsData, &WorldPosition), With<Player>>,
 ) {
     let mut intent = Vec3::ZERO;
-    let mut jump = false;
+    let mut is_jumping = false;
 
     // Add gamepad input if available
     if let Some(gamepad_res) = gamepad_res
@@ -108,7 +109,7 @@ fn record_player_directional_input(
         }
 
         if gamepad.just_pressed(GamepadButton::South) {
-            jump = true;
+            is_jumping = true;
         }
     }
 
@@ -128,7 +129,7 @@ fn record_player_directional_input(
         }
 
         if input.just_pressed(KeyCode::Space) {
-            jump = true;
+            is_jumping = true;
         }
 
         // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
@@ -137,9 +138,13 @@ fn record_player_directional_input(
     }
 
     // Apply movement intent to controllers.
-    for (mut controller, physics) in &mut controller_query {
+    for (mut controller, physics, position) in &mut controller_query {
         controller.intent = intent;
-        if let PhysicsData::Kinematic { time_since_grounded, .. } = *physics && time_since_grounded < COYOTE_TIME && jump {
+        if let PhysicsData::Kinematic { time_since_grounded, last_grounded_height, .. } = *physics
+            && time_since_grounded < COYOTE_TIME
+            && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
+            && is_jumping
+        {
             controller.intent.y += JUMP_VELOCITY;
         }
     }

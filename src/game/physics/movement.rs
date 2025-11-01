@@ -82,6 +82,7 @@ fn check_collisions(
                 ref mut displacement,
                 ref mut grounded,
                 ref mut time_since_grounded,
+                ref mut last_grounded_height,
             } = *physics
             {
                 // Apply gravity
@@ -158,6 +159,7 @@ fn check_collisions(
 
                 if *grounded {
                     *time_since_grounded = 0.0;
+                    *last_grounded_height = current_position.y;
                 } else {
                     *time_since_grounded += time.delta_secs();
                 }
