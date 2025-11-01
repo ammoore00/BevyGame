@@ -15,11 +15,11 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 #[derive(Component)]
-pub struct Grid(pub Arc<RwLock<BTreeMap<TileCoords, Entity>>>);
+pub struct Grid;
 
-pub fn grid(tile_map: Arc<RwLock<BTreeMap<TileCoords, Entity>>>, scale: f32) -> impl Bundle {
+pub fn grid(_tile_map: Arc<RwLock<BTreeMap<TileCoords, Entity>>>, scale: f32) -> impl Bundle {
     (
-        Grid(tile_map.clone()),
+        Grid,
         Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
         InheritedVisibility::default(),
     )

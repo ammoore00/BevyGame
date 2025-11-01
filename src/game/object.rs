@@ -1,7 +1,7 @@
 use crate::asset_tracking::LoadResource;
 use crate::game::grid::coords::WorldPosition;
-use bevy::prelude::*;
 use crate::game::physics::components::{Collider, PhysicsData};
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<ObjectAssets>();
@@ -49,7 +49,7 @@ pub fn object(
         WorldPosition(position.into()),
         Transform::from_scale(Vec3::splat(scale)),
         // Physics
-        //Collider::vertical_capsule(collider_radius, collider_height, position),
+        Collider::vertical_capsule(collider_height, collider_radius, position),
         PhysicsData::Static,
         // Rendering
         Sprite::from(assets.boulder.clone()),

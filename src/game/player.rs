@@ -88,7 +88,10 @@ fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
-    mut controller_query: Query<(&mut MovementController, &PhysicsData, &WorldPosition), With<Player>>,
+    mut controller_query: Query<
+        (&mut MovementController, &PhysicsData, &WorldPosition),
+        With<Player>,
+    >,
 ) {
     let mut intent = Vec3::ZERO;
     let mut is_jumping = false;
@@ -140,7 +143,11 @@ fn record_player_directional_input(
     // Apply movement intent to controllers.
     for (mut controller, physics, position) in &mut controller_query {
         controller.intent = intent;
-        if let PhysicsData::Kinematic { time_since_grounded, last_grounded_height, .. } = *physics
+        if let PhysicsData::Kinematic {
+            time_since_grounded,
+            last_grounded_height,
+            ..
+        } = *physics
             && time_since_grounded < COYOTE_TIME
             && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
             && is_jumping

@@ -4,8 +4,5 @@ pub mod components;
 pub mod movement;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((
-        components::plugin,
-        movement::plugin,
-    ));
+    app.add_plugins((components::plugin, movement::plugin));
 }

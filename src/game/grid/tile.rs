@@ -1,7 +1,5 @@
 use crate::ReflectResource;
-use crate::game::grid::coords::{
-    ScreenCoords, TileCoords, TilePosition, WorldCoords, WorldPosition,
-};
+use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::image::{Image, TextureAtlas, TextureAtlasLayout};

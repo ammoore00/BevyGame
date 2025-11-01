@@ -16,7 +16,7 @@
 use bevy::prelude::*;
 
 use crate::game::grid::coords::WorldPosition;
-use crate::game::physics::components::{Collider, ColliderType, CollisionEvent, PhysicsData};
+use crate::game::physics::components::{Collider, CollisionEvent, PhysicsData};
 use crate::{AppSystems, PausableSystems};
 
 pub(super) fn plugin(app: &mut App) {
@@ -110,7 +110,9 @@ fn check_collisions(
                         time.delta_secs(),
                     );
 
-                    if let Some(new_ground_normal) = new_ground_normal && new_ground_normal.y > ground_normal.y {
+                    if let Some(new_ground_normal) = new_ground_normal
+                        && new_ground_normal.y > ground_normal.y
+                    {
                         ground_normal = new_ground_normal;
                     }
                 }
@@ -262,7 +264,6 @@ fn stabilize_on_slope(displacement: &mut Vec3, ground_normal: Vec3, delta_time: 
         *displacement -= ground_normal * into_surface;
     }
 }
-
 
 fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
     for (physics, mut position) in query {

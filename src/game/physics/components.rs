@@ -4,7 +4,7 @@ use parry3d::math::Isometry;
 use parry3d::na::{Const, OPoint, Vector3};
 use parry3d::query;
 use parry3d::query::Contact;
-use parry3d::shape::{Ball, Capsule, ConvexPolyhedron, Cuboid, Shape};
+use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
 
 pub(super) fn plugin(app: &mut App) {
@@ -36,7 +36,6 @@ impl PhysicsData {
 
 #[derive(Debug, Clone)]
 pub enum ColliderType {
-    Sphere(Ball),
     Cuboid(Cuboid),
     Capsule(Capsule),
     ConvexHull(ConvexPolyhedron),
@@ -45,7 +44,6 @@ pub enum ColliderType {
 impl ColliderType {
     fn get_shape(&self) -> &dyn Shape {
         match &self {
-            ColliderType::Sphere(sphere) => sphere,
             ColliderType::Cuboid(cuboid) => cuboid,
             ColliderType::Capsule(capsule) => capsule,
             ColliderType::ConvexHull(convex_hull) => convex_hull,
@@ -66,15 +64,6 @@ pub struct Collider {
 }
 
 impl Collider {
-    pub fn sphere(radius: f32, position: impl Into<WorldCoords>) -> Self {
-        let position = position.into();
-
-        Self {
-            collider_type: ColliderType::Sphere(Ball::new(radius)),
-            position: Isometry::translation(position.x, position.y, position.z),
-        }
-    }
-
     pub fn cuboid(size: Vec3, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
         let size: Vector3<f32> = Vector3::new(size.x, size.y, size.z);
@@ -158,7 +147,7 @@ impl Collider {
 pub struct CollisionEvent(Contact);
 
 impl CollisionEvent {
-    pub fn contact_points(&self) -> (Vec3, Vec3) {
+    pub fn _contact_points(&self) -> (Vec3, Vec3) {
         let contact = &self.0;
 
         let p1 = contact.point1.coords;
@@ -170,7 +159,7 @@ impl CollisionEvent {
         (p1, p2)
     }
 
-    pub fn depth(&self) -> f32 {
+    pub fn _depth(&self) -> f32 {
         -self.0.dist
     }
 
