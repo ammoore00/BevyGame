@@ -4,7 +4,8 @@ use parry3d::math::Isometry;
 use parry3d::na::{Const, OPoint, Vector3};
 use parry3d::query;
 use parry3d::query::Contact;
-use parry3d::shape::{Ball, Capsule, Cuboid, Shape};
+use parry3d::shape::{Ball, Capsule, ConvexPolyhedron, Cuboid, Shape};
+use parry3d::transformation::convex_hull;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);
@@ -36,6 +37,7 @@ pub enum ColliderType {
     Sphere(Ball),
     Cuboid(Cuboid),
     Capsule(Capsule),
+    ConvexHull(ConvexPolyhedron),
 }
 
 impl ColliderType {
@@ -44,6 +46,7 @@ impl ColliderType {
             ColliderType::Sphere(sphere) => sphere,
             ColliderType::Cuboid(cuboid) => cuboid,
             ColliderType::Capsule(capsule) => capsule,
+            ColliderType::ConvexHull(convex_hull) => convex_hull,
         }
     }
 }
@@ -102,6 +105,25 @@ impl Collider {
         let position = position.into();
 
         Self::capsule(start, end, radius, position)
+    }
+
+    pub fn convex_hull(vertices: Vec<Vec3>, position: impl Into<WorldCoords>) -> Self {
+        let position = position.into();
+
+        let vertices = vertices
+            .iter()
+            .map(|v| OPoint::<f32, Const<3>>::new(v.x, v.y, v.z))
+            .collect::<Vec<_>>();
+
+        let convex_hull = convex_hull(vertices.as_slice());
+        let convex_polyhedron = ConvexPolyhedron::from_convex_hull(convex_hull.0.as_slice());
+
+        Self {
+            collider_type: ColliderType::ConvexHull(
+                convex_polyhedron.expect("Failed to create convex hull"),
+            ),
+            position: Isometry::translation(position.x, position.y, position.z),
+        }
     }
 
     pub fn with_collider(collider_type: ColliderType, position: impl Into<WorldCoords>) -> Self {
