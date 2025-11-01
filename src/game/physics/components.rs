@@ -1,5 +1,5 @@
+use crate::PausableSystems;
 use crate::game::grid::coords::{WorldCoords, WorldPosition};
-use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
@@ -42,8 +42,130 @@ pub struct Capsule {
     pub(super) end: Vec3,
     pub(super) radius: f32,
 }
+
 #[derive(Debug, Clone, Reflect)]
-pub struct Hull(pub(super) Vec<Vec3>);
+pub struct Hull {
+    vertices: Vec<Vec3>,
+    faces: Vec<Face>,
+}
+
+#[derive(Debug, Clone, Reflect)]
+struct Face {
+    vertices: [usize; 3],
+    normal: Vec3,
+}
+
+impl Hull {
+    pub fn new(vertices: [Vec3; 8]) -> Self {
+        Self {
+            vertices: Vec::from(vertices),
+            faces: Self::get_faces(vertices),
+        }
+    }
+
+    fn get_faces(vertices: [Vec3; 8]) -> Vec<Face> {
+        let pos_y = [4, 5, 6, 7];
+        let neg_y = [0, 1, 2, 3];
+
+        let pos_x = [1, 2, 6, 7];
+        let neg_x = [0, 4, 5, 3];
+
+        let pos_z = [2, 3, 5, 6];
+        let neg_z = [0, 1, 7, 4];
+
+        [pos_y, neg_y, pos_x, neg_x, pos_z, neg_z]
+            .iter()
+            .flat_map(|quad| Self::split_face(vertices, *quad))
+            .collect()
+    }
+
+    /// Splits each quad into two triangles
+    /// If there are any degeneracies, it may return fewer than two faces
+    /// - One face will be returned if a single pair of points overlap
+    /// - No faces will be returned if all points are collinear
+    fn split_face(vertices: [Vec3; 8], quad: [usize; 4]) -> Vec<Face> {
+        let indices = Vec::from(quad);
+
+        // TODO: proper deduplication - right now the indexes will be different even if the points are the same
+        let mut deduped_indices = Vec::new();
+        let mut deduped_points = Vec::new();
+
+        for point in indices {
+            if !deduped_points.contains(&vertices[point]) {
+                deduped_indices.push(point);
+                deduped_points.push(vertices[point]);
+            }
+        }
+
+        match deduped_points.len() {
+            // All four points are unique
+            4 => {
+                let face_center =
+                    (deduped_points[0] + deduped_points[1] + deduped_points[2] + deduped_points[3])
+                        / 4.0;
+
+                let test_normal =
+                    compute_normal(&deduped_points[0], &deduped_points[1], &deduped_points[3]);
+
+                // Ensure that the faces are all convex when splitting non-planar faces
+                if test_normal.dot(face_center) <= 0.0 {
+                    vec![
+                        Face {
+                            vertices: [0, 1, 3],
+                            normal: compute_normal(
+                                &deduped_points[0],
+                                &deduped_points[1],
+                                &deduped_points[3],
+                            ),
+                        },
+                        Face {
+                            vertices: [0, 3, 2],
+                            normal: compute_normal(
+                                &deduped_points[0],
+                                &deduped_points[3],
+                                &deduped_points[2],
+                            ),
+                        },
+                    ]
+                } else {
+                    vec![
+                        Face {
+                            vertices: [0, 1, 3],
+                            normal: compute_normal(
+                                &deduped_points[0],
+                                &deduped_points[2],
+                                &deduped_points[3],
+                            ),
+                        },
+                        Face {
+                            vertices: [0, 3, 2],
+                            normal: compute_normal(
+                                &deduped_points[0],
+                                &deduped_points[3],
+                                &deduped_points[1],
+                            ),
+                        },
+                    ]
+                }
+            }
+            // A single pair of points overlap, so just return one triangle
+            3 => {
+                let normal =
+                    compute_normal(&deduped_points[0], &deduped_points[1], &deduped_points[2]);
+                vec![Face {
+                    vertices: [deduped_indices[0], deduped_indices[1], deduped_indices[2]],
+                    normal,
+                }]
+            }
+            // Less than 2 unique points, so return nothing
+            _ => Vec::new(),
+        }
+    }
+}
+
+fn compute_normal(v0: &Vec3, v1: &Vec3, v2: &Vec3) -> Vec3 {
+    (*v1 - *v0).cross(*v2 - *v0).normalize()
+}
 
 #[derive(Debug, Clone)]
 pub struct Collision {
@@ -107,11 +229,14 @@ impl Collider {
         }
     }
 
-    pub fn hull(mut points: Vec<Vec3>, position: impl Into<WorldCoords>) -> Self {
+    /// Provide points in counterclockwise order
+    /// Lower points first, then upper
+    ///
+    /// Counterclockwise defined as looking at that face
+    pub fn hull(vertices: [Vec3; 8], position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
-        points.dedup();
         Self {
-            collider_type: ColliderType::Hull(Hull(points)),
+            collider_type: ColliderType::Hull(Hull::new(vertices)),
             position,
         }
     }
@@ -151,10 +276,7 @@ impl Collider {
             }
 
             // Only tiles use hull collision, and they will never be the source of a collision
-            (C::Hull(_), C::Capsule(_)) => None,
-            (C::Hull(_), C::Aabb(_)) => None,
-            // Only tiles use hull collision, and there is no need to check for collisions between them
-            (C::Hull(_), C::Hull(_)) => None,
+            (C::Hull(_), _) => unreachable!("Attempted collision check with hull as source"),
         }
     }
 
@@ -181,7 +303,14 @@ impl Collider {
                 (capsule.start - capsule.end).length() / 2.0 + capsule.radius
             }
             ColliderType::Hull(hull) => {
-                let points = &hull.0;
+                let mut points: Vec<Vec3> = Vec::new();
+
+                for face in &hull.faces {
+                    points.extend(face.vertices.iter().map(|&i| hull.vertices[i]));
+                }
+
+                points.dedup();
+
                 let mut largest_radius = 0.0;
                 for point in points {
                     let distance = point.length();
@@ -471,17 +600,15 @@ fn closest_point_capsule_aabb(
     box_max: Vec3,
 ) -> Vec3 {
     let segment_dir = capsule_end - capsule_start;
-    let segment_len_sq = segment_dir.length_squared();
+    let segment_len = segment_dir.length();
 
     // Handle degenerate capsule (start == end) — it's just a sphere
-    if segment_len_sq == 0.0 {
+    if segment_len == 0.0 {
         return closest_point_on_aabb(capsule_start, box_min, box_max);
     }
 
-    // Parameter along the capsule’s central segment [0..1]
-    let mut best_t = 0.0_f32;
-    let mut best_point = capsule_start;
-    let mut best_dist_sq = f32::INFINITY;
+    let mut nearest_point = capsule_start;
+    let mut smallest_distance = f32::INFINITY;
 
     // Check along each axis to find which projection gives the closest approach
     for axis in 0..3 {
@@ -494,38 +621,30 @@ fn closest_point_capsule_aabb(
         }
 
         // Find where the segment would enter or exit the AABB slab on this axis
-        let mut candidate_t = 0.0;
-
-        if start < box_min[axis] {
-            candidate_t = (box_min[axis] - start) / dir;
+        let candidate_t = if start < box_min[axis] {
+            (box_min[axis] - start) / dir
         } else if start > box_max[axis] {
-            candidate_t = (box_max[axis] - start) / dir;
+            (box_max[axis] - start) / dir
         } else {
             // Segment starts within the AABB’s extent on this axis — no clamping needed
             continue;
-        }
-
-        // Clamp t to [0, 1]
-        candidate_t = candidate_t.clamp(0.0, 1.0);
+        };
 
         // Get the corresponding point on the capsule’s segment
-        let segment_point = capsule_start + segment_dir * candidate_t;
+        let segment_point = capsule_start + segment_dir * candidate_t.clamp(0.0, 1.0);
 
         // Get the closest point on the AABB to that segment point
         let box_point = closest_point_on_aabb(segment_point, box_min, box_max);
 
-        // Measure squared distance
-        let dist_sq = (segment_point - box_point).length_squared();
-
         // Keep whichever t gives the smallest distance
-        if dist_sq < best_dist_sq {
-            best_dist_sq = dist_sq;
-            best_t = candidate_t;
-            best_point = segment_point;
+        let distance = (segment_point - box_point).length();
+        if distance < smallest_distance {
+            smallest_distance = distance;
+            nearest_point = segment_point;
         }
     }
 
-    best_point
+    nearest_point
 }
 
 //------ AABB-Hull collision ------//

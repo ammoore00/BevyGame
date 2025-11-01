@@ -129,9 +129,8 @@ fn check_collisions(
                                     ColliderType::Capsule(capsule) => {
                                         Collider::capsule(capsule.start, capsule.end, capsule.radius, test_position)
                                     }
-                                    ColliderType::Hull(hull) => {
-                                        Collider::hull(hull.0.clone(), test_position)
-                                    }
+                                    // Only tiles have hull colliders
+                                    _ => unreachable!(),
                                 };
 
                                 // Check if there's still a collision at this height

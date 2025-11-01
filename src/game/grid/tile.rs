@@ -1,10 +1,12 @@
 use crate::ReflectResource;
-use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords, WorldPosition};
+use crate::game::grid::coords::{
+    ScreenCoords, TileCoords, TilePosition, WorldCoords, WorldPosition,
+};
+use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::image::{Image, TextureAtlas, TextureAtlasLayout};
 use bevy::math::{UVec2, Vec3};
 use bevy::prelude::{Bundle, Component, FromWorld, Reflect, Resource, Sprite, Transform, World};
-use crate::game::physics::components::{Collider, PhysicsData};
 
 pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;
@@ -52,22 +54,22 @@ impl TileType {
     fn get_collision(&self) -> impl Fn(WorldCoords) -> Collider {
         match self {
             TileType::SlopeLower { facing, .. } => match facing {
-                TileFacing::PosX => get_tile_collider_hull(0.5, 0.5, 0.0, 0.0),
-                TileFacing::NegX => get_tile_collider_hull(0.0, 0.0, 0.5, 0.5),
-                TileFacing::PosZ => get_tile_collider_hull(0.5, 0.0, 0.5, 0.0),
-                TileFacing::NegZ => get_tile_collider_hull(0.0, 0.5, 0.0, 0.5),
+                TileFacing::PosX => get_tile_collider_hull_from_heightmap(0.5, 0.5, 0.0, 0.0),
+                TileFacing::NegX => get_tile_collider_hull_from_heightmap(0.0, 0.0, 0.5, 0.5),
+                TileFacing::PosZ => get_tile_collider_hull_from_heightmap(0.5, 0.0, 0.5, 0.0),
+                TileFacing::NegZ => get_tile_collider_hull_from_heightmap(0.0, 0.5, 0.0, 0.5),
             },
             TileType::SlopeUpper { facing, .. } => match facing {
-                TileFacing::PosX => get_tile_collider_hull(1.0, 1.0, 0.5, 0.5),
-                TileFacing::NegX => get_tile_collider_hull(0.5, 0.5, 1.0, 1.0),
-                TileFacing::PosZ => get_tile_collider_hull(1.0, 0.5, 1.0, 0.5),
-                TileFacing::NegZ => get_tile_collider_hull(0.5, 1.0, 0.5, 1.0),
+                TileFacing::PosX => get_tile_collider_hull_from_heightmap(1.0, 1.0, 0.5, 0.5),
+                TileFacing::NegX => get_tile_collider_hull_from_heightmap(0.5, 0.5, 1.0, 1.0),
+                TileFacing::PosZ => get_tile_collider_hull_from_heightmap(1.0, 0.5, 1.0, 0.5),
+                TileFacing::NegZ => get_tile_collider_hull_from_heightmap(0.5, 1.0, 0.5, 1.0),
             },
             TileType::Stairs(facing) => match facing {
-                TileFacing::PosX => get_tile_collider_hull(1.0, 1.0, 0.0, 0.0),
-                TileFacing::NegX => get_tile_collider_hull(0.0, 0.0, 1.0, 1.0),
-                TileFacing::PosZ => get_tile_collider_hull(1.0, 0.0, 1.0, 0.0),
-                TileFacing::NegZ => get_tile_collider_hull(0.0, 1.0, 0.0, 1.0),
+                TileFacing::PosX => get_tile_collider_hull_from_heightmap(1.0, 1.0, 0.0, 0.0),
+                TileFacing::NegX => get_tile_collider_hull_from_heightmap(0.0, 0.0, 1.0, 1.0),
+                TileFacing::PosZ => get_tile_collider_hull_from_heightmap(1.0, 0.0, 1.0, 0.0),
+                TileFacing::NegZ => get_tile_collider_hull_from_heightmap(0.0, 1.0, 0.0, 1.0),
             },
             _ => Box::new(move |position| Collider::aabb(Vec3::ONE, position)),
         }
@@ -148,21 +150,34 @@ impl TileType {
     }
 }
 
-fn get_tile_collider_hull(pp: f32, pn: f32, np: f32, nn: f32) -> Box<dyn Fn(WorldCoords) -> Collider> {
+fn get_tile_collider_hull_from_heightmap(
+    pp: f32,
+    pn: f32,
+    np: f32,
+    nn: f32,
+) -> Box<dyn Fn(WorldCoords) -> Collider> {
     Box::new(move |position| {
-        Collider::hull(vec![
-            Vec3::new(-0.5, -0.5, -0.5),
-            Vec3::new(-0.5, nn - 0.5, -0.5),
-
-            Vec3::new(-0.5, -0.5, 0.5),
-            Vec3::new(-0.5, np - 0.5, 0.5),
-
-            Vec3::new(0.5, -0.5, -0.5),
-            Vec3::new(0.5, pn - 0.5, -0.5),
-
-            Vec3::new(0.5, -0.5, 0.5),
-            Vec3::new(0.5, pp - 0.5, 0.5),
-        ], position)
+        Collider::hull(
+            [
+                // 000
+                Vec3::new(-0.5, -0.5, -0.5),
+                // 100
+                Vec3::new(0.5, -0.5, -0.5),
+                // 101
+                Vec3::new(0.5, -0.5, 0.5),
+                // 001
+                Vec3::new(-0.5, -0.5, 0.5),
+                // 010
+                Vec3::new(-0.5, nn - 0.5, -0.5),
+                // 011
+                Vec3::new(-0.5, np - 0.5, 0.5),
+                // 111
+                Vec3::new(0.5, pp - 0.5, 0.5),
+                // 110
+                Vec3::new(0.5, pn - 0.5, -0.5),
+            ],
+            position,
+        )
     })
 }
 
