@@ -77,11 +77,6 @@ pub fn spawn_level(
                     0.5,
                     0.5,
                 ),
-                sariel(
-                    &character_assets,
-                    Vec3::new(8.0, 1.0, 2.0),
-                    scale.0,
-                )
             ],
         ))
         .id();
