@@ -10,6 +10,9 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct Object(ObjectType);
 
+#[derive(Component, Debug, Clone, Reflect)]
+pub struct Shadow;
+
 #[derive(Debug, Clone, Copy, Reflect)]
 pub enum ObjectType {
     Rock,
@@ -55,6 +58,7 @@ pub fn object(
         Sprite::from(assets.boulder.clone()),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
+                Shadow,
                 Sprite {
                     image: shadow,
                     color: Color::srgba(1.0, 1.0, 1.0, 0.75),

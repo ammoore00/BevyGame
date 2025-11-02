@@ -1,14 +1,16 @@
 use crate::ReflectResource;
+use crate::asset_tracking::LoadResource;
 use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::image::{Image, TextureAtlas, TextureAtlasLayout};
 use bevy::math::{UVec2, Vec3};
-use bevy::prelude::{
-    Bundle, ChildSpawner, Children, Component, FromWorld, Reflect, Resource, SpawnRelated,
-    SpawnWith, Sprite, Transform, World,
-};
+use bevy::prelude::*;
 use std::ops::{Add, AddAssign};
+
+pub fn plugin(app: &mut App) {
+    app.load_resource::<TileAssets>();
+}
 
 pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;
@@ -72,15 +74,6 @@ pub struct TileEdges {
 }
 
 impl TileEdges {
-    pub fn new(pos_x: bool, neg_x: bool, pos_z: bool, neg_z: bool) -> Self {
-        Self {
-            pos_x,
-            neg_x,
-            pos_z,
-            neg_z,
-        }
-    }
-
     pub fn pos_x() -> Self {
         Self {
             pos_x: true,
@@ -113,15 +106,6 @@ impl TileEdges {
             pos_x: false,
             neg_x: false,
             pos_z: false,
-            neg_z: true,
-        }
-    }
-
-    pub fn all() -> Self {
-        Self {
-            pos_x: true,
-            neg_x: true,
-            pos_z: true,
             neg_z: true,
         }
     }
@@ -342,7 +326,9 @@ impl TileType {
                     *position - Vec3::splat(0.5),
                 ),
             },
-            TileType::Bridge { .. } => Collider::cuboid(Vec3::new(0.5, 0.25, 0.5), *position + Vec3::Y * 0.25),
+            TileType::Bridge { .. } => {
+                Collider::cuboid(Vec3::new(0.5, 0.25, 0.5), *position + Vec3::Y * 0.25)
+            }
             _ => Collider::cuboid(Vec3::splat(0.5), position),
         }
     }

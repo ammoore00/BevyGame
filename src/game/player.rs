@@ -3,6 +3,7 @@
 use bevy::prelude::*;
 
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
+use crate::game::object::Shadow;
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
@@ -65,6 +66,7 @@ pub fn player(
         player_animation,
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
+                Shadow,
                 Sprite {
                     image: shadow,
                     color: Color::srgba(1.0, 1.0, 1.0, 0.75),
@@ -78,11 +80,11 @@ pub fn player(
 
 const COYOTE_TIME: f32 = 0.2;
 const COYOTE_TIME_HEIGHT_THRESHOLD: f32 = 0.1;
-const JUMP_VELOCITY: f32 = 4.0;
+const JUMP_VELOCITY: f32 = 2.75;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
 #[reflect(Component)]
-struct Player;
+pub struct Player;
 
 fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
@@ -152,7 +154,7 @@ fn record_player_directional_input(
             && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
             && is_jumping
         {
-            controller.intent.y += JUMP_VELOCITY;
+            controller.intent.y = JUMP_VELOCITY;
         }
     }
 }

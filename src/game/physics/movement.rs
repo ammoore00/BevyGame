@@ -67,7 +67,7 @@ fn set_intended_velocity(time: Res<Time>, query: Query<(&MovementController, &mu
     }
 }
 
-pub const GRAVITY: f32 = 1.0;
+pub const GRAVITY: f32 = 0.5;
 pub const STEP_UP_HEIGHT: f32 = 0.3;
 
 pub const MAX_STABLE_SLOPE_ANGLE: f32 = 45.0_f32.to_radians();
