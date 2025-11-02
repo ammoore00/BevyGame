@@ -246,7 +246,7 @@ fn create_level(
                         TileCoords(IVec3::new(x as i32, y as i32, z as i32)),
                     ));
                 } else if !col.replace("_", "").is_empty() && !col.replace(" ", "").is_empty() {
-                    println!("Invalid tile settings: {}", col);
+                    println!("Invalid tile settings: {col}");
                     println!("Err: {}", result.err().unwrap());
                 }
             }

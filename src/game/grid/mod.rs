@@ -13,7 +13,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins((coords::plugin, tile::plugin));
 
     app.add_systems(
-        Update,
+        PreUpdate,
         (
             (hide_tiles_above, hide_objects_above),
             correct_shadow_opacity,
