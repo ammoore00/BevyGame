@@ -46,16 +46,15 @@ pub fn player(
         Name::new("Player"),
         Player,
         WorldPosition(position.into()),
-        Transform::from_scale(Vec3::splat(scale)),
         // Physics
         MovementController {
             max_speed,
             ..default()
         },
         Collider::vertical_capsule(0.75, 0.25, position),
-        //Collider::aabb(Vec3::splat(0.5), position),
         PhysicsData::kinematic(Vec3::ZERO),
         // Rendering
+        Transform::from_scale(Vec3::splat(scale)),
         Sprite::from_atlas_image(
             player_assets.ducky.clone(),
             TextureAtlas {

@@ -17,6 +17,7 @@ use crate::{
     game::player::{PlayerAssets, player},
     screens::Screen,
 };
+use crate::game::character::{sariel, CharacterAssets};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -46,6 +47,7 @@ pub fn spawn_level(
     player_assets: Res<PlayerAssets>,
     tile_assets: Res<TileAssets>,
     object_assets: Res<ObjectAssets>,
+    character_assets: Res<CharacterAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let level = commands
@@ -70,11 +72,16 @@ pub fn spawn_level(
                 object(
                     ObjectType::Rock,
                     &object_assets,
-                    Vec3::new(8.0, 6.0, 7.0),
+                    Vec3::new(7.0, 5.0, 6.0),
                     scale.0,
                     0.5,
                     0.5,
                 ),
+                sariel(
+                    &character_assets,
+                    Vec3::new(8.0, 1.0, 2.0),
+                    scale.0,
+                )
             ],
         ))
         .id();
