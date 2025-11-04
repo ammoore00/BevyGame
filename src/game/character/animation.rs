@@ -27,28 +27,31 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
 fn update_animation_state(query: Query<(&mut CharacterAnimation, &MovementController)>) {
     for (mut animation, controller) in query {
         //let direction = rotate_movement_to_screen_space(controller.intent);
-        let direction = controller.intent;
+        let ground_movement = controller.intent * Vec3::new(1.0, 0.0, 1.0);
 
         // Calculate angle in radians (-PI to PI)
         // Note: atan2(z, x) where x is "forward" and z is "right"
-        let angle = direction.x.atan2(direction.z);
+        let angle = ground_movement.x.atan2(ground_movement.z);
 
         // Convert to 0-8 range, where each direction occupies 45 degrees (PI/4 radians)
         // Add PI to shift range from [-PI, PI] to [0, 2*PI]
         // Add PI/8 to center the divisions on the cardinal directions
+        // Add 3PI/2 to rotate divisions to align with sprite sheets
         // Divide by PI/4 (45 degrees) to get 0-8 range
         let direction_index = ((angle + std::f32::consts::PI + std::f32::consts::FRAC_PI_8 + std::f32::consts::FRAC_PI_2 * 3.0)
             / std::f32::consts::FRAC_PI_4)
             .floor() as i32
             % 8;
 
-        animation.facing = Facing::from(direction_index as usize);
+        let facing = Facing::from(direction_index as usize);
 
-        if controller.intent.length() >= 0.8 {
+        if ground_movement.length() >= 0.8 {
+            animation.facing = facing;
             animation
                 .set_running()
                 .unwrap_or_else(|_| animation.set_idle());
-        } else if controller.intent.length() > 1e-6 {
+        } else if ground_movement.length() > 1e-6 {
+            animation.facing = facing;
             animation
                 .set_walking()
                 .unwrap_or_else(|_| animation.set_idle());
@@ -184,8 +187,6 @@ impl CharacterAnimation {
     fn update_timer(&mut self, delta: Duration) {
         self.timer.tick(delta);
 
-        println!("{:?}", self.timer.elapsed());
-
         if !self.timer.is_finished() {
             return;
         }
@@ -212,8 +213,6 @@ impl CharacterAnimation {
                     }
                 }
             };
-
-        println!("{:?}", self.frame);
     }
 
     fn get_image(&self) -> &Handle<Image> {

@@ -86,14 +86,10 @@ impl Collider {
     }
 
     pub fn vertical_capsule(height: f32, radius: f32, position: impl Into<WorldCoords>) -> Self {
-        // No, I don't know why this is the case, but height - radius leads to the correct offset
-        // for the capsule to start at the player's feet
-        let segment_length = height - radius;
+        let segment_length = height - radius * 2.0;
 
-        let start = Vec3::new(0.0, -segment_length / 2.0, 0.0);
-        let end = Vec3::new(0.0, segment_length / 2.0, 0.0);
-
-        let position = position.into();
+        let start = Vec3::new(0.0, -radius, 0.0);
+        let end = Vec3::new(0.0, segment_length - radius, 0.0);
 
         Self::capsule(start, end, radius, position)
     }

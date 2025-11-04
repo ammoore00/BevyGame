@@ -273,5 +273,6 @@ fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>) {
             continue;
         };
         position.set(new_position);
+        println!("{:?}", new_position);
     }
 }

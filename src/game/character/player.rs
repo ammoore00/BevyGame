@@ -84,7 +84,7 @@ pub fn player(
         position,
         sprite,
         character_animation,
-        Collider::vertical_capsule(1.75, 0.375, position),
+        Collider::vertical_capsule(1.25, 0.25, position),
         scale,
     );
 
