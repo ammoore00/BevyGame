@@ -10,7 +10,8 @@ use std::time::Duration;
 
 use crate::game::grid::coords::rotate_movement_to_screen_space;
 use crate::game::physics::movement::MovementController;
-use crate::{AppSystems, PausableSystems, audio::sound_effect, game::player::PlayerAssets};
+use crate::{audio::sound_effect, AppSystems, PausableSystems};
+use crate::game::character::player::PlayerAssets;
 
 pub(super) fn plugin(app: &mut App) {
     // Animate and play sound effects based on controls.

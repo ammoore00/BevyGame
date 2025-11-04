@@ -2,14 +2,15 @@
 
 use bevy::prelude::*;
 
+use crate::game::character::animation::CharacterAnimation;
+use crate::game::character::character;
+use crate::game::character::legacy_animation::PlayerAnimation;
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
 use crate::game::object::Shadow;
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
-use crate::{
-    AppSystems, PausableSystems, asset_tracking::LoadResource, game::animation::PlayerAnimation,
-};
+use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -18,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            record_player_directional_input
+            record_player_movement_input
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
             camera_follow_player.in_set(AppSystems::Update),
@@ -34,45 +35,47 @@ pub fn player(
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     scale: f32,
 ) -> impl Bundle {
-    // A texture atlas is a way to split a single image into a grid of related images.
-    // You can learn more in this example: https://github.com/bevyengine/bevy/blob/latest/examples/2d/texture_atlas.rs
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(15), 6, 2, Some(UVec2::splat(1)), None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     let player_animation = PlayerAnimation::new();
+    let sprite = Sprite::from_atlas_image(
+        player_assets.ducky.clone(),
+        TextureAtlas {
+            layout: texture_atlas_layout,
+            index: player_animation.get_atlas_index(),
+        },
+    );
+
+    let character_data = character(
+        "Player",
+        position,
+        sprite,
+        CharacterAnimation::Dynamic,
+        Collider::vertical_capsule(0.75, 0.25, position),
+        scale,
+    );
 
     let shadow = player_assets.shadow.clone();
+    let shadow = (
+        Shadow,
+        Sprite {
+            image: shadow,
+            color: Color::srgba(1.0, 1.0, 1.0, 0.75),
+            ..default()
+        },
+        Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
+    );
 
     (
-        Name::new("Player"),
         Player,
-        WorldPosition(position.into()),
-        // Physics
         MovementController {
             max_speed,
             ..default()
         },
-        Collider::vertical_capsule(0.75, 0.25, position),
-        PhysicsData::kinematic(Vec3::ZERO),
-        // Rendering
-        Transform::from_scale(Vec3::splat(scale)),
-        Sprite::from_atlas_image(
-            player_assets.ducky.clone(),
-            TextureAtlas {
-                layout: texture_atlas_layout,
-                index: player_animation.get_atlas_index(),
-            },
-        ),
-        player_animation,
+        PlayerAnimation::new(),
+        character_data,
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            parent.spawn((
-                Shadow,
-                Sprite {
-                    image: shadow,
-                    color: Color::srgba(1.0, 1.0, 1.0, 0.75),
-                    ..default()
-                },
-                Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
-            ));
+            parent.spawn(shadow);
         })),
     )
 }
@@ -85,7 +88,7 @@ const JUMP_VELOCITY: f32 = 2.75;
 #[reflect(Component)]
 pub struct Player;
 
-fn record_player_directional_input(
+fn record_player_movement_input(
     input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,

@@ -7,17 +7,17 @@ use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
 use crate::game::grid::coords::TileCoords;
-use crate::game::grid::tile::{TileEdges, TileFacing, TileMaterial, TileType, tile};
-use crate::game::grid::{TileAssets, grid};
-use crate::game::object::{ObjectAssets, ObjectType, object};
+use crate::game::grid::tile::{tile, TileEdges, TileFacing, TileMaterial, TileType};
+use crate::game::grid::{grid, TileAssets};
+use crate::game::object::{object, ObjectAssets, ObjectType};
 use crate::{
-    Scale,
     asset_tracking::LoadResource,
     audio::music,
-    game::player::{PlayerAssets, player},
     screens::Screen,
+    Scale,
 };
-use crate::game::character::{sariel, CharacterAssets};
+use crate::game::character::CharacterAssets;
+use crate::game::character::player::{player, PlayerAssets};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();

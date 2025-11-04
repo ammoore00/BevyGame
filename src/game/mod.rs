@@ -4,23 +4,20 @@
 //! to get a feeling for the template.
 
 use bevy::prelude::*;
+use character::{legacy_animation, player};
 
-mod animation;
 mod grid;
 pub mod level;
 mod object;
 mod physics;
-pub mod player;
 mod character;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
-        animation::plugin,
         character::plugin,
         grid::plugin,
         level::plugin,
         physics::plugin,
         object::plugin,
-        player::plugin,
     ));
 }

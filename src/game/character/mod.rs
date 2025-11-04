@@ -1,27 +1,42 @@
 use bevy::prelude::*;
 use crate::asset_tracking::LoadResource;
+use crate::game::character::animation::CharacterAnimation;
 use crate::game::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 
+pub mod player;
+pub mod legacy_animation;
+mod animation;
+
 pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
+
+    app.add_plugins((
+        animation::plugin,
+        legacy_animation::plugin,
+        player::plugin,
+    ));
 }
 
-pub fn sariel(
-    assets: &CharacterAssets,
+pub fn character(
+    name: impl Into<String>,
     position: Vec3,
+    sprite: Sprite,
+    animation: CharacterAnimation,
+    collider: Collider,
     scale: f32,
 ) -> impl Bundle {
     (
-        Name::new("Sariel"),
+        Name::new(name.into()),
         Character,
-        WorldPosition(position.into()),
         // Physics
-        Collider::vertical_capsule(1.75, 0.375, position),
+        WorldPosition(position.into()),
         PhysicsData::kinematic(Vec3::ZERO),
+        collider,
         // Rendering
         Transform::from_scale(Vec3::splat(scale)),
-        Sprite::from(assets.sariel.clone()),
+        sprite,
+        animation,
     )
 }
 
