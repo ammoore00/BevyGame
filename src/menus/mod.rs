@@ -5,6 +5,7 @@ mod gamepad_navigation;
 mod main_menu;
 mod pause;
 mod settings;
+mod hud;
 
 use bevy::prelude::*;
 
@@ -13,6 +14,7 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_plugins((
         credits::plugin,
+        hud::plugin,
         main_menu::plugin,
         settings::plugin,
         pause::plugin,
