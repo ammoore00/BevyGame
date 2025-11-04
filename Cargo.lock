@@ -705,6 +705,7 @@ dependencies = [
  "getrandom",
  "parry3d",
  "rand",
+ "thiserror 2.0.17",
  "tracing",
 ]
 

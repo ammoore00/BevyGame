@@ -1,10 +1,10 @@
 //! Player-specific behavior.
 
+use std::time::Duration;
 use bevy::prelude::*;
 
-use crate::game::character::animation::CharacterAnimation;
+use crate::game::character::animation::{AnimationCapabilities, CharacterAnimation, CharacterAnimationData};
 use crate::game::character::character;
-use crate::game::character::legacy_animation::PlayerAnimation;
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
 use crate::game::object::Shadow;
 use crate::game::physics::components::{Collider, PhysicsData};
@@ -15,7 +15,6 @@ use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
 
-    // Record directional input as movement controls.
     app.add_systems(
         Update,
         (
@@ -35,47 +34,77 @@ pub fn player(
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     scale: f32,
 ) -> impl Bundle {
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(15), 6, 2, Some(UVec2::splat(1)), None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    let player_animation = PlayerAnimation::new();
-    let sprite = Sprite::from_atlas_image(
-        player_assets.ducky.clone(),
-        TextureAtlas {
-            layout: texture_atlas_layout,
-            index: player_animation.get_atlas_index(),
+    let idle_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 12, 8, None, None);
+    let walk_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
+    let run_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
+
+    let idle_layout = texture_atlas_layouts.add(idle_layout);
+    let walk_layout = texture_atlas_layouts.add(walk_layout);
+    let run_layout = texture_atlas_layouts.add(run_layout);
+
+    let character_animation = CharacterAnimation::new(AnimationCapabilities {
+        idle: CharacterAnimationData {
+            image: player_assets.idle.clone(),
+            atlas: TextureAtlas {
+                layout: idle_layout,
+                index: 0,
+            },
+            frames: 12,
+            interval: Duration::from_millis(150),
         },
-    );
+        walk: Some(CharacterAnimationData {
+            image: player_assets.walk.clone(),
+            atlas: TextureAtlas {
+                layout: walk_layout,
+                index: 0,
+            },
+            frames: 8,
+            interval: Duration::from_millis(50),
+        }),
+        run: Some(CharacterAnimationData {
+            image: player_assets.run.clone(),
+            atlas: TextureAtlas {
+                layout: run_layout,
+                index: 0,
+            },
+            frames: 8,
+            interval: Duration::from_millis(50),
+        }),
+    });
+
+    let sprite = character_animation.default_sprite();
+
+    let movement_controller = MovementController {
+        max_speed,
+        ..default()
+    };
 
     let character_data = character(
         "Player",
         position,
         sprite,
-        CharacterAnimation::Dynamic,
-        Collider::vertical_capsule(0.75, 0.25, position),
+        character_animation,
+        Collider::vertical_capsule(1.75, 0.375, position),
         scale,
     );
 
-    let shadow = player_assets.shadow.clone();
-    let shadow = (
-        Shadow,
-        Sprite {
-            image: shadow,
-            color: Color::srgba(1.0, 1.0, 1.0, 0.75),
-            ..default()
-        },
-        Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
-    );
+    //let shadow = player_assets.shadow.clone();
+    //let shadow = (
+    //    Shadow,
+    //    Sprite {
+    //        image: shadow,
+    //        color: Color::srgba(1.0, 1.0, 1.0, 0.75),
+    //        ..default()
+    //    },
+    //    Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
+    //);
 
     (
         Player,
-        MovementController {
-            max_speed,
-            ..default()
-        },
-        PlayerAnimation::new(),
+        movement_controller,
         character_data,
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            parent.spawn(shadow);
+            //parent.spawn(shadow);
         })),
     )
 }
@@ -181,9 +210,11 @@ fn camera_follow_player(
 #[reflect(Resource)]
 pub struct PlayerAssets {
     #[dependency]
-    ducky: Handle<Image>,
+    idle: Handle<Image>,
     #[dependency]
-    shadow: Handle<Image>,
+    walk: Handle<Image>,
+    #[dependency]
+    run: Handle<Image>,
     #[dependency]
     pub steps: Vec<Handle<AudioSource>>,
 }
@@ -192,8 +223,10 @@ impl FromWorld for PlayerAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            ducky: assets.load("images/ducky2.png"),
-            shadow: assets.load("images/ducky_shadow.png"),
+            idle: assets.load("images/characters/idle.png"),
+            walk: assets.load("images/characters/walk.png"),
+            run: assets.load("images/characters/run.png"),
+
             steps: vec![
                 assets.load("audio/sound_effects/step1.ogg"),
                 assets.load("audio/sound_effects/step2.ogg"),

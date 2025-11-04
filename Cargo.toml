@@ -17,6 +17,8 @@ tracing = { version = "0.1", features = [
 
 parry3d = "0.25.1"
 
+thiserror = "2.0.17"
+
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }
 

@@ -4,7 +4,6 @@
 //! to get a feeling for the template.
 
 use bevy::prelude::*;
-use character::{legacy_animation, player};
 
 mod grid;
 pub mod level;

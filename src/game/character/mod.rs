@@ -5,7 +5,6 @@ use crate::game::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 
 pub mod player;
-pub mod legacy_animation;
 mod animation;
 
 pub fn plugin(app: &mut App) {
@@ -13,7 +12,6 @@ pub fn plugin(app: &mut App) {
 
     app.add_plugins((
         animation::plugin,
-        legacy_animation::plugin,
         player::plugin,
     ));
 }
