@@ -6,8 +6,12 @@ use bevy::{
     ecs::{spawn::SpawnWith, system::IntoObserverSystem},
     prelude::*,
 };
-
+use crate::asset_tracking::LoadResource;
 use crate::theme::{interaction::InteractionPalette, palette::*};
+
+pub(super) fn plugin(app: &mut App) {
+    app.load_resource::<ButtonAssets>();
+}
 
 #[derive(Component, Debug)]
 pub struct ButtonRoot;
@@ -75,36 +79,47 @@ pub fn label(text: impl Into<String>) -> impl Bundle {
 }
 
 /// A large rounded button with text and an action defined as an [`Observer`].
-pub fn button<E, B, M, I>(text: impl Into<String>, action: I) -> impl Bundle
+pub fn button<E, B, M, I>(
+    button_assets: &ButtonAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    text: impl Into<String>,
+    action: I,
+) -> impl Bundle
 where
     E: EntityEvent,
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
     button_base(
+        button_assets,
+        texture_atlas_layouts,
         text,
         action,
-        (
-            Node {
-                width: px(380),
-                height: px(80),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            BorderRadius::MAX,
-        ),
+        (Node {
+            width: px(380),
+            height: px(80),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },),
     )
 }
 
 /// A small square button with text and an action defined as an [`Observer`].
-pub fn button_small<E, B, M, I>(text: impl Into<String>, action: I) -> impl Bundle
+pub fn button_small<E, B, M, I>(
+    button_assets: &ButtonAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    text: impl Into<String>,
+    action: I,
+) -> impl Bundle
 where
     E: EntityEvent,
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
     button_base(
+        button_assets,
+        texture_atlas_layouts,
         text,
         action,
         Node {
@@ -119,6 +134,8 @@ where
 
 /// A simple button with text and an action defined as an [`Observer`]. The button's layout is provided by `button_bundle`.
 fn button_base<E, B, M, I>(
+    button_assets: &ButtonAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
     action: I,
     button_bundle: impl Bundle,
@@ -129,7 +146,13 @@ where
     I: IntoObserverSystem<E, B, M>,
 {
     let text = text.into();
+    let image = button_assets.button_sprite.clone();
+
     let action = IntoObserverSystem::into_system(action);
+
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 8, 8, None, None);
+    let layout = texture_atlas_layouts.add(layout);
+
     (
         Name::new("Button"),
         ButtonRoot,
@@ -139,11 +162,19 @@ where
                 .spawn((
                     Name::new("Button Inner"),
                     Button,
-                    BackgroundColor(BUTTON_BACKGROUND),
+                    ImageNode {
+                        image,
+                        image_mode: NodeImageMode::Sliced(ButtonSlicer::default().0),
+                        texture_atlas: Some(TextureAtlas {
+                            layout,
+                            index: 0,
+                        }),
+                        ..default()
+                    },
                     InteractionPalette {
-                        none: BUTTON_BACKGROUND,
-                        hovered: BUTTON_HOVERED_BACKGROUND,
-                        pressed: BUTTON_PRESSED_BACKGROUND,
+                        none: 0,
+                        hovered: 1,
+                        pressed: 2,
                     },
                     children![(
                         Name::new("Button Text"),
@@ -158,4 +189,33 @@ where
                 .observe(action);
         })),
     )
+}
+
+#[derive(Component)]
+struct ButtonSlicer(TextureSlicer);
+
+impl Default for ButtonSlicer {
+    fn default() -> Self {
+        Self(TextureSlicer {
+            border: BorderRect::all(4.0), // Adjust based on your atlas design
+            center_scale_mode: SliceScaleMode::Stretch,
+            sides_scale_mode: SliceScaleMode::Stretch,
+            max_corner_scale: 16.0,
+        })
+    }
+}
+
+#[derive(Resource, Asset, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct ButtonAssets {
+    pub button_sprite: Handle<Image>,
+}
+
+impl FromWorld for ButtonAssets {
+    fn from_world(world: &mut World) -> Self {
+        let assets = world.resource::<AssetServer>();
+        Self {
+            button_sprite: assets.load("images/ui/buttons.png"),
+        }
+    }
 }

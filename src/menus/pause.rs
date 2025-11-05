@@ -1,6 +1,7 @@
 //! The pause menu.
 
 use crate::gamepad::gamepad_just_pressed;
+use crate::theme::widget::ButtonAssets;
 use crate::{menus::Menu, screens::Screen, theme::widget};
 use bevy::input_focus::InputFocus;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
@@ -22,6 +23,8 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_pause_menu(
+    button_assets: Res<ButtonAssets>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
@@ -35,16 +38,29 @@ fn spawn_pause_menu(
         ))
         .id();
 
-    let continue_button = commands.spawn(widget::button("Continue", close_menu)).id();
+    let continue_button = commands
+        .spawn(widget::button(&button_assets,
+                              &mut texture_atlas_layouts, "Continue", close_menu))
+        .id();
     commands.entity(ui_root).add_child(continue_button);
 
     let settings_button = commands
-        .spawn(widget::button("Settings", open_settings_menu))
+        .spawn(widget::button(
+            &button_assets,
+            &mut texture_atlas_layouts,
+            "Settings",
+            open_settings_menu,
+        ))
         .id();
     commands.entity(ui_root).add_child(settings_button);
 
     let quit_button = commands
-        .spawn(widget::button("Quit to title", quit_to_title))
+        .spawn(widget::button(
+            &button_assets,
+            &mut texture_atlas_layouts,
+            "Quit to title",
+            quit_to_title,
+        ))
         .id();
     commands.entity(ui_root).add_child(quit_button);
 

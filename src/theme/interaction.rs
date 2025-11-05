@@ -21,14 +21,14 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
 pub struct InteractionPalette {
-    pub none: Color,
-    pub hovered: Color,
-    pub pressed: Color,
+    pub none: usize,
+    pub hovered: usize,
+    pub pressed: usize,
 }
 
 fn apply_interaction_palette(
     mut palette_query: Query<
-        (&Interaction, &InteractionPalette, &mut BackgroundColor),
+        (&Interaction, &InteractionPalette, &mut ImageNode),
         Changed<Interaction>,
     >,
     input_focus_visible: Res<InputFocusVisible>,
@@ -41,16 +41,17 @@ fn apply_interaction_palette(
         }
     };
 
-    for (interaction, palette, mut background) in &mut palette_query {
-        *background = match interaction {
+    for (interaction, palette, mut image) in &mut palette_query {
+        let index = match interaction {
             Interaction::None => palette.none,
             Interaction::Hovered => {
                 reset_focus();
                 palette.hovered
             }
             Interaction::Pressed => palette.pressed,
-        }
-        .into();
+        };
+
+        image.texture_atlas.as_mut().unwrap().index = index;
     }
 }
 
@@ -61,12 +62,12 @@ fn apply_gamepad_interaction_palette(
         Entity,
         &Interaction,
         &InteractionPalette,
-        &mut BackgroundColor,
+        &mut ImageNode,
     )>,
     button_query: Query<(Entity, &Children), With<ButtonRoot>>,
 ) {
     // For everything with a background color palette
-    for (entity, interaction, palette, mut background) in palette_query.iter_mut() {
+    for (entity, interaction, palette, mut image) in palette_query.iter_mut() {
         // If we are rendering the current focused element
         if input_focus_visible.0 {
             // Iterate through each button that has children
@@ -77,16 +78,16 @@ fn apply_gamepad_interaction_palette(
                         // If the entity we are currently looking at is a child of the focused button
                         if child == entity {
                             // Then update the color
-                            *background = palette.hovered.into();
+                            image.texture_atlas.as_mut().unwrap().index = palette.hovered;
                         } else {
-                            *background = palette.none.into();
+                            image.texture_atlas.as_mut().unwrap().index = palette.none;
                         }
                     })
                 }
             });
         } else if input_focus_visible.is_changed() && matches!(interaction, Interaction::None) {
             // If the input is false, and has changed since the last frame, disable highlighting
-            *background = palette.none.into();
+            image.texture_atlas.as_mut().unwrap().index = palette.none;
         }
     }
 }

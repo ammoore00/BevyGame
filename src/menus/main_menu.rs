@@ -11,6 +11,8 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_main_menu(
+    button_assets: Res<widget::ButtonAssets>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
@@ -26,21 +28,25 @@ fn spawn_main_menu(
     #[cfg(not(target_family = "wasm"))]
     {
         let play_button = commands
-            .spawn(widget::button("Play", enter_loading_or_gameplay_screen))
+            .spawn(widget::button(&button_assets,
+                                  &mut texture_atlas_layouts, "Play", enter_loading_or_gameplay_screen))
             .id();
         commands.entity(ui_root).add_child(play_button);
 
         let settings_button = commands
-            .spawn(widget::button("Settings", open_settings_menu))
+            .spawn(widget::button(&button_assets,
+                                  &mut texture_atlas_layouts, "Settings", open_settings_menu))
             .id();
         commands.entity(ui_root).add_child(settings_button);
 
         let credits_button = commands
-            .spawn(widget::button("Credits", open_credits_menu))
+            .spawn(widget::button(&button_assets,
+                                  &mut texture_atlas_layouts, "Credits", open_credits_menu))
             .id();
         commands.entity(ui_root).add_child(credits_button);
 
-        let exit_button = commands.spawn(widget::button("Exit", exit_app)).id();
+        let exit_button = commands.spawn(widget::button(&button_assets,
+                                                        &mut texture_atlas_layouts, "Exit", exit_app)).id();
         commands.entity(ui_root).add_child(exit_button);
 
         directional_nav_map.add_looping_edges(

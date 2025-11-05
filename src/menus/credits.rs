@@ -1,6 +1,7 @@
 //! The credits menu.
 
 use crate::gamepad::gamepad_just_pressed;
+use crate::theme::widget::ButtonAssets;
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
 use bevy::input_focus::InputFocus;
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
@@ -18,10 +19,15 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), start_credits_music);
 }
 
-fn spawn_credits_menu(mut input_focus: ResMut<InputFocus>, mut commands: Commands) {
+fn spawn_credits_menu(
+    button_assets: Res<ButtonAssets>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut input_focus: ResMut<InputFocus>,
+    mut commands: Commands,
+) {
     let ui_root = commands
         .spawn((
-            widget::ui_root("Credits Menu"),
+            widget::scrollable_ui_root("Credits Menu"),
             GlobalZIndex(2),
             DespawnOnExit(Menu::Credits),
             children![
@@ -37,7 +43,8 @@ fn spawn_credits_menu(mut input_focus: ResMut<InputFocus>, mut commands: Command
         .id();
 
     let back_button = commands
-        .spawn(widget::button("Back", go_back_on_click))
+        .spawn(widget::button(&button_assets,
+                              &mut texture_atlas_layouts, "Back", go_back_on_click))
         .id();
     commands.entity(ui_root).add_child(back_button);
     input_focus.0 = Some(back_button);
@@ -53,8 +60,9 @@ fn assets() -> impl Bundle {
         ["Music", "CC BY 3.0 by Kevin MacLeod"],
         ["Character Templates", "ZeggyGames - zegley.itch.io"],
         ["User Interface", "LimeZu - linezu.itch.io"],
+        ["Font", "BoldPixels"],
         [
-            "Bevy logo",
+            "Bevy Logo",
             "All rights reserved by the Bevy Foundation, permission granted for splash screen use when unmodified",
         ],
     ])
