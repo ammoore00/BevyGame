@@ -4,11 +4,11 @@
 
 use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widget;
+use crate::theme::widget::ButtonAssets;
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::InputFocus;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
-use crate::theme::widget::ButtonAssets;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu);
@@ -32,8 +32,12 @@ fn spawn_settings_menu(
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
 ) {
-    let grid = settings_grid(&button_assets,
-                             &mut texture_atlas_layouts, directional_nav_map, &mut commands);
+    let grid = settings_grid(
+        &button_assets,
+        &mut texture_atlas_layouts,
+        directional_nav_map,
+        &mut commands,
+    );
 
     let ui_root = commands
         .spawn((
@@ -47,8 +51,12 @@ fn spawn_settings_menu(
     commands.entity(ui_root).add_child(grid);
 
     let back_button = commands
-        .spawn(widget::button(&button_assets,
-                              &mut texture_atlas_layouts, "Back", go_back_on_click))
+        .spawn(widget::button(
+            &button_assets,
+            &mut texture_atlas_layouts,
+            "Back",
+            go_back_on_click,
+        ))
         .id();
     commands.entity(ui_root).add_child(back_button);
 
@@ -61,8 +69,12 @@ fn settings_grid(
     directional_nav_map: ResMut<DirectionalNavigationMap>,
     commands: &mut Commands,
 ) -> Entity {
-    let volume_widget = global_volume_widget(button_assets,
-                                             texture_atlas_layouts, directional_nav_map, commands);
+    let volume_widget = global_volume_widget(
+        button_assets,
+        texture_atlas_layouts,
+        directional_nav_map,
+        commands,
+    );
 
     let ui_root = commands
         .spawn((
@@ -129,8 +141,12 @@ fn global_volume_widget(
     commands.entity(ui_root).add_child(current_volume_display);
 
     let plus_button = commands
-        .spawn(widget::button_small(&button_assets,
-                                    texture_atlas_layouts, "+", raise_global_volume))
+        .spawn(widget::button_small(
+            &button_assets,
+            texture_atlas_layouts,
+            "+",
+            raise_global_volume,
+        ))
         .id();
     commands.entity(ui_root).add_child(plus_button);
 

@@ -38,7 +38,10 @@ fn update_animation_state(query: Query<(&mut CharacterAnimation, &MovementContro
         // Add PI/8 to center the divisions on the cardinal directions
         // Add 3PI/2 to rotate divisions to align with sprite sheets
         // Divide by PI/4 (45 degrees) to get 0-8 range
-        let direction_index = ((angle + std::f32::consts::PI + std::f32::consts::FRAC_PI_8 + std::f32::consts::FRAC_PI_2 * 3.0)
+        let direction_index = ((angle
+            + std::f32::consts::PI
+            + std::f32::consts::FRAC_PI_8
+            + std::f32::consts::FRAC_PI_2 * 3.0)
             / std::f32::consts::FRAC_PI_4)
             .floor() as i32
             % 8;
@@ -128,10 +131,7 @@ impl CharacterAnimation {
     }
 
     pub fn default_sprite(&self) -> Sprite {
-        Sprite::from_atlas_image(
-            self.get_image().clone(),
-            self.get_atlas().clone(),
-        )
+        Sprite::from_atlas_image(self.get_image().clone(), self.get_atlas().clone())
     }
 
     fn set_idle(&mut self) {
@@ -266,7 +266,7 @@ impl CharacterAnimation {
             AnimationState::Idling => {
                 let offset = self.facing as usize * self.capabilities.idle.frames;
                 default + offset
-            },
+            }
             AnimationState::Walking => {
                 if let Some(walk) = &self.capabilities.walk {
                     let offset = self.facing as usize * walk.frames;

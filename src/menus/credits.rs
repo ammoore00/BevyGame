@@ -43,8 +43,12 @@ fn spawn_credits_menu(
         .id();
 
     let back_button = commands
-        .spawn(widget::button(&button_assets,
-                              &mut texture_atlas_layouts, "Back", go_back_on_click))
+        .spawn(widget::button(
+            &button_assets,
+            &mut texture_atlas_layouts,
+            "Back",
+            go_back_on_click,
+        ))
         .id();
     commands.entity(ui_root).add_child(back_button);
     input_focus.0 = Some(back_button);
@@ -58,9 +62,9 @@ fn assets() -> impl Bundle {
     grid(vec![
         ["Button SFX", "CC0 by Jaszunio15"],
         ["Music", "CC BY 3.0 by Kevin MacLeod"],
+        ["Font", "Open Font License by BoldPixels"],
         ["Character Templates", "ZeggyGames - zegley.itch.io"],
-        ["User Interface", "LimeZu - linezu.itch.io"],
-        ["Font", "BoldPixels"],
+        ["User Interface", "LimeZu - limezu.itch.io"],
         [
             "Bevy Logo",
             "All rights reserved by the Bevy Foundation, permission granted for splash screen use when unmodified",

@@ -1,9 +1,11 @@
 //! Player-specific behavior.
 
-use std::time::Duration;
 use bevy::prelude::*;
+use std::time::Duration;
 
-use crate::game::character::animation::{AnimationCapabilities, CharacterAnimation, CharacterAnimationData};
+use crate::game::character::animation::{
+    AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
+};
 use crate::game::character::character;
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
 use crate::game::object::Shadow;

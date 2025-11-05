@@ -39,8 +39,12 @@ fn spawn_pause_menu(
         .id();
 
     let continue_button = commands
-        .spawn(widget::button(&button_assets,
-                              &mut texture_atlas_layouts, "Continue", close_menu))
+        .spawn(widget::button(
+            &button_assets,
+            &mut texture_atlas_layouts,
+            "Continue",
+            close_menu,
+        ))
         .id();
     commands.entity(ui_root).add_child(continue_button);
 

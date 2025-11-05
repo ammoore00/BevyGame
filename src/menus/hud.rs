@@ -1,6 +1,6 @@
-use bevy::prelude::*;
-use crate::theme::prelude::*;
 use crate::screens::Screen;
+use crate::theme::prelude::*;
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Gameplay), spawn_hud);
@@ -14,15 +14,17 @@ struct HudRoot;
 struct HealthText;
 
 fn spawn_hud(mut commands: Commands) {
-    commands.spawn((
-        HudRoot,
-        widget::ui_root("HUD"),
-        GlobalZIndex(1),
-        DespawnOnExit(Screen::Gameplay),
-    )).with_children(|parent| {
-        // Add your HUD elements here
-        parent.spawn(health());
-    });
+    commands
+        .spawn((
+            HudRoot,
+            widget::ui_root("HUD"),
+            GlobalZIndex(1),
+            DespawnOnExit(Screen::Gameplay),
+        ))
+        .with_children(|parent| {
+            // Add your HUD elements here
+            parent.spawn(health());
+        });
 }
 
 fn health() -> impl Bundle {
@@ -40,7 +42,7 @@ fn health() -> impl Bundle {
             height: px(30),
 
             ..default()
-        }
+        },
     )
 }
 

@@ -1,7 +1,7 @@
+use crate::game::character::player::Player;
 use crate::game::grid::coords::{SCREEN_Z_SCALE, TileCoords, TilePosition, WorldPosition};
 pub(crate) use crate::game::grid::tile::TileAssets;
 use crate::game::object::Shadow;
-use crate::game::character::player::Player;
 use bevy::prelude::*;
 use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};

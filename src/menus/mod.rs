@@ -2,10 +2,10 @@
 
 mod credits;
 mod gamepad_navigation;
+mod hud;
 mod main_menu;
 mod pause;
 mod settings;
-mod hud;
 
 use bevy::prelude::*;
 

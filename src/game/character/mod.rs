@@ -1,19 +1,16 @@
-use bevy::prelude::*;
 use crate::asset_tracking::LoadResource;
 use crate::game::character::animation::CharacterAnimation;
 use crate::game::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
+use bevy::prelude::*;
 
-pub mod player;
 mod animation;
+pub mod player;
 
 pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
 
-    app.add_plugins((
-        animation::plugin,
-        player::plugin,
-    ));
+    app.add_plugins((animation::plugin, player::plugin));
 }
 
 pub fn character(

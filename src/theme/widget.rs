@@ -2,15 +2,34 @@
 
 use std::borrow::Cow;
 
+use crate::asset_tracking::LoadResource;
+use crate::theme::{interaction::InteractionPalette, palette::*};
 use bevy::{
     ecs::{spawn::SpawnWith, system::IntoObserverSystem},
     prelude::*,
 };
-use crate::asset_tracking::LoadResource;
-use crate::theme::{interaction::InteractionPalette, palette::*};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<ButtonAssets>();
+
+    Assets::insert(
+        &mut app.world_mut().resource_mut(),
+        AssetId::default(),
+        Font {
+            data: include_bytes!("../../assets/BoldPixels.ttf")
+                .to_vec()
+                .into(),
+        },
+    )
+    .expect("Failed to load font");
+}
+
+#[derive(Resource)]
+struct GameFont(Handle<Font>);
+
+fn load_font(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let font_handle = asset_server.load("assets/BoldPixels.ttf");
+    commands.insert_resource(GameFont(font_handle));
 }
 
 #[derive(Component, Debug)]
@@ -165,10 +184,7 @@ where
                     ImageNode {
                         image,
                         image_mode: NodeImageMode::Sliced(ButtonSlicer::default().0),
-                        texture_atlas: Some(TextureAtlas {
-                            layout,
-                            index: 0,
-                        }),
+                        texture_atlas: Some(TextureAtlas { layout, index: 0 }),
                         ..default()
                     },
                     InteractionPalette {
@@ -181,6 +197,12 @@ where
                         Text(text),
                         TextFont::from_font_size(40.0),
                         TextColor(BUTTON_TEXT),
+                        Node {
+                            justify_self: JustifySelf::Center,
+                            padding: UiRect::all(Val::Px(5.0)),
+
+                            ..default()
+                        },
                         // Don't bubble picking events from the text up to the button.
                         Pickable::IGNORE,
                     )],
