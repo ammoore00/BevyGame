@@ -11,7 +11,7 @@ pub mod player;
 pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
 
-    app.add_plugins((animation::plugin, player::plugin));
+    app.add_plugins((animation::plugin, health::plugin, player::plugin));
 }
 
 pub fn character(

@@ -1,3 +1,4 @@
+use crate::AppSystems;
 use crate::asset_tracking::LoadResource;
 use crate::game::character::health::Health;
 use crate::game::character::player::Player;
@@ -9,7 +10,12 @@ pub(super) fn plugin(app: &mut App) {
     app.load_resource::<StatBarAssets>();
 
     app.add_systems(OnEnter(Screen::Gameplay), spawn_hud);
-    app.add_systems(Update, update_hud.run_if(in_state(Screen::Gameplay)));
+    app.add_systems(
+        Update,
+        update_hud
+            .run_if(in_state(Screen::Gameplay))
+            .in_set(AppSystems::Respond),
+    );
 }
 
 #[derive(Component, Debug, Clone)]

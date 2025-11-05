@@ -9,7 +9,7 @@ use crate::game::character::animation::{
 use crate::game::character::character;
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
 //use crate::game::object::Shadow;
-use crate::game::character::health::Health;
+use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
@@ -21,10 +21,10 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            record_player_movement_input
+            (record_player_movement_input, record_action_input)
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
-            camera_follow_player.in_set(AppSystems::Update),
+            camera_follow_player.in_set(AppSystems::Respond),
         ),
     );
 }
@@ -107,10 +107,7 @@ pub fn player(
         movement_controller,
         character_data,
         //Health::new(300),
-        Health {
-            max: 300,
-            current: 170,
-        },
+        Health::with_current(300, 160),
         Children::spawn(SpawnWith(move |_parent: &mut ChildSpawner| {
             //parent.spawn(shadow);
         })),
@@ -194,6 +191,33 @@ fn record_player_movement_input(
             && is_jumping
         {
             controller.intent.y = JUMP_VELOCITY;
+        }
+    }
+}
+
+fn record_action_input(
+    input: Res<ButtonInput<KeyCode>>,
+    gamepad_res: Option<Res<GamepadRes>>,
+    gamepads: Query<&Gamepad>,
+    health_query: Query<(Entity, &Health), With<Player>>,
+    mut commands: Commands,
+) {
+    if let Some(gamepad_res) = gamepad_res
+        && let Ok(gamepad) = gamepads.get(gamepad_res.0)
+    {
+        let Ok((player, health)) = health_query.single() else {
+            return;
+        };
+
+        if gamepad.just_pressed(GamepadButton::West) {
+            commands.trigger(HealthEvent::new(
+                player,
+                HealthEventType::Damage(10, DamageType::Generic),
+            ));
+        }
+
+        if gamepad.just_pressed(GamepadButton::North) {
+            commands.trigger(HealthEvent::new(player, HealthEventType::Heal(10)));
         }
     }
 }

@@ -65,6 +65,7 @@ impl Plugin for AppPlugin {
                 AppSystems::TickTimers,
                 AppSystems::RecordInput,
                 AppSystems::Update,
+                AppSystems::Respond,
             )
                 .chain(),
         );
@@ -91,6 +92,8 @@ enum AppSystems {
     RecordInput,
     /// Do everything else (consider splitting this into further variants).
     Update,
+    /// Respond to changes in update
+    Respond,
 }
 
 /// Whether or not the game is paused.
