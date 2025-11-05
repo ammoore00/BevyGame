@@ -51,6 +51,8 @@ fn assets() -> impl Bundle {
     grid(vec![
         ["Button SFX", "CC0 by Jaszunio15"],
         ["Music", "CC BY 3.0 by Kevin MacLeod"],
+        ["Character Templates", "ZeggyGames - zegley.itch.io"],
+        ["User Interface", "LimeZu - linezu.itch.io"],
         [
             "Bevy logo",
             "All rights reserved by the Bevy Foundation, permission granted for splash screen use when unmodified",

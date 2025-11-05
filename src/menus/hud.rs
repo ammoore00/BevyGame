@@ -21,23 +21,27 @@ fn spawn_hud(mut commands: Commands) {
         DespawnOnExit(Screen::Gameplay),
     )).with_children(|parent| {
         // Add your HUD elements here
-        parent.spawn((
-            HealthText,
-            Text::new("Health: 100"),
-            TextLayout::new_with_justify(Justify::Center),
-            Node {
-                position_type: PositionType::Absolute,
-
-                left: percent(40),
-                width: percent(20),
-
-                top: percent(2),
-                height: px(30),
-
-                ..default()
-            }
-        ));
+        parent.spawn(health());
     });
+}
+
+fn health() -> impl Bundle {
+    (
+        HealthText,
+        Text::new("Health: 100"),
+        TextLayout::new_with_justify(Justify::Center),
+        Node {
+            position_type: PositionType::Absolute,
+
+            left: percent(40),
+            width: percent(20),
+
+            top: percent(2),
+            height: px(30),
+
+            ..default()
+        }
+    )
 }
 
 fn update_hud(
