@@ -119,7 +119,7 @@ fn global_volume_widget(
 
     let minus_button = commands
         .spawn(widget::button_small(
-            &button_assets,
+            button_assets,
             texture_atlas_layouts,
             "-",
             lower_global_volume,
@@ -142,7 +142,7 @@ fn global_volume_widget(
 
     let plus_button = commands
         .spawn(widget::button_small(
-            &button_assets,
+            button_assets,
             texture_atlas_layouts,
             "+",
             raise_global_volume,

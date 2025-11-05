@@ -48,13 +48,7 @@ fn health() -> impl Bundle {
 
 fn update_hud(
     // Query your game state here
-    mut health_text: Query<&mut Text, With<HealthText>>,
+    mut _health_text: Query<&mut Text, With<HealthText>>,
 ) {
     // Update HUD based on game state
-}
-
-fn despawn_hud(mut commands: Commands, hud: Query<Entity, With<HudRoot>>) {
-    for entity in &hud {
-        commands.entity(entity).despawn();
-    }
 }

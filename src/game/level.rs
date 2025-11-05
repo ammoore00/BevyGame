@@ -42,7 +42,7 @@ pub fn spawn_level(
     player_assets: Res<PlayerAssets>,
     tile_assets: Res<TileAssets>,
     object_assets: Res<ObjectAssets>,
-    character_assets: Res<CharacterAssets>,
+    _character_assets: Res<CharacterAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let level = commands

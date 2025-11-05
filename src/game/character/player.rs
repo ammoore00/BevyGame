@@ -8,7 +8,7 @@ use crate::game::character::animation::{
 };
 use crate::game::character::character;
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
-use crate::game::object::Shadow;
+//use crate::game::object::Shadow;
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
@@ -105,7 +105,7 @@ pub fn player(
         Player,
         movement_controller,
         character_data,
-        Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
+        Children::spawn(SpawnWith(move |_parent: &mut ChildSpawner| {
             //parent.spawn(shadow);
         })),
     )
