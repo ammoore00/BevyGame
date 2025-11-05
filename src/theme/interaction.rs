@@ -60,6 +60,8 @@ fn apply_gamepad_interaction_palette(
     input_focus_visible: Res<InputFocusVisible>,
     mut palette_query: Query<(Entity, &Interaction, &InteractionPalette, &mut ImageNode)>,
     button_query: Query<(Entity, &Children), With<ButtonRoot>>,
+    interaction_assets: Option<Res<InteractionAssets>>,
+    mut commands: Commands,
 ) {
     // For everything with a background color palette
     for (entity, interaction, palette, mut image) in palette_query.iter_mut() {
@@ -89,11 +91,11 @@ fn apply_gamepad_interaction_palette(
 
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
-struct InteractionAssets {
+pub struct InteractionAssets {
     #[dependency]
-    hover: Handle<AudioSource>,
+    pub hover: Handle<AudioSource>,
     #[dependency]
-    click: Handle<AudioSource>,
+    pub click: Handle<AudioSource>,
 }
 
 impl FromWorld for InteractionAssets {

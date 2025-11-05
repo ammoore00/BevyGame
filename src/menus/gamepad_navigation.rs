@@ -1,3 +1,4 @@
+use crate::audio::sound_effect;
 use bevy::camera::NormalizedRenderTarget;
 use bevy::input_focus::directional_navigation::{
     DirectionalNavigation, DirectionalNavigationPlugin,
@@ -9,6 +10,9 @@ use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use std::time::Duration;
+use crate::theme::interaction::InteractionAssets;
+use crate::theme::prelude::InteractionPalette;
+use crate::theme::widget::ButtonRoot;
 
 pub fn plugin(app: &mut App) {
     app
@@ -111,7 +115,12 @@ fn process_inputs(
     }
 }
 
-fn navigate(action_state: Res<ActionState>, mut directional_navigation: DirectionalNavigation) {
+fn navigate(
+    action_state: Res<ActionState>,
+    mut directional_navigation: DirectionalNavigation,
+    interaction_assets: Option<Res<InteractionAssets>>,
+    mut commands: Commands,
+) {
     // If the user is pressing both left and right, or up and down,
     // we should not move in either direction.
     let net_east_west = action_state
@@ -148,6 +157,10 @@ fn navigate(action_state: Res<ActionState>, mut directional_navigation: Directio
             // on both successful and unsuccessful navigation attempts
             Ok(entity) => {
                 println!("Navigated {direction:?} successfully. {entity} is now focused.");
+
+                if let Some(ref interaction_assets) = interaction_assets {
+                    commands.spawn(sound_effect(interaction_assets.hover.clone()));
+                }
             }
             Err(e) => println!("Navigation failed: {e}"),
         }
@@ -160,6 +173,7 @@ fn interact_with_focused_button(
     action_state: Res<ActionState>,
     input_focus: Res<InputFocus>,
     children: Query<&Children>,
+    mut button_query: Query<(&mut ImageNode, &InteractionPalette), With<ButtonRoot>>,
     mut commands: Commands,
 ) {
     if action_state
@@ -193,6 +207,10 @@ fn interact_with_focused_button(
                     duration: Duration::from_secs_f32(0.1),
                 },
             });
+
+            if let Ok((mut image, palette)) = button_query.get_mut(child) {
+                image.texture_atlas.as_mut().unwrap().index = palette.pressed;
+            }
         });
     }
 }
