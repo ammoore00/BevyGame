@@ -5,6 +5,7 @@ use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
 
 mod animation;
+pub mod health;
 pub mod player;
 
 pub fn plugin(app: &mut App) {

@@ -9,6 +9,7 @@ use crate::game::character::animation::{
 use crate::game::character::character;
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
 //use crate::game::object::Shadow;
+use crate::game::character::health::Health;
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
@@ -105,6 +106,11 @@ pub fn player(
         Player,
         movement_controller,
         character_data,
+        //Health::new(300),
+        Health {
+            max: 300,
+            current: 170,
+        },
         Children::spawn(SpawnWith(move |_parent: &mut ChildSpawner| {
             //parent.spawn(shadow);
         })),

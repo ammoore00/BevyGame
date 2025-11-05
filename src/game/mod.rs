@@ -5,7 +5,7 @@
 
 use bevy::prelude::*;
 
-mod character;
+pub mod character;
 mod grid;
 pub mod level;
 mod object;
