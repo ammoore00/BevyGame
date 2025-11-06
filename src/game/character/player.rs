@@ -276,6 +276,10 @@ fn record_player_movement_input(
             is_jumping = true;
         }
 
+        if input.just_pressed(KeyCode::ShiftLeft) {
+            toggle_run = true;
+        }
+
         // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
         intent = intent.normalize_or_zero();
         intent = rotate_screen_space_to_movement(intent);
