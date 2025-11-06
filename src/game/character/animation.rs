@@ -3,6 +3,7 @@ use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::time::Duration;
+use crate::game::grid::Facing;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -26,26 +27,8 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
 fn update_animation_state(query: Query<(&mut CharacterAnimation, &MovementController)>) {
     for (mut animation, controller) in query {
         //let direction = rotate_movement_to_screen_space(controller.intent);
-        let ground_movement = controller.intent * Vec3::new(1.0, 0.0, 1.0);
-
-        // Calculate angle in radians (-PI to PI)
-        // Note: atan2(z, x) where x is "forward" and z is "right"
-        let angle = ground_movement.x.atan2(ground_movement.z);
-
-        // Convert to 0-8 range, where each direction occupies 45 degrees (PI/4 radians)
-        // Add PI to shift range from [-PI, PI] to [0, 2*PI]
-        // Add PI/8 to center the divisions on the cardinal directions
-        // Add 3PI/2 to rotate divisions to align with sprite sheets
-        // Divide by PI/4 (45 degrees) to get 0-8 range
-        let direction_index = ((angle
-            + std::f32::consts::PI
-            + std::f32::consts::FRAC_PI_8
-            + std::f32::consts::FRAC_PI_2 * 3.0)
-            / std::f32::consts::FRAC_PI_4)
-            .floor() as i32
-            % 8;
-
-        let facing = Facing::from(direction_index as usize);
+        let ground_movement = controller.intent.xz();
+        let facing = Facing::from(ground_movement);
 
         if ground_movement.length() >= 0.8 {
             animation.facing = facing;
@@ -71,34 +54,6 @@ fn update_animation_atlas(query: Query<(&CharacterAnimation, &mut Sprite)>) {
             let mut atlas = animation.get_atlas().clone();
             atlas.index = animation.get_atlas_index();
             sprite.texture_atlas = Some(atlas);
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Reflect)]
-enum Facing {
-    NorthWest = 0,
-    West = 1,
-    SouthWest = 2,
-    South = 3,
-    SouthEast = 4,
-    East = 5,
-    NorthEast = 6,
-    North = 7,
-}
-
-impl From<usize> for Facing {
-    fn from(index: usize) -> Self {
-        match index {
-            0 => Self::NorthWest,
-            1 => Self::West,
-            2 => Self::SouthWest,
-            3 => Self::South,
-            4 => Self::SouthEast,
-            5 => Self::East,
-            6 => Self::NorthEast,
-            7 => Self::North,
-            _ => unreachable!(),
         }
     }
 }

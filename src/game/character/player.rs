@@ -6,10 +6,13 @@ use std::time::Duration;
 use crate::game::character::animation::{
     AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
 };
-use crate::game::character::{character, CharacterStateContainer};
-use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
+use crate::game::character::{CharacterStateContainer, character};
+use crate::game::grid::coords::{
+    WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
+};
 //use crate::game::object::Shadow;
 use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
+use crate::game::grid::Facing;
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
@@ -21,13 +24,18 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            (record_action_input, record_player_movement_input)
+            (
+                record_action_input,
+                record_player_movement_input,
+                record_aim_input,
+            )
                 .chain()
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
             camera_follow_player.in_set(AppSystems::Respond),
         ),
-    );
+    )
+    .add_observer(on_aim_facing_changed);
 }
 
 /// The player character.
@@ -103,13 +111,32 @@ pub fn player(
     //    Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
     //);
 
+    let indicator_ring_sprite = player_assets.indicator_ring.clone();
+    let indicator_ring_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 1, None, None);
+    let indicator_ring_layout = texture_atlas_layouts.add(indicator_ring_layout);
+
+    let indicator_ring = (
+        AimFacing::default(),
+        Sprite {
+            image: indicator_ring_sprite,
+            texture_atlas: Some(TextureAtlas {
+                layout: indicator_ring_layout,
+                index: 0,
+            }),
+            color: Color::srgba(1.0, 1.0, 1.0, 0.25),
+            ..default()
+        },
+        Visibility::Hidden,
+        Transform::from_translation(Vec3::new(0.0, 0.0, 100.0)),
+    );
+
     (
         Player,
         movement_controller,
         character_data,
-        //Health::new(300),
         Health::with_current(300, 160),
-        Children::spawn(SpawnWith(move |_parent: &mut ChildSpawner| {
+        Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
+            parent.spawn(indicator_ring);
             //parent.spawn(shadow);
         })),
     )
@@ -123,17 +150,84 @@ const JUMP_VELOCITY: f32 = 2.75;
 #[reflect(Component)]
 pub struct Player;
 
+#[derive(Component, Debug, Clone, Copy, PartialEq, Default, Eq, Reflect)]
+pub struct AimFacing(Option<Facing>);
+
+#[derive(EntityEvent, Debug, Clone, Reflect)]
+pub struct AimFacingEvent {
+    entity: Entity,
+    facing: Option<Facing>,
+}
+
+fn record_aim_input(
+    gamepad_res: Option<Res<GamepadRes>>,
+    gamepads: Query<&Gamepad>,
+    aim_query: Query<(Entity, &AimFacing)>,
+    mut commands: Commands,
+) {
+    // Add gamepad input if available
+    if let Some(gamepad_res) = gamepad_res
+        && let Ok(gamepad) = gamepads.get(gamepad_res.0)
+    {
+        let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap_or(0.0);
+        let right_stick_y = gamepad.get(GamepadAxis::RightStickY).unwrap_or(0.0);
+
+        // Apply deadzone
+        let new_facing = if right_stick_x.abs() > 0.1 || right_stick_y.abs() > 0.1 {
+            let aim_direction = Vec2::new(right_stick_x, right_stick_y);
+            Some(Facing::from(rotate_screen_space_to_facing(aim_direction)))
+        } else {
+            None
+        };
+
+        if let Ok((aiming_entity, aim_facing)) = aim_query.single()
+            //&& new_facing != aim_facing.0
+        {
+            commands.trigger(AimFacingEvent {
+                entity: aiming_entity,
+                facing: new_facing,
+            })
+        }
+    }
+}
+
+fn on_aim_facing_changed(
+    event: On<AimFacingEvent>,
+    mut query: Query<(&mut AimFacing, &mut Sprite, &mut Visibility)>,
+) {
+    let Ok((mut aim_facing, mut sprite, mut visibility)) = query.get_mut(event.entity) else {
+        return;
+    };
+
+    if let Some(new_facing) = event.facing {
+        aim_facing.0 = Some(new_facing);
+        visibility
+            .set(Box::new(Visibility::Inherited))
+            .expect("Failed to set visibility");
+        sprite.texture_atlas.as_mut().unwrap().index = new_facing as usize;
+    } else {
+        visibility
+            .set(Box::new(Visibility::Hidden))
+            .expect("Failed to set visibility");
+    }
+}
+
 fn record_player_movement_input(
     input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
     mut controller_query: Query<
-        (&mut MovementController, &PhysicsData, &WorldPosition, &CharacterStateContainer),
+        (
+            &mut MovementController,
+            &PhysicsData,
+            &WorldPosition,
+            &CharacterStateContainer,
+        ),
         With<Player>,
     >,
 ) {
     let mut intent = Vec3::ZERO;
-    
+
     let mut is_jumping = false;
 
     // Add gamepad input if available
@@ -249,6 +343,10 @@ pub struct PlayerAssets {
     walk: Handle<Image>,
     #[dependency]
     run: Handle<Image>,
+
+    #[dependency]
+    indicator_ring: Handle<Image>,
+
     #[dependency]
     pub steps: Vec<Handle<AudioSource>>,
 }
@@ -260,6 +358,7 @@ impl FromWorld for PlayerAssets {
             idle: assets.load("images/characters/idle.png"),
             walk: assets.load("images/characters/walk.png"),
             run: assets.load("images/characters/run.png"),
+            indicator_ring: assets.load("images/characters/indicator_ring.png"),
 
             steps: vec![
                 assets.load("audio/sound_effects/step1.ogg"),
