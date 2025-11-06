@@ -6,7 +6,7 @@ use std::time::Duration;
 use crate::game::character::animation::{
     AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
 };
-use crate::game::character::{character, CharacterStateEvent, CharacterState, Facing};
+use crate::game::character::{CharacterState, CharacterStateEvent, Facing, character};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
@@ -37,6 +37,8 @@ pub(super) fn plugin(app: &mut App) {
     .add_observer(on_aim_facing_changed);
 }
 
+const ATTACK_DURATION: u64 = 560;
+
 /// The player character.
 pub fn player(
     position: Vec3,
@@ -48,10 +50,12 @@ pub fn player(
     let idle_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 12, 8, None, None);
     let walk_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
     let run_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
+    let attack_layout = TextureAtlasLayout::from_grid(UVec2::new(96, 96), 7, 8, None, None);
 
     let idle_layout = texture_atlas_layouts.add(idle_layout);
     let walk_layout = texture_atlas_layouts.add(walk_layout);
     let run_layout = texture_atlas_layouts.add(run_layout);
+    let attack_layout = texture_atlas_layouts.add(attack_layout);
 
     let character_animation = CharacterAnimation::new(AnimationCapabilities {
         idle: CharacterAnimationData {
@@ -80,6 +84,15 @@ pub fn player(
             },
             frames: 8,
             interval: Duration::from_millis(50),
+        }),
+        attack: Some(CharacterAnimationData {
+            image: player_assets.attack.clone(),
+            atlas: TextureAtlas {
+                layout: attack_layout,
+                index: 0,
+            },
+            frames: 7,
+            interval: Duration::from_millis(ATTACK_DURATION / 7),
         }),
     });
 
@@ -150,7 +163,7 @@ const JUMP_VELOCITY: f32 = 2.75;
 pub struct Player;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Default, Eq, Reflect)]
-pub struct AimFacing(Option<Facing>);
+pub struct AimFacing(pub Option<Facing>);
 
 #[derive(EntityEvent, Debug, Clone, Reflect)]
 pub struct AimFacingEvent {
@@ -180,7 +193,7 @@ fn record_aim_input(
         };
 
         if let Ok((aiming_entity, aim_facing)) = aim_query.single()
-            //&& new_facing != aim_facing.0
+        //&& new_facing != aim_facing.0
         {
             commands.trigger(AimFacingEvent {
                 entity: aiming_entity,
@@ -286,26 +299,30 @@ fn record_player_movement_input(
     }
 
     // Apply movement intent to controllers.
-    for (entity, mut controller, physics, position, _state) in &mut controller_query {
+    for (entity, mut controller, physics, position, state) in &mut controller_query {
+        if !state.is_movement() {
+            controller.intent = Vec3::ZERO;
+            continue;
+        }
+
         controller.intent = intent;
 
         let new_state = if intent.length() > 1e-6 {
             if intent.length() < 0.7 {
                 controller.running = false;
                 CharacterState::Walking
-            }
-            else {
+            } else {
                 match (toggle_run, controller.running) {
                     (false, false) => CharacterState::Walking,
                     (false, true) => CharacterState::Running,
                     (true, false) => {
                         controller.running = true;
                         CharacterState::Running
-                    },
+                    }
                     (true, true) => {
                         controller.running = false;
                         CharacterState::Walking
-                    },
+                    }
                 }
             }
         } else {
@@ -338,13 +355,13 @@ fn record_action_input(
     input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
-    health_query: Query<(Entity, &Health), With<Player>>,
+    player_query: Query<(Entity, &mut CharacterState), With<Player>>,
     mut commands: Commands,
 ) {
     if let Some(gamepad_res) = gamepad_res
         && let Ok(gamepad) = gamepads.get(gamepad_res.0)
     {
-        let Ok((player, health)) = health_query.single() else {
+        let Ok((player, state)) = player_query.single() else {
             return;
         };
 
@@ -357,6 +374,15 @@ fn record_action_input(
 
         if gamepad.just_pressed(GamepadButton::North) {
             commands.trigger(HealthEvent::new(player, HealthEventType::Heal(10)));
+        }
+
+        if gamepad.just_pressed(GamepadButton::RightTrigger) {
+            commands.trigger(CharacterStateEvent {
+                entity: player,
+                new_state: CharacterState::Attacking { time_left: ATTACK_DURATION as f32 / 1000.0 },
+                prev_state: None,
+                config: Default::default(),
+            })
         }
     }
 }
@@ -386,6 +412,8 @@ pub struct PlayerAssets {
     walk: Handle<Image>,
     #[dependency]
     run: Handle<Image>,
+    #[dependency]
+    attack: Handle<Image>,
 
     #[dependency]
     indicator_ring: Handle<Image>,
@@ -401,6 +429,8 @@ impl FromWorld for PlayerAssets {
             idle: assets.load("images/characters/idle.png"),
             walk: assets.load("images/characters/walk.png"),
             run: assets.load("images/characters/run.png"),
+            attack: assets.load("images/characters/attack.png"),
+
             indicator_ring: assets.load("images/characters/indicator_ring.png"),
 
             steps: vec![

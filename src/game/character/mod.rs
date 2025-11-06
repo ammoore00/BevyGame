@@ -1,3 +1,4 @@
+use crate::AppSystems;
 use crate::asset_tracking::LoadResource;
 use crate::game::character::animation::CharacterAnimation;
 use crate::game::grid::coords::WorldPosition;
@@ -13,6 +14,7 @@ pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
 
     app.add_plugins((animation::plugin, health::plugin, player::plugin));
+    app.add_systems(Update, (update_state,).in_set(AppSystems::Update));
     app.add_observer(on_state_change);
 }
 
@@ -54,11 +56,19 @@ impl FromWorld for CharacterAssets {
     }
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
 pub enum CharacterState {
     Idle,
     Walking,
     Running,
+    Attacking { time_left: f32 },
+}
+
+impl CharacterState {
+    /// If this state is a movement state which can be canceled into other states
+    pub fn is_movement(&self) -> bool {
+        matches!(self, CharacterState::Idle | CharacterState::Walking | CharacterState::Running)
+    }
 }
 
 #[derive(EntityEvent, Debug, Clone, Reflect)]
@@ -95,7 +105,7 @@ impl Default for CharacterStateEventConfiguration {
 
 fn on_state_change(
     event: On<CharacterStateEvent>,
-    mut query: Query<(&mut CharacterState), With<Character>>,
+    mut query: Query<&mut CharacterState, With<Character>>,
 ) {
     let Ok(mut state) = query.get_mut(event.entity) else {
         return;
@@ -115,6 +125,19 @@ fn on_state_change(
     }
 
     *state = event.new_state;
+}
+
+fn update_state(time: Res<Time>, mut query: Query<(&mut CharacterState), With<Character>>) {
+    query.iter_mut().for_each(|mut state| match *state {
+        CharacterState::Attacking { ref mut time_left } => {
+            *time_left -= time.delta_secs();
+
+            if *time_left <= 0.0 {
+                *state = CharacterState::Idle;
+            }
+        }
+        _ => {}
+    })
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]

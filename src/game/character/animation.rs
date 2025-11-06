@@ -1,3 +1,4 @@
+use crate::game::character::player::AimFacing;
 use crate::game::character::{CharacterState, Facing};
 use crate::game::physics::movement::MovementController;
 use crate::{AppSystems, PausableSystems};
@@ -30,20 +31,34 @@ fn update_animation_state(
         &MovementController,
         &CharacterState,
         &Facing,
+        Option<&AimFacing>,
     )>,
 ) {
-    for (mut animation, controller, state, facing) in query {
+    for (mut animation, controller, state, facing, aim_facing) in query {
         animation.facing = *facing;
-        
+
         match state {
             CharacterState::Idle => {
                 animation.set_idle();
             }
             CharacterState::Walking => {
-                animation.set_walking().unwrap_or_else(|_| animation.set_idle());
+                animation
+                    .set_walking()
+                    .unwrap_or_else(|_| animation.set_idle());
             }
             CharacterState::Running => {
-                animation.set_running().unwrap_or_else(|_| animation.set_idle());
+                animation
+                    .set_running()
+                    .unwrap_or_else(|_| animation.set_idle());
+            }
+            CharacterState::Attacking { .. } => {
+                if let Some(aim_facing) = aim_facing.map(|aim_facing| aim_facing.0).flatten() {
+                    animation.facing = aim_facing;
+                }
+                
+                animation
+                    .set_attacking()
+                    .unwrap_or_else(|_| animation.set_idle());
             }
         }
     }
@@ -135,6 +150,23 @@ impl CharacterAnimation {
         Ok(())
     }
 
+    fn set_attacking(&mut self) -> Result<(), AnimationError> {
+        if matches!(self.state, AnimationState::Attacking) {
+            return Ok(());
+        }
+
+        let attack = self
+            .capabilities
+            .attack
+            .as_ref()
+            .ok_or(AnimationError::NoSuchCapability(AnimationState::Attacking))?;
+
+        self.state = AnimationState::Attacking;
+        self.timer = Timer::new(attack.interval, TimerMode::Repeating);
+        self.frame = 0;
+        Ok(())
+    }
+
     fn reset(&mut self) {
         self.state = AnimationState::Idling;
         self.timer = Timer::new(self.capabilities.idle.interval, TimerMode::Repeating);
@@ -161,8 +193,17 @@ impl CharacterAnimation {
                     }
                 }
                 AnimationState::Running => {
-                    if let Some(walk) = &self.capabilities.walk {
-                        walk.frames
+                    if let Some(run) = &self.capabilities.walk {
+                        run.frames
+                    } else {
+                        // If we somehow got into an invalid state, reset the animation to idle
+                        self.reset();
+                        return;
+                    }
+                }
+                AnimationState::Attacking => {
+                    if let Some(attack) = &self.capabilities.attack {
+                        attack.frames
                     } else {
                         // If we somehow got into an invalid state, reset the animation to idle
                         self.reset();
@@ -191,6 +232,13 @@ impl CharacterAnimation {
                     default
                 }
             }
+            AnimationState::Attacking => {
+                if let Some(attack) = &self.capabilities.attack {
+                    &attack.image
+                } else {
+                    default
+                }
+            }
         }
     }
 
@@ -209,6 +257,13 @@ impl CharacterAnimation {
             AnimationState::Running => {
                 if let Some(run) = &self.capabilities.run {
                     &run.atlas
+                } else {
+                    default
+                }
+            }
+            AnimationState::Attacking => {
+                if let Some(attack) = &self.capabilities.attack {
+                    &attack.atlas
                 } else {
                     default
                 }
@@ -240,6 +295,14 @@ impl CharacterAnimation {
                     default
                 }
             }
+            AnimationState::Attacking => {
+                if let Some(attack) = &self.capabilities.attack {
+                    let offset = self.facing as usize * attack.frames;
+                    self.frame + offset
+                } else {
+                    default
+                }
+            }
         }
     }
 
@@ -262,6 +325,7 @@ pub struct AnimationCapabilities {
     pub idle: CharacterAnimationData,
     pub walk: Option<CharacterAnimationData>,
     pub run: Option<CharacterAnimationData>,
+    pub attack: Option<CharacterAnimationData>,
 }
 
 #[derive(Debug, Clone, Reflect)]
@@ -269,4 +333,5 @@ pub enum AnimationState {
     Idling,
     Walking,
     Running,
+    Attacking,
 }
