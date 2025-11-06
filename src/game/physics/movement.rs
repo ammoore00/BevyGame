@@ -15,6 +15,7 @@
 
 use bevy::prelude::*;
 
+use crate::game::character::Facing;
 use crate::game::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, CollisionEvent, PhysicsData};
 use crate::{AppSystems, PausableSystems};
@@ -22,7 +23,12 @@ use crate::{AppSystems, PausableSystems};
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (set_intended_velocity, check_collisions, apply_movement)
+        (
+            set_intended_velocity,
+            update_facing_from_movement,
+            check_collisions,
+            apply_movement,
+        )
             .chain()
             .in_set(AppSystems::Update)
             .in_set(PausableSystems),
@@ -57,7 +63,7 @@ impl Default for MovementController {
 fn set_intended_velocity(time: Res<Time>, query: Query<(&MovementController, &mut PhysicsData)>) {
     for (controller, mut physics) in query {
         if let PhysicsData::Kinematic {
-            displacement: ref mut displacement,
+            ref mut displacement,
             ..
         } = *physics
         {
@@ -70,6 +76,20 @@ fn set_intended_velocity(time: Res<Time>, query: Query<(&MovementController, &mu
             displacement.x = intent.x;
             displacement.z = intent.z;
             displacement.y += intent.y;
+        }
+    }
+}
+
+fn update_facing_from_movement(query: Query<(&PhysicsData, &mut Facing)>) {
+    for (physics, mut facing) in query {
+        let PhysicsData::Kinematic { displacement, .. } = *physics else {
+            continue;
+        };
+
+        let ground_movement = displacement.xz();
+
+        if ground_movement.length() > 1e-6 {
+            *facing = Facing::from(ground_movement);
         }
     }
 }

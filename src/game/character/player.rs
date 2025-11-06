@@ -6,13 +6,12 @@ use std::time::Duration;
 use crate::game::character::animation::{
     AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
 };
-use crate::game::character::{character, CharacterStateEvent, CharacterState};
+use crate::game::character::{character, CharacterStateEvent, CharacterState, Facing};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
 //use crate::game::object::Shadow;
 use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
-use crate::game::grid::Facing;
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;

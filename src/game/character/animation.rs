@@ -1,10 +1,9 @@
+use crate::game::character::{CharacterState, Facing};
 use crate::game::physics::movement::MovementController;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::time::Duration;
-use crate::game::character::CharacterState;
-use crate::game::grid::Facing;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -25,24 +24,27 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
     }
 }
 
-fn update_animation_state(query: Query<(&mut CharacterAnimation, &MovementController, &CharacterState)>) {
-    for (mut animation, controller, state) in query {
-        // TODO: Better facing handling
-        let ground_movement = controller.intent.xz();
-        let facing = Facing::from(ground_movement);
-
-        if matches!(state, CharacterState::Running) {
-            animation.facing = facing;
-            animation
-                .set_running()
-                .unwrap_or_else(|_| animation.set_idle());
-        } else if matches!(state, CharacterState::Walking) {
-            animation.facing = facing;
-            animation
-                .set_walking()
-                .unwrap_or_else(|_| animation.set_idle());
-        } else {
-            animation.set_idle();
+fn update_animation_state(
+    query: Query<(
+        &mut CharacterAnimation,
+        &MovementController,
+        &CharacterState,
+        &Facing,
+    )>,
+) {
+    for (mut animation, controller, state, facing) in query {
+        animation.facing = *facing;
+        
+        match state {
+            CharacterState::Idle => {
+                animation.set_idle();
+            }
+            CharacterState::Walking => {
+                animation.set_walking().unwrap_or_else(|_| animation.set_idle());
+            }
+            CharacterState::Running => {
+                animation.set_running().unwrap_or_else(|_| animation.set_idle());
+            }
         }
     }
 }
