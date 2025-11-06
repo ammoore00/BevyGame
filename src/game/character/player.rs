@@ -6,7 +6,7 @@ use std::time::Duration;
 use crate::game::character::animation::{
     AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
 };
-use crate::game::character::character;
+use crate::game::character::{character, CharacterStateContainer};
 use crate::game::grid::coords::{WorldPosition, rotate_screen_space_to_movement};
 //use crate::game::object::Shadow;
 use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
@@ -21,7 +21,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            (record_player_movement_input, record_action_input)
+            (record_action_input, record_player_movement_input)
+                .chain()
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
             camera_follow_player.in_set(AppSystems::Respond),
@@ -127,11 +128,12 @@ fn record_player_movement_input(
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
     mut controller_query: Query<
-        (&mut MovementController, &PhysicsData, &WorldPosition),
+        (&mut MovementController, &PhysicsData, &WorldPosition, &CharacterStateContainer),
         With<Player>,
     >,
 ) {
     let mut intent = Vec3::ZERO;
+    
     let mut is_jumping = false;
 
     // Add gamepad input if available
@@ -179,7 +181,7 @@ fn record_player_movement_input(
     }
 
     // Apply movement intent to controllers.
-    for (mut controller, physics, position) in &mut controller_query {
+    for (mut controller, physics, position, state) in &mut controller_query {
         controller.intent = intent;
         if let PhysicsData::Kinematic {
             time_since_grounded,
