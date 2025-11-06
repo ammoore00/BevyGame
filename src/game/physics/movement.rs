@@ -38,8 +38,9 @@ pub struct MovementController {
     /// The direction the character wants to move in.
     pub intent: Vec3,
 
+    pub running: bool,
+
     /// Maximum speed in world units per second.
-    /// 1 world unit = 1 pixel when using the default 2D camera and no physics engine.
     pub max_speed: f32,
 }
 
@@ -47,6 +48,7 @@ impl Default for MovementController {
     fn default() -> Self {
         Self {
             intent: Vec3::ZERO,
+            running: false,
             max_speed: 3.5,
         }
     }
@@ -55,14 +57,19 @@ impl Default for MovementController {
 fn set_intended_velocity(time: Res<Time>, query: Query<(&MovementController, &mut PhysicsData)>) {
     for (controller, mut physics) in query {
         if let PhysicsData::Kinematic {
-            displacement: ref mut velocity,
+            displacement: ref mut displacement,
             ..
         } = *physics
         {
-            let intent = controller.intent * controller.max_speed * time.delta_secs();
-            velocity.x = intent.x;
-            velocity.z = intent.z;
-            velocity.y += intent.y;
+            let mut intent = controller.intent * controller.max_speed * time.delta_secs();
+
+            if controller.running {
+                intent *= Vec3::new(1.5, 1.0, 1.5);
+            }
+
+            displacement.x = intent.x;
+            displacement.z = intent.z;
+            displacement.y += intent.y;
         }
     }
 }

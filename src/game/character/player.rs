@@ -6,7 +6,7 @@ use std::time::Duration;
 use crate::game::character::animation::{
     AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
 };
-use crate::game::character::{CharacterStateContainer, character};
+use crate::game::character::{character, CharacterStateEvent, CharacterState};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
@@ -218,17 +218,21 @@ fn record_player_movement_input(
     gamepads: Query<&Gamepad>,
     mut controller_query: Query<
         (
+            Entity,
             &mut MovementController,
             &PhysicsData,
             &WorldPosition,
-            &CharacterStateContainer,
+            &CharacterState,
         ),
         With<Player>,
     >,
+    mut commands: Commands,
 ) {
     let mut intent = Vec3::ZERO;
 
     let mut is_jumping = false;
+
+    let mut toggle_run = false;
 
     // Add gamepad input if available
     if let Some(gamepad_res) = gamepad_res
@@ -247,6 +251,10 @@ fn record_player_movement_input(
 
         if gamepad.just_pressed(GamepadButton::South) {
             is_jumping = true;
+        }
+
+        if gamepad.just_pressed(GamepadButton::LeftThumb) {
+            toggle_run = true;
         }
     }
 
@@ -275,8 +283,40 @@ fn record_player_movement_input(
     }
 
     // Apply movement intent to controllers.
-    for (mut controller, physics, position, state) in &mut controller_query {
+    for (entity, mut controller, physics, position, _state) in &mut controller_query {
         controller.intent = intent;
+
+        let new_state = if intent.length() > 1e-6 {
+            if intent.length() < 0.7 {
+                controller.running = false;
+                CharacterState::Walking
+            }
+            else {
+                match (toggle_run, controller.running) {
+                    (false, false) => CharacterState::Walking,
+                    (false, true) => CharacterState::Running,
+                    (true, false) => {
+                        controller.running = true;
+                        CharacterState::Running
+                    },
+                    (true, true) => {
+                        controller.running = false;
+                        CharacterState::Walking
+                    },
+                }
+            }
+        } else {
+            controller.running = false;
+            CharacterState::Idle
+        };
+
+        commands.trigger(CharacterStateEvent {
+            entity,
+            new_state,
+            prev_state: None,
+            config: Default::default(),
+        });
+
         if let PhysicsData::Kinematic {
             time_since_grounded,
             last_grounded_height,

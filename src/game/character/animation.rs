@@ -3,6 +3,7 @@ use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::time::Duration;
+use crate::game::character::CharacterState;
 use crate::game::grid::Facing;
 
 pub(super) fn plugin(app: &mut App) {
@@ -24,18 +25,18 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
     }
 }
 
-fn update_animation_state(query: Query<(&mut CharacterAnimation, &MovementController)>) {
-    for (mut animation, controller) in query {
-        //let direction = rotate_movement_to_screen_space(controller.intent);
+fn update_animation_state(query: Query<(&mut CharacterAnimation, &MovementController, &CharacterState)>) {
+    for (mut animation, controller, state) in query {
+        // TODO: Better facing handling
         let ground_movement = controller.intent.xz();
         let facing = Facing::from(ground_movement);
 
-        if ground_movement.length() >= 0.8 {
+        if matches!(state, CharacterState::Running) {
             animation.facing = facing;
             animation
                 .set_running()
                 .unwrap_or_else(|_| animation.set_idle());
-        } else if ground_movement.length() > 1e-6 {
+        } else if matches!(state, CharacterState::Walking) {
             animation.facing = facing;
             animation
                 .set_walking()
