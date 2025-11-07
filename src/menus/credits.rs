@@ -61,7 +61,7 @@ fn created_by() -> impl Bundle {
 fn assets() -> impl Bundle {
     grid(vec![
         ["Button SFX", "CC0 by Jaszunio15"],
-        ["Music", "CC BY 3.0 by Kevin MacLeod"],
+        ["Music", "CC BY 3.0 by Kevin MacLeod\nCC BY 4.0 by Tim Kulig"],
         ["Font", "Open Font License by BoldPixels"],
         ["Character Templates", "ZeggyGames - zegley.itch.io"],
         ["User Interface", "LimeZu - limezu.itch.io"],
