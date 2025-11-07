@@ -37,7 +37,7 @@ pub(super) fn plugin(app: &mut App) {
     .add_observer(on_aim_facing_changed);
 }
 
-const ATTACK_DURATION: u64 = 560;
+const ATTACK_DURATION: u64 = 350;
 
 /// The player character.
 pub fn player(
@@ -193,7 +193,7 @@ fn record_aim_input(
         };
 
         if let Ok((aiming_entity, aim_facing)) = aim_query.single()
-        //&& new_facing != aim_facing.0
+            && new_facing != aim_facing.0
         {
             commands.trigger(AimFacingEvent {
                 entity: aiming_entity,
@@ -218,6 +218,7 @@ fn on_aim_facing_changed(
             .expect("Failed to set visibility");
         sprite.texture_atlas.as_mut().unwrap().index = new_facing as usize;
     } else {
+        aim_facing.0 = None;
         visibility
             .set(Box::new(Visibility::Hidden))
             .expect("Failed to set visibility");
@@ -355,14 +356,19 @@ fn record_action_input(
     input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
-    player_query: Query<(Entity, &mut CharacterState), With<Player>>,
+    mut player_query: Query<(Entity, &CharacterState, &mut Facing), With<Player>>,
+    aim_facing_query: Query<&AimFacing>,
     mut commands: Commands,
 ) {
     if let Some(gamepad_res) = gamepad_res
         && let Ok(gamepad) = gamepads.get(gamepad_res.0)
     {
-        let Ok((player, state)) = player_query.single() else {
+        let Ok((player, state, mut facing)) = player_query.single_mut() else {
             return;
+        };
+
+        let Ok(aim_facing) = aim_facing_query.single() else {
+            panic!("Singular aim facing not found");
         };
 
         if gamepad.just_pressed(GamepadButton::West) {
@@ -376,7 +382,11 @@ fn record_action_input(
             commands.trigger(HealthEvent::new(player, HealthEventType::Heal(10)));
         }
 
-        if gamepad.just_pressed(GamepadButton::RightTrigger) {
+        if gamepad.just_pressed(GamepadButton::RightTrigger) && state.is_movement() {
+            if let Some(aim_facing) = aim_facing.0 {
+                *facing = aim_facing;
+            }
+
             commands.trigger(CharacterStateEvent {
                 entity: player,
                 new_state: CharacterState::Attacking { time_left: ATTACK_DURATION as f32 / 1000.0 },

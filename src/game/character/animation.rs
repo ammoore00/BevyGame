@@ -52,10 +52,6 @@ fn update_animation_state(
                     .unwrap_or_else(|_| animation.set_idle());
             }
             CharacterState::Attacking { .. } => {
-                if let Some(aim_facing) = aim_facing.map(|aim_facing| aim_facing.0).flatten() {
-                    animation.facing = aim_facing;
-                }
-                
                 animation
                     .set_attacking()
                     .unwrap_or_else(|_| animation.set_idle());

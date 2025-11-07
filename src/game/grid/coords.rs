@@ -198,9 +198,9 @@ impl Deref for ScreenCoords {
 }
 
 pub fn rotate_screen_space_to_facing(screen_space: Vec2) -> Vec2 {
-    let angle = std::f32::consts::FRAC_PI_4;
+    let angle = -std::f32::consts::FRAC_PI_4;
     let rotation = Mat2::from_angle(angle);
-    rotation * screen_space
+    rotation * (screen_space * Vec2::new(1.0, -1.0))
 }
 
 pub fn rotate_screen_space_to_movement(screen_space: Vec3) -> Vec3 {
