@@ -9,11 +9,17 @@ use std::fmt::Debug;
 mod animation;
 pub mod health;
 pub mod player;
+pub mod stamina;
 
 pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
 
-    app.add_plugins((animation::plugin, health::plugin, player::plugin));
+    app.add_plugins((
+        animation::plugin,
+        health::plugin,
+        player::plugin,
+        stamina::plugin,
+    ));
     app.add_systems(Update, (update_state,).in_set(AppSystems::Update));
     app.add_observer(on_state_change);
 }

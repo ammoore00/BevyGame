@@ -17,6 +17,8 @@ use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
 use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
+use crate::game::character::stamina::{Stamina, StaminaEvent};
+use crate::screens::Screen;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -30,6 +32,7 @@ pub(super) fn plugin(app: &mut App) {
                 record_aim_input,
             )
                 .chain()
+                .run_if(in_state(Screen::Gameplay))
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
             camera_follow_player.in_set(AppSystems::Respond),
@@ -38,8 +41,6 @@ pub(super) fn plugin(app: &mut App) {
     .add_observer(on_aim_facing_changed)
     .add_observer(on_player_attack);
 }
-
-const ATTACK_DURATION: u64 = 350;
 
 /// The player character.
 pub fn player(
@@ -148,7 +149,8 @@ pub fn player(
         Player,
         movement_controller,
         character_data,
-        Health::with_current(300, 160),
+        Health::with_current(600, 400),
+        Stamina::new(450, 150, 1.0),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn(indicator_ring);
             //parent.spawn(shadow);
@@ -353,14 +355,14 @@ fn record_action_input(
     _input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
-    mut player_query: Query<(Entity, &CharacterState, &mut Facing), With<Player>>,
+    mut player_query: Query<(Entity, &CharacterState, &mut Facing, &Stamina), With<Player>>,
     aim_facing_query: Query<&AimFacing>,
     mut commands: Commands,
 ) {
     if let Some(gamepad_res) = gamepad_res
         && let Ok(gamepad) = gamepads.get(gamepad_res.0)
     {
-        let Ok((player, state, mut facing)) = player_query.single_mut() else {
+        let Ok((player, state, mut facing, stamina)) = player_query.single_mut() else {
             return;
         };
 
@@ -379,7 +381,7 @@ fn record_action_input(
             commands.trigger(HealthEvent::new(player, HealthEventType::Heal(10)));
         }
 
-        if gamepad.just_pressed(GamepadButton::RightTrigger) && state.is_movement() {
+        if gamepad.just_pressed(GamepadButton::RightTrigger) && state.is_movement() && stamina.current > 0 {
             if let Some(aim_facing) = aim_facing.0 {
                 *facing = aim_facing;
             }
@@ -414,12 +416,17 @@ struct PlayerAttackEvent {
     facing: Facing,
 }
 
+const ATTACK_DURATION: u64 = 350;
+const ATTACK_STAMINA_COST: usize = 50;
+
 fn on_player_attack(
     event: On<PlayerAttackEvent>,
     player_assets: Res<PlayerAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands,
 ) {
+    commands.trigger(StaminaEvent::new(event.entity, ATTACK_STAMINA_COST));
+
     commands.trigger(CharacterStateEvent::new(
         event.entity,
         CharacterState::Attacking {

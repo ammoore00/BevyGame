@@ -3,6 +3,7 @@ use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::time::Duration;
+use crate::screens::Screen;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -13,6 +14,7 @@ pub(super) fn plugin(app: &mut App) {
                 .chain()
                 .in_set(AppSystems::Update),
         )
+            .run_if(in_state(Screen::Gameplay))
             .in_set(PausableSystems),
     );
 }
