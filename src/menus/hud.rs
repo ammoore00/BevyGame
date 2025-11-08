@@ -163,7 +163,7 @@ fn update_stamina_bar(
 
     spawn_stat_bar(
         stamina.max,
-        stamina.current as usize,
+        stamina.current.max(0) as usize,
         HEALTH_BAR_PIXEL_VALUE,
         16,
         StaminaBarSegment,

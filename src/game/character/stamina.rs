@@ -18,7 +18,7 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component)]
 pub struct Stamina {
     pub max: usize,
-    pub current: usize,
+    pub current: isize,
     pub regen_rate: usize,
     pub regen_delay: f32,
     pub regen_timer: Timer,
@@ -27,12 +27,12 @@ pub struct Stamina {
 
 impl Stamina {
     pub fn new(max: usize, regen_per_second: usize, regen_delay: f32) -> Self {
-        let regen_interval = 0.1;
+        let regen_interval = 0.05;
         let regen_rate = (regen_per_second as f32 * regen_interval).max(0.0) as usize;
 
         Self {
             max,
-            current: max,
+            current: max as isize,
             regen_rate,
             regen_delay,
             regen_timer: Timer::from_seconds(regen_interval, TimerMode::Repeating),
@@ -55,15 +55,8 @@ impl StaminaEvent {
 
 fn on_stamina_event(event: On<StaminaEvent>, mut query: Query<&mut Stamina>) {
     if let Ok(mut stamina) = query.get_mut(event.entity) {
-        stamina.current = (stamina.current as isize - event.cost as isize).max(0) as usize;
-
-        let regen_delay = if stamina.current > 0 {
-            stamina.regen_delay
-        } else {
-            stamina.regen_delay * 2.0
-        };
-
-        stamina.regen_delay_timer = Some(Timer::from_seconds(regen_delay, TimerMode::Once));
+        stamina.current -= event.cost as isize;
+        stamina.regen_delay_timer = Some(Timer::from_seconds(stamina.regen_delay, TimerMode::Once));
     }
 }
 
@@ -87,8 +80,8 @@ fn update_stamina(mut query: Query<&mut Stamina>) {
         }
 
         if stamina.regen_timer.is_finished() {
-            stamina.current += stamina.regen_rate;
-            stamina.current = stamina.current.min(stamina.max);
+            stamina.current += stamina.regen_rate as isize;
+            stamina.current = stamina.current.min(stamina.max as isize);
         }
     }
 }
