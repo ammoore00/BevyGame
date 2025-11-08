@@ -4,8 +4,8 @@ pub mod character;
 mod grid;
 pub mod level;
 mod object;
-mod physics;
 mod particle;
+mod physics;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((

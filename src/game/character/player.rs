@@ -333,12 +333,7 @@ fn record_player_movement_input(
             CharacterState::Idle
         };
 
-        commands.trigger(CharacterStateEvent {
-            entity,
-            new_state,
-            prev_state: None,
-            config: Default::default(),
-        });
+        commands.trigger(CharacterStateEvent::new(entity, new_state));
 
         if let PhysicsData::Kinematic {
             time_since_grounded,
@@ -355,7 +350,7 @@ fn record_player_movement_input(
 }
 
 fn record_action_input(
-    input: Res<ButtonInput<KeyCode>>,
+    _input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
     mut player_query: Query<(Entity, &CharacterState, &mut Facing), With<Player>>,
@@ -425,14 +420,12 @@ fn on_player_attack(
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands,
 ) {
-    commands.trigger(CharacterStateEvent {
-        entity: event.entity,
-        new_state: CharacterState::Attacking {
+    commands.trigger(CharacterStateEvent::new(
+        event.entity,
+        CharacterState::Attacking {
             time_left: ATTACK_DURATION as f32 / 1000.0,
         },
-        prev_state: None,
-        config: Default::default(),
-    });
+    ));
 
     const NUM_FRAMES: u32 = 7;
 

@@ -1,6 +1,4 @@
-use crate::game::character::player::AimFacing;
 use crate::game::character::{CharacterState, Facing};
-use crate::game::physics::movement::MovementController;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::fmt::Debug;
@@ -25,13 +23,7 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
     }
 }
 
-fn update_animation_state(
-    query: Query<(
-        &mut CharacterAnimation,
-        &CharacterState,
-        &Facing,
-    )>,
-) {
+fn update_animation_state(query: Query<(&mut CharacterAnimation, &CharacterState, &Facing)>) {
     for (mut animation, state, facing) in query {
         animation.facing = *facing;
 

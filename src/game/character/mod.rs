@@ -67,7 +67,10 @@ pub enum CharacterState {
 impl CharacterState {
     /// If this state is a movement state which can be canceled into other states
     pub fn is_movement(&self) -> bool {
-        matches!(self, CharacterState::Idle | CharacterState::Walking | CharacterState::Running)
+        matches!(
+            self,
+            CharacterState::Idle | CharacterState::Walking | CharacterState::Running
+        )
     }
 }
 
@@ -127,16 +130,15 @@ fn on_state_change(
     *state = event.new_state;
 }
 
-fn update_state(time: Res<Time>, mut query: Query<(&mut CharacterState), With<Character>>) {
-    query.iter_mut().for_each(|mut state| match *state {
-        CharacterState::Attacking { ref mut time_left } => {
+fn update_state(time: Res<Time>, mut query: Query<&mut CharacterState, With<Character>>) {
+    query.iter_mut().for_each(|mut state| {
+        if let CharacterState::Attacking { ref mut time_left } = *state {
             *time_left -= time.delta_secs();
 
             if *time_left <= 0.0 {
                 *state = CharacterState::Idle;
             }
         }
-        _ => {}
     })
 }
 

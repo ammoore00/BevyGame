@@ -57,7 +57,11 @@ impl ParticleSpawnEvent {
         }
     }
 
-    pub fn with_parent(sprite: Sprite, particle_animation: ParticleAnimation, parent: Entity) -> Self {
+    pub fn with_parent(
+        sprite: Sprite,
+        particle_animation: ParticleAnimation,
+        parent: Entity,
+    ) -> Self {
         Self {
             sprite,
             particle_animation,

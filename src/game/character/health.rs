@@ -64,7 +64,7 @@ pub enum DamageModifier {
     Immunity,
 }
 
-fn on_health_event(event: On<HealthEvent>, mut query: Query<(&mut Health)>) {
+fn on_health_event(event: On<HealthEvent>, mut query: Query<&mut Health>) {
     if let Ok(mut health) = query.get_mut(event.entity) {
         match event.event_type {
             HealthEventType::Heal(amount) => {
