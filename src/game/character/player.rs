@@ -149,8 +149,8 @@ pub fn player(
         Player,
         movement_controller,
         character_data,
-        Health::with_current(600, 400),
-        Stamina::new(450, 150, 1.0),
+        Health::with_current(300, 400),
+        Stamina::new(200, 200, 1.0),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn(indicator_ring);
             //parent.spawn(shadow);
@@ -417,7 +417,7 @@ struct PlayerAttackEvent {
 }
 
 const ATTACK_DURATION: u64 = 350;
-const ATTACK_STAMINA_COST: usize = 50;
+const ATTACK_STAMINA_COST: usize = 20;
 
 fn on_player_attack(
     event: On<PlayerAttackEvent>,

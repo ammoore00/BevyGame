@@ -47,6 +47,7 @@ fn stat_bars(texture_atlas_layouts: &mut Assets<TextureAtlasLayout>) -> impl Bun
         StatBarLayout(layout),
         Node {
             position_type: PositionType::Absolute,
+            flex_direction: FlexDirection::Column,
 
             left: percent(2),
             width: percent(78),
@@ -188,8 +189,8 @@ fn spawn_stat_bar(
 
     commands.entity(parent).with_children(|parent| {
         let node = Node {
-            width: px(4 * 4),
-            height: px(8 * 4),
+            width: px(4 * 5),
+            height: px(8 * 5),
             ..default()
         };
 
@@ -269,12 +270,12 @@ fn spawn_stat_bar(
         }
 
         // Spawn right end cap
-        let total_bar_remainder = if current > (max / segment_value) * segment_value {
-            (max % segment_value) / pixel_value
+        let total_bar_remainder = (max % segment_value) / pixel_value;
+        let current_bar_remainder = if current > (max / segment_value) * segment_value {
+            (current % segment_value) / pixel_value
         } else {
             0
         };
-        let current_bar_remainder = (current % segment_value) / pixel_value;
 
         let indices: &[usize] = match (total_bar_remainder, current_bar_remainder) {
             (1, 1) => &[bar_sprite_index + 7],
