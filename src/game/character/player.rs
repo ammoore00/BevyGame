@@ -12,6 +12,7 @@ use crate::game::grid::coords::{
 };
 //use crate::game::object::Shadow;
 use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
+use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
@@ -34,7 +35,8 @@ pub(super) fn plugin(app: &mut App) {
             camera_follow_player.in_set(AppSystems::Respond),
         ),
     )
-    .add_observer(on_aim_facing_changed);
+    .add_observer(on_aim_facing_changed)
+    .add_observer(on_player_attack);
 }
 
 const ATTACK_DURATION: u64 = 350;
@@ -387,12 +389,10 @@ fn record_action_input(
                 *facing = aim_facing;
             }
 
-            commands.trigger(CharacterStateEvent {
+            commands.trigger(PlayerAttackEvent {
                 entity: player,
-                new_state: CharacterState::Attacking { time_left: ATTACK_DURATION as f32 / 1000.0 },
-                prev_state: None,
-                config: Default::default(),
-            })
+                facing: *facing,
+            });
         }
     }
 }
@@ -413,6 +413,54 @@ fn camera_follow_player(
     camera_transform.translation = player_transform.translation;
 }
 
+#[derive(EntityEvent, Debug, Clone, Reflect)]
+struct PlayerAttackEvent {
+    entity: Entity,
+    facing: Facing,
+}
+
+fn on_player_attack(
+    event: On<PlayerAttackEvent>,
+    player_assets: Res<PlayerAssets>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut commands: Commands,
+) {
+    commands.trigger(CharacterStateEvent {
+        entity: event.entity,
+        new_state: CharacterState::Attacking {
+            time_left: ATTACK_DURATION as f32 / 1000.0,
+        },
+        prev_state: None,
+        config: Default::default(),
+    });
+
+    const NUM_FRAMES: u32 = 7;
+
+    let particle_layout =
+        TextureAtlasLayout::from_grid(UVec2::new(96, 96), NUM_FRAMES, 8, None, None);
+    let particle_layout = texture_atlas_layouts.add(particle_layout);
+
+    let particle_sprite = Sprite::from_atlas_image(
+        player_assets.attack_particle.clone(),
+        TextureAtlas {
+            layout: particle_layout,
+            index: event.facing as usize,
+        },
+    );
+
+    let particle_animation = ParticleAnimation::new(
+        event.facing as usize * NUM_FRAMES as usize,
+        NUM_FRAMES as usize,
+        Duration::from_millis(ATTACK_DURATION / NUM_FRAMES as u64),
+    );
+
+    commands.trigger(ParticleSpawnEvent::with_parent(
+        particle_sprite,
+        particle_animation,
+        event.entity,
+    ));
+}
+
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct PlayerAssets {
@@ -422,8 +470,11 @@ pub struct PlayerAssets {
     walk: Handle<Image>,
     #[dependency]
     run: Handle<Image>,
+
     #[dependency]
     attack: Handle<Image>,
+    #[dependency]
+    attack_particle: Handle<Image>,
 
     #[dependency]
     indicator_ring: Handle<Image>,
@@ -439,7 +490,9 @@ impl FromWorld for PlayerAssets {
             idle: assets.load("images/characters/idle.png"),
             walk: assets.load("images/characters/walk.png"),
             run: assets.load("images/characters/run.png"),
+
             attack: assets.load("images/characters/attack.png"),
+            attack_particle: assets.load("images/characters/attack_particle.png"),
 
             indicator_ring: assets.load("images/characters/indicator_ring.png"),
 

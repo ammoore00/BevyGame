@@ -28,13 +28,11 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
 fn update_animation_state(
     query: Query<(
         &mut CharacterAnimation,
-        &MovementController,
         &CharacterState,
         &Facing,
-        Option<&AimFacing>,
     )>,
 ) {
-    for (mut animation, controller, state, facing, aim_facing) in query {
+    for (mut animation, state, facing) in query {
         animation.facing = *facing;
 
         match state {
