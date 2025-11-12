@@ -1,9 +1,9 @@
 use crate::game::character::{CharacterState, Facing};
+use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::time::Duration;
-use crate::screens::Screen;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -29,6 +29,8 @@ fn update_animation_state(query: Query<(&mut CharacterAnimation, &CharacterState
     for (mut animation, state, facing) in query {
         animation.facing = *facing;
 
+        println!("{:?} {:?}", state, facing);
+
         match state {
             CharacterState::Idle => {
                 animation.set_idle();
@@ -41,6 +43,11 @@ fn update_animation_state(query: Query<(&mut CharacterAnimation, &CharacterState
             CharacterState::Running => {
                 animation
                     .set_running()
+                    .unwrap_or_else(|_| animation.set_idle());
+            }
+            CharacterState::Sprinting => {
+                animation
+                    .set_sprinting()
                     .unwrap_or_else(|_| animation.set_idle());
             }
             CharacterState::Attacking { .. } => {
@@ -138,6 +145,23 @@ impl CharacterAnimation {
         Ok(())
     }
 
+    fn set_sprinting(&mut self) -> Result<(), AnimationError> {
+        if matches!(self.state, AnimationState::Sprinting) {
+            return Ok(());
+        }
+
+        let sprint = self
+            .capabilities
+            .sprint
+            .as_ref()
+            .ok_or(AnimationError::NoSuchCapability(AnimationState::Sprinting))?;
+
+        self.state = AnimationState::Sprinting;
+        self.timer = Timer::new(sprint.interval, TimerMode::Repeating);
+        self.frame = 0;
+        Ok(())
+    }
+
     fn set_attacking(&mut self) -> Result<(), AnimationError> {
         if matches!(self.state, AnimationState::Attacking) {
             return Ok(());
@@ -181,8 +205,17 @@ impl CharacterAnimation {
                     }
                 }
                 AnimationState::Running => {
-                    if let Some(run) = &self.capabilities.walk {
+                    if let Some(run) = &self.capabilities.run {
                         run.frames
+                    } else {
+                        // If we somehow got into an invalid state, reset the animation to idle
+                        self.reset();
+                        return;
+                    }
+                }
+                AnimationState::Sprinting => {
+                    if let Some(sprint) = &self.capabilities.sprint {
+                        sprint.frames
                     } else {
                         // If we somehow got into an invalid state, reset the animation to idle
                         self.reset();
@@ -201,96 +234,58 @@ impl CharacterAnimation {
             };
     }
 
-    fn get_image(&self) -> &Handle<Image> {
-        let default = &self.capabilities.idle.image;
+    fn get_image(&self) -> Handle<Image> {
+        let default = self.capabilities.idle.image.clone();
+
+        let maybe_image = |capability: Option<&CharacterAnimationData>| {
+            capability
+                .map(|data| data.image.clone())
+                .unwrap_or(default.clone())
+        };
 
         match self.state {
             AnimationState::Idling => default,
-            AnimationState::Walking => {
-                if let Some(walk) = &self.capabilities.walk {
-                    &walk.image
-                } else {
-                    default
-                }
-            }
-            AnimationState::Running => {
-                if let Some(run) = &self.capabilities.run {
-                    &run.image
-                } else {
-                    default
-                }
-            }
-            AnimationState::Attacking => {
-                if let Some(attack) = &self.capabilities.attack {
-                    &attack.image
-                } else {
-                    default
-                }
-            }
+            AnimationState::Walking => maybe_image(self.capabilities.walk.as_ref()),
+            AnimationState::Running => maybe_image(self.capabilities.run.as_ref()),
+            AnimationState::Sprinting => maybe_image(self.capabilities.sprint.as_ref()),
+            AnimationState::Attacking => maybe_image(self.capabilities.attack.as_ref()),
         }
     }
 
-    fn get_atlas(&self) -> &TextureAtlas {
+    fn get_atlas<'a>(&'a self) -> &'a TextureAtlas {
         let default = &self.capabilities.idle.atlas;
+
+        let maybe_atlas = |capability: Option<&'a CharacterAnimationData>| {
+            capability.map(|data| &data.atlas).unwrap_or(default)
+        };
 
         match self.state {
             AnimationState::Idling => default,
-            AnimationState::Walking => {
-                if let Some(walk) = &self.capabilities.walk {
-                    &walk.atlas
-                } else {
-                    default
-                }
-            }
-            AnimationState::Running => {
-                if let Some(run) = &self.capabilities.run {
-                    &run.atlas
-                } else {
-                    default
-                }
-            }
-            AnimationState::Attacking => {
-                if let Some(attack) = &self.capabilities.attack {
-                    &attack.atlas
-                } else {
-                    default
-                }
-            }
+            AnimationState::Walking => maybe_atlas(self.capabilities.walk.as_ref()),
+            AnimationState::Running => maybe_atlas(self.capabilities.run.as_ref()),
+            AnimationState::Sprinting => maybe_atlas(self.capabilities.sprint.as_ref()),
+            AnimationState::Attacking => maybe_atlas(self.capabilities.attack.as_ref()),
         }
     }
 
     fn get_atlas_index(&self) -> usize {
         let default = self.frame;
 
+        let maybe_offset = |capability: Option<&CharacterAnimationData>| {
+            capability
+                .map(|data| self.frame + self.facing as usize * data.frames)
+                .unwrap_or(default)
+        };
+
         match self.state {
             AnimationState::Idling => {
                 let offset = self.facing as usize * self.capabilities.idle.frames;
                 default + offset
             }
-            AnimationState::Walking => {
-                if let Some(walk) = &self.capabilities.walk {
-                    let offset = self.facing as usize * walk.frames;
-                    self.frame + offset
-                } else {
-                    default
-                }
-            }
-            AnimationState::Running => {
-                if let Some(run) = &self.capabilities.run {
-                    let offset = self.facing as usize * run.frames;
-                    self.frame + offset
-                } else {
-                    default
-                }
-            }
-            AnimationState::Attacking => {
-                if let Some(attack) = &self.capabilities.attack {
-                    let offset = self.facing as usize * attack.frames;
-                    self.frame + offset
-                } else {
-                    default
-                }
-            }
+            AnimationState::Walking => maybe_offset(self.capabilities.walk.as_ref()),
+            AnimationState::Running => maybe_offset(self.capabilities.run.as_ref()),
+            AnimationState::Sprinting => maybe_offset(self.capabilities.sprint.as_ref()),
+            AnimationState::Attacking => maybe_offset(self.capabilities.attack.as_ref()),
         }
     }
 
@@ -313,6 +308,7 @@ pub struct AnimationCapabilities {
     pub idle: CharacterAnimationData,
     pub walk: Option<CharacterAnimationData>,
     pub run: Option<CharacterAnimationData>,
+    pub sprint: Option<CharacterAnimationData>,
     pub attack: Option<CharacterAnimationData>,
 }
 
@@ -321,5 +317,6 @@ pub enum AnimationState {
     Idling,
     Walking,
     Running,
+    Sprinting,
     Attacking,
 }

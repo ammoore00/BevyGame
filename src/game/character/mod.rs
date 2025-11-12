@@ -67,6 +67,7 @@ pub enum CharacterState {
     Idle,
     Walking,
     Running,
+    Sprinting,
     Attacking { time_left: f32 },
 }
 
@@ -75,7 +76,7 @@ impl CharacterState {
     pub fn is_movement(&self) -> bool {
         matches!(
             self,
-            CharacterState::Idle | CharacterState::Walking | CharacterState::Running
+            CharacterState::Idle | CharacterState::Walking | CharacterState::Running | CharacterState::Sprinting
         )
     }
 }

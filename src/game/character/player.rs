@@ -82,11 +82,20 @@ pub fn player(
         run: Some(CharacterAnimationData {
             image: player_assets.run.clone(),
             atlas: TextureAtlas {
-                layout: run_layout,
+                layout: run_layout.clone(),
                 index: 0,
             },
             frames: 8,
             interval: Duration::from_millis(50),
+        }),
+        sprint: Some(CharacterAnimationData {
+            image: player_assets.run.clone(),
+            atlas: TextureAtlas {
+                layout: run_layout,
+                index: 0,
+            },
+            frames: 8,
+            interval: Duration::from_millis(35),
         }),
         attack: Some(CharacterAnimationData {
             image: player_assets.attack.clone(),
@@ -249,7 +258,7 @@ fn record_player_movement_input(
 
     let mut is_jumping = false;
 
-    let mut toggle_run = false;
+    let mut toggle_sprint = false;
 
     // Add gamepad input if available
     if let Some(gamepad_res) = gamepad_res
@@ -271,7 +280,7 @@ fn record_player_movement_input(
         }
 
         if gamepad.just_pressed(GamepadButton::LeftThumb) {
-            toggle_run = true;
+            toggle_sprint = true;
         }
     }
 
@@ -295,7 +304,7 @@ fn record_player_movement_input(
         }
 
         if input.just_pressed(KeyCode::ShiftLeft) {
-            toggle_run = true;
+            toggle_sprint = true;
         }
 
         // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
@@ -314,24 +323,24 @@ fn record_player_movement_input(
 
         let new_state = if intent.length() > 1e-6 {
             if intent.length() < 0.7 {
-                controller.running = false;
+                controller.sprinting = false;
                 CharacterState::Walking
             } else {
-                match (toggle_run, controller.running) {
-                    (false, false) => CharacterState::Walking,
-                    (false, true) => CharacterState::Running,
+                match (toggle_sprint, controller.sprinting) {
+                    (false, false) => CharacterState::Running,
+                    (false, true) => CharacterState::Sprinting,
                     (true, false) => {
-                        controller.running = true;
-                        CharacterState::Running
+                        controller.sprinting = true;
+                        CharacterState::Sprinting
                     }
                     (true, true) => {
-                        controller.running = false;
-                        CharacterState::Walking
+                        controller.sprinting = false;
+                        CharacterState::Running
                     }
                 }
             }
         } else {
-            controller.running = false;
+            controller.sprinting = false;
             CharacterState::Idle
         };
 

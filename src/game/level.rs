@@ -55,7 +55,7 @@ pub fn spawn_level(
                 player(
                     Vec3::new(7.0, 1.0, 8.0),
                     //Vec3::new(0.0, 1.0, 0.0),
-                    3.5,
+                    4.5,
                     &player_assets,
                     &mut texture_atlas_layouts,
                     scale.0

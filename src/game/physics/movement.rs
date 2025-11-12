@@ -44,7 +44,7 @@ pub struct MovementController {
     /// The direction the character wants to move in.
     pub intent: Vec3,
 
-    pub running: bool,
+    pub sprinting: bool,
 
     /// Maximum speed in world units per second.
     pub max_speed: f32,
@@ -54,7 +54,7 @@ impl Default for MovementController {
     fn default() -> Self {
         Self {
             intent: Vec3::ZERO,
-            running: false,
+            sprinting: false,
             max_speed: 3.5,
         }
     }
@@ -69,7 +69,7 @@ fn set_intended_velocity(time: Res<Time>, query: Query<(&MovementController, &mu
         {
             let mut intent = controller.intent * controller.max_speed * time.delta_secs();
 
-            if controller.running {
+            if controller.sprinting {
                 intent *= Vec3::new(1.5, 1.0, 1.5);
             }
 
