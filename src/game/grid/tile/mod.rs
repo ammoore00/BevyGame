@@ -1,8 +1,8 @@
 use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
-use crate::game::grid::tile::assets::{TileAssets, TileMaterial};
+use crate::game::grid::tile::assets::TileAssets;
 use crate::game::grid::tile::tile_types::TileType;
 use crate::game::physics::components::{Collider, PhysicsData};
-use bevy::asset::{Assets};
+use bevy::asset::Assets;
 use bevy::image::{TextureAtlas, TextureAtlasLayout};
 use bevy::math::{UVec2, Vec3};
 use bevy::prelude::*;
@@ -10,8 +10,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{Add, AddAssign};
 
-mod collision;
 pub mod assets;
+mod collision;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins(assets::plugin);

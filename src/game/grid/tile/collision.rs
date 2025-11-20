@@ -31,9 +31,9 @@ pub(super) fn slope(
             [1.0, upper_height, 1.0],
             [1.0, upper_height, 0.0],
         ]
-            .iter()
-            .map(|point| facing.rotate_point(Vec3::from(*point) - Vec3::splat(0.5)))
-            .collect::<Vec<_>>();
+        .iter()
+        .map(|point| facing.rotate_point(Vec3::from(*point) - Vec3::splat(0.5)))
+        .collect::<Vec<_>>();
 
         Collider::convex_hull(points, *pos)
     }

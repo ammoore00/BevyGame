@@ -12,13 +12,13 @@ use crate::game::grid::coords::{
 };
 //use crate::game::object::Shadow;
 use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
+use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
-use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
-use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::screens::Screen;
+use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -390,7 +390,10 @@ fn record_action_input(
             commands.trigger(HealthEvent::new(player, HealthEventType::Heal(10)));
         }
 
-        if gamepad.just_pressed(GamepadButton::RightTrigger) && state.is_movement() && stamina.current > 0 {
+        if gamepad.just_pressed(GamepadButton::RightTrigger)
+            && state.is_movement()
+            && stamina.current > 0
+        {
             if let Some(aim_facing) = aim_facing.0 {
                 *facing = aim_facing;
             }

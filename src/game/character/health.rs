@@ -70,7 +70,9 @@ fn on_health_event(event: On<HealthEvent>, mut query: Query<&mut Health>) {
             HealthEventType::Heal(amount) => {
                 health.current += amount.min(health.max - health.current)
             }
-            HealthEventType::Damage(amount, _) => health.current -= amount.min(health.current),
+            HealthEventType::Damage(amount, _damage_type) => {
+                health.current -= amount.min(health.current)
+            }
             HealthEventType::_Set(amount) => health.current = amount.clamp(0, health.max),
             HealthEventType::_FullHeal => health.current = health.max,
             HealthEventType::_InstantDeath => health.current = 0,

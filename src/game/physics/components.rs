@@ -57,7 +57,7 @@ impl PartialEq for ColliderType {
             (ColliderType::Cuboid(a), ColliderType::Cuboid(b)) => a == b,
             (ColliderType::Capsule(a), ColliderType::Capsule(b)) => {
                 a.radius == b.radius && a.segment == b.segment
-            },
+            }
             (ColliderType::ConvexHull(a), ColliderType::ConvexHull(b)) => a == b,
             _ => false,
         }
