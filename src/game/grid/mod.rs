@@ -23,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn hide_objects_above(
     mut query: Query<(&mut Sprite, &WorldPosition, Option<&Children>)>,
-    mut child_query: Query<(Entity, &mut Sprite), Without<WorldPosition>>,
+    mut child_query: Query<(Entity, &mut Sprite), (Without<TilePosition>, Without<WorldPosition>)>,
     player_query: Query<&WorldPosition, With<Player>>,
 ) {
     let player_height = if let Ok(player_pos) = player_query.single() {
@@ -48,27 +48,13 @@ fn hide_objects_above(
             let prev_color = sprite.color.to_srgba();
             sprite.color = Color::srgba(prev_color.red, prev_color.green, prev_color.blue, alpha);
 
-            if let Some(children) = children {
-                child_query
-                    .iter_mut()
-                    .for_each(|(child_entity, ref mut child_sprite)| {
-                        if children.contains(&child_entity) {
-                            let child_prev_color = child_sprite.color.to_srgba();
-                            child_sprite.color = Color::srgba(
-                                child_prev_color.red,
-                                child_prev_color.green,
-                                child_prev_color.blue,
-                                alpha,
-                            );
-                        }
-                    })
-            }
+            set_alpha(child_query.reborrow(), children, alpha);
         })
 }
 
 fn hide_tiles_above(
     mut query: Query<(&mut Sprite, &TilePosition, Option<&Children>)>,
-    mut child_query: Query<(Entity, &mut Sprite), Without<TilePosition>>,
+    mut child_query: Query<(Entity, &mut Sprite), (Without<TilePosition>, Without<WorldPosition>)>,
     player_query: Query<&WorldPosition, With<Player>>,
 ) {
     let player_height = if let Ok(player_pos) = player_query.single() {
@@ -94,22 +80,30 @@ fn hide_tiles_above(
             let prev_color = sprite.color.to_srgba();
             sprite.color = Color::srgba(prev_color.red, prev_color.green, prev_color.blue, alpha);
 
-            if let Some(children) = children {
-                child_query
-                    .iter_mut()
-                    .for_each(|(child_entity, ref mut child_sprite)| {
-                        if children.contains(&child_entity) {
-                            let child_prev_color = child_sprite.color.to_srgba();
-                            child_sprite.color = Color::srgba(
-                                child_prev_color.red,
-                                child_prev_color.green,
-                                child_prev_color.blue,
-                                alpha,
-                            );
-                        }
-                    })
-            }
+            set_alpha(child_query.reborrow(), children, alpha);
         })
+}
+
+fn set_alpha(
+    mut child_query: Query<(Entity, &mut Sprite), (Without<TilePosition>, Without<WorldPosition>)>,
+    children: Option<&Children>,
+    alpha: f32
+) {
+    if let Some(children) = children {
+        child_query
+            .iter_mut()
+            .for_each(|(child_entity, ref mut child_sprite)| {
+                if children.contains(&child_entity) {
+                    let child_prev_color = child_sprite.color.to_srgba();
+                    child_sprite.color = Color::srgba(
+                        child_prev_color.red,
+                        child_prev_color.green,
+                        child_prev_color.blue,
+                        alpha,
+                    );
+                }
+            })
+    }
 }
 
 fn correct_shadow_opacity(mut query: Query<&mut Sprite, With<Shadow>>) {
