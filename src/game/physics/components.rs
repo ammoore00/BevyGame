@@ -51,13 +51,26 @@ impl ColliderType {
     }
 }
 
+impl PartialEq for ColliderType {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ColliderType::Cuboid(a), ColliderType::Cuboid(b)) => a == b,
+            (ColliderType::Capsule(a), ColliderType::Capsule(b)) => {
+                a.radius == b.radius && a.segment == b.segment
+            },
+            (ColliderType::ConvexHull(a), ColliderType::ConvexHull(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
 fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
     for (mut collider, world_position) in query {
         collider.position = world_position.clone().into();
     }
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, PartialEq)]
 pub struct Collider {
     collider_type: ColliderType,
     position: Isometry<f32>,

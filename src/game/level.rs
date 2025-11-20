@@ -9,10 +9,12 @@ use std::sync::{Arc, RwLock};
 use crate::game::character::CharacterAssets;
 use crate::game::character::player::{PlayerAssets, player};
 use crate::game::grid::coords::TileCoords;
-use crate::game::grid::tile::{TileEdges, TileFacing, TileMaterial, TileType, tile};
-use crate::game::grid::{TileAssets, grid};
+use crate::game::grid::tile::{TileEdges, TileFacing, TileShape, tile};
+use crate::game::grid::{grid};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
+use crate::game::grid::tile::assets::{TileAssets, TileMaterial};
+use crate::game::grid::tile::tile_types::TileType;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -235,11 +237,10 @@ fn create_level(
             let chars = row.split(',');
 
             for (x, col) in chars.into_iter().enumerate() {
-                let result = col.parse::<TileSettings>();
-                if let Ok(tile_settings) = result {
+                let result = col.parse::<TileType>();
+                if let Ok(tile_type) = result {
                     tile_coords.push((
-                        tile_settings.tile_material,
-                        tile_settings.tile_type,
+                        tile_type,
                         TileCoords(IVec3::new(x as i32, y as i32, z as i32)),
                     ));
                 } else if !col.replace("_", "").is_empty() && !col.replace(" ", "").is_empty() {
@@ -253,11 +254,10 @@ fn create_level(
     let grid = grid(tile_map.clone(), scale.0);
     let grid = commands.spawn(grid).id();
 
-    for (material, tile_type, coords) in tile_coords {
+    for (tile_type, coords) in tile_coords {
         let tile = commands
             .spawn(tile(
                 tile_type,
-                material,
                 coords.clone(),
                 &tile_assets,
                 &mut texture_atlas_layouts,
@@ -281,33 +281,27 @@ impl std::fmt::Display for TileSettingsParseError {
     }
 }
 
-struct TileSettings {
-    tile_type: TileType,
-    tile_material: TileMaterial,
-}
-
-impl FromStr for TileSettings {
+impl FromStr for TileType {
     type Err = TileSettingsParseError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        println!("Parsing tile: {}", s);
+
         let mut parts = s.splitn(2, ':');
-        let tile_type = parts
+        let shape = parts
             .next()
             .ok_or_else(|| TileSettingsParseError("No tile type".to_string()))?
             .parse()?;
-        let tile_material = parts
+        let material = parts
             .next()
             .ok_or_else(|| TileSettingsParseError("No tile material".to_string()))?
             .parse()?;
 
-        Ok(Self {
-            tile_type,
-            tile_material,
-        })
+        Ok(TileType::get_tile(shape, material))
     }
 }
 
-impl FromStr for TileType {
+impl FromStr for TileShape {
     type Err = TileSettingsParseError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -361,7 +355,7 @@ impl FromStr for TileType {
                             true
                         };
 
-                        Ok(TileType::Full { edges, is_top })
+                        Ok(TileShape::Full { is_top })
                     }
                     "L" => {
                         let is_top = if let Some(mut data) = data {
@@ -375,7 +369,7 @@ impl FromStr for TileType {
                             true
                         };
 
-                        Ok(TileType::Layer { edges, is_top })
+                        Ok(TileShape::Layer { is_top })
                     }
                     "B" => {
                         let facing = if let Some(mut data) = data {
@@ -395,7 +389,7 @@ impl FromStr for TileType {
                             None
                         };
 
-                        Ok(TileType::Bridge { edges, facing })
+                        Ok(TileShape::Bridge(facing))
                     }
                     _ => unreachable!(),
                 }
@@ -419,7 +413,7 @@ impl FromStr for TileType {
                     false
                 };
 
-                Ok(TileType::SlopeLower { facing, has_edge })
+                Ok(TileShape::SlopeLower(facing))
             }
             "PU" => {
                 let mut data = data.expect("Slopes require data");
@@ -440,7 +434,7 @@ impl FromStr for TileType {
                     false
                 };
 
-                Ok(TileType::SlopeUpper { facing, has_edge })
+                Ok(TileShape::SlopeUpper(facing))
             }
             "S" => {
                 let mut data = data.expect("Stairs require data");
@@ -453,7 +447,7 @@ impl FromStr for TileType {
                     _ => return Err(TileSettingsParseError("Invalid facing".to_string())),
                 };
 
-                Ok(TileType::Stairs(facing))
+                Ok(TileShape::Stairs(facing))
             }
 
             _ => Err(TileSettingsParseError("Invalid tile type".to_string())),
@@ -469,9 +463,8 @@ impl FromStr for TileMaterial {
 
         match s.as_str() {
             "G" => Ok(TileMaterial::Grass),
-            "S" => Ok(TileMaterial::Stone),
-            "P" => Ok(TileMaterial::Planks),
-            "FP" => Ok(TileMaterial::FramedPlanks),
+            "P" => Ok(TileMaterial::DarkPlanks),
+            "FP" => Ok(TileMaterial::DarkFramedPlanks),
             _ => Err(TileSettingsParseError("Invalid tile material".to_string())),
         }
     }
