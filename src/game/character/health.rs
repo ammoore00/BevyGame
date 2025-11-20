@@ -15,7 +15,7 @@ impl Health {
         Self { max, current: max }
     }
 
-    pub fn with_current(max: usize, current: usize) -> Self {
+    pub fn _with_current(max: usize, current: usize) -> Self {
         let current = current.clamp(0, max);
         Self { max, current }
     }
@@ -36,28 +36,28 @@ impl HealthEvent {
 pub enum HealthEventType {
     Heal(usize),
     Damage(usize, DamageType),
-    Set(usize),
-    FullHeal,
-    InstantDeath,
+    _Set(usize),
+    _FullHeal,
+    _InstantDeath,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum DamageType {
     Generic,
-    Fall,
+    _Fall,
 
-    Slash,
-    Blunt,
-    Pierce,
+    _Slash,
+    _Blunt,
+    _Pierce,
 
-    Shock,
-    Fire,
-    Void,
-    Explosive,
+    _Shock,
+    _Fire,
+    _Void,
+    _Explosive,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum DamageModifier {
+pub enum _DamageModifier {
     None,
     Vulnerability(f32),
     Resistance(f32),
@@ -71,9 +71,9 @@ fn on_health_event(event: On<HealthEvent>, mut query: Query<&mut Health>) {
                 health.current += amount.min(health.max - health.current)
             }
             HealthEventType::Damage(amount, _) => health.current -= amount.min(health.current),
-            HealthEventType::Set(amount) => health.current = amount.clamp(0, health.max),
-            HealthEventType::FullHeal => health.current = health.max,
-            HealthEventType::InstantDeath => health.current = 0,
+            HealthEventType::_Set(amount) => health.current = amount.clamp(0, health.max),
+            HealthEventType::_FullHeal => health.current = health.max,
+            HealthEventType::_InstantDeath => health.current = 0,
         }
     }
 }

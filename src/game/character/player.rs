@@ -158,7 +158,7 @@ pub fn player(
         Player,
         movement_controller,
         character_data,
-        Health::with_current(300, 400),
+        Health::new(300),
         Stamina::new(200, 200, 1.0),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn(indicator_ring);

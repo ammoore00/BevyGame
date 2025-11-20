@@ -121,7 +121,7 @@ fn on_state_change(
         return;
     };
 
-    let prev_state = state.clone();
+    let prev_state = *state;
 
     if let Some(expected_prev_state) = event.prev_state
         && event.config.fail_on_prev_state_mismatch

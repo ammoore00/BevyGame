@@ -319,7 +319,7 @@ impl FromStr for TileShape {
 
         match tile_type {
             "F" | "L" | "B" => {
-                let edges = if let Some(mut data) = data.clone()
+                let _edges = if let Some(mut data) = data.clone()
                     && let Some(first) = data.next()
                 {
                     let mut edges = TileEdges::default();
@@ -405,7 +405,7 @@ impl FromStr for TileShape {
                     _ => return Err(TileSettingsParseError("Invalid facing".to_string())),
                 };
 
-                let has_edge = if let Some(second) = data.next()
+                let _has_edge = if let Some(second) = data.next()
                     && second.contains('E')
                 {
                     true
@@ -426,7 +426,7 @@ impl FromStr for TileShape {
                     _ => return Err(TileSettingsParseError("Invalid facing".to_string())),
                 };
 
-                let has_edge = if let Some(second) = data.next()
+                let _has_edge = if let Some(second) = data.next()
                     && second.contains('E')
                 {
                     true
