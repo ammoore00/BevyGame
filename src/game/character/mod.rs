@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+use std::error::Error;
 use crate::AppSystems;
 use crate::asset_tracking::LoadResource;
 use crate::game::character::animation::CharacterAnimation;
@@ -5,6 +7,7 @@ use crate::game::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
 use std::fmt::Debug;
+use std::sync::{Arc, RwLock};
 
 mod animation;
 pub mod health;
@@ -35,7 +38,7 @@ pub fn character(
     (
         Name::new(name.into()),
         Character,
-        CharacterState::Idle,
+        CharacterStateOld::Idle,
         Facing::default(),
         // Physics
         WorldPosition(position.into()),
@@ -48,7 +51,7 @@ pub fn character(
     )
 }
 
-#[derive(Component, Asset, Clone, Reflect)]
+#[derive(Component, Asset, Clone, Copy, Reflect)]
 pub struct Character;
 
 #[derive(Resource, Asset, Clone, Reflect)]
@@ -62,8 +65,164 @@ impl FromWorld for CharacterAssets {
     }
 }
 
+pub trait CharacterState {}
+pub trait MovementState: CharacterState {}
+
+pub trait TransitionTo<T: CharacterState> {
+    type Err: Error;
+
+    fn can_transition_to(&self, state: &T) -> bool { true }
+    fn on_transition_to(&self, state: &T) -> Result<(), Self::Err> { Ok(()) }
+}
+
+/// Marker trait - allows transition from Idle into State
+pub trait FromIdle: CharacterState {}
+/// Marker trait - allows transition from Movement into State
+pub trait FromMovement: CharacterState {}
+
+pub trait InterruptPolicy {
+    fn can_interrupt() -> bool;
+}
+pub struct NoInterrupt;
+impl InterruptPolicy for NoInterrupt { fn can_interrupt() -> bool { false } }
+pub struct Interrupt;
+impl InterruptPolicy for Interrupt { fn can_interrupt() -> bool { true } }
+
+/// Marker trait - allows transition from Attacking into State
+pub trait FromAttacking: CharacterState {
+    type Policy: InterruptPolicy;
+}
+
+/// Usage:
+/// This macro generates character state types with automatic `CharacterState` trait implementation.
+///
+/// Automatic traits include:
+/// ```ignore
+/// FromIdle,
+/// FromMovement,
+/// FromAttacking
+/// ```
+/// These automatic traits control blanket implementations of `TransitionTo` for all states.
+/// They can be opted out by prefixing them with `?`.
+///
+/// # Syntax
+/// ```ignore
+/// define_character_states! {
+///     StateName;                                  // State without fields
+///     StateName { field: Type };                  // State with fields
+///     StateName : ?TraitName;                     // State that does NOT implement TraitName
+///     StateName { field: Type } : ?TraitName;     // State with fields that does NOT implement TraitName
+///     StateName : ?Trait1 ?Trait2;                // State that does NOT implement multiple traits
+/// }
+/// ```
+///
+/// # Examples
+/// ```ignore
+/// define_character_states! {
+///     Idle;                           // Simple state, implements all default traits
+///     Walking;                        // Simple state, implements all default traits
+///     Attacking { time_left: f32 };   // State with data, implements all default traits
+///     Dead : ?FromIdle ?FromMovement; // State that cannot be transitioned to from Idle or Movement
+/// }
+/// ```
+///
+/// # Generated Code
+/// For each state, this macro generates:
+/// - A component struct (with or without fields)
+/// - `Component` derive with reflection support
+/// - `CharacterState` trait implementation
+/// - Default trait implementations (e.g., `FromIdle`, `FromMovement`, `FromAttacking`)
+///   - Any trait prefixed with `?` in the opt-out list will NOT be implemented
+///   - To add support for new transition traits, add corresponding `@check_*` and `@handle_traits` entries
+///
+macro_rules! define_character_states {
+    // 1. Terminal case
+    () => {};
+
+    // 2. Case: State WITH fields and optional trait opt-outs
+    ($name:ident { $($field:ident: $type:ty),* $(,)? } $(: $(?$traits:ident)*)? ; $($rest:tt)*) => {
+        #[derive(Component, Debug, Clone, Reflect, Default)]
+        #[reflect(Component)]
+        pub struct $name { $(pub $field: $type),* }
+    
+        impl CharacterState for $name {}
+        
+        // Handle all default trait implementations
+        define_character_states!(@handle_traits $name $( $(?$traits)* )?);
+    
+        define_character_states!($($rest)*);
+    };
+
+    // 3. Case: State WITHOUT fields
+    ($name:ident $(: $(?$traits:ident)*)? ; $($rest:tt)*) => {
+        #[derive(Component, Debug, Clone, Reflect, Default)]
+        #[reflect(Component)]
+        pub struct $name {}
+    
+        impl CharacterState for $name {}
+        
+        define_character_states!(@handle_traits $name $( $(?$traits)* )?);
+    
+        define_character_states!($($rest)*);
+    };
+
+    // --- Internal Trait Handlers ---
+
+    (@handle_traits $name:ident $(?$traits:ident)*) => {
+        define_character_states!(@check_from_idle $name $(?$traits)*);
+        define_character_states!(@check_from_movement $name $(?$traits)*);
+        define_character_states!(@check_from_attacking $name $(?$traits)*);
+    };
+
+    // FromIdle logic
+    (@check_from_idle $name:ident FromIdle $($others:tt)*) => {}; // Found it, skip
+    (@check_from_idle $name:ident $ignore:ident $($others:tt)*) => { define_character_states!(@check_from_idle $name $($others)*); };
+    (@check_from_idle $name:ident) => { impl FromIdle for $name {} };
+
+    // FromMovement logic
+    (@check_from_movement $name:ident FromMovement $($others:tt)*) => {}; // Found it, skip
+    (@check_from_movement $name:ident $ignore:ident $($others:tt)*) => { define_character_states!(@check_from_movement $name $($others)*); };
+    (@check_from_movement $name:ident) => { impl FromMovement for $name {} };
+
+    // FromAttacking logic
+    (@check_from_attacking $name:ident FromAttacking $($others:tt)*) => {}; // Found it, skip
+    (@check_from_attacking $name:ident $ignore:ident $($others:tt)*) => { define_character_states!(@check_from_attacking $name $($others)*); };
+    (@check_from_attacking $name:ident) => { impl FromAttacking for $name { type Policy = crate::game::character::NoInterrupt; } };
+}
+
+pub mod default_states {
+    use super::*;
+
+    define_character_states! {
+        Idle;
+        Walking;
+        Running;
+        Sprinting;
+        Attacking { time_left: f32 };
+    }
+
+    impl <T: FromIdle> TransitionTo<T> for Idle {
+        type Err = Infallible;
+    }
+
+    impl MovementState for Walking {}
+    impl MovementState for Running {}
+    impl MovementState for Sprinting {}
+
+    impl <ToState: FromMovement, FromState: MovementState> TransitionTo<ToState> for FromState {
+        type Err = Infallible;
+    }
+
+    impl<T: FromAttacking> TransitionTo<T> for Attacking {
+        type Err = Infallible;
+        fn can_transition_to(&self, _: &T) -> bool {
+            <T::Policy as InterruptPolicy>::can_interrupt() || self.time_left <= 0.0
+        }
+    }
+}
+
 #[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
-pub enum CharacterState {
+pub enum CharacterStateOld {
     Idle,
     Walking,
     Running,
@@ -71,15 +230,15 @@ pub enum CharacterState {
     Attacking { time_left: f32 },
 }
 
-impl CharacterState {
+impl CharacterStateOld {
     /// If this state is a movement state which can be canceled into other states
     pub fn is_movement(&self) -> bool {
         matches!(
             self,
-            CharacterState::Idle
-                | CharacterState::Walking
-                | CharacterState::Running
-                | CharacterState::Sprinting
+            CharacterStateOld::Idle
+                | CharacterStateOld::Walking
+                | CharacterStateOld::Running
+                | CharacterStateOld::Sprinting
         )
     }
 }
@@ -87,13 +246,13 @@ impl CharacterState {
 #[derive(EntityEvent, Debug, Clone, Reflect)]
 pub struct CharacterStateEvent {
     entity: Entity,
-    new_state: CharacterState,
-    prev_state: Option<CharacterState>,
+    new_state: CharacterStateOld,
+    prev_state: Option<CharacterStateOld>,
     config: CharacterStateEventConfiguration,
 }
 
 impl CharacterStateEvent {
-    pub fn new(entity: Entity, new_state: CharacterState) -> Self {
+    pub fn new(entity: Entity, new_state: CharacterStateOld) -> Self {
         Self {
             entity,
             new_state,
@@ -118,7 +277,7 @@ impl Default for CharacterStateEventConfiguration {
 
 fn on_state_change(
     event: On<CharacterStateEvent>,
-    mut query: Query<&mut CharacterState, With<Character>>,
+    mut query: Query<&mut CharacterStateOld, With<Character>>,
 ) {
     let Ok(mut state) = query.get_mut(event.entity) else {
         return;
@@ -140,13 +299,13 @@ fn on_state_change(
     *state = event.new_state;
 }
 
-fn update_state(time: Res<Time>, mut query: Query<&mut CharacterState, With<Character>>) {
+fn update_state(time: Res<Time>, mut query: Query<&mut CharacterStateOld, With<Character>>) {
     query.iter_mut().for_each(|mut state| {
-        if let CharacterState::Attacking { ref mut time_left } = *state {
+        if let CharacterStateOld::Attacking { ref mut time_left } = *state {
             *time_left -= time.delta_secs();
 
             if *time_left <= 0.0 {
-                *state = CharacterState::Idle;
+                *state = CharacterStateOld::Idle;
             }
         }
     })

@@ -6,7 +6,7 @@ use std::time::Duration;
 use crate::game::character::animation::{
     AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
 };
-use crate::game::character::{CharacterState, CharacterStateEvent, Facing, character};
+use crate::game::character::{CharacterStateOld, CharacterStateEvent, Facing, character};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
@@ -248,7 +248,7 @@ fn record_player_movement_input(
             &mut MovementController,
             &PhysicsData,
             &WorldPosition,
-            &CharacterState,
+            &CharacterStateOld,
         ),
         With<Player>,
     >,
@@ -324,24 +324,24 @@ fn record_player_movement_input(
         let new_state = if intent.length() > 1e-6 {
             if intent.length() < 0.7 {
                 controller.sprinting = false;
-                CharacterState::Walking
+                CharacterStateOld::Walking
             } else {
                 match (toggle_sprint, controller.sprinting) {
-                    (false, false) => CharacterState::Running,
-                    (false, true) => CharacterState::Sprinting,
+                    (false, false) => CharacterStateOld::Running,
+                    (false, true) => CharacterStateOld::Sprinting,
                     (true, false) => {
                         controller.sprinting = true;
-                        CharacterState::Sprinting
+                        CharacterStateOld::Sprinting
                     }
                     (true, true) => {
                         controller.sprinting = false;
-                        CharacterState::Running
+                        CharacterStateOld::Running
                     }
                 }
             }
         } else {
             controller.sprinting = false;
-            CharacterState::Idle
+            CharacterStateOld::Idle
         };
 
         commands.trigger(CharacterStateEvent::new(entity, new_state));
@@ -364,7 +364,7 @@ fn record_action_input(
     _input: Res<ButtonInput<KeyCode>>,
     gamepad_res: Option<Res<GamepadRes>>,
     gamepads: Query<&Gamepad>,
-    mut player_query: Query<(Entity, &CharacterState, &mut Facing, &Stamina), With<Player>>,
+    mut player_query: Query<(Entity, &CharacterStateOld, &mut Facing, &Stamina), With<Player>>,
     aim_facing_query: Query<&AimFacing>,
     mut commands: Commands,
 ) {
@@ -441,7 +441,7 @@ fn on_player_attack(
 
     commands.trigger(CharacterStateEvent::new(
         event.entity,
-        CharacterState::Attacking {
+        CharacterStateOld::Attacking {
             time_left: ATTACK_DURATION as f32 / 1000.0,
         },
     ));

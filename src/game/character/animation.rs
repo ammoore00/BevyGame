@@ -1,4 +1,4 @@
-use crate::game::character::{CharacterState, Facing};
+use crate::game::character::{CharacterStateOld, Facing};
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
@@ -25,32 +25,32 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
     }
 }
 
-fn update_animation_state(query: Query<(&mut CharacterAnimation, &CharacterState, &Facing)>) {
+fn update_animation_state(query: Query<(&mut CharacterAnimation, &CharacterStateOld, &Facing)>) {
     for (mut animation, state, facing) in query {
         animation.facing = *facing;
 
         println!("{:?} {:?}", state, facing);
 
         match state {
-            CharacterState::Idle => {
+            CharacterStateOld::Idle => {
                 animation.set_idle();
             }
-            CharacterState::Walking => {
+            CharacterStateOld::Walking => {
                 animation
                     .set_walking()
                     .unwrap_or_else(|_| animation.set_idle());
             }
-            CharacterState::Running => {
+            CharacterStateOld::Running => {
                 animation
                     .set_running()
                     .unwrap_or_else(|_| animation.set_idle());
             }
-            CharacterState::Sprinting => {
+            CharacterStateOld::Sprinting => {
                 animation
                     .set_sprinting()
                     .unwrap_or_else(|_| animation.set_idle());
             }
-            CharacterState::Attacking { .. } => {
+            CharacterStateOld::Attacking { .. } => {
                 animation
                     .set_attacking()
                     .unwrap_or_else(|_| animation.set_idle());
