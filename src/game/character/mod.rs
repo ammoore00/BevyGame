@@ -79,17 +79,23 @@ pub struct CharacterStateTracker {
     type_id: TypeId,
 }
 
-pub trait CharacterStateMarker: Reflect + Send + Sync + Debug + 'static {}
+pub trait CharacterStateMarker: Reflect + Send + Sync + Debug + 'static {
+    fn set_animation(&self, animation: &mut CharacterAnimation);
+}
 #[reflect_trait]
 pub trait CharacterState: Reflect + Send + Sync + Debug + 'static {
     fn as_reflect(&self) -> &dyn Reflect;
     fn clone_value(&self) -> Box<dyn Reflect>;
     fn box_clone(&self) -> Box<dyn CharacterState>;
+    fn set_animation(&self, animation: &mut CharacterAnimation);
 }
 impl <T: CharacterStateMarker + Clone> CharacterState for T {
     fn as_reflect(&self) -> &dyn Reflect { self }
     fn clone_value(&self) -> Box<dyn Reflect> { Box::new(self.clone()) }
     fn box_clone(&self) -> Box<dyn CharacterState> { Box::new(self.clone()) }
+    fn set_animation(&self, animation: &mut CharacterAnimation) {
+        CharacterStateMarker::set_animation(self, animation);
+    }
 }
 
 #[reflect_trait]
@@ -151,26 +157,48 @@ pub mod default_states {
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState)]
     pub struct Idle;
-    impl CharacterStateMarker for Idle {}
+    impl CharacterStateMarker for Idle {
+        fn set_animation(&self, animation: &mut CharacterAnimation) {
+            animation.set_idle();
+        }
+    }
 
     impl<T: FromIdle> TransitionTo<T> for Idle {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, MovementState)]
     pub struct Walking;
-    impl CharacterStateMarker for Walking {}
+    impl CharacterStateMarker for Walking {
+        fn set_animation(&self, animation: &mut CharacterAnimation) {
+            animation
+                .set_walking()
+                .unwrap_or_else(|_| animation.set_idle())
+        }
+    }
     impl MovementState for Walking {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, MovementState)]
     pub struct Running;
-    impl CharacterStateMarker for Running {}
+    impl CharacterStateMarker for Running {
+        fn set_animation(&self, animation: &mut CharacterAnimation) {
+            animation
+                .set_running()
+                .unwrap_or_else(|_| animation.set_idle())
+        }
+    }
     impl MovementState for Running {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, MovementState)]
     pub struct Sprinting;
-    impl CharacterStateMarker for Sprinting {}
+    impl CharacterStateMarker for Sprinting {
+        fn set_animation(&self, animation: &mut CharacterAnimation) {
+            animation
+                .set_sprinting()
+                .unwrap_or_else(|_| animation.set_idle())
+        }
+    }
     impl MovementState for Sprinting {}
 
     impl<From: MovementState, To: FromMovement> TransitionTo<To> for From {}
@@ -178,7 +206,13 @@ pub mod default_states {
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, TimedState)]
     pub struct Attacking { pub time_left: f32 }
-    impl CharacterStateMarker for Attacking {}
+    impl CharacterStateMarker for Attacking {
+        fn set_animation(&self, animation: &mut CharacterAnimation) {
+            animation
+                .set_attacking()
+                .unwrap_or_else(|_| animation.set_idle())
+        }
+    }
     impl TimedState for Attacking {
         fn time_left(&self) -> f32 { self.time_left }
 

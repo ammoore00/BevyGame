@@ -1,4 +1,4 @@
-use crate::game::character::{CharacterStateOld, Facing};
+use crate::game::character::{CharacterStateTracker, Facing};
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
@@ -10,9 +10,9 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             update_animation_timer.in_set(AppSystems::TickTimers),
-            (update_animation_state, update_animation_atlas)
-                .chain()
-                .in_set(AppSystems::Update),
+            update_animation_atlas.in_set(AppSystems::Update),
+            // Exclusive system cannot be chained
+            update_animation_state.in_set(AppSystems::Respond),
         )
             .run_if(in_state(Screen::Gameplay))
             .in_set(PausableSystems),
@@ -25,35 +25,22 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut CharacterAnimat
     }
 }
 
-fn update_animation_state(query: Query<(&mut CharacterAnimation, &CharacterStateOld, &Facing)>) {
-    for (mut animation, state, facing) in query {
-        animation.facing = *facing;
+fn update_animation_state(world: &mut World) {
+    // 1. Manually fetch the entities and their data using a query
+    // We collect into a Vec to avoid borrowing issues while we use 'world' inside the loop
+    let mut query = world.query::<(Entity, &CharacterStateTracker, &Facing)>();
+    let entities: Vec<(Entity, CharacterStateTracker, Facing)> = query
+        .iter(world)
+        .map(|(e, t, f)| (e, t.clone(), *f))
+        .collect();
 
-        println!("{:?} {:?}", state, facing);
-
-        match state {
-            CharacterStateOld::Idle => {
-                animation.set_idle();
-            }
-            CharacterStateOld::Walking => {
-                animation
-                    .set_walking()
-                    .unwrap_or_else(|_| animation.set_idle());
-            }
-            CharacterStateOld::Running => {
-                animation
-                    .set_running()
-                    .unwrap_or_else(|_| animation.set_idle());
-            }
-            CharacterStateOld::Sprinting => {
-                animation
-                    .set_sprinting()
-                    .unwrap_or_else(|_| animation.set_idle());
-            }
-            CharacterStateOld::Attacking { .. } => {
-                animation
-                    .set_attacking()
-                    .unwrap_or_else(|_| animation.set_idle());
+    for (entity, state_tracker, facing) in entities {
+        // 2. Get the state using your exclusive helper
+        if let Some(state) = crate::game::character::get_state(entity, &state_tracker, world) {
+            // 3. Apply the animation updates
+            if let Some(mut animation) = world.get_mut::<CharacterAnimation>(entity) {
+                animation.facing = facing;
+                state.set_animation(&mut animation);
             }
         }
     }
@@ -72,7 +59,7 @@ fn update_animation_atlas(query: Query<(&CharacterAnimation, &mut Sprite)>) {
 }
 
 #[derive(thiserror::Error, Debug)]
-enum AnimationError {
+pub enum AnimationError {
     #[error("No animation capability found for state {:?}", .0)]
     NoSuchCapability(AnimationState),
 }
@@ -101,7 +88,7 @@ impl CharacterAnimation {
         Sprite::from_atlas_image(self.get_image().clone(), self.get_atlas().clone())
     }
 
-    fn set_idle(&mut self) {
+    pub fn set_idle(&mut self) {
         if matches!(self.state, AnimationState::Idling) {
             return;
         }
@@ -111,7 +98,7 @@ impl CharacterAnimation {
         self.frame = 0;
     }
 
-    fn set_walking(&mut self) -> Result<(), AnimationError> {
+    pub fn set_walking(&mut self) -> Result<(), AnimationError> {
         if matches!(self.state, AnimationState::Walking) {
             return Ok(());
         }
@@ -128,7 +115,7 @@ impl CharacterAnimation {
         Ok(())
     }
 
-    fn set_running(&mut self) -> Result<(), AnimationError> {
+    pub fn set_running(&mut self) -> Result<(), AnimationError> {
         if matches!(self.state, AnimationState::Running) {
             return Ok(());
         }
@@ -145,7 +132,7 @@ impl CharacterAnimation {
         Ok(())
     }
 
-    fn set_sprinting(&mut self) -> Result<(), AnimationError> {
+    pub fn set_sprinting(&mut self) -> Result<(), AnimationError> {
         if matches!(self.state, AnimationState::Sprinting) {
             return Ok(());
         }
@@ -162,7 +149,7 @@ impl CharacterAnimation {
         Ok(())
     }
 
-    fn set_attacking(&mut self) -> Result<(), AnimationError> {
+    pub fn set_attacking(&mut self) -> Result<(), AnimationError> {
         if matches!(self.state, AnimationState::Attacking) {
             return Ok(());
         }
