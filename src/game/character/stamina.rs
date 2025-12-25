@@ -15,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
     .add_observer(on_stamina_event);
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Stamina {
     pub max: usize,
     pub current: isize,

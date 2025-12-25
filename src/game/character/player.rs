@@ -1,16 +1,21 @@
 //! Player-specific behavior.
 
-use bevy::prelude::*;
-use std::time::Duration;
-
 use crate::game::character::animation::{
     AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
 };
-use crate::game::character::{CharacterStateOld, CharacterStateEvent, Facing, character};
+use crate::game::character::{
+    Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing,
+    ReflectCharacterState, ReflectMovementState, character,
+};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
+use bevy::prelude::*;
+use std::any::Any;
+use std::time::Duration;
 //use crate::game::object::Shadow;
+use crate::game::character;
+use crate::game::character::default_states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
 use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
@@ -26,20 +31,30 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
+            // Normal Systems
+            (
+                record_aim_input,
+            )
+                .run_if(in_state(Screen::Gameplay))
+                .in_set(AppSystems::RecordInput)
+                .in_set(PausableSystems),
+
+            camera_follow_player.in_set(AppSystems::Respond),
+
+            // Exclusive Systems
+            // Note: Chaining exclusive systems works if they all have the &mut World signature
             (
                 record_action_input,
                 record_player_movement_input,
-                record_aim_input,
             )
                 .chain()
                 .run_if(in_state(Screen::Gameplay))
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
-            camera_follow_player.in_set(AppSystems::Respond),
         ),
     )
-    .add_observer(on_aim_facing_changed)
-    .add_observer(on_player_attack);
+        .add_observer(on_aim_facing_changed)
+        .add_observer(on_player_attack);
 }
 
 /// The player character.
@@ -238,31 +253,16 @@ fn on_aim_facing_changed(
     }
 }
 
-fn record_player_movement_input(
-    input: Res<ButtonInput<KeyCode>>,
-    gamepad_res: Option<Res<GamepadRes>>,
-    gamepads: Query<&Gamepad>,
-    mut controller_query: Query<
-        (
-            Entity,
-            &mut MovementController,
-            &PhysicsData,
-            &WorldPosition,
-            &CharacterStateOld,
-        ),
-        With<Player>,
-    >,
-    mut commands: Commands,
-) {
+fn record_player_movement_input(world: &mut World) {
     let mut intent = Vec3::ZERO;
-
     let mut is_jumping = false;
-
     let mut toggle_sprint = false;
 
-    // Add gamepad input if available
-    if let Some(gamepad_res) = gamepad_res
-        && let Ok(gamepad) = gamepads.get(gamepad_res.0)
+    let input = world.resource::<ButtonInput<KeyCode>>();
+    let gamepad_res = world.get_resource::<GamepadRes>();
+
+    if let Some(gamepad_id) = gamepad_res.map(|r| r.0)
+        && let Ok(Some(gamepad)) = world.get_entity(gamepad_id).and_then(|e| Ok(e.get::<Gamepad>()))
     {
         let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
         let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
@@ -312,96 +312,196 @@ fn record_player_movement_input(
         intent = rotate_screen_space_to_movement(intent);
     }
 
-    // Apply movement intent to controllers.
-    for (entity, mut controller, physics, position, state) in &mut controller_query {
-        if !state.is_movement() {
-            controller.intent = Vec3::ZERO;
+    let mut controller_query = world.query_filtered::<
+        Entity,
+        (
+            With<Player>,
+            With<Character>,
+            With<MovementController>,
+            With<PhysicsData>,
+            With<WorldPosition>,
+            With<CharacterStateTracker>
+        )>();
+
+    let entities: Vec<Entity> = controller_query.iter(world).collect();
+
+    for entity in entities {
+        // 1. Get the current state first (this takes &mut World)
+        let tracker = world.get::<CharacterStateTracker>(entity).cloned().unwrap();
+        let Some(prev_state) = character::get_state(entity, &tracker, world) else {
+            warn!("Failed to get reflect component for entity {}", entity);
             continue;
-        }
+        };
 
-        controller.intent = intent;
+        // 2. Check if it's a movement state (this takes &mut World)
+        let is_movement = {
+            let registry = world.resource::<AppTypeRegistry>().clone();
+            let type_registry = registry.read();
+            let reg = type_registry.get(tracker.type_id).unwrap();
+            let reflect_component = reg.data::<ReflectComponent>().unwrap();
+            let reflect_movement_state = reg.data::<ReflectMovementState>().unwrap();
 
-        let new_state = if intent.length() > 1e-6 {
-            if intent.length() < 0.7 {
-                controller.sprinting = false;
-                CharacterStateOld::Walking
+            if let Ok(mut entity_mut) = world.get_entity_mut(entity)
+                && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
+            {
+                reflect_movement_state.get(reflect_data.into_inner()).is_some()
             } else {
-                match (toggle_sprint, controller.sprinting) {
-                    (false, false) => CharacterStateOld::Running,
-                    (false, true) => CharacterStateOld::Sprinting,
+                false
+            }
+        };
+
+        // 3. Logic to determine new state (needs scoped mutable access to controller)
+        let mut sprinting = {
+            let controller = world.get::<MovementController>(entity).unwrap();
+            controller.sprinting
+        };
+
+        let new_state: Box<dyn CharacterState> = if intent.length() > 1e-6 {
+            if intent.length() < 0.7 {
+                sprinting = false;
+                Box::new(Walking::default())
+            } else {
+                match (toggle_sprint, sprinting) {
+                    (false, _) => prev_state.box_clone(),
                     (true, false) => {
-                        controller.sprinting = true;
-                        CharacterStateOld::Sprinting
+                        sprinting = true;
+                        Box::new(Sprinting::default())
                     }
                     (true, true) => {
-                        controller.sprinting = false;
-                        CharacterStateOld::Running
+                        sprinting = false;
+                        Box::new(Running::default())
                     }
                 }
             }
         } else {
-            controller.sprinting = false;
-            CharacterStateOld::Idle
+            sprinting = false;
+            Box::new(Idle::default())
         };
 
-        commands.trigger(CharacterStateEvent::new(entity, new_state));
+        // 4. Update the controller's sprinting flag and intent
+        if let Some(mut controller) = world.get_mut::<MovementController>(entity) {
+            controller.sprinting = sprinting;
+            if is_movement {
+                controller.intent = intent;
+            } else {
+                controller.intent = Vec3::ZERO;
+            }
+        }
 
-        if let PhysicsData::Kinematic {
-            time_since_grounded,
-            last_grounded_height,
-            ..
-        } = *physics
-            && time_since_grounded < COYOTE_TIME
-            && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
-            && is_jumping
+        // 5. Trigger the event (requires &mut World, all borrows must be dropped by now)
+        if let Ok(event) = CharacterStateEvent::try_new(entity, new_state, prev_state) {
+            world.trigger(event);
+        }
+
+        // 6. Handle Coyote Time jumping (Scoped borrows again)
         {
-            controller.intent.y = JUMP_VELOCITY;
+            let physics = world.get::<PhysicsData>(entity).unwrap();
+            let position = world.get::<WorldPosition>(entity).unwrap();
+
+            if let PhysicsData::Kinematic {
+                time_since_grounded,
+                last_grounded_height,
+                ..
+            } = *physics
+                && time_since_grounded < COYOTE_TIME
+                && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
+                && is_jumping
+            {
+                if let Some(mut controller) = world.get_mut::<MovementController>(entity) {
+                    controller.intent.y = JUMP_VELOCITY;
+                }
+            }
         }
     }
 }
 
-fn record_action_input(
-    _input: Res<ButtonInput<KeyCode>>,
-    gamepad_res: Option<Res<GamepadRes>>,
-    gamepads: Query<&Gamepad>,
-    mut player_query: Query<(Entity, &CharacterStateOld, &mut Facing, &Stamina), With<Player>>,
-    aim_facing_query: Query<&AimFacing>,
-    mut commands: Commands,
-) {
-    if let Some(gamepad_res) = gamepad_res
-        && let Ok(gamepad) = gamepads.get(gamepad_res.0)
-    {
-        let Ok((player, state, mut facing, stamina)) = player_query.single_mut() else {
+fn record_action_input(world: &mut World) {
+    let gamepad = world.get_resource::<GamepadRes>().map(|r| r.0);
+
+    let player = {
+        let mut query = world.query_filtered::<Entity, With<Player>>();
+        query.single(world).ok()
+    };
+
+    let (player, gamepad_id) = match (player, gamepad) {
+        (Some(p), Some(g)) => (p, g),
+        _ => return,
+    };
+
+    let gamepad = world.get_entity(gamepad_id).unwrap().get::<Gamepad>().unwrap();
+    let attack = gamepad.just_pressed(GamepadButton::RightTrigger);
+
+    let mut player_query = world.query_filtered::<
+        Entity,
+        (
+            With<Player>,
+            With<Character>,
+            With<Facing>,
+            With<Stamina>,
+            With<CharacterStateTracker>
+        )>();
+    let player = player_query.single(world).unwrap();
+
+    let is_movement = {
+        let state_tracker = world.get::<CharacterStateTracker>(player).unwrap();
+        let state_type_id = state_tracker.type_id();
+
+        let registry = world.resource::<AppTypeRegistry>().clone();
+        let type_registry = registry.read();
+        let reg = type_registry.get(state_type_id).unwrap();
+        let reflect_component = reg.data::<ReflectComponent>().unwrap();
+        let reflect_movement_state = reg.data::<ReflectMovementState>().unwrap();
+
+        if let Ok(mut entity_mut) = world.get_entity_mut(player)
+            && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
+        {
+            reflect_movement_state.get(reflect_data.into_inner()).is_some()
+        } else {
+            false
+        }
+    };
+
+    let prev_state = {
+        let state_tracker = world.get::<CharacterStateTracker>(player).cloned().unwrap();
+
+        let Some(prev_state) = character::get_state(player, &state_tracker, world) else {
+            warn!("Failed to get reflect component for entity {}", player);
             return;
         };
+        prev_state
+    };
 
-        let Ok(aim_facing) = aim_facing_query.single() else {
-            panic!("Singular aim facing not found");
-        };
+    let stamina = world.get::<Stamina>(player).cloned().unwrap();
 
-        if gamepad.just_pressed(GamepadButton::West) {
-            commands.trigger(HealthEvent::new(
-                player,
-                HealthEventType::Damage(10, DamageType::Generic),
-            ));
-        }
+    let mut aim_facing_query = world.query_filtered::<Entity, With<AimFacing>>();
+    let aim_facing = aim_facing_query.single(world).unwrap();
+    let aim_facing = world.get::<AimFacing>(aim_facing).cloned().unwrap();
 
-        if gamepad.just_pressed(GamepadButton::North) {
-            commands.trigger(HealthEvent::new(player, HealthEventType::Heal(10)));
-        }
-
-        if gamepad.just_pressed(GamepadButton::RightTrigger)
-            && state.is_movement()
-            && stamina.current > 0
-        {
+    if attack && is_movement && stamina.current > 0 {
+        let facing = {
+            let mut facing = world.get_mut::<Facing>(player).unwrap();
             if let Some(aim_facing) = aim_facing.0 {
                 *facing = aim_facing;
             }
+            *facing
+        };
 
-            commands.trigger(PlayerAttackEvent {
-                entity: player,
-                facing: *facing,
-            });
+        world.trigger(PlayerAttackEvent {
+            entity: player,
+            facing,
+        });
+
+        match CharacterStateEvent::try_new(
+            player,
+            Box::new(Attacking {
+                time_left: ATTACK_DURATION as f32 / 1000.0,
+            }),
+            prev_state,
+        ) {
+            Ok(event) => world.trigger(event),
+            Err(_) => {
+                warn!("Failed to create CharacterStateEvent for Attacking state");
+            }
         }
     }
 }
@@ -438,13 +538,6 @@ fn on_player_attack(
     mut commands: Commands,
 ) {
     commands.trigger(StaminaEvent::new(event.entity, ATTACK_STAMINA_COST));
-
-    commands.trigger(CharacterStateEvent::new(
-        event.entity,
-        CharacterStateOld::Attacking {
-            time_left: ATTACK_DURATION as f32 / 1000.0,
-        },
-    ));
 
     const NUM_FRAMES: u32 = 7;
 
