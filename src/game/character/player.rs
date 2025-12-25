@@ -406,10 +406,9 @@ fn record_player_movement_input(world: &mut World) {
                 && time_since_grounded < COYOTE_TIME
                 && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
                 && is_jumping
+                && let Some(mut controller) = world.get_mut::<MovementController>(entity)
             {
-                if let Some(mut controller) = world.get_mut::<MovementController>(entity) {
-                    controller.intent.y = JUMP_VELOCITY;
-                }
+                controller.intent.y = JUMP_VELOCITY;
             }
         }
     }
