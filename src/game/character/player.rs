@@ -359,23 +359,23 @@ fn record_player_movement_input(world: &mut World) {
         let new_state: Box<dyn CharacterState> = if intent.length() > 1e-6 {
             if intent.length() < 0.7 {
                 sprinting = false;
-                Box::new(Walking::default())
+                Box::new(Walking)
             } else {
                 match (toggle_sprint, sprinting) {
                     (false, _) => prev_state.box_clone(),
                     (true, false) => {
                         sprinting = true;
-                        Box::new(Sprinting::default())
+                        Box::new(Sprinting)
                     }
                     (true, true) => {
                         sprinting = false;
-                        Box::new(Running::default())
+                        Box::new(Running)
                     }
                 }
             }
         } else {
             sprinting = false;
-            Box::new(Idle::default())
+            Box::new(Idle)
         };
 
         // 4. Update the controller's sprinting flag and intent

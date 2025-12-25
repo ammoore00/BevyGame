@@ -37,7 +37,7 @@ pub fn character(
     (
         Name::new(name.into()),
         Character,
-        character_state(default_states::Idle::default()),
+        character_state(default_states::Idle),
         Facing::default(),
         // Physics
         WorldPosition(position.into()),
@@ -105,7 +105,6 @@ pub trait MovementState: CharacterState {}
 pub trait TimedState: CharacterState {
     fn time_left(&self) -> f32;
     fn set_time(&mut self, time: f32);
-    fn reset_time(&mut self);
 }
 
 pub trait TransitionTo<T: CharacterState> {
@@ -157,6 +156,9 @@ pub mod default_states {
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState)]
     pub struct Idle;
+    impl FromIdle for Idle {}
+    impl FromMovement for Idle {}
+    impl FromAttacking for Idle { type Policy = NoInterrupt; }
     impl CharacterStateMarker for Idle {
         fn set_animation(&self, animation: &mut CharacterAnimation) {
             animation.set_idle();
@@ -168,6 +170,9 @@ pub mod default_states {
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, MovementState)]
     pub struct Walking;
+    impl FromIdle for Walking {}
+    impl FromMovement for Walking {}
+    impl FromAttacking for Walking { type Policy = Interrupt; }
     impl CharacterStateMarker for Walking {
         fn set_animation(&self, animation: &mut CharacterAnimation) {
             animation
@@ -180,6 +185,9 @@ pub mod default_states {
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, MovementState)]
     pub struct Running;
+    impl FromIdle for Running {}
+    impl FromMovement for Running {}
+    impl FromAttacking for Running { type Policy = Interrupt; }
     impl CharacterStateMarker for Running {
         fn set_animation(&self, animation: &mut CharacterAnimation) {
             animation
@@ -192,6 +200,9 @@ pub mod default_states {
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, MovementState)]
     pub struct Sprinting;
+    impl FromIdle for Sprinting {}
+    impl FromMovement for Sprinting {}
+    impl FromAttacking for Sprinting { type Policy = Interrupt; }
     impl CharacterStateMarker for Sprinting {
         fn set_animation(&self, animation: &mut CharacterAnimation) {
             animation
@@ -206,6 +217,8 @@ pub mod default_states {
     #[derive(Component, Debug, Clone, Reflect, Default)]
     #[reflect(Component, CharacterState, TimedState)]
     pub struct Attacking { pub time_left: f32 }
+    impl FromIdle for Attacking {}
+    impl FromMovement for Attacking {}
     impl CharacterStateMarker for Attacking {
         fn set_animation(&self, animation: &mut CharacterAnimation) {
             animation
@@ -217,11 +230,7 @@ pub mod default_states {
         fn time_left(&self) -> f32 { self.time_left }
 
         fn set_time(&mut self, time: f32) {
-            todo!()
-        }
-
-        fn reset_time(&mut self) {
-            todo!()
+            self.time_left = time;
         }
     }
 
@@ -267,8 +276,8 @@ impl CharacterStateEvent {
         // TODO: Check state transition logic here
         Ok(Self {
             entity,
-            new_state: new_state.into(),
-            prev_state: prev_state.into(),
+            new_state,
+            prev_state,
         })
     }
 }
@@ -360,7 +369,7 @@ fn update_state(
 
                 match CharacterStateEvent::try_new(
                     entity,
-                    Box::new(default_states::Idle::default()),
+                    Box::new(default_states::Idle),
                     prev_data
                 ) {
                     Ok(event) => {
