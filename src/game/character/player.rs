@@ -262,7 +262,7 @@ fn record_player_movement_input(world: &mut World) {
     let gamepad_res = world.get_resource::<GamepadRes>();
 
     if let Some(gamepad_id) = gamepad_res.map(|r| r.0)
-        && let Ok(Some(gamepad)) = world.get_entity(gamepad_id).and_then(|e| Ok(e.get::<Gamepad>()))
+        && let Ok(Some(gamepad)) = world.get_entity(gamepad_id).map(|e| e.get::<Gamepad>())
     {
         let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
         let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
@@ -339,10 +339,10 @@ fn record_player_movement_input(world: &mut World) {
             let type_registry = registry.read();
             let reg = type_registry.get(tracker.type_id).unwrap();
             let reflect_component = reg.data::<ReflectComponent>().unwrap();
-            let reflect_movement_state = reg.data::<ReflectMovementState>().unwrap();
 
             if let Ok(mut entity_mut) = world.get_entity_mut(entity)
                 && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
+                && let Some(reflect_movement_state) = reg.data::<ReflectMovementState>()
             {
                 reflect_movement_state.get(reflect_data.into_inner()).is_some()
             } else {
@@ -450,10 +450,10 @@ fn record_action_input(world: &mut World) {
         let type_registry = registry.read();
         let reg = type_registry.get(state_type_id).unwrap();
         let reflect_component = reg.data::<ReflectComponent>().unwrap();
-        let reflect_movement_state = reg.data::<ReflectMovementState>().unwrap();
 
         if let Ok(mut entity_mut) = world.get_entity_mut(player)
             && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
+            && let Some(reflect_movement_state) = reg.data::<ReflectMovementState>()
         {
             reflect_movement_state.get(reflect_data.into_inner()).is_some()
         } else {
