@@ -1,13 +1,14 @@
-use std::convert::Infallible;
-use std::error::Error;
 use crate::AppSystems;
 use crate::asset_tracking::LoadResource;
 use crate::game::character::animation::CharacterAnimation;
 use crate::game::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
+use std::any::TypeId;
+use std::convert::Infallible;
+use std::error::Error;
 use std::fmt::Debug;
-use std::sync::{Arc, RwLock};
+use bevy::ecs::world::DeferredWorld;
 
 mod animation;
 pub mod health;
@@ -38,7 +39,7 @@ pub fn character(
     (
         Name::new(name.into()),
         Character,
-        CharacterStateOld::Idle,
+        character_state(default_states::Idle::default()),
         Facing::default(),
         // Physics
         WorldPosition(position.into()),
@@ -65,14 +66,44 @@ impl FromWorld for CharacterAssets {
     }
 }
 
-pub trait CharacterState {}
+pub fn character_state(state: impl CharacterState + Component) -> impl Bundle {
+    (
+        CharacterStateTracker {
+            type_id: state.type_id(),
+        },
+        state,
+    )
+}
+
+#[derive(Component, Debug, Reflect)]
+#[reflect(Component)]
+pub struct CharacterStateTracker {
+    type_id: TypeId,
+}
+
+pub trait CharacterState: Reflect + Send + Sync + Debug + 'static {
+    fn as_reflect(&self) -> &dyn Reflect;
+    fn clone_value(&self) -> Box<dyn Reflect>;
+    fn box_clone(&self) -> Box<dyn CharacterState>;
+}
 pub trait MovementState: CharacterState {}
+
+#[reflect_trait]
+pub trait TimedState: CharacterState {
+    fn time_left(&self) -> f32;
+    fn set_time(&mut self, time: f32);
+    fn reset_time(&mut self);
+}
 
 pub trait TransitionTo<T: CharacterState> {
     type Err: Error;
 
-    fn can_transition_to(&self, state: &T) -> bool { true }
-    fn on_transition_to(&self, state: &T) -> Result<(), Self::Err> { Ok(()) }
+    fn can_transition_to(&self, state: &T) -> bool {
+        true
+    }
+    fn on_transition_to(&self, state: &T) -> Result<(), Self::Err> {
+        Ok(())
+    }
 }
 
 /// Marker trait - allows transition from Idle into State
@@ -84,9 +115,17 @@ pub trait InterruptPolicy {
     fn can_interrupt() -> bool;
 }
 pub struct NoInterrupt;
-impl InterruptPolicy for NoInterrupt { fn can_interrupt() -> bool { false } }
+impl InterruptPolicy for NoInterrupt {
+    fn can_interrupt() -> bool {
+        false
+    }
+}
 pub struct Interrupt;
-impl InterruptPolicy for Interrupt { fn can_interrupt() -> bool { true } }
+impl InterruptPolicy for Interrupt {
+    fn can_interrupt() -> bool {
+        true
+    }
+}
 
 /// Marker trait - allows transition from Attacking into State
 pub trait FromAttacking: CharacterState {
@@ -144,12 +183,17 @@ macro_rules! define_character_states {
         #[derive(Component, Debug, Clone, Reflect, Default)]
         #[reflect(Component)]
         pub struct $name { $(pub $field: $type),* }
-    
-        impl CharacterState for $name {}
-        
+
+        impl CharacterState for $name {
+            fn as_reflect(&self) -> &dyn Reflect { self }
+            fn clone_value(&self) -> Box<dyn Reflect> {
+                Box::new(self.clone())
+            }
+        }
+
         // Handle all default trait implementations
         define_character_states!(@handle_traits $name $( $(?$traits)* )?);
-    
+
         define_character_states!($($rest)*);
     };
 
@@ -158,11 +202,17 @@ macro_rules! define_character_states {
         #[derive(Component, Debug, Clone, Reflect, Default)]
         #[reflect(Component)]
         pub struct $name {}
-    
-        impl CharacterState for $name {}
-        
+
+        impl CharacterState for $name {
+            fn as_reflect(&self) -> &dyn Reflect { self }
+            fn clone_value(&self) -> Box<dyn Reflect> {
+                Box::new(self.clone())
+            }
+            fn box_clone(&self) -> Box<dyn CharacterState> { Box::new(self.clone()) }
+        }
+
         define_character_states!(@handle_traits $name $( $(?$traits)* )?);
-    
+
         define_character_states!($($rest)*);
     };
 
@@ -198,10 +248,9 @@ pub mod default_states {
         Walking;
         Running;
         Sprinting;
-        Attacking { time_left: f32 };
     }
 
-    impl <T: FromIdle> TransitionTo<T> for Idle {
+    impl<T: FromIdle> TransitionTo<T> for Idle {
         type Err = Infallible;
     }
 
@@ -209,8 +258,32 @@ pub mod default_states {
     impl MovementState for Running {}
     impl MovementState for Sprinting {}
 
-    impl <ToState: FromMovement, FromState: MovementState> TransitionTo<ToState> for FromState {
+    impl<ToState: FromMovement, FromState: MovementState> TransitionTo<ToState> for FromState {
         type Err = Infallible;
+    }
+
+    #[derive(Component, Debug, Clone, Reflect, Default)]
+    #[reflect(Component, TimedState)]
+    pub struct Attacking { time_left: f32 }
+
+    impl CharacterState for Attacking {
+        fn as_reflect(&self) -> &dyn Reflect { self }
+        fn clone_value(&self) -> Box<dyn Reflect> {
+            Box::new(self.clone())
+        }
+        fn box_clone(&self) -> Box<dyn CharacterState> { Box::new(self.clone()) }
+    }
+
+    impl TimedState for Attacking {
+        fn time_left(&self) -> f32 { self.time_left }
+
+        fn set_time(&mut self, time: f32) {
+            todo!()
+        }
+
+        fn reset_time(&mut self) {
+            todo!()
+        }
     }
 
     impl<T: FromAttacking> TransitionTo<T> for Attacking {
@@ -221,94 +294,120 @@ pub mod default_states {
     }
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
-pub enum CharacterStateOld {
-    Idle,
-    Walking,
-    Running,
-    Sprinting,
-    Attacking { time_left: f32 },
-}
-
-impl CharacterStateOld {
-    /// If this state is a movement state which can be canceled into other states
-    pub fn is_movement(&self) -> bool {
-        matches!(
-            self,
-            CharacterStateOld::Idle
-                | CharacterStateOld::Walking
-                | CharacterStateOld::Running
-                | CharacterStateOld::Sprinting
-        )
-    }
-}
-
-#[derive(EntityEvent, Debug, Clone, Reflect)]
+#[derive(EntityEvent, Debug)]
 pub struct CharacterStateEvent {
     entity: Entity,
-    new_state: CharacterStateOld,
-    prev_state: Option<CharacterStateOld>,
-    config: CharacterStateEventConfiguration,
+    new_state: Box<dyn CharacterState>,
+    prev_state: Box<dyn CharacterState>,
 }
 
 impl CharacterStateEvent {
-    pub fn new(entity: Entity, new_state: CharacterStateOld) -> Self {
+    pub fn new(
+        entity: Entity,
+        new_state: Box<dyn CharacterState>,
+        prev_state: Box<dyn CharacterState>,
+    ) -> Self {
         Self {
             entity,
-            new_state,
-            prev_state: None,
-            config: CharacterStateEventConfiguration::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Reflect)]
-pub struct CharacterStateEventConfiguration {
-    fail_on_prev_state_mismatch: bool,
-}
-
-impl Default for CharacterStateEventConfiguration {
-    fn default() -> Self {
-        Self {
-            fail_on_prev_state_mismatch: true,
+            new_state: new_state.into(),
+            prev_state: prev_state.into(),
         }
     }
 }
 
 fn on_state_change(
     event: On<CharacterStateEvent>,
-    mut query: Query<&mut CharacterStateOld, With<Character>>,
+    mut world: DeferredWorld,
 ) {
-    let Ok(mut state) = query.get_mut(event.entity) else {
-        return;
-    };
+    let entity = event.entity;
 
-    let prev_state = *state;
+    // We clone these to move them into the command closure
+    let new_state = event.new_state.clone_value();
+    let prev_type_id = event.prev_state.type_id();
+    let new_type_id = new_state.type_id();
 
-    if let Some(expected_prev_state) = event.prev_state
-        && event.config.fail_on_prev_state_mismatch
-        && prev_state != expected_prev_state
-    {
-        // TODO: proper handling
-        panic!(
-            "Character state mismatch: expected {:?}, got {:?}",
-            expected_prev_state, prev_state
-        );
-    }
+    // Use the queue to get full World access after the observer logic
+    world.commands().queue(move |world: &mut World| {
+        let registry = world.resource::<AppTypeRegistry>().clone();
+        let type_registry = registry.read();
 
-    *state = event.new_state;
+        if let Some(prev_type) = type_registry.get(prev_type_id)
+            && let Some(prev_reflect_component) = prev_type.data::<ReflectComponent>()
+            && let Some(next_type) = type_registry.get(new_type_id)
+            && let Some(next_reflect_component) = next_type.data::<ReflectComponent>()
+            && let Ok(mut entity_mut) = world.get_entity_mut(entity)
+        {
+            // Remove the old state
+            prev_reflect_component.remove(&mut entity_mut);
+
+            // Insert the new state
+            next_reflect_component.insert(
+                &mut entity_mut,
+                new_state.as_reflect(),
+                &type_registry,
+            );
+
+            // Update the tracker component
+            entity_mut.insert(CharacterStateTracker {
+                type_id: new_type_id,
+            });
+        } else {
+            warn!("Failed to update state for entity {}: ", entity);
+        }
+    });
 }
 
-fn update_state(time: Res<Time>, mut query: Query<&mut CharacterStateOld, With<Character>>) {
-    query.iter_mut().for_each(|mut state| {
-        if let CharacterStateOld::Attacking { ref mut time_left } = *state {
-            *time_left -= time.delta_secs();
+fn update_state(
+    time: Res<Time>,
+    mut commands: Commands,
+    registry: Res<AppTypeRegistry>,
+    query: Query<(Entity, &CharacterStateTracker), With<Character>>,
+) {
+    let delta = time.delta_secs();
+    let type_registry = registry.read();
 
-            if *time_left <= 0.0 {
-                *state = CharacterStateOld::Idle;
+    for (entity, tracker) in &query {
+        // Find the type registration for the current state
+        let Some(registration) = type_registry.get(tracker.type_id) else { continue };
+
+        // ONLY proceed if this type was registered with TimedState reflection
+        let Some(_) = registration.data::<ReflectTimedState>() else { continue };
+        let Some(_) = registration.data::<ReflectComponent>() else { continue };
+
+        let type_id = tracker.type_id;
+
+        // Perform the update via command queue to get EntityWorldMut
+        commands.queue(move |world: &mut World| {
+            let type_registry = world.resource::<AppTypeRegistry>().clone();
+            let type_registry = type_registry.read();
+
+            // Re-fetch helpers inside closure
+            let reg = type_registry.get(type_id).unwrap();
+            let reflect_timed_state = reg.data::<ReflectTimedState>().unwrap();
+            let reflect_component = reg.data::<ReflectComponent>().unwrap();
+
+            if let Ok(mut entity_mut) = world.get_entity_mut(entity)
+                && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
+                && let Some(timed_state) = reflect_timed_state.get_mut(reflect_data.into_inner())
+            {
+                let new_time = timed_state.time_left() - delta;
+                timed_state.set_time(new_time);
+
+                if new_time > 0.0 {
+                    return;
+                }
+
+                // To clone, we reach through the Reflected Mut to the underlying data
+                let prev_data = timed_state.box_clone();
+
+                world.commands().trigger(CharacterStateEvent::new(
+                    entity,
+                    Box::new(default_states::Idle::default()),
+                    prev_data
+                ));
             }
-        }
-    })
+        });
+    }
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
