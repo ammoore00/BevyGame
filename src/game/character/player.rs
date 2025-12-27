@@ -1,22 +1,22 @@
 //! Player-specific behavior.
 
-use crate::game::character::animation::{
-    AnimationCapabilities, CharacterAnimation, CharacterAnimationData,
-};
+use crate::game::character::animation::{CharacterAnimationTracker, CharacterAnimationData, AnimationStateMap};
 use crate::game::character::{
     Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing,
-    ReflectCharacterState, ReflectMovementState, character,
+    ReflectMovementState, character,
 };
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
 use bevy::prelude::*;
 use std::any::Any;
+use std::collections::HashMap;
+use std::iter::Map;
 use std::time::Duration;
 //use crate::game::object::Shadow;
 use crate::game::character;
 use crate::game::character::default_states::{Attacking, Idle, Running, Sprinting, Walking};
-use crate::game::character::health::{DamageType, Health, HealthEvent, HealthEventType};
+use crate::game::character::health::{Health, HealthEvent, HealthEventType};
 use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::components::{Collider, PhysicsData};
@@ -63,67 +63,23 @@ pub fn player(
     max_speed: f32,
     player_assets: &PlayerAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    animation_assets: &Assets<CharacterAnimationData>,
     scale: f32,
 ) -> impl Bundle {
-    let idle_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 12, 8, None, None);
-    let walk_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
-    let run_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
-    let attack_layout = TextureAtlasLayout::from_grid(UVec2::new(96, 96), 7, 8, None, None);
+    let character_animation_map = AnimationStateMap(HashMap::from([
+        (Idle.type_id(), player_assets.idle_animation.clone()),
+        (Walking.type_id(), player_assets.walk_animation.clone()),
+        (Running.type_id(), player_assets.run_animation.clone()),
+        (Sprinting.type_id(), player_assets.sprint_animation.clone()),
+        (Attacking::default().type_id(), player_assets.attack_animation.clone()),
+    ]));
+    
+    let character_animation = CharacterAnimationTracker::new(
+        player_assets.idle_animation.clone(),
+        animation_assets,
+    );
 
-    let idle_layout = texture_atlas_layouts.add(idle_layout);
-    let walk_layout = texture_atlas_layouts.add(walk_layout);
-    let run_layout = texture_atlas_layouts.add(run_layout);
-    let attack_layout = texture_atlas_layouts.add(attack_layout);
-
-    let character_animation = CharacterAnimation::new(AnimationCapabilities {
-        idle: CharacterAnimationData {
-            image: player_assets.idle.clone(),
-            atlas: TextureAtlas {
-                layout: idle_layout,
-                index: 0,
-            },
-            frames: 12,
-            interval: Duration::from_millis(150),
-        },
-        walk: Some(CharacterAnimationData {
-            image: player_assets.walk.clone(),
-            atlas: TextureAtlas {
-                layout: walk_layout,
-                index: 0,
-            },
-            frames: 8,
-            interval: Duration::from_millis(50),
-        }),
-        run: Some(CharacterAnimationData {
-            image: player_assets.run.clone(),
-            atlas: TextureAtlas {
-                layout: run_layout.clone(),
-                index: 0,
-            },
-            frames: 8,
-            interval: Duration::from_millis(50),
-        }),
-        sprint: Some(CharacterAnimationData {
-            image: player_assets.run.clone(),
-            atlas: TextureAtlas {
-                layout: run_layout,
-                index: 0,
-            },
-            frames: 8,
-            interval: Duration::from_millis(35),
-        }),
-        attack: Some(CharacterAnimationData {
-            image: player_assets.attack.clone(),
-            atlas: TextureAtlas {
-                layout: attack_layout,
-                index: 0,
-            },
-            frames: 7,
-            interval: Duration::from_millis(ATTACK_DURATION / 7),
-        }),
-    });
-
-    let sprite = character_animation.default_sprite();
+    let sprite = character_animation.default_sprite(animation_assets);
 
     let movement_controller = MovementController {
         max_speed,
@@ -135,6 +91,7 @@ pub fn player(
         position,
         sprite,
         character_animation,
+        character_animation_map,
         Collider::vertical_capsule(1.25, 0.25, position),
         scale,
     );
@@ -150,7 +107,7 @@ pub fn player(
     //    Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
     //);
 
-    let indicator_ring_sprite = player_assets.indicator_ring.clone();
+    let indicator_ring_sprite = player_assets.indicator_ring_sprite.clone();
     let indicator_ring_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 1, None, None);
     let indicator_ring_layout = texture_atlas_layouts.add(indicator_ring_layout);
 
@@ -545,7 +502,7 @@ fn on_player_attack(
     let particle_layout = texture_atlas_layouts.add(particle_layout);
 
     let particle_sprite = Sprite::from_atlas_image(
-        player_assets.attack_particle.clone(),
+        player_assets.attack_particle_sprite.clone(),
         TextureAtlas {
             layout: particle_layout,
             index: event.facing as usize,
@@ -569,19 +526,34 @@ fn on_player_attack(
 #[reflect(Resource)]
 pub struct PlayerAssets {
     #[dependency]
-    idle: Handle<Image>,
+    idle_sprite: Handle<Image>,
     #[dependency]
-    walk: Handle<Image>,
-    #[dependency]
-    run: Handle<Image>,
+    idle_animation: Handle<CharacterAnimationData>,
 
     #[dependency]
-    attack: Handle<Image>,
+    walk_sprite: Handle<Image>,
     #[dependency]
-    attack_particle: Handle<Image>,
+    walk_animation: Handle<CharacterAnimationData>,
 
     #[dependency]
-    indicator_ring: Handle<Image>,
+    run_sprite: Handle<Image>,
+    #[dependency]
+    run_animation: Handle<CharacterAnimationData>,
+
+    #[dependency]
+    sprint_sprite: Handle<Image>,
+    #[dependency]
+    sprint_animation: Handle<CharacterAnimationData>,
+
+    #[dependency]
+    attack_sprite: Handle<Image>,
+    #[dependency]
+    attack_particle_sprite: Handle<Image>,
+    #[dependency]
+    attack_animation: Handle<CharacterAnimationData>,
+
+    #[dependency]
+    indicator_ring_sprite: Handle<Image>,
 
     #[dependency]
     pub steps: Vec<Handle<AudioSource>>,
@@ -589,16 +561,83 @@ pub struct PlayerAssets {
 
 impl FromWorld for PlayerAssets {
     fn from_world(world: &mut World) -> Self {
+        let idle_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 12, 8, None, None);
+        let walk_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
+        let run_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
+        let attack_layout = TextureAtlasLayout::from_grid(UVec2::new(96, 96), 7, 8, None, None);
+        
+        let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
+
+        let idle_layout = texture_atlas_layouts.add(idle_layout);
+        let walk_layout = texture_atlas_layouts.add(walk_layout);
+        let run_layout = texture_atlas_layouts.add(run_layout);
+        let attack_layout = texture_atlas_layouts.add(attack_layout);
+        
         let assets = world.resource::<AssetServer>();
+        
+        let idle_sprite = assets.load("images/characters/idle.png");
+        let walk_sprite = assets.load("images/characters/walk.png");
+        let run_sprite = assets.load("images/characters/run.png");
+        let attack_sprite = assets.load("images/characters/attack.png");
+        
         Self {
-            idle: assets.load("images/characters/idle.png"),
-            walk: assets.load("images/characters/walk.png"),
-            run: assets.load("images/characters/run.png"),
+            idle_animation: assets.add(CharacterAnimationData {
+                image: idle_sprite.clone(),
+                atlas: TextureAtlas {
+                    layout: idle_layout,
+                    index: 0,
+                },
+                frames: 12,
+                interval: Duration::from_millis(150),
+            }),
+            idle_sprite,
 
-            attack: assets.load("images/characters/attack.png"),
-            attack_particle: assets.load("images/characters/attack_particle.png"),
+            walk_animation: assets.add(CharacterAnimationData {
+                image: walk_sprite.clone(),
+                atlas: TextureAtlas {
+                    layout: walk_layout,
+                    index: 0,
+                },
+                frames: 12,
+                interval: Duration::from_millis(50),
+            }),
+            walk_sprite,
 
-            indicator_ring: assets.load("images/characters/indicator_ring.png"),
+            run_animation: assets.add(CharacterAnimationData {
+                image: run_sprite.clone(),
+                atlas: TextureAtlas {
+                    layout: run_layout.clone(),
+                    index: 0,
+                },
+                frames: 12,
+                interval: Duration::from_millis(50),
+            }),
+            run_sprite: run_sprite.clone(),
+
+            sprint_animation: assets.add(CharacterAnimationData {
+                image: run_sprite.clone(),
+                atlas: TextureAtlas {
+                    layout: run_layout,
+                    index: 0,
+                },
+                frames: 12,
+                interval: Duration::from_millis(35),
+            }),
+            sprint_sprite: run_sprite,
+
+            attack_animation: assets.add(CharacterAnimationData {
+                image: attack_sprite.clone(),
+                atlas: TextureAtlas {
+                    layout: attack_layout,
+                    index: 0,
+                },
+                frames: 12,
+                interval: Duration::from_millis(ATTACK_DURATION / 7),
+            }),
+            attack_sprite: assets.load("images/characters/attack.png"),
+            attack_particle_sprite: assets.load("images/characters/attack_particle.png"),
+
+            indicator_ring_sprite: assets.load("images/characters/indicator_ring.png"),
 
             steps: vec![
                 assets.load("audio/sound_effects/step1.ogg"),

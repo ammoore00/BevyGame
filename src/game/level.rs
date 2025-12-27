@@ -15,6 +15,7 @@ use crate::game::grid::tile::tile_types::TileType;
 use crate::game::grid::tile::{TileEdges, TileFacing, TileShape, tile};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
+use crate::game::character::animation::CharacterAnimationData;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -46,6 +47,7 @@ pub fn spawn_level(
     object_assets: Res<ObjectAssets>,
     _character_assets: Res<CharacterAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    animation_assets: Res<Assets<CharacterAnimationData>>,
 ) {
     let level = commands
         .spawn((
@@ -60,6 +62,7 @@ pub fn spawn_level(
                     4.5,
                     &player_assets,
                     &mut texture_atlas_layouts,
+                    &animation_assets,
                     scale.0
                 ),
                 (

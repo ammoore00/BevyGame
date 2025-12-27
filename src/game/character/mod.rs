@@ -1,6 +1,6 @@
 use crate::AppSystems;
 use crate::asset_tracking::LoadResource;
-use crate::game::character::animation::CharacterAnimation;
+use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
@@ -8,7 +8,7 @@ use std::any::TypeId;
 use std::fmt::Debug;
 use bevy::ecs::world::DeferredWorld;
 
-mod animation;
+pub mod animation;
 pub mod health;
 pub mod player;
 pub mod stamina;
@@ -30,7 +30,8 @@ pub fn character(
     name: impl Into<String>,
     position: Vec3,
     sprite: Sprite,
-    animation: CharacterAnimation,
+    animation_tracker: CharacterAnimationTracker,
+    animation_map: AnimationStateMap,
     collider: Collider,
     scale: f32,
 ) -> impl Bundle {
@@ -46,7 +47,8 @@ pub fn character(
         // Rendering
         Transform::from_scale(Vec3::splat(scale)),
         sprite,
-        animation,
+        animation_tracker,
+        animation_map,
     )
 }
 
@@ -79,23 +81,15 @@ pub struct CharacterStateTracker {
     type_id: TypeId,
 }
 
-pub trait CharacterStateMarker: Reflect + Send + Sync + Debug + 'static {
-    fn set_animation(&self, animation: &mut CharacterAnimation);
-}
+pub trait CharacterStateMarker: Reflect + Send + Sync + Debug + 'static {}
 #[reflect_trait]
 pub trait CharacterState: Reflect + Send + Sync + Debug + 'static {
-    fn as_reflect(&self) -> &dyn Reflect;
     fn clone_value(&self) -> Box<dyn Reflect>;
     fn box_clone(&self) -> Box<dyn CharacterState>;
-    fn set_animation(&self, animation: &mut CharacterAnimation);
 }
 impl <T: CharacterStateMarker + Clone> CharacterState for T {
-    fn as_reflect(&self) -> &dyn Reflect { self }
     fn clone_value(&self) -> Box<dyn Reflect> { Box::new(self.clone()) }
     fn box_clone(&self) -> Box<dyn CharacterState> { Box::new(self.clone()) }
-    fn set_animation(&self, animation: &mut CharacterAnimation) {
-        CharacterStateMarker::set_animation(self, animation);
-    }
 }
 
 #[reflect_trait]
@@ -159,11 +153,7 @@ pub mod default_states {
     impl FromIdle for Idle {}
     impl FromMovement for Idle {}
     impl FromAttacking for Idle { type Policy = NoInterrupt; }
-    impl CharacterStateMarker for Idle {
-        fn set_animation(&self, animation: &mut CharacterAnimation) {
-            animation.set_idle();
-        }
-    }
+    impl CharacterStateMarker for Idle {}
 
     impl<T: FromIdle> TransitionTo<T> for Idle {}
 
@@ -173,13 +163,7 @@ pub mod default_states {
     impl FromIdle for Walking {}
     impl FromMovement for Walking {}
     impl FromAttacking for Walking { type Policy = Interrupt; }
-    impl CharacterStateMarker for Walking {
-        fn set_animation(&self, animation: &mut CharacterAnimation) {
-            animation
-                .set_walking()
-                .unwrap_or_else(|_| animation.set_idle())
-        }
-    }
+    impl CharacterStateMarker for Walking {}
     impl MovementState for Walking {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
@@ -188,13 +172,7 @@ pub mod default_states {
     impl FromIdle for Running {}
     impl FromMovement for Running {}
     impl FromAttacking for Running { type Policy = Interrupt; }
-    impl CharacterStateMarker for Running {
-        fn set_animation(&self, animation: &mut CharacterAnimation) {
-            animation
-                .set_running()
-                .unwrap_or_else(|_| animation.set_idle())
-        }
-    }
+    impl CharacterStateMarker for Running {}
     impl MovementState for Running {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
@@ -203,13 +181,7 @@ pub mod default_states {
     impl FromIdle for Sprinting {}
     impl FromMovement for Sprinting {}
     impl FromAttacking for Sprinting { type Policy = Interrupt; }
-    impl CharacterStateMarker for Sprinting {
-        fn set_animation(&self, animation: &mut CharacterAnimation) {
-            animation
-                .set_sprinting()
-                .unwrap_or_else(|_| animation.set_idle())
-        }
-    }
+    impl CharacterStateMarker for Sprinting {}
     impl MovementState for Sprinting {}
 
     impl<From: MovementState, To: FromMovement> TransitionTo<To> for From {}
@@ -219,13 +191,7 @@ pub mod default_states {
     pub struct Attacking { pub time_left: f32 }
     impl FromIdle for Attacking {}
     impl FromMovement for Attacking {}
-    impl CharacterStateMarker for Attacking {
-        fn set_animation(&self, animation: &mut CharacterAnimation) {
-            animation
-                .set_attacking()
-                .unwrap_or_else(|_| animation.set_idle())
-        }
-    }
+    impl CharacterStateMarker for Attacking {}
     impl TimedState for Attacking {
         fn time_left(&self) -> f32 { self.time_left }
 
