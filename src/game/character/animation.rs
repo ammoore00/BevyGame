@@ -15,11 +15,11 @@ pub(super) fn plugin(app: &mut App) {
         (
             update_animation_timer.in_set(AppSystems::TickTimers),
             (
-                update_animation_atlas,
                 update_animation_state,
+                update_animation_atlas,
             )
                 .chain()
-                .in_set(AppSystems::Update),
+                .in_set(AppSystems::Respond),
         )
             .run_if(in_state(Screen::Gameplay))
             .in_set(PausableSystems),

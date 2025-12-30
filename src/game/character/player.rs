@@ -1,15 +1,12 @@
 //! Player-specific behavior.
 
 use crate::game::character::animation::{CharacterAnimationTracker, CharacterAnimationData, AnimationStateMap};
-use crate::game::character::{
-    Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing,
-    ReflectMovementState, character,
-};
+use crate::game::character::{Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, ReflectMovementState, character, is_in_movement_state, default_states};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
 use bevy::prelude::*;
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::iter::Map;
 use std::time::Duration;
@@ -24,6 +21,7 @@ use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
+use crate::game::character::state_transitions::StateCapabilities;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -86,9 +84,21 @@ pub fn player(
         ..default()
     };
 
+    let default_states = default_states::DEFAULT_STATES;
+    let states = default_states.clone();
+
+    let default_transitions = default_states::DEFAULT_TRANSITIONS;
+    let transitions = default_transitions.clone();
+
+    let state_capabilities = StateCapabilities::new(
+        states,
+        transitions,
+    );
+
     let character_data = character(
         "Player",
         position,
+        state_capabilities,
         sprite,
         character_animation,
         character_animation_map,
@@ -277,37 +287,24 @@ fn record_player_movement_input(world: &mut World) {
             With<MovementController>,
             With<PhysicsData>,
             With<WorldPosition>,
-            With<CharacterStateTracker>
+            With<CharacterStateTracker>,
+            With<StateCapabilities>,
         )>();
 
     let entities: Vec<Entity> = controller_query.iter(world).collect();
 
     for entity in entities {
-        // 1. Get the current state first (this takes &mut World)
+        // Get the current state
         let tracker = world.get::<CharacterStateTracker>(entity).cloned().unwrap();
         let Some(prev_state) = character::get_state(entity, &tracker, world) else {
             warn!("Failed to get reflect component for entity {}", entity);
             continue;
         };
 
-        // 2. Check if it's a movement state (this takes &mut World)
-        let is_movement = {
-            let registry = world.resource::<AppTypeRegistry>().clone();
-            let type_registry = registry.read();
-            let reg = type_registry.get(tracker.type_id).unwrap();
-            let reflect_component = reg.data::<ReflectComponent>().unwrap();
+        // Check if the current state is movement
+        let is_movement = is_in_movement_state(entity, &world.get::<CharacterStateTracker>(entity).unwrap().clone(), world);
 
-            if let Ok(mut entity_mut) = world.get_entity_mut(entity)
-                && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
-                && let Some(reflect_movement_state) = reg.data::<ReflectMovementState>()
-            {
-                reflect_movement_state.get(reflect_data.into_inner()).is_some()
-            } else {
-                false
-            }
-        };
-
-        // 3. Logic to determine new state (needs scoped mutable access to controller)
+        // Determine new state from movement intent
         let mut sprinting = {
             let controller = world.get::<MovementController>(entity).unwrap();
             controller.sprinting
@@ -319,11 +316,22 @@ fn record_player_movement_input(world: &mut World) {
                 Box::new(Walking)
             } else {
                 match (toggle_sprint, sprinting) {
-                    (false, _) => prev_state.box_clone(),
+                    // We aren't sprinting, and don't want to sprint
+                    (false, false) => {
+                        sprinting = false;
+                        Box::new(Sprinting)
+                    }
+                    // We aren't sprinting, and want to start sprinting
+                    (false, true) => {
+                        sprinting = true;
+                        Box::new(Running)
+                    }
+                    // We are sprinting, and want to keep sprinting
                     (true, false) => {
                         sprinting = true;
                         Box::new(Sprinting)
                     }
+                    // We are sprinting, and want to stop sprinting
                     (true, true) => {
                         sprinting = false;
                         Box::new(Running)
@@ -335,7 +343,19 @@ fn record_player_movement_input(world: &mut World) {
             Box::new(Idle)
         };
 
-        // 4. Update the controller's sprinting flag and intent
+        let state_capabilities = world.get::<StateCapabilities>(entity).cloned().unwrap();
+
+        // If the character state has changed
+        if (*prev_state).type_id() != (*new_state).type_id() {
+            // Attempt to create a state transition event
+            let should_sprint = (*new_state).type_id() == TypeId::of::<Sprinting>();
+            if let Ok(event) = CharacterStateEvent::try_new(entity, &state_capabilities, new_state, prev_state) {
+                world.trigger(event);
+                sprinting = should_sprint;
+            }
+        }
+
+        // Update the controller's intent
         if let Some(mut controller) = world.get_mut::<MovementController>(entity) {
             controller.sprinting = sprinting;
             if is_movement {
@@ -345,28 +365,21 @@ fn record_player_movement_input(world: &mut World) {
             }
         }
 
-        // 5. Trigger the event (requires &mut World, all borrows must be dropped by now)
-        if let Ok(event) = CharacterStateEvent::try_new(entity, new_state, prev_state) {
-            world.trigger(event);
-        }
+        // Handle jumping
+        let physics = world.get::<PhysicsData>(entity).unwrap();
+        let position = world.get::<WorldPosition>(entity).unwrap();
 
-        // 6. Handle Coyote Time jumping (Scoped borrows again)
+        if let PhysicsData::Kinematic {
+            time_since_grounded,
+            last_grounded_height,
+            ..
+        } = *physics
+            && time_since_grounded < COYOTE_TIME
+            && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
+            && is_jumping
+            && let Some(mut controller) = world.get_mut::<MovementController>(entity)
         {
-            let physics = world.get::<PhysicsData>(entity).unwrap();
-            let position = world.get::<WorldPosition>(entity).unwrap();
-
-            if let PhysicsData::Kinematic {
-                time_since_grounded,
-                last_grounded_height,
-                ..
-            } = *physics
-                && time_since_grounded < COYOTE_TIME
-                && position.as_vec3().y < last_grounded_height + COYOTE_TIME_HEIGHT_THRESHOLD
-                && is_jumping
-                && let Some(mut controller) = world.get_mut::<MovementController>(entity)
-            {
-                controller.intent.y = JUMP_VELOCITY;
-            }
+            controller.intent.y = JUMP_VELOCITY;
         }
     }
 }
@@ -394,28 +407,17 @@ fn record_action_input(world: &mut World) {
             With<Character>,
             With<Facing>,
             With<Stamina>,
-            With<CharacterStateTracker>
+            With<CharacterStateTracker>,
+            With<StateCapabilities>,
         )>();
     let player = player_query.single(world).unwrap();
 
-    let is_movement = {
-        let state_tracker = world.get::<CharacterStateTracker>(player).unwrap();
-        let state_type_id = state_tracker.type_id();
+    let state_capabilities = world.get::<StateCapabilities>(player).cloned().unwrap();
 
-        let registry = world.resource::<AppTypeRegistry>().clone();
-        let type_registry = registry.read();
-        let reg = type_registry.get(state_type_id).unwrap();
-        let reflect_component = reg.data::<ReflectComponent>().unwrap();
+    // 2. Check if it's a movement state (this takes &mut World)
+    let is_movement = is_in_movement_state(player, &world.get::<CharacterStateTracker>(player).unwrap().clone(), world);
 
-        if let Ok(mut entity_mut) = world.get_entity_mut(player)
-            && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
-            && let Some(reflect_movement_state) = reg.data::<ReflectMovementState>()
-        {
-            reflect_movement_state.get(reflect_data.into_inner()).is_some()
-        } else {
-            false
-        }
-    };
+    let is_idle = world.query_filtered::<Entity, With<Idle>>().get(world, player).is_ok();
 
     let prev_state = {
         let state_tracker = world.get::<CharacterStateTracker>(player).cloned().unwrap();
@@ -433,7 +435,7 @@ fn record_action_input(world: &mut World) {
     let aim_facing = aim_facing_query.single(world).unwrap();
     let aim_facing = world.get::<AimFacing>(aim_facing).cloned().unwrap();
 
-    if attack && is_movement && stamina.current > 0 {
+    if attack && (is_movement || is_idle) && stamina.current > 0 {
         let facing = {
             let mut facing = world.get_mut::<Facing>(player).unwrap();
             if let Some(aim_facing) = aim_facing.0 {
@@ -449,6 +451,7 @@ fn record_action_input(world: &mut World) {
 
         match CharacterStateEvent::try_new(
             player,
+            &state_capabilities,
             Box::new(Attacking {
                 time_left: ATTACK_DURATION as f32 / 1000.0,
             }),
