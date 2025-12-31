@@ -41,7 +41,7 @@ Levels will consist of composable elements assembled into a full level layout.
 
 Randomization of level components should give some inherent replayability.
 
-Each major world story should also have multiple outcomes and secrets, providing value to playing through the same level multiple times.
+Each major world story should also have multiple outcomes and secrets, providing value to playing through the same level multiple times. See [Level Architecture](notes/Level%20Architecture.md)
 
 There should be some way to encourage multiple completions of the game as well.
 
