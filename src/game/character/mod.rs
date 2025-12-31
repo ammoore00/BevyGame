@@ -122,7 +122,6 @@ mod state_transitions {
 
     #[derive(Component, Debug, Clone)]
     pub struct StateCapabilities {
-        allowed_states: Vec<TypeId>,
         transition_graph: HashMap<(TypeId, TypeId), StateTransitionRule>,
     }
 
@@ -161,13 +160,8 @@ mod state_transitions {
             }
 
             Self {
-                allowed_states,
                 transition_graph,
             }
-        }
-
-        pub fn from_existing(other: Self) -> Self {
-            other.clone()
         }
 
         pub(super) fn can_transition(

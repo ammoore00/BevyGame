@@ -1,7 +1,7 @@
 //! Player-specific behavior.
 
 use crate::game::character::animation::{CharacterAnimationTracker, CharacterAnimationData, AnimationStateMap};
-use crate::game::character::{Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, ReflectMovementState, character, is_in_movement_state, default_states};
+use crate::game::character::{Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, character, is_in_movement_state, default_states};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
@@ -13,7 +13,7 @@ use std::time::Duration;
 //use crate::game::object::Shadow;
 use crate::game::character;
 use crate::game::character::default_states::{Attacking, Idle, Running, Sprinting, Walking};
-use crate::game::character::health::{Health, HealthEvent, HealthEventType};
+use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::components::{Collider, PhysicsData};
@@ -319,12 +319,12 @@ fn record_player_movement_input(world: &mut World) {
                     // We aren't sprinting, and don't want to sprint
                     (false, false) => {
                         sprinting = false;
-                        Box::new(Sprinting)
+                        Box::new(Running)
                     }
                     // We aren't sprinting, and want to start sprinting
                     (false, true) => {
                         sprinting = true;
-                        Box::new(Running)
+                        Box::new(Sprinting)
                     }
                     // We are sprinting, and want to keep sprinting
                     (true, false) => {
@@ -392,7 +392,7 @@ fn record_action_input(world: &mut World) {
         query.single(world).ok()
     };
 
-    let (player, gamepad_id) = match (player, gamepad) {
+    let (_player, gamepad_id) = match (player, gamepad) {
         (Some(p), Some(g)) => (p, g),
         _ => return,
     };
@@ -634,7 +634,7 @@ impl FromWorld for PlayerAssets {
                     layout: attack_layout,
                     index: 0,
                 },
-                frames: 8,
+                frames: 7,
                 interval: Duration::from_millis(ATTACK_DURATION / 7),
             }),
             attack_sprite: assets.load("images/characters/attack.png"),
