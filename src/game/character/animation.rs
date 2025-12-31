@@ -1,9 +1,9 @@
-use std::any::{Any, TypeId};
-use std::collections::HashMap;
 use crate::game::character::{CharacterStateTracker, Facing};
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
 
@@ -14,10 +14,7 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             update_animation_timer.in_set(AppSystems::TickTimers),
-            (
-                update_animation_state,
-                update_animation_atlas,
-            )
+            (update_animation_state, update_animation_atlas)
                 .chain()
                 .in_set(AppSystems::Respond),
         )
@@ -29,7 +26,7 @@ pub(super) fn plugin(app: &mut App) {
 fn update_animation_timer(
     time: Res<Time>,
     assets: Res<Assets<CharacterAnimationData>>,
-    mut query: Query<&mut CharacterAnimationTracker>
+    mut query: Query<&mut CharacterAnimationTracker>,
 ) {
     for mut animation in &mut query {
         animation.update_timer(time.delta(), &assets);
@@ -73,7 +70,9 @@ fn update_animation_atlas(
     )>,
 ) {
     for (state, animation, map, mut sprite) in &mut query {
-        let Some(data) = map.0.get(&state.type_id).cloned() else { continue; };
+        let Some(data) = map.0.get(&state.type_id).cloned() else {
+            continue;
+        };
         let data = assets.get(data.id()).unwrap();
 
         sprite.image = data.image.clone();
@@ -113,7 +112,10 @@ impl CharacterAnimationTracker {
     }
 
     pub fn default_sprite(&self, assets: &Assets<CharacterAnimationData>) -> Sprite {
-        Sprite::from_atlas_image(self.get_image(assets).clone(), self.get_atlas(assets).clone())
+        Sprite::from_atlas_image(
+            self.get_image(assets).clone(),
+            self.get_atlas(assets).clone(),
+        )
     }
 
     fn update_timer(&mut self, delta: Duration, assets: &Assets<CharacterAnimationData>) {

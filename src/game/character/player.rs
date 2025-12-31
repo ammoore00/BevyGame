@@ -1,7 +1,12 @@
 //! Player-specific behavior.
 
-use crate::game::character::animation::{CharacterAnimationTracker, CharacterAnimationData, AnimationStateMap};
-use crate::game::character::{Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, character, is_in_movement_state, default_states};
+use crate::game::character::animation::{
+    AnimationStateMap, CharacterAnimationData, CharacterAnimationTracker,
+};
+use crate::game::character::{
+    Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, character,
+    default_states, is_in_movement_state,
+};
 use crate::game::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
@@ -15,13 +20,13 @@ use crate::game::character;
 use crate::game::character::default_states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
+use crate::game::character::state_transitions::StateCapabilities;
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
-use crate::game::character::state_transitions::StateCapabilities;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -30,29 +35,22 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             // Normal Systems
-            (
-                record_aim_input,
-            )
+            (record_aim_input,)
                 .run_if(in_state(Screen::Gameplay))
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
-
             camera_follow_player.in_set(AppSystems::Respond),
-
             // Exclusive Systems
             // Note: Chaining exclusive systems works if they all have the &mut World signature
-            (
-                record_action_input,
-                record_player_movement_input,
-            )
+            (record_action_input, record_player_movement_input)
                 .chain()
                 .run_if(in_state(Screen::Gameplay))
                 .in_set(AppSystems::RecordInput)
                 .in_set(PausableSystems),
         ),
     )
-        .add_observer(on_aim_facing_changed)
-        .add_observer(on_player_attack);
+    .add_observer(on_aim_facing_changed)
+    .add_observer(on_player_attack);
 }
 
 /// The player character.
@@ -69,13 +67,14 @@ pub fn player(
         (Walking.type_id(), player_assets.walk_animation.clone()),
         (Running.type_id(), player_assets.run_animation.clone()),
         (Sprinting.type_id(), player_assets.sprint_animation.clone()),
-        (Attacking::default().type_id(), player_assets.attack_animation.clone()),
+        (
+            Attacking::default().type_id(),
+            player_assets.attack_animation.clone(),
+        ),
     ]));
-    
-    let character_animation = CharacterAnimationTracker::new(
-        player_assets.idle_animation.clone(),
-        animation_assets,
-    );
+
+    let character_animation =
+        CharacterAnimationTracker::new(player_assets.idle_animation.clone(), animation_assets);
 
     let sprite = character_animation.default_sprite(animation_assets);
 
@@ -90,10 +89,7 @@ pub fn player(
     let default_transitions = default_states::DEFAULT_TRANSITIONS;
     let transitions = default_transitions.clone();
 
-    let state_capabilities = StateCapabilities::new(
-        states,
-        transitions,
-    );
+    let state_capabilities = StateCapabilities::new(states, transitions);
 
     let character_data = character(
         "Player",
@@ -279,17 +275,15 @@ fn record_player_movement_input(world: &mut World) {
         intent = rotate_screen_space_to_movement(intent);
     }
 
-    let mut controller_query = world.query_filtered::<
-        Entity,
-        (
-            With<Player>,
-            With<Character>,
-            With<MovementController>,
-            With<PhysicsData>,
-            With<WorldPosition>,
-            With<CharacterStateTracker>,
-            With<StateCapabilities>,
-        )>();
+    let mut controller_query = world.query_filtered::<Entity, (
+        With<Player>,
+        With<Character>,
+        With<MovementController>,
+        With<PhysicsData>,
+        With<WorldPosition>,
+        With<CharacterStateTracker>,
+        With<StateCapabilities>,
+    )>();
 
     let entities: Vec<Entity> = controller_query.iter(world).collect();
 
@@ -302,7 +296,11 @@ fn record_player_movement_input(world: &mut World) {
         };
 
         // Check if the current state is movement
-        let is_movement = is_in_movement_state(entity, &world.get::<CharacterStateTracker>(entity).unwrap().clone(), world);
+        let is_movement = is_in_movement_state(
+            entity,
+            &world.get::<CharacterStateTracker>(entity).unwrap().clone(),
+            world,
+        );
 
         // Determine new state from movement intent
         let mut sprinting = {
@@ -349,7 +347,9 @@ fn record_player_movement_input(world: &mut World) {
         if (*prev_state).type_id() != (*new_state).type_id() {
             // Attempt to create a state transition event
             let should_sprint = (*new_state).type_id() == TypeId::of::<Sprinting>();
-            if let Ok(event) = CharacterStateEvent::try_new(entity, &state_capabilities, new_state, prev_state) {
+            if let Ok(event) =
+                CharacterStateEvent::try_new(entity, &state_capabilities, new_state, prev_state)
+            {
                 world.trigger(event);
                 sprinting = should_sprint;
             }
@@ -397,27 +397,36 @@ fn record_action_input(world: &mut World) {
         _ => return,
     };
 
-    let gamepad = world.get_entity(gamepad_id).unwrap().get::<Gamepad>().unwrap();
+    let gamepad = world
+        .get_entity(gamepad_id)
+        .unwrap()
+        .get::<Gamepad>()
+        .unwrap();
     let attack = gamepad.just_pressed(GamepadButton::RightTrigger);
 
-    let mut player_query = world.query_filtered::<
-        Entity,
-        (
-            With<Player>,
-            With<Character>,
-            With<Facing>,
-            With<Stamina>,
-            With<CharacterStateTracker>,
-            With<StateCapabilities>,
-        )>();
+    let mut player_query = world.query_filtered::<Entity, (
+        With<Player>,
+        With<Character>,
+        With<Facing>,
+        With<Stamina>,
+        With<CharacterStateTracker>,
+        With<StateCapabilities>,
+    )>();
     let player = player_query.single(world).unwrap();
 
     let state_capabilities = world.get::<StateCapabilities>(player).cloned().unwrap();
 
     // 2. Check if it's a movement state (this takes &mut World)
-    let is_movement = is_in_movement_state(player, &world.get::<CharacterStateTracker>(player).unwrap().clone(), world);
+    let is_movement = is_in_movement_state(
+        player,
+        &world.get::<CharacterStateTracker>(player).unwrap().clone(),
+        world,
+    );
 
-    let is_idle = world.query_filtered::<Entity, With<Idle>>().get(world, player).is_ok();
+    let is_idle = world
+        .query_filtered::<Entity, With<Idle>>()
+        .get(world, player)
+        .is_ok();
 
     let prev_state = {
         let state_tracker = world.get::<CharacterStateTracker>(player).cloned().unwrap();
@@ -568,21 +577,21 @@ impl FromWorld for PlayerAssets {
         let walk_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
         let run_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
         let attack_layout = TextureAtlasLayout::from_grid(UVec2::new(96, 96), 7, 8, None, None);
-        
+
         let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
 
         let idle_layout = texture_atlas_layouts.add(idle_layout);
         let walk_layout = texture_atlas_layouts.add(walk_layout);
         let run_layout = texture_atlas_layouts.add(run_layout);
         let attack_layout = texture_atlas_layouts.add(attack_layout);
-        
+
         let assets = world.resource::<AssetServer>();
-        
+
         let idle_sprite = assets.load("images/characters/idle.png");
         let walk_sprite = assets.load("images/characters/walk.png");
         let run_sprite = assets.load("images/characters/run.png");
         let attack_sprite = assets.load("images/characters/attack.png");
-        
+
         Self {
             idle_animation: assets.add(CharacterAnimationData {
                 image: idle_sprite.clone(),

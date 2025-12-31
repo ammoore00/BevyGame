@@ -87,7 +87,7 @@ fn hide_tiles_above(
 fn set_alpha(
     mut child_query: Query<(Entity, &mut Sprite), (Without<TilePosition>, Without<WorldPosition>)>,
     children: Option<&Children>,
-    alpha: f32
+    alpha: f32,
 ) {
     if let Some(children) = children {
         child_query

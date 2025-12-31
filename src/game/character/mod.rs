@@ -159,9 +159,7 @@ mod state_transitions {
                 }
             }
 
-            Self {
-                transition_graph,
-            }
+            Self { transition_graph }
         }
 
         pub(super) fn can_transition(
@@ -289,12 +287,26 @@ mod state_transitions {
     #[derive(Clone)]
     pub enum StateTransitionChecker {
         Always,
-        Custom(Arc<RwLock<dyn for<'a> Fn(&'a dyn CharacterState, &'a dyn CharacterState) -> bool + Send + Sync>>),
+        Custom(
+            Arc<
+                RwLock<
+                    dyn for<'a> Fn(&'a dyn CharacterState, &'a dyn CharacterState) -> bool
+                        + Send
+                        + Sync,
+                >,
+            >,
+        ),
         Never,
     }
 
     impl StateTransitionChecker {
-        pub fn custom(function: Box<dyn for<'a> Fn(&'a dyn CharacterState, &'a dyn CharacterState) -> bool + Send + Sync>) -> Self {
+        pub fn custom(
+            function: Box<
+                dyn for<'a> Fn(&'a dyn CharacterState, &'a dyn CharacterState) -> bool
+                    + Send
+                    + Sync,
+            >,
+        ) -> Self {
             Self::Custom(Arc::new(RwLock::new(function)))
         }
     }
@@ -347,7 +359,9 @@ mod state_transitions {
 
 pub mod default_states {
     use super::*;
-    use crate::game::character::state_transitions::{StateMatcher, StateTransitionChecker, StateTransitionRule};
+    use crate::game::character::state_transitions::{
+        StateMatcher, StateTransitionChecker, StateTransitionRule,
+    };
     use std::cell::LazyCell;
 
     pub(super) fn register_states(app: &mut App) {
@@ -388,25 +402,23 @@ pub mod default_states {
             StateTransitionRule::new(
                 StateMatcher::Single(TypeId::of::<Attacking>()),
                 StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone()),
-                StateTransitionChecker::custom(Box::new(can_transition_from_attacking))
+                StateTransitionChecker::custom(Box::new(can_transition_from_attacking)),
             ),
         ]
     });
 
-    pub const DEFAULT_TRANSITIONS_PASSIVE: LazyCell<Vec<StateTransitionRule>> = LazyCell::new(|| {
-        vec![
-            StateTransitionRule::always(
+    pub const DEFAULT_TRANSITIONS_PASSIVE: LazyCell<Vec<StateTransitionRule>> =
+        LazyCell::new(|| {
+            vec![StateTransitionRule::always(
                 StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone()),
-                StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone())
-            )
-        ]
-    });
+                StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone()),
+            )]
+        });
 
-    fn can_transition_from_attacking(
-        prev: &dyn CharacterState,
-        _: &dyn CharacterState,
-    ) -> bool {
-        if let Some(attacking) = CharacterState::as_any(prev).downcast_ref::<Attacking>() && attacking.time_left > 0.0 {
+    fn can_transition_from_attacking(prev: &dyn CharacterState, _: &dyn CharacterState) -> bool {
+        if let Some(attacking) = CharacterState::as_any(prev).downcast_ref::<Attacking>()
+            && attacking.time_left > 0.0
+        {
             false
         } else {
             true
