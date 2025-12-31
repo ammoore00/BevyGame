@@ -1,21 +1,15 @@
 //! Spawn the main level.
 
 mod map;
-mod palette;
-mod room;
 pub mod grid;
 
 use bevy::prelude::*;
-use std::collections::BTreeMap;
 use std::error::Error;
 use std::str::FromStr;
-use std::sync::{Arc, RwLock};
 
 use crate::game::character::CharacterAssets;
 use crate::game::character::animation::CharacterAnimationData;
 use crate::game::character::player::{player, PlayerAssets};
-use grid::coords::TileCoords;
-use grid::grid;
 use grid::tile::assets::{TileAssets, TileMaterial};
 use grid::tile::tile_types::TileType;
 use grid::tile::{tile, TileEdges, TileFacing, TileShape};
@@ -26,7 +20,7 @@ use crate::game::level::map::temp_create_level;
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
 
-    app.add_plugins((map::plugin, palette::plugin, room::plugin));
+    app.add_plugins((grid::plugin, map::plugin));
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]
@@ -54,7 +48,6 @@ pub fn spawn_level(
     tile_assets: Res<TileAssets>,
     object_assets: Res<ObjectAssets>,
     _character_assets: Res<CharacterAssets>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     animation_assets: Res<Assets<CharacterAnimationData>>,
 ) {
     let level = commands
@@ -69,7 +62,6 @@ pub fn spawn_level(
                     //Vec3::new(0.0, 1.0, 0.0),
                     4.5,
                     &player_assets,
-                    &mut texture_atlas_layouts,
                     &animation_assets,
                     scale.0
                 ),
@@ -93,7 +85,6 @@ pub fn spawn_level(
         commands.reborrow(),
         scale,
         tile_assets,
-        texture_atlas_layouts,
     );
 
     commands.entity(level).add_child(grid);

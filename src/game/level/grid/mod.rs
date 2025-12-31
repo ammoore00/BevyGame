@@ -8,7 +8,7 @@ use std::sync::{Arc, RwLock};
 pub mod coords;
 pub mod tile;
 
-pub(in crate::game) fn plugin(app: &mut App) {
+pub(super) fn plugin(app: &mut App) {
     app.add_plugins((coords::plugin, tile::plugin));
 
     app.add_systems(
@@ -118,12 +118,17 @@ fn correct_shadow_opacity(mut query: Query<&mut Sprite, With<Shadow>>) {
     })
 }
 
-#[derive(Component)]
-pub struct Grid;
+pub type TileMap = Arc<RwLock<BTreeMap<TileCoords, Entity>>>;
+pub fn tile_map() -> TileMap {
+    Arc::new(RwLock::new(BTreeMap::new()))
+}
 
-pub fn grid(_tile_map: Arc<RwLock<BTreeMap<TileCoords, Entity>>>, scale: f32) -> impl Bundle {
+#[derive(Component)]
+pub struct Grid(TileMap);
+
+pub fn grid(tile_map: TileMap, scale: f32) -> impl Bundle {
     (
-        Grid,
+        Grid(tile_map),
         Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
         InheritedVisibility::default(),
     )

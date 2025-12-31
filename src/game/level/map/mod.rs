@@ -1,37 +1,66 @@
-use std::collections::BTreeMap;
-use std::sync::{Arc, RwLock};
-use bevy::prelude::*;
+use crate::Scale;
 use crate::game::level::grid::coords::TileCoords;
-use crate::game::level::grid::grid;
+use crate::game::level::grid::{grid, tile_map};
 use crate::game::level::grid::tile::assets::TileAssets;
 use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::tile::tile_types::TileType;
-use crate::Scale;
+use palette::Palette;
+use bevy::prelude::*;
+use rand::Rng;
+use crate::game::level::map::room::RoomDefinition;
+
+mod palette;
+mod room;
+mod connector;
 
 pub(super) fn plugin(app: &mut App) {
-    
+    app.add_plugins((connector::plugin, palette::plugin, room::plugin));
 }
 
+#[derive(Debug)]
+pub enum MapType {
+    Main,
+    Boss,
+    Side,
+}
+
+#[derive(Debug)]
 pub struct MapDefinition {
-    
+    palette: Palette,
+    map_type: MapType,
+}
+
+impl MapDefinition {
+    pub fn bake(&self, seed: u64, rand: impl Rng) -> MapState {
+        todo!()
+    }
 }
 
 #[derive(Component, Debug)]
 pub struct MapState {
-    
+    grid: Entity,
+    injectable: RoomDefinition,
 }
 
-pub struct MapPersistence {
-    
+pub fn map_state(
+    grid: Entity,
+    injectable: RoomDefinition,
+) -> impl Bundle {
+    MapState {
+        grid,
+        injectable,
+    }
 }
+
+#[derive(Debug)]
+pub struct MapPersistence {}
 
 pub(super) fn temp_create_level(
     mut commands: Commands,
     scale: Res<Scale>,
     tile_assets: Res<TileAssets>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) -> Entity {
-    let tile_map = Arc::new(RwLock::new(BTreeMap::<TileCoords, Entity>::new()));
+    let tile_map = tile_map();
 
     let level_1 = [
         "L=xz:G__,L=z:G___,L=z:G___,L=z:G___,L=z:G___,L=z:G___,L=z:G___,L=z:G___,L=z:G___,L=z:G___,L=Xz:G__,________,________,________,________,________,________,________,________,________,________,________,",
@@ -197,7 +226,6 @@ pub(super) fn temp_create_level(
                 tile_type,
                 coords.clone(),
                 &tile_assets,
-                &mut texture_atlas_layouts,
             ))
             .id();
 

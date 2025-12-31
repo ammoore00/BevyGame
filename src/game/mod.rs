@@ -10,7 +10,6 @@ mod physics;
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         character::plugin,
-        grid::plugin,
         level::plugin,
         particle::plugin,
         physics::plugin,

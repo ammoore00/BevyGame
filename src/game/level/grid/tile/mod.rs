@@ -24,11 +24,9 @@ pub fn tile(
     tile_type: TileType,
     tile_coords: impl Into<TileCoords> + Clone,
     tile_assets: &TileAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
 ) -> impl Bundle {
     let sprite_sheet = tile_assets.get_asset_set_for_material(tile_type.material);
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+    let layout = tile_assets.layout().clone();
 
     let edge_indices = Vec::new();
 
@@ -45,7 +43,7 @@ pub fn tile(
         Sprite::from_atlas_image(
             sprite_sheet.clone(),
             TextureAtlas {
-                layout: texture_atlas_layout.clone(),
+                layout: layout.clone(),
                 index: tile_type.index,
             },
         ),
@@ -55,7 +53,7 @@ pub fn tile(
                     Sprite::from_atlas_image(
                         sprite_sheet.clone(),
                         TextureAtlas {
-                            layout: texture_atlas_layout.clone(),
+                            layout: layout.clone(),
                             index,
                         },
                     ),

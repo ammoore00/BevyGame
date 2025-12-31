@@ -58,7 +58,6 @@ pub fn player(
     position: Vec3,
     max_speed: f32,
     player_assets: &PlayerAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     animation_assets: &Assets<CharacterAnimationData>,
     scale: f32,
 ) -> impl Bundle {
@@ -114,8 +113,7 @@ pub fn player(
     //);
 
     let indicator_ring_sprite = player_assets.indicator_ring_sprite.clone();
-    let indicator_ring_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 1, None, None);
-    let indicator_ring_layout = texture_atlas_layouts.add(indicator_ring_layout);
+    let indicator_ring_layout = player_assets.indicator_ring_layout.clone();
 
     let indicator_ring = (
         AimFacing::default(),
@@ -566,6 +564,9 @@ pub struct PlayerAssets {
 
     #[dependency]
     indicator_ring_sprite: Handle<Image>,
+    #[dependency]
+    indicator_ring_layout: Handle<TextureAtlasLayout>,
+
 
     #[dependency]
     pub steps: Vec<Handle<AudioSource>>,
@@ -577,6 +578,7 @@ impl FromWorld for PlayerAssets {
         let walk_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
         let run_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
         let attack_layout = TextureAtlasLayout::from_grid(UVec2::new(96, 96), 7, 8, None, None);
+        let indicator_ring_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 1, None, None);
 
         let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
 
@@ -584,6 +586,7 @@ impl FromWorld for PlayerAssets {
         let walk_layout = texture_atlas_layouts.add(walk_layout);
         let run_layout = texture_atlas_layouts.add(run_layout);
         let attack_layout = texture_atlas_layouts.add(attack_layout);
+        let indicator_ring_layout = texture_atlas_layouts.add(indicator_ring_layout);
 
         let assets = world.resource::<AssetServer>();
 
@@ -650,6 +653,7 @@ impl FromWorld for PlayerAssets {
             attack_particle_sprite: assets.load("images/characters/attack_particle.png"),
 
             indicator_ring_sprite: assets.load("images/characters/indicator_ring.png"),
+            indicator_ring_layout,
 
             steps: vec![
                 assets.load("audio/sound_effects/step1.ogg"),
