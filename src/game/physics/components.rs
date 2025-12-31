@@ -1,4 +1,4 @@
-use crate::game::grid::coords::{WorldCoords, WorldPosition};
+use crate::game::level::grid::coords::{WorldCoords, WorldPosition};
 use bevy::prelude::*;
 use parry3d::math::Isometry;
 use parry3d::na::{Const, OPoint, Vector3};

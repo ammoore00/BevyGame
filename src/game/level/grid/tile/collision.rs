@@ -1,21 +1,21 @@
-use crate::game::grid::coords::WorldCoords;
-use crate::game::grid::tile::TileFacing;
+use crate::game::level::grid::coords::WorldCoords;
+use crate::game::level::grid::tile::TileFacing;
 use crate::game::physics::components::Collider;
 use bevy::prelude::*;
 
-pub(super) fn full() -> impl Fn(WorldCoords) -> Collider {
+pub(in crate::game) fn full() -> impl Fn(WorldCoords) -> Collider {
     cuboid(Vec3::splat(0.5))
 }
 
-pub(super) fn slope_45(facing: TileFacing) -> impl Fn(WorldCoords) -> Collider {
+pub(in crate::game) fn slope_45(facing: TileFacing) -> impl Fn(WorldCoords) -> Collider {
     slope(0.0, 1.0, facing)
 }
 
-pub(super) fn cuboid(size: Vec3) -> impl Fn(WorldCoords) -> Collider {
+pub(in crate::game) fn cuboid(size: Vec3) -> impl Fn(WorldCoords) -> Collider {
     move |pos| Collider::cuboid(size, pos)
 }
 
-pub(super) fn slope(
+pub(in crate::game) fn slope(
     lower_height: f32,
     upper_height: f32,
     facing: TileFacing,

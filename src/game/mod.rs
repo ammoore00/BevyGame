@@ -1,7 +1,7 @@
 use bevy::prelude::*;
+use level::grid;
 
 pub mod character;
-mod grid;
 pub mod level;
 mod object;
 mod particle;

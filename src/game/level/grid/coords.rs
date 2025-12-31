@@ -1,13 +1,13 @@
 use crate::Scale;
-use crate::game::grid::tile::{TILE_HEIGHT, TILE_WIDTH};
+use crate::game::level::grid::tile::{TILE_HEIGHT, TILE_WIDTH};
 use bevy::prelude::*;
 use parry3d::math::Isometry;
 use std::cmp::Ordering;
 use std::ops::Deref;
 
-pub(super) const SCREEN_Z_SCALE: f32 = 2.0;
+pub(in crate::game) const SCREEN_Z_SCALE: f32 = 2.0;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::game) fn plugin(app: &mut App) {
     app.add_systems(
         PreUpdate,
         (

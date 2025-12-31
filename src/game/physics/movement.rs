@@ -16,7 +16,7 @@
 use bevy::prelude::*;
 
 use crate::game::character::Facing;
-use crate::game::grid::coords::WorldPosition;
+use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, CollisionEvent, PhysicsData};
 use crate::{AppSystems, PausableSystems};
 

@@ -7,7 +7,7 @@ use crate::game::character::{
     Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, character,
     default_states, is_in_movement_state,
 };
-use crate::game::grid::coords::{
+use crate::game::level::grid::coords::{
     WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
 };
 use bevy::prelude::*;

@@ -2,7 +2,7 @@ use crate::AppSystems;
 use crate::asset_tracking::LoadResource;
 use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::state_transitions::{StateCapabilities, StateTransitionError};
-use crate::game::grid::coords::WorldPosition;
+use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;

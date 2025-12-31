@@ -1,5 +1,5 @@
 use crate::asset_tracking::LoadResource;
-use crate::game::grid::coords::WorldPosition;
+use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
 

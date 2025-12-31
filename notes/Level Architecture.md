@@ -1,11 +1,4 @@
 # Level Architecture
-Copy/paste:
-
-│   
-
-├── 
-
-└── 
 
 ## Player-Facing
 ```

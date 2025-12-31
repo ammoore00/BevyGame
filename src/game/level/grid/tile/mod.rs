@@ -1,6 +1,6 @@
-use crate::game::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
-use crate::game::grid::tile::assets::TileAssets;
-use crate::game::grid::tile::tile_types::TileType;
+use crate::game::level::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
+use crate::game::level::grid::tile::assets::TileAssets;
+use crate::game::level::grid::tile::tile_types::TileType;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::asset::Assets;
 use bevy::image::{TextureAtlas, TextureAtlasLayout};

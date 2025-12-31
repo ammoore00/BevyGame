@@ -1,7 +1,7 @@
 use crate::asset_tracking::LoadResource;
 use bevy::prelude::*;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::game) fn plugin(app: &mut App) {
     app.load_resource::<TileAssets>();
 }
 

@@ -1,5 +1,5 @@
-use crate::game::grid::tile::TileShape;
-use crate::game::grid::tile::assets::TileMaterial;
+use crate::game::level::grid::tile::TileShape;
+use crate::game::level::grid::tile::assets::TileMaterial;
 use std::sync::LazyLock;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -183,7 +183,7 @@ macro_rules! standard_tile_set {
 
 pub mod grass {
     use super::*;
-    use crate::game::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::Grass;
     standard_tile_set!(MATERIAL);
@@ -191,7 +191,7 @@ pub mod grass {
 
 pub mod dark_planks {
     use super::*;
-    use crate::game::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::DarkPlanks;
     standard_tile_set!(MATERIAL);
@@ -199,7 +199,7 @@ pub mod dark_planks {
 
 pub mod dark_framed_planks {
     use super::*;
-    use crate::game::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::DarkFramedPlanks;
     standard_tile_set!(MATERIAL);
@@ -207,7 +207,7 @@ pub mod dark_framed_planks {
 
 pub mod light_planks {
     use super::*;
-    use crate::game::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::LightPlanks;
     standard_tile_set!(MATERIAL);
@@ -215,7 +215,7 @@ pub mod light_planks {
 
 pub mod light_framed_planks {
     use super::*;
-    use crate::game::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::LightFramedPlanks;
     standard_tile_set!(MATERIAL);
