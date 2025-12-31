@@ -2,7 +2,7 @@ use crate::game::character::{CharacterStateTracker, Facing};
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
@@ -138,11 +138,6 @@ impl CharacterAnimationTracker {
 
     fn get_atlas_index(&self, assets: &Assets<CharacterAnimationData>) -> usize {
         self.frame + self.facing as usize * assets.get(self.current.id()).unwrap().frames
-    }
-
-    /// Whether animation changed this tick.
-    pub fn changed(&self) -> bool {
-        true
     }
 }
 
