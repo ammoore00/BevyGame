@@ -238,3 +238,4 @@ impl TileShape {
 }
 
 pub mod tile_types;
+mod tile_defs;

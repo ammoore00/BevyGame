@@ -14,19 +14,21 @@ mod room;
 mod connector;
 
 pub(super) fn plugin(app: &mut App) {
+    app.init_asset::<MapDefinition>();
+
     app.add_plugins((connector::plugin, palette::plugin, room::plugin));
 }
 
-#[derive(Debug)]
+#[derive(Debug, Reflect)]
 pub enum MapType {
     Main,
     Boss,
     Side,
 }
 
-#[derive(Debug)]
+#[derive(Asset, Debug, Reflect)]
 pub struct MapDefinition {
-    palette: Palette,
+    palette: Handle<Palette>,
     map_type: MapType,
 }
 
