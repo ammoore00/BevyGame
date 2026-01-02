@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use crate::game::level::map::connector::ConnectorPool;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_resource::<Palettes>();
+    //app.init_resource::<Palettes>();
 
     app.add_plugins((standard::plugin,));
 }
@@ -32,7 +32,7 @@ mod standard {
     pub(super) fn plugin(app: &mut App) {
         app.add_plugins((connectors::plugin,));
     }
-    
+
     pub(super) fn palette(assets: &AssetServer) -> Palette {
         Palette {
             connector_pool: assets.add(connectors::connector_pool(assets)),
@@ -44,7 +44,7 @@ mod standard {
         use super::*;
 
         pub(super) fn plugin(app: &mut App) {}
-        
+
         pub(super) fn connector_pool(assets: &AssetServer) -> ConnectorPool {
             todo!()
         }

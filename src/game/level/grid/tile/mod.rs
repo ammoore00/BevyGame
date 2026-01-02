@@ -12,6 +12,7 @@ use std::ops::{Add, AddAssign};
 
 pub mod assets;
 mod collision;
+pub mod tile_types;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins(assets::plugin);
@@ -236,6 +237,3 @@ impl TileShape {
         }
     }
 }
-
-pub mod tile_types;
-mod tile_defs;

@@ -1,7 +1,7 @@
 //! Spawn the main level.
 
-mod map;
 pub mod grid;
+mod map;
 
 use bevy::prelude::*;
 use std::error::Error;
@@ -9,13 +9,13 @@ use std::str::FromStr;
 
 use crate::game::character::CharacterAssets;
 use crate::game::character::animation::CharacterAnimationData;
-use crate::game::character::player::{player, PlayerAssets};
+use crate::game::character::player::{PlayerAssets, player};
+use crate::game::level::map::temp_create_level;
+use crate::game::object::{ObjectAssets, ObjectType, object};
+use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
 use grid::tile::assets::{TileAssets, TileMaterial};
 use grid::tile::tile_types::TileType;
-use grid::tile::{tile, TileEdges, TileFacing, TileShape};
-use crate::game::object::{object, ObjectAssets, ObjectType};
-use crate::{asset_tracking::LoadResource, audio::music, screens::Screen, Scale};
-use crate::game::level::map::temp_create_level;
+use grid::tile::{TileEdges, TileFacing, TileShape, tile};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -81,11 +81,7 @@ pub fn spawn_level(
         ))
         .id();
 
-    let grid = temp_create_level(
-        commands.reborrow(),
-        scale,
-        tile_assets,
-    );
+    let grid = temp_create_level(commands.reborrow(), scale, tile_assets);
 
     commands.entity(level).add_child(grid);
 }

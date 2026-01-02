@@ -8,7 +8,7 @@ pub(in crate::game) fn plugin(app: &mut App) {
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct TileAssets {
-    #[dependency]
+    //#[dependency]
     layout: Handle<TextureAtlasLayout>,
     
     #[dependency]

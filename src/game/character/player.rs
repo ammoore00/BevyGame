@@ -564,7 +564,6 @@ pub struct PlayerAssets {
 
     #[dependency]
     indicator_ring_sprite: Handle<Image>,
-    #[dependency]
     indicator_ring_layout: Handle<TextureAtlasLayout>,
 
 

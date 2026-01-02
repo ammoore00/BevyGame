@@ -1,9 +1,10 @@
-use std::collections::HashMap;
 use crate::Scale;
 use crate::game::level::grid::TileMap;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::TileAssets;
+use crate::game::level::grid::tile::tile_types::TileType;
 use bevy::prelude::*;
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 
 pub(super) fn plugin(app: &mut App) {
@@ -32,22 +33,12 @@ pub enum RoomType {
     Connector,
 }
 
-#[derive(Asset, Reflect)]
+#[derive(Asset, Debug, Reflect)]
 pub struct RoomDefinition {
     room_type: RoomType,
     connections: Vec<RoomConnection>,
     bounds: IVec3,
     id: RoomID,
-}
-
-impl Debug for RoomDefinition {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RoomDefinition")
-            .field("room_type", &self.room_type)
-            .field("connections", &self.connections)
-            .field("bounds", &self.bounds)
-            .finish()
-    }
 }
 
 #[derive(Debug, Reflect)]
@@ -70,6 +61,16 @@ pub struct RoomBuilderRegistry {
 
 type RoomTileBuilder = Box<
     dyn FnMut(Commands, Res<Scale>, Res<TileAssets>, ResMut<Assets<TextureAtlasLayout>>) -> TileMap
-    + Send
-    + Sync,
+        + Send
+        + Sync,
 >;
+
+pub struct RoomLayout<const X: usize, const Y: usize, const Z: usize> {
+    pub tiles: [[[TileType; X]; Z]; Y],
+}
+
+impl<const X: usize, const Y: usize, const Z: usize> RoomLayout<X, Y, Z> {
+    pub const fn new(tiles: [[[TileType; X]; Z]; Y]) -> Self {
+        Self { tiles }
+    }
+}
