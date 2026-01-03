@@ -116,5 +116,5 @@ fn spawn_camera(mut commands: Commands) {
     ));
 }
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Clone, Copy, PartialEq)]
 pub struct Scale(pub f32);
