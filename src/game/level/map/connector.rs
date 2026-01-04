@@ -1,7 +1,7 @@
 use bevy::prelude::*;
+use crate::game::level::map::room::RoomDefinition;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_asset::<ConnectorPool>();
 }
 
 #[derive(Debug)]
@@ -9,11 +9,25 @@ pub struct Connector {
 
 }
 
-#[derive(Asset, Debug, Reflect)]
+#[derive(Debug, Reflect)]
 pub struct ConnectorPool(pub Vec<ConnectorRoom>);
 
 #[derive(Debug, Reflect)]
 pub struct ConnectorRoom {
-    room_id: usize,
+    room: RoomDefinition,
     weight: f32,
+}
+
+impl ConnectorRoom {
+    pub fn new(room: RoomDefinition, weight: f32) -> Self {
+        Self { room, weight }
+    }
+    
+    pub fn room(&self) -> &RoomDefinition {
+        &self.room
+    }
+    
+    pub fn weight(&self) -> f32 {
+        self.weight
+    }
 }

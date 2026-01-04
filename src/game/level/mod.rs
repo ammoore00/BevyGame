@@ -7,15 +7,16 @@ use bevy::prelude::*;
 use std::error::Error;
 use std::str::FromStr;
 
-use crate::game::character::CharacterAssets;
 use crate::game::character::animation::CharacterAnimationData;
 use crate::game::character::player::{PlayerAssets, player};
-use crate::game::level::map::temp_create_level;
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
-use grid::tile::assets::{TileAssets, TileMaterial};
+use grid::tile::assets::TileMaterial;
 use grid::tile::tile_types::TileType;
-use grid::tile::{TileEdges, TileFacing, TileShape, tile};
+use grid::tile::{TileEdges, TileFacing, TileShape};
+use crate::game::level::grid::tile::assets::TileAssets;
+use crate::game::level::map::palette::{Palette, Palettes};
+use crate::game::level::map::room::{RoomBuilderContext, RoomRegistryContext};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -43,11 +44,17 @@ impl FromWorld for LevelAssets {
 pub fn spawn_level(
     mut commands: Commands,
     scale: Res<Scale>,
+
     level_assets: Res<LevelAssets>,
-    player_assets: Res<PlayerAssets>,
+    level_palettes: Res<Palettes>,
+    palette_assets: Res<Assets<Palette>>,
+
+    room_registry_context: Res<RoomRegistryContext>,
+
     tile_assets: Res<TileAssets>,
+
+    player_assets: Res<PlayerAssets>,
     object_assets: Res<ObjectAssets>,
-    _character_assets: Res<CharacterAssets>,
     animation_assets: Res<Assets<CharacterAnimationData>>,
 ) {
     let level = commands
@@ -81,7 +88,21 @@ pub fn spawn_level(
         ))
         .id();
 
-    let grid = temp_create_level(commands.reborrow(), scale, tile_assets);
+    //let grid = temp_create_level(commands.reborrow(), scale, tile_assets);
+    let palettes = level_palettes.into_inner();
+    let palette = palette_assets.get(palettes.standard.id()).unwrap();
+
+    let room = palette.connector_pool().0[0].room();
+
+    let grid = {
+        let builder_context = RoomBuilderContext {
+            commands: &mut commands,
+            scale: *scale,
+            tile_assets: &tile_assets,
+        };
+
+        room.build(&room_registry_context, builder_context)
+    };
 
     commands.entity(level).add_child(grid);
 }

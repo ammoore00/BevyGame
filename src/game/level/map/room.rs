@@ -10,8 +10,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_resource::<RoomIDs>();
-    app.init_resource::<RoomBuilderRegistry>();
+    app.init_resource::<RoomRegistryContext>();
 }
 
 type RoomTileCoords = TileCoords;
@@ -24,7 +23,7 @@ pub enum RoomType {
     Connector,
 }
 
-#[derive(Asset, Debug, Reflect)]
+#[derive(Debug, Reflect)]
 pub struct RoomDefinition {
     room_type: RoomType,
     connections: Vec<RoomConnection>,
@@ -37,7 +36,7 @@ impl RoomDefinition {
         room_type: RoomType,
         connections: Vec<RoomConnection>,
         layout: Box<dyn RoomBuilder>,
-        registry_context: RoomRegistryContext,
+        registry_context: &mut RoomRegistryContext,
     ) -> Self {
         let bounds = layout.bounds();
 
@@ -50,6 +49,14 @@ impl RoomDefinition {
             bounds,
             id,
         }
+    }
+
+    pub fn build(
+        &self,
+        registry_context: &RoomRegistryContext,
+        builder_context: RoomBuilderContext,
+    ) -> Entity {
+        registry_context.registry.room_builders[&self.id].build(builder_context)
     }
 }
 
@@ -66,7 +73,13 @@ pub enum ConnectionType {
     Large,
 }
 
-#[derive(Resource, Debug, Default)]
+#[derive(Resource, Default)]
+pub struct RoomRegistryContext {
+    pub ids: RoomIDs,
+    pub registry: RoomBuilderRegistry,
+}
+
+#[derive(Debug, Default)]
 pub struct RoomIDs(RoomID);
 impl RoomIDs {
     pub fn next(&mut self) -> RoomID {
@@ -77,7 +90,7 @@ impl RoomIDs {
 }
 type RoomID = usize;
 
-#[derive(Resource, Default)]
+#[derive(Default)]
 pub struct RoomBuilderRegistry {
     room_builders: HashMap<RoomID, Box<dyn RoomBuilder>>,
 }
@@ -89,7 +102,11 @@ pub trait RoomBuilder: Send + Sync {
 }
 
 #[derive(Debug, Clone)]
-pub struct RoomLayout<const X: usize, const Y: usize, const Z: usize> {
+pub struct RoomLayout<
+    const X: usize,
+    const Y: usize,
+    const Z: usize
+> {
     tiles: [[[Option<TileType>; X]; Z]; Y],
 }
 
@@ -140,13 +157,8 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
     }
 }
 
-pub struct RoomBuilderContext<'a> {
-    commands: &'a mut Commands<'a, 'a>,
-    scale: Scale,
-    tile_assets: &'a TileAssets,
-}
-
-pub struct RoomRegistryContext<'a> {
-    ids: &'a mut RoomIDs,
-    registry: &'a mut RoomBuilderRegistry,
+pub struct RoomBuilderContext<'a, 'w, 's> {
+    pub commands: &'a mut Commands<'w, 's>,
+    pub scale: Scale,
+    pub tile_assets: &'a TileAssets,
 }

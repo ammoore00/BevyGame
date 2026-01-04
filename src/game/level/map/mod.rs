@@ -9,14 +9,18 @@ use bevy::prelude::*;
 use rand::Rng;
 use crate::game::level::map::room::RoomDefinition;
 
-mod palette;
-mod room;
+pub mod palette;
+pub mod room;
 mod connector;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<MapDefinition>();
 
-    app.add_plugins((connector::plugin, palette::plugin, room::plugin));
+    app.add_plugins((
+        connector::plugin,
+        room::plugin,
+        palette::plugin, // Order matters here - palette must be after room
+    ));
 }
 
 #[derive(Debug, Reflect)]
