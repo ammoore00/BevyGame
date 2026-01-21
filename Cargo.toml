@@ -101,10 +101,10 @@ lto = "thin"
 [profile.web-release]
 # Default to release profile values.
 inherits = "release"
-# Optimize with size in mind (also try "z", sometimes it is better).
-# Slightly slows compile times, great improvements to file size and runtime performance.
+# Optimize with SIZE in mind (also try "z", sometimes it is better).
+# Slightly slows compile times, great improvements to file SIZE and runtime performance.
 opt-level = "s"
-# Strip all debugging information from the binary to slightly reduce file size.
+# Strip all debugging information from the binary to slightly reduce file SIZE.
 strip = "debuginfo"
 
 # Optimize for build time in CI.

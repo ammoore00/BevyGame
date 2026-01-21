@@ -60,10 +60,17 @@ impl RoomDefinition {
     }
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Clone, Reflect)]
 pub struct RoomConnection {
     location: RoomTileCoords,
     connection_type: ConnectionType,
+    facing: ConnectionFacing,
+}
+
+impl RoomConnection {
+    pub fn new(location: RoomTileCoords, connection_type: ConnectionType, facing: ConnectionFacing) -> Self {
+        Self { location, connection_type, facing }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Reflect)]
@@ -71,6 +78,14 @@ pub enum ConnectionType {
     Small,
     Medium,
     Large,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+pub enum ConnectionFacing {
+    North,
+    East,
+    South,
+    West,
 }
 
 #[derive(Resource, Default)]
