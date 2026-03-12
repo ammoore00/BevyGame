@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::game::level::map::connector::ConnectorPool;
+use crate::game::level::map::transition::TransitionRoomPool;
 use crate::game::level::map::MapPool;
 use crate::game::level::map::room::RoomRegistryContext;
 
@@ -8,6 +8,7 @@ pub(super) fn plugin(app: &mut App) {
     app.init_resource::<Palettes>();
 }
 
+/// Resource holding handles to each palette asset
 #[derive(Resource, Asset, Debug, Reflect)]
 pub struct Palettes {
     pub standard: Handle<Palette>,
@@ -29,11 +30,11 @@ impl FromWorld for Palettes {
 #[derive(Asset, Debug, Reflect)]
 pub struct Palette {
     main_map_pool: MapPool,
-    connector_pool: ConnectorPool,
+    connector_pool: TransitionRoomPool,
 }
 
 impl Palette {
-    pub fn connector_pool(&self) -> &ConnectorPool {
+    pub fn connector_pool(&self) -> &TransitionRoomPool {
         &self.connector_pool
     }
     
@@ -71,13 +72,13 @@ mod standard {
     mod connectors {
         use crate::game::level::grid::tile::tile_types;
         use crate::game::level::grid::tile::tile_types::TileType;
-        use crate::game::level::map::connector::{ConnectorPool, ConnectorRoom};
-        use crate::game::level::map::room::{ConnectionFacing, ConnectionType, RoomConnection, RoomDefinition, RoomLayout, RoomRegistryContext, RoomType};
+        use crate::game::level::map::transition::{TransitionRoomPool, TransitionRoom};
+        use crate::game::level::map::room::{ConnectionFacing, ConnectionSize, RoomConnection, RoomDefinition, RoomLayout, RoomRegistryContext, RoomType};
         use super::*;
 
         pub(super) fn connector_pool(
             context: &mut RoomRegistryContext,
-        ) -> ConnectorPool {
+        ) -> TransitionRoomPool {
             const SIZE: usize = 7;
             const HALF_SIZE: usize = SIZE / 2;
 
@@ -102,45 +103,45 @@ mod standard {
             let basic_connections = vec![
                 RoomConnection::new(
                     IVec3::new(HALF_SIZE as i32, 0, 0).into(),
-                    ConnectionType::Small,
+                    ConnectionSize::Small,
                     ConnectionFacing::North
                 ),
                 RoomConnection::new(
                     IVec3::new(SIZE as i32, 0, HALF_SIZE as i32).into(),
-                    ConnectionType::Small,
+                    ConnectionSize::Small,
                     ConnectionFacing::East
                 ),
                 RoomConnection::new(
                     IVec3::new(HALF_SIZE as i32, 0, SIZE as i32).into(),
-                    ConnectionType::Small,
+                    ConnectionSize::Small,
                     ConnectionFacing::South
                 ),
                 RoomConnection::new(
                     IVec3::new(0, 0, HALF_SIZE as i32).into(),
-                    ConnectionType::Small,
+                    ConnectionSize::Small,
                     ConnectionFacing::West
                 ),
             ];
 
             let grass_layer = Some(tile_types::grass::LAYER);
             let grass_room = RoomDefinition::new(
-                RoomType::Connector,
+                RoomType::Transition,
                 basic_connections.clone(),
                 Box::new(RoomLayout::new(basic_room(grass_layer))),
                 context,
             );
-            let grass_room = ConnectorRoom::new(grass_room, 1.0);
+            let grass_room = TransitionRoom::new(grass_room, 1.0);
 
             let plank_layer = Some(tile_types::grass::LAYER);
             let plank_room = RoomDefinition::new(
-                RoomType::Connector,
+                RoomType::Transition,
                 basic_connections.clone(),
                 Box::new(RoomLayout::new(basic_room(plank_layer))),
                 context,
             );
-            let plank_room = ConnectorRoom::new(plank_room, 1.0);
+            let plank_room = TransitionRoom::new(plank_room, 1.0);
 
-            ConnectorPool(vec![
+            TransitionRoomPool(vec![
                 grass_room,
                 plank_room,
             ])

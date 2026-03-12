@@ -16,18 +16,26 @@ pub(super) fn plugin(app: &mut App) {
 type RoomTileCoords = TileCoords;
 type RoomWorldCoords = WorldCoords;
 
+/// The type of room this is
+/// Set pieces and injectables are rooms designed for a specific instance
+/// Transitions are designed to be randomly selected in connector sections from a pool
 #[derive(Debug, Reflect)]
 pub enum RoomType {
     SetPiece,
     Injectable,
-    Connector,
+    Transition,
 }
 
+/// Elements required to build a room dynamically
 #[derive(Debug, Reflect)]
 pub struct RoomDefinition {
+    /// How this room is intended to be used
     room_type: RoomType,
+    /// Connections to other rooms
     connections: Vec<RoomConnection>,
+    /// How big this room is
     bounds: UVec3,
+    /// Unique ID for this room
     id: RoomID,
 }
 
@@ -40,7 +48,7 @@ impl RoomDefinition {
     ) -> Self {
         let bounds = layout.bounds();
 
-        let id = registry_context.ids.next();
+        let id = registry_context.ids.next_id();
         registry_context.registry.room_builders.insert(id, layout);
 
         Self {
@@ -60,26 +68,36 @@ impl RoomDefinition {
     }
 }
 
+/// Definition for the connection itself
 #[derive(Debug, Clone, Reflect)]
 pub struct RoomConnection {
+    /// Where in the room this connection is located
     location: RoomTileCoords,
-    connection_type: ConnectionType,
+    /// How big this connection is
+    connection_size: ConnectionSize,
+    /// The facing of this connection, as seen from the room itself
     facing: ConnectionFacing,
 }
 
 impl RoomConnection {
-    pub fn new(location: RoomTileCoords, connection_type: ConnectionType, facing: ConnectionFacing) -> Self {
-        Self { location, connection_type, facing }
+    pub fn new(location: RoomTileCoords, connection_size: ConnectionSize, facing: ConnectionFacing) -> Self {
+        Self { location, connection_size, facing }
     }
 }
 
+/// The type of connection this is
+/// Standardized connection sizes are used to allow for flexibility when matching rooms dynamically
 #[derive(Debug, Clone, Copy, PartialEq, Reflect)]
-pub enum ConnectionType {
+pub enum ConnectionSize {
     Small,
     Medium,
     Large,
 }
 
+/// The facing from this room, as seen from the room itself.
+///
+/// E.g., a North facing exits the current room to the north side
+/// and requires a South facing connection to match
 #[derive(Debug, Clone, Copy, PartialEq, Reflect)]
 pub enum ConnectionFacing {
     North,
@@ -88,16 +106,20 @@ pub enum ConnectionFacing {
     West,
 }
 
+/// Context holding references to data necessary to register rooms globally
 #[derive(Resource, Default)]
 pub struct RoomRegistryContext {
-    pub ids: RoomIDs,
+    pub ids: RoomIDTracker,
     pub registry: RoomBuilderRegistry,
 }
 
+/// Manager for ensuring unique identifiers for rooms
+/// These ids do not need to be the same every time, they only need to be unique from other rooms
 #[derive(Debug, Default)]
-pub struct RoomIDs(RoomID);
-impl RoomIDs {
-    pub fn next(&mut self) -> RoomID {
+pub struct RoomIDTracker(RoomID);
+// TODO: Do something to prevent accidental creation of multiple RoomID tracker instances
+impl RoomIDTracker {
+    pub fn next_id(&mut self) -> RoomID {
         let next = self.0;
         self.0 += 1;
         next
@@ -105,17 +127,26 @@ impl RoomIDs {
 }
 type RoomID = usize;
 
+/// Registry which holds references from each room id to the builder which can generate the room
+/// from the definition
+///
+/// This is kept separate from the room definitions to allow for reflection in the room definitions
+/// while keeping the room builders generic
 #[derive(Default)]
 pub struct RoomBuilderRegistry {
     room_builders: HashMap<RoomID, Box<dyn RoomBuilder>>,
 }
 
+/// Trait for building rooms from a layout
+///
+/// This is implemented as a trait to allow for const generic room layouts
 pub trait RoomBuilder: Send + Sync {
     fn build(&self, context: RoomBuilderContext) -> Entity;
 
     fn bounds(&self) -> UVec3;
 }
 
+/// Struct which contains the specific tile layout for a room
 #[derive(Debug, Clone)]
 pub struct RoomLayout<
     const X: usize,
@@ -172,6 +203,7 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
     }
 }
 
+/// Context holding references to data necessary to build rooms from their definitions
 pub struct RoomBuilderContext<'a, 'w, 's> {
     pub commands: &'a mut Commands<'w, 's>,
     pub scale: Scale,

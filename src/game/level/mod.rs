@@ -4,16 +4,10 @@ pub mod grid;
 mod map;
 
 use bevy::prelude::*;
-use std::error::Error;
-use std::str::FromStr;
-
 use crate::game::character::animation::CharacterAnimationData;
 use crate::game::character::player::{PlayerAssets, player};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
-use grid::tile::assets::TileMaterial;
-use grid::tile::tile_types::TileType;
-use grid::tile::{TileEdges, TileFacing, TileShape};
 use crate::game::level::grid::tile::assets::TileAssets;
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::{RoomBuilderContext, RoomRegistryContext};

@@ -1,9 +1,3 @@
-use crate::Scale;
-use crate::game::level::grid::coords::TileCoords;
-use crate::game::level::grid::{grid, tile_map};
-use crate::game::level::grid::tile::assets::TileAssets;
-use crate::game::level::grid::tile::tile;
-use crate::game::level::grid::tile::tile_types::TileType;
 use bevy::prelude::*;
 use rand::Rng;
 use crate::game::level::map::palette::Palette;
@@ -11,21 +5,28 @@ use crate::game::level::map::room::{RoomBuilderContext, RoomDefinition};
 
 pub mod palette;
 pub mod room;
-mod connector;
+mod transition;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<MapDefinition>();
 
     app.add_plugins((
-        connector::plugin,
+        transition::plugin,
         room::plugin,
         palette::plugin, // Order matters here - palette must be after room
     ));
 }
 
+/// Pool of all registered map definitions
+/// This contains every map def that the game knows about
 #[derive(Debug, Reflect)]
 pub struct MapPool(pub(crate) Vec<MapDefinition>);
 
+/// The type for this map. This affects where in the world it will be used
+///
+/// Main - used as a main map for a world
+/// Boss - boss dungeon, which may or may not be optional, depending on where it gets used
+/// Side - optional side dungeon without a boss
 #[derive(Debug, Reflect)]
 pub enum MapType {
     Main,
@@ -33,6 +34,11 @@ pub enum MapType {
     Side,
 }
 
+/// Contains all the information needed to generate a map
+///
+/// This contains both information about map selection and information about building the map
+/// - Selection information includes things such as map type and palette
+/// - Build information includes things like set pieces, injectables, and connections
 #[derive(Asset, Debug, Reflect)]
 pub struct MapDefinition {
     map_type: MapType,
@@ -42,6 +48,7 @@ pub struct MapDefinition {
 }
 
 impl MapDefinition {
+    /// Creates a usable map state from the definition and provided RNG
     pub fn bake(
         &self,
         rand: impl Rng,
@@ -52,13 +59,15 @@ impl MapDefinition {
     }
 }
 
+/// Stores the current state of the generated map
 #[derive(Component, Debug)]
 pub struct MapState {
     grid: Entity,
     injectable: RoomDefinition,
 }
 
-pub fn map_state(
+/// Creates a map state bundle from required information
+fn map_state(
     grid: Entity,
     injectable: RoomDefinition,
 ) -> impl Bundle {
@@ -68,5 +77,7 @@ pub fn map_state(
     }
 }
 
+/// Data required to save the generation criteria and state changes to persistent storage
+/// for recreation when loading the game
 #[derive(Debug)]
 pub struct MapPersistence {}
