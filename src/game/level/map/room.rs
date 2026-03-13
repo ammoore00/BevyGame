@@ -109,15 +109,14 @@ pub enum ConnectionFacing {
 /// Context holding references to data necessary to register rooms globally
 #[derive(Resource, Default)]
 pub struct RoomRegistryContext {
-    pub ids: RoomIDTracker,
-    pub registry: RoomBuilderRegistry,
+    ids: RoomIDTracker,
+    registry: RoomBuilderRegistry,
 }
 
 /// Manager for ensuring unique identifiers for rooms
 /// These ids do not need to be the same every time, they only need to be unique from other rooms
 #[derive(Debug, Default)]
 pub struct RoomIDTracker(RoomID);
-// TODO: Do something to prevent accidental creation of multiple RoomID tracker instances
 impl RoomIDTracker {
     pub fn next_id(&mut self) -> RoomID {
         let next = self.0;
@@ -204,6 +203,8 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
 }
 
 /// Context holding references to data necessary to build rooms from their definitions
+///
+/// RoomBuilderContext is a reference type which is designed to be passed by value
 pub struct RoomBuilderContext<'a, 'w, 's> {
     pub commands: &'a mut Commands<'w, 's>,
     pub scale: Scale,
