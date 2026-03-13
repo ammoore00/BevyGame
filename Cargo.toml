@@ -4,6 +4,13 @@ authors = ["Abigail Moore <abigailmmoore00@gmail.com>"]
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = [
+    ".",
+    "datagen",
+]
+resolver = "2"
+
 [dependencies]
 bevy = { version = "0.17" }
 rand = "0.9"
