@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use level::grid;
 
 pub mod character;
 pub mod level;

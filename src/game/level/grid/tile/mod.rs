@@ -2,9 +2,8 @@ use crate::game::level::grid::coords::{ScreenCoords, TileCoords, TilePosition, W
 use crate::game::level::grid::tile::assets::TileAssets;
 use crate::game::level::grid::tile::tile_types::TileType;
 use crate::game::physics::components::{Collider, PhysicsData};
-use bevy::asset::Assets;
-use bevy::image::{TextureAtlas, TextureAtlasLayout};
-use bevy::math::{UVec2, Vec3};
+use bevy::image::TextureAtlas;
+use bevy::math::Vec3;
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -18,7 +17,7 @@ pub fn plugin(app: &mut App) {
     app.add_plugins(assets::plugin);
     app.add_systems(
         Update,
-        update_tile_location
+        update_tile_collision
     );
 }
 
@@ -80,10 +79,10 @@ pub fn set_tile_location(
     commands.entity(tile.0).insert(TilePosition(tile_coords.clone().into()));
 }
 
-fn update_tile_location(
-    tile_query: Query<(&TilePosition, &mut Transform, &mut Collider), With<Tile>>,
+fn update_tile_collision(
+    tile_query: Query<(&TilePosition, &mut Collider), With<Tile>>,
 ) {
-    for (tile_pos, mut transform, mut collider) in tile_query {
+    for (tile_pos, mut collider) in tile_query {
         let world_coords = Into::<WorldCoords>::into(tile_pos.0.clone());
         collider.set_position(world_coords);
     }

@@ -13,7 +13,6 @@ use crate::game::level::grid::coords::{
 use bevy::prelude::*;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
-use std::iter::Map;
 use std::time::Duration;
 //use crate::game::object::Shadow;
 use crate::game::character;

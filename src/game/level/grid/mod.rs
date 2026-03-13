@@ -183,7 +183,7 @@ impl MergeTileCoords {
         self.coords.0
     }
 
-    pub fn other_grid_coords(&self, other: &Grid) -> IVec3 {
+    pub fn other_grid_coords(&self) -> IVec3 {
         self.coords.0 - self.offset
     }
 }
@@ -237,8 +237,4 @@ pub fn grid_bundle(grid: Grid, scale: f32) -> impl Bundle {
         Transform::from_scale(Vec2::splat(scale).extend(SCREEN_Z_SCALE)),
         InheritedVisibility::default(),
     )
-}
-
-pub fn grid_bundle_from_tiles(tile_map: TileMap, scale: f32) -> impl Bundle {
-    grid_bundle(Grid::new(tile_map), scale)
 }

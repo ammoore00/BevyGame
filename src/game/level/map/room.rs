@@ -2,7 +2,7 @@ use crate::Scale;
 use crate::game::level::grid;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::TileAssets;
-use crate::game::level::grid::tile::{tile, Tile};
+use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::tile::tile_types::TileType;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;

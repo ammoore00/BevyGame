@@ -1,11 +1,10 @@
 use bevy::prelude::*;
 use rand::Rng;
 use crate::game::level::grid;
-use crate::game::level::grid::{grid_bundle_from_tiles, grid_bundle, Grid, TileMap, merge_tile_map};
-use crate::game::level::grid::coords::{ScreenCoords, TilePosition};
+use crate::game::level::grid::{grid_bundle, Grid, merge_tile_map};
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::map::palette::Palette;
-use crate::game::level::map::room::{RoomBuilderContext, RoomDefinition, RoomRegistryContext};
+use crate::game::level::map::room::{RoomBuilderContext, RoomRegistryContext};
 
 pub mod palette;
 pub mod room;
