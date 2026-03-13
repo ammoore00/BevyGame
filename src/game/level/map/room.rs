@@ -2,9 +2,9 @@ use crate::Scale;
 use crate::game::level::grid;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::TileAssets;
-use crate::game::level::grid::tile::tile;
+use crate::game::level::grid::tile::{tile, Tile};
 use crate::game::level::grid::tile::tile_types::TileType;
-use crate::game::level::grid::grid;
+use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -62,8 +62,8 @@ impl RoomDefinition {
     pub fn build(
         &self,
         registry_context: &RoomRegistryContext,
-        builder_context: RoomBuilderContext,
-    ) -> Entity {
+        builder_context: &mut RoomBuilderContext,
+    ) -> TileMap {
         registry_context.registry.room_builders[&self.id].build(builder_context)
     }
 }
@@ -140,7 +140,7 @@ pub struct RoomBuilderRegistry {
 ///
 /// This is implemented as a trait to allow for const generic room layouts
 pub trait RoomBuilder: Send + Sync {
-    fn build(&self, context: RoomBuilderContext) -> Entity;
+    fn build(&self, context: &mut RoomBuilderContext) -> TileMap;
 
     fn bounds(&self) -> UVec3;
 }
@@ -162,10 +162,8 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomLayout<X, Y, Z> {
 }
 
 impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<X, Y, Z> {
-    fn build(&self, context: RoomBuilderContext) -> Entity {
+    fn build(&self, context: &mut RoomBuilderContext) -> TileMap {
         let tile_map = grid::tile_map();
-        let grid = grid(tile_map.clone(), context.scale.0);
-        let grid = context.commands.spawn(grid).id();
 
         for y in 0..Y {
             for z in 0..Z {
@@ -185,7 +183,6 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
                         ))
                         .id();
 
-                    context.commands.entity(grid).add_child(tile);
                     tile_map
                         .write()
                         .unwrap()
@@ -194,7 +191,7 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
             }
         }
 
-        grid
+        tile_map
     }
 
     fn bounds(&self) -> UVec3 {

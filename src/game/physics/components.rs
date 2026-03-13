@@ -150,6 +150,11 @@ impl Collider {
         .flatten()
         .map(CollisionEvent::from)
     }
+
+    pub fn set_position(&mut self, position: impl Into<WorldCoords>) {
+        let position = position.into();
+        self.position = Isometry::translation(position.x, position.y, position.z);
+    }
 }
 
 #[derive(Debug, Clone)]

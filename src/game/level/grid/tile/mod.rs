@@ -16,6 +16,10 @@ pub mod tile_types;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins(assets::plugin);
+    app.add_systems(
+        Update,
+        update_tile_location
+    );
 }
 
 pub const TILE_WIDTH: i32 = 32;
@@ -66,7 +70,24 @@ pub fn tile(
 }
 
 #[derive(Component)]
-struct Tile;
+pub struct Tile;
+/// Newtype wrapper for better API clarity
+pub struct TileEntity(pub Entity);
+
+pub fn set_tile_location(
+    tile: TileEntity, tile_coords: impl Into<TileCoords> + Clone, commands: &mut Commands
+) {
+    commands.entity(tile.0).insert(TilePosition(tile_coords.clone().into()));
+}
+
+fn update_tile_location(
+    tile_query: Query<(&TilePosition, &mut Transform, &mut Collider), With<Tile>>,
+) {
+    for (tile_pos, mut transform, mut collider) in tile_query {
+        let world_coords = Into::<WorldCoords>::into(tile_pos.0.clone());
+        collider.set_position(world_coords);
+    }
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct TileEdges {

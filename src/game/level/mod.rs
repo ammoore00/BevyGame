@@ -89,7 +89,7 @@ pub fn spawn_level(
     let palettes = level_palettes.into_inner();
     let palette = palette_assets.get(palettes.standard.id()).unwrap();
         
-    let builder_context = RoomBuilderContext {
+    let mut builder_context = RoomBuilderContext {
         commands: &mut commands,
         scale: *scale,
         tile_assets: &tile_assets,
@@ -101,7 +101,7 @@ pub fn spawn_level(
         rng,
         palette,
         &room_registry_context,
-        builder_context,
+        &mut builder_context,
     );
     commands.entity(level).add_child(map_state.grid());
 }

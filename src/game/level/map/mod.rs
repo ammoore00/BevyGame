@@ -1,5 +1,9 @@
 use bevy::prelude::*;
 use rand::Rng;
+use crate::game::level::grid;
+use crate::game::level::grid::{grid_bundle_from_tiles, grid_bundle, Grid, TileMap, merge_tile_map};
+use crate::game::level::grid::coords::{ScreenCoords, TilePosition};
+use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::map::palette::Palette;
 use crate::game::level::map::room::{RoomBuilderContext, RoomDefinition, RoomRegistryContext};
 
@@ -51,18 +55,37 @@ impl MapDefinition {
     /// Creates a usable map state from the definition and provided RNG
     pub fn bake(
         &self,
-        rand: impl Rng,
+        mut rand: impl Rng,
         palette: &Palette,
         room_registry_context: &RoomRegistryContext,
-        room_builder_context: RoomBuilderContext,
+        room_builder_context: &mut RoomBuilderContext,
     ) -> MapState {
         let transition_pool = palette.transition_pool();
-        let room = &transition_pool.0[0];
+        
+        let mut grid = Grid::new(grid::tile_map());
+        
+        for _ in 0..self.map_size {
+            let room = &transition_pool.0[rand.random_range(0..transition_pool.0.len())];
+            let room_tile_map = room.room().build(room_registry_context, room_builder_context);
 
-        let grid = room.room().build(room_registry_context, room_builder_context);
+            let grid_size = grid.size();
+            merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))
+                .expect("Failed to merge tile map");
+        }
+
+        let grid_entity = room_builder_context.commands
+            .spawn(grid_bundle(grid.clone(), room_builder_context.scale.0))
+            .id();
+
+        for (tile_coords, tile) in &*grid.tile_map().read().unwrap() {
+            room_builder_context.commands.entity(grid_entity).add_child(*tile);
+
+            let tile = TileEntity(room_builder_context.commands.entity(*tile).id());
+            set_tile_location(tile, tile_coords.clone(), room_builder_context.commands);
+        }
 
         MapState {
-            grid,
+            grid: grid_entity,
         }
     }
 }
