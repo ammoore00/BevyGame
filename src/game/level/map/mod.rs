@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 use crate::game::level::map::palette::Palette;
-use crate::game::level::map::room::{RoomBuilderContext, RoomDefinition};
+use crate::game::level::map::room::{RoomBuilderContext, RoomDefinition, RoomRegistryContext};
 
 pub mod palette;
 pub mod room;
@@ -53,9 +53,17 @@ impl MapDefinition {
         &self,
         rand: impl Rng,
         palette: &Palette,
-        room_builder_context: RoomBuilderContext
+        room_registry_context: &RoomRegistryContext,
+        room_builder_context: RoomBuilderContext,
     ) -> MapState {
-        todo!()
+        let transition_pool = palette.transition_pool();
+        let room = &transition_pool.0[0];
+
+        let grid = room.room().build(room_registry_context, room_builder_context);
+
+        MapState {
+            grid,
+        }
     }
 }
 
@@ -63,17 +71,11 @@ impl MapDefinition {
 #[derive(Component, Debug)]
 pub struct MapState {
     grid: Entity,
-    injectable: RoomDefinition,
 }
 
-/// Creates a map state bundle from required information
-fn map_state(
-    grid: Entity,
-    injectable: RoomDefinition,
-) -> impl Bundle {
-    MapState {
-        grid,
-        injectable,
+impl MapState {
+    pub fn grid(&self) -> Entity {
+        self.grid
     }
 }
 

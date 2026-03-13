@@ -30,12 +30,12 @@ impl FromWorld for Palettes {
 #[derive(Asset, Debug, Reflect)]
 pub struct Palette {
     main_map_pool: MapPool,
-    connector_pool: TransitionRoomPool,
+    transition_pool: TransitionRoomPool,
 }
 
 impl Palette {
-    pub fn connector_pool(&self) -> &TransitionRoomPool {
-        &self.connector_pool
+    pub fn transition_pool(&self) -> &TransitionRoomPool {
+        &self.transition_pool
     }
     
     pub fn main_map_pool(&self) -> &MapPool {
@@ -52,7 +52,7 @@ mod standard {
     ) -> Palette {
         Palette {
             main_map_pool: maps::main_map_pool(),
-            connector_pool: connectors::connector_pool(context),
+            transition_pool: transitions::transition_pool(context),
         }
     }
     
@@ -69,14 +69,14 @@ mod standard {
         }
     }
 
-    mod connectors {
+    mod transitions {
         use crate::game::level::grid::tile::tile_types;
         use crate::game::level::grid::tile::tile_types::TileType;
         use crate::game::level::map::transition::{TransitionRoomPool, TransitionRoom};
         use crate::game::level::map::room::{ConnectionFacing, ConnectionSize, RoomConnection, RoomDefinition, RoomLayout, RoomRegistryContext, RoomType};
         use super::*;
 
-        pub(super) fn connector_pool(
+        pub(super) fn transition_pool(
             context: &mut RoomRegistryContext,
         ) -> TransitionRoomPool {
             const SIZE: usize = 7;
