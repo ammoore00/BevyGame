@@ -13,6 +13,7 @@ mod menus;
 mod screens;
 mod theme;
 pub mod datagen_api;
+mod data;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 

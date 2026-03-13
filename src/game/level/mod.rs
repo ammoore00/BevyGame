@@ -1,7 +1,7 @@
 //! Spawn the main level.
 
 pub mod grid;
-mod map;
+pub mod map;
 
 use bevy::prelude::*;
 use crate::game::character::animation::CharacterAnimationData;

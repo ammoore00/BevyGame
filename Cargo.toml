@@ -26,6 +26,8 @@ parry3d = "0.25.1"
 
 thiserror = "2.0.17"
 
+regex = "1.12.3"
+
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }
 

@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 bevy_game_2d = { path = ".." }
+thiserror = "2.0.17"
