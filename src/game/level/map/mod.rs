@@ -65,7 +65,8 @@ impl MapDefinition {
         let mut grid = Grid::new(grid::tile_map());
         
         for _ in 0..self.map_size {
-            let room = &transition_pool.0[rand.random_range(0..transition_pool.0.len())];
+            let index = rand.random_range(0..transition_pool.0.len());
+            let room = &transition_pool.0[index];
             let room_tile_map = room.room().build(room_registry_context, room_builder_context);
 
             let grid_size = grid.size();

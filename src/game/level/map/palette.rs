@@ -124,7 +124,7 @@ impl PaletteDefinition for StandardPalette {
         );
         let grass_room = TransitionRoom::new(grass_room, 1.0);
 
-        let plank_layer = Some(tile_types::grass::LAYER);
+        let plank_layer = Some(tile_types::light_planks::LAYER);
         let plank_room = RoomDefinition::new(
             RoomType::Transition,
             basic_connections.clone(),
