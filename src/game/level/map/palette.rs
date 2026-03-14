@@ -1,3 +1,4 @@
+use std::array;
 use bevy::prelude::*;
 use crate::game::level::grid::tile::tile_types;
 use crate::game::level::grid::tile::tile_types::TileType;
@@ -74,8 +75,14 @@ impl PaletteDefinition for StandardPalette {
         const SIZE: usize = 7;
         const HALF_SIZE: usize = SIZE / 2;
 
-        let basic_room = |gl: Option<TileType>| {
-            let mut layout = [[[gl; SIZE]; SIZE]; 1];
+        let basic_room = |tile: Option<TileType>| {
+            let mut layout: [[[_; SIZE]; SIZE]; 1] = array::from_fn(
+                |_| array::from_fn(
+                    |_| array::from_fn(
+                        |_| tile.clone()
+                    )
+                )
+            );
 
             for x in 0..SIZE {
                 for z in 0..SIZE {

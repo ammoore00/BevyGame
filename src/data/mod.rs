@@ -6,10 +6,23 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use std::str::FromStr;
 use std::sync::LazyLock;
+use serde::{de, Deserialize, Deserializer, Serialize};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+fn deserialize_from_str<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: FromStr,
+    T::Err: std::fmt::Display,
+{
+    let s = String::deserialize(deserializer)?;
+    T::from_str(&s).map_err(de::Error::custom)
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ResourceLocation<T: ResourceType> {
+    #[serde(deserialize_with = "deserialize_from_str")]
     namespace: Namespace,
+    #[serde(deserialize_with = "deserialize_from_str")]
     id: ResourceId,
     phantom_data: PhantomData<T>,
 }
@@ -56,7 +69,8 @@ static DEFAULT_NAMESPACE_NAME: &str = "base";
 static NAMESPACE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9_-]+$").unwrap());
 static RESOURCE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9/_-]+$").unwrap());
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+#[serde(try_from = "String")]
 pub struct Namespace(String);
 impl Default for Namespace {
     fn default() -> Self {
@@ -83,7 +97,8 @@ impl FromStr for Namespace {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+#[serde(try_from = "String")]
 pub struct ResourceId(String);
 impl FromStr for ResourceId {
     type Err = ResourceLocationParseError;
@@ -121,4 +136,12 @@ pub enum ResourceLocationParseError {
     MultipleDividers(String),
     #[error("Resource locations must contain at least one component")]
     Empty,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct SpriteResource;
+impl ResourceType for SpriteResource {
+    fn root_dir() -> &'static str {
+        "images"
+    }
 }

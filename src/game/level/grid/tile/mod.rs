@@ -156,104 +156,134 @@ impl AddAssign for TileEdges {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum TileFacing {
-    PosX,
-    NegX,
-    PosZ,
-    NegZ,
-}
+pub mod codec {
+    use bevy::math::Vec3;
+    use serde::{Deserialize, Serialize};
+    use crate::data::{ResourceLocation, ResourceType, SpriteResource};
+    use crate::datagen_api::tile::collision;
+    use crate::game::level::grid::coords::WorldCoords;
+    use crate::game::physics::components::Collider;
 
-impl TileFacing {
-    /// Returns the rotation angle in radians around the Y axis for this facing direction
-    pub fn rotation_y(&self) -> f32 {
-        match self {
-            TileFacing::PosX => 0.0,
-            TileFacing::PosZ => std::f32::consts::FRAC_PI_2, // 90 degrees
-            TileFacing::NegX => std::f32::consts::PI,        // 180 degrees
-            TileFacing::NegZ => -std::f32::consts::FRAC_PI_2, // -90 degrees (or 270)
+    #[derive(Serialize, Deserialize)]
+    pub struct TileCodec {
+        format: u8,
+        sprite: ResourceLocation<SpriteResource>,
+        sprite_index: u8,
+    }
+
+    #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
+    pub struct TileResource;
+    impl ResourceType for TileResource {
+        fn root_dir() -> &'static str {
+            "tiles"
         }
     }
 
-    /// Rotates a point around the Y axis according to this facing direction
-    pub fn rotate_point(&self, point: Vec3) -> Vec3 {
-        let angle = self.rotation_y();
-        let cos = angle.cos();
-        let sin = angle.sin();
-
-        Vec3::new(
-            point.x * cos - point.z * sin,
-            point.y,
-            point.x * sin + point.z * cos,
-        )
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub enum TileShape {
+        Full {
+            is_top: bool,
+        },
+        Layer {
+            is_top: bool,
+        },
+        SlopeLower(TileFacing),
+        SlopeUpper(TileFacing),
+        Stairs(TileFacing),
+        Bridge(Option<TileFacing>),
+        Other(Vec<Vec3>),
     }
-}
 
-#[derive(Debug, Clone, Copy)]
-pub enum TileShape {
-    Full {
-        is_top: bool,
-    },
-    Layer {
-        is_top: bool,
-    },
-    SlopeLower(TileFacing),
-    SlopeUpper(TileFacing),
-    Stairs(TileFacing),
-    Bridge(Option<TileFacing>),
-    _Unique {
-        id: &'static str,
-        provider: fn(WorldCoords) -> Collider,
-    },
-}
+    impl PartialEq for TileShape {
+        fn eq(&self, other: &Self) -> bool {
+            match (self, other) {
+                (TileShape::Full { is_top: a }, TileShape::Full { is_top: b }) => a == b,
+                (TileShape::Layer { is_top: a }, TileShape::Layer { is_top: b }) => a == b,
+                (TileShape::SlopeLower(a), TileShape::SlopeLower(b)) => a == b,
+                (TileShape::SlopeUpper(a), TileShape::SlopeUpper(b)) => a == b,
+                (TileShape::Stairs(a), TileShape::Stairs(b)) => a == b,
+                (TileShape::Bridge(a), TileShape::Bridge(b)) => a == b,
+                (TileShape::Other(a), TileShape::Other(b)) => {
+                    let sorted = |v: &[Vec3]| -> Vec<[f32; 3]> {
+                        let mut s: Vec<[f32; 3]> = v.iter()
+                            .map(|v| [v.x, v.y, v.z])
+                            .collect();
+                        
+                        s.sort_by(|a, b| {
+                            a[0].total_cmp(&b[0])
+                                .then(a[1].total_cmp(&b[1]))
+                                .then(a[2].total_cmp(&b[2]))
+                        });
+                        
+                        s
+                    };
+                    
+                    let mut a = a.clone();
+                    a.dedup();
 
-impl PartialEq for TileShape {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (TileShape::Full { is_top: a }, TileShape::Full { is_top: b }) => a == b,
-            (TileShape::Layer { is_top: a }, TileShape::Layer { is_top: b }) => a == b,
-            (TileShape::SlopeLower(a), TileShape::SlopeLower(b)) => a == b,
-            (TileShape::SlopeUpper(a), TileShape::SlopeUpper(b)) => a == b,
-            (TileShape::Stairs(a), TileShape::Stairs(b)) => a == b,
-            (TileShape::Bridge(a), TileShape::Bridge(b)) => a == b,
-            (
-                TileShape::_Unique {
-                    id: a_id,
-                    provider: a_provider,
+                    let mut b = b.clone();
+                    b.dedup();
+
+                    a.len() == b.len() && sorted(&a) == sorted(&b)
                 },
-                TileShape::_Unique {
-                    id: b_id,
-                    provider: b_provider,
-                },
-            ) => {
-                // Function pointers cannot be meaningfully compared,
-                // so we instead execute the functions and compare the results
-                a_id == b_id && a_provider(Vec3::ZERO.into()) == b_provider(Vec3::ZERO.into())
+                _ => false,
             }
-            _ => false,
         }
     }
-}
 
-impl Default for TileShape {
-    fn default() -> Self {
-        Self::Full { is_top: true }
+    impl Default for TileShape {
+        fn default() -> Self {
+            Self::Full { is_top: true }
+        }
     }
-}
 
-impl TileShape {
-    fn get_collision(&self, position: impl Into<WorldCoords>) -> Collider {
-        let position = position.into();
+    impl TileShape {
+        pub(super) fn get_collision(&self, position: impl Into<WorldCoords>) -> Collider {
+            let position = position.into();
 
-        match self {
-            TileShape::SlopeLower(facing) => collision::slope(0.0, 0.5, *facing)(position),
-            TileShape::SlopeUpper(facing) => collision::slope(0.5, 1.0, *facing)(position),
-            TileShape::Stairs(facing) => collision::slope_45(*facing)(position),
-            TileShape::Bridge(_) => {
-                collision::cuboid(Vec3::new(0.5, 0.25, 0.5))((*position + Vec3::Y * 0.25).into())
+            match self {
+                TileShape::SlopeLower(facing) => collision::slope(0.0, 0.5, *facing)(position),
+                TileShape::SlopeUpper(facing) => collision::slope(0.5, 1.0, *facing)(position),
+                TileShape::Stairs(facing) => collision::slope_45(*facing)(position),
+                TileShape::Bridge(_) => {
+                    collision::cuboid(Vec3::new(0.5, 0.25, 0.5))((*position + Vec3::Y * 0.25).into())
+                }
+                TileShape::Other(points) => collision::convex_hull(points)(position),
+                _ => collision::full()(position),
             }
-            TileShape::_Unique { provider, .. } => provider(position),
-            _ => collision::full()(position),
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    pub enum TileFacing {
+        PosX,
+        NegX,
+        PosZ,
+        NegZ,
+    }
+
+    impl TileFacing {
+        /// Returns the rotation angle in radians around the Y axis for this facing direction
+        pub fn rotation_y(&self) -> f32 {
+            match self {
+                TileFacing::PosX => 0.0,
+                TileFacing::PosZ => std::f32::consts::FRAC_PI_2, // 90 degrees
+                TileFacing::NegX => std::f32::consts::PI,        // 180 degrees
+                TileFacing::NegZ => -std::f32::consts::FRAC_PI_2, // -90 degrees (or 270)
+            }
+        }
+
+        /// Rotates a point around the Y axis according to this facing direction
+        pub fn rotate_point(&self, point: Vec3) -> Vec3 {
+            let angle = self.rotation_y();
+            let cos = angle.cos();
+            let sin = angle.sin();
+
+            Vec3::new(
+                point.x * cos - point.z * sin,
+                point.y,
+                point.x * sin + point.z * cos,
+            )
         }
     }
 }

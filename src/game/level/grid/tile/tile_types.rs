@@ -1,8 +1,8 @@
-use crate::game::level::grid::tile::TileShape;
+use crate::game::level::grid::tile::codec::TileShape;
 use crate::game::level::grid::tile::assets::TileMaterial;
 use std::sync::LazyLock;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TileType {
     pub shape: TileShape,
     pub material: TileMaterial,
@@ -29,9 +29,10 @@ impl TileType {
     }
 
     pub fn get_tile(shape: TileShape, material: TileMaterial) -> Self {
-        *ALL_TILES
+        ALL_TILES
             .iter()
             .find(|tile| tile.shape == shape && tile.material == material)
+            .cloned()
             .unwrap_or_else(|| {
                 panic!("No tile with the given shape: {shape:?} and material: {material:?} exists")
             })
@@ -183,7 +184,7 @@ macro_rules! standard_tile_set {
 
 pub mod grass {
     use super::*;
-    use crate::game::level::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::codec::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::Grass;
     standard_tile_set!(MATERIAL);
@@ -191,7 +192,7 @@ pub mod grass {
 
 pub mod dark_planks {
     use super::*;
-    use crate::game::level::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::codec::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::DarkPlanks;
     standard_tile_set!(MATERIAL);
@@ -199,7 +200,7 @@ pub mod dark_planks {
 
 pub mod dark_framed_planks {
     use super::*;
-    use crate::game::level::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::codec::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::DarkFramedPlanks;
     standard_tile_set!(MATERIAL);
@@ -207,7 +208,7 @@ pub mod dark_framed_planks {
 
 pub mod light_planks {
     use super::*;
-    use crate::game::level::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::codec::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::LightPlanks;
     standard_tile_set!(MATERIAL);
@@ -215,7 +216,7 @@ pub mod light_planks {
 
 pub mod light_framed_planks {
     use super::*;
-    use crate::game::level::grid::tile::TileFacing;
+    use crate::game::level::grid::tile::codec::TileFacing;
 
     const MATERIAL: TileMaterial = TileMaterial::LightFramedPlanks;
     standard_tile_set!(MATERIAL);

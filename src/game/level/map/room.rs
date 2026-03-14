@@ -168,7 +168,7 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
         for y in 0..Y {
             for z in 0..Z {
                 for x in 0..X {
-                    let Some(tile_type) = self.tiles[y][z][x] else {
+                    let Some(tile_type) = self.tiles[y][z][x].clone() else {
                         continue;
                     };
 
@@ -206,4 +206,17 @@ pub struct RoomBuilderContext<'a, 'w, 's> {
     pub commands: &'a mut Commands<'w, 's>,
     pub scale: Scale,
     pub tile_assets: &'a TileAssets,
+}
+
+pub mod codec {
+    use serde::{Deserialize, Serialize};
+    use crate::data::ResourceLocation;
+    use crate::datagen_api::tile::codec::TileResource;
+
+    #[derive(Serialize, Deserialize)]
+    pub struct RoomCodec {
+        format: u8,
+        tile_palette: Vec<ResourceLocation<TileResource>>,
+        tiles: Vec<Vec<Vec<u8>>>
+    }
 }

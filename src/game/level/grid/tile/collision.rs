@@ -1,5 +1,5 @@
 use crate::game::level::grid::coords::WorldCoords;
-use crate::game::level::grid::tile::TileFacing;
+use crate::datagen_api::tile::codec::TileFacing;
 use crate::game::physics::components::Collider;
 use bevy::prelude::*;
 
@@ -37,4 +37,8 @@ pub(in crate::game) fn slope(
 
         Collider::convex_hull(points, *pos)
     }
+}
+
+pub(in crate::game) fn convex_hull(points: &[Vec3]) -> impl Fn(WorldCoords) -> Collider {
+    move |pos| Collider::convex_hull(Vec::from(points), pos)
 }
