@@ -48,12 +48,12 @@ impl Plugin for AppPlugin {
             asset_tracking::plugin,
             audio::plugin,
             game::plugin,
-            #[cfg(feature = "dev")]
-            dev_tools::plugin,
             gamepad::plugin,
             menus::plugin,
             screens::plugin,
             theme::plugin,
+            #[cfg(feature = "dev")]
+            dev_tools::plugin,
         ));
 
         // Order new `AppSystems` variants by adding them here:
