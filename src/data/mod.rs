@@ -1,12 +1,19 @@
-mod registry;
+pub mod registry;
 
+use std::fmt::Display;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use regex::Regex;
 use std::str::FromStr;
 use std::sync::LazyLock;
+use bevy::prelude::*;
 use serde::{de, Deserialize, Deserializer, Serialize};
+use crate::data::registry::ResourceRegistry;
+
+pub fn plugin(app: &mut App) {
+    app.init_resource::<ResourceRegistry<SpriteResource, SpriteImageAsset>>();
+}
 
 fn deserialize_from_str<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
@@ -25,6 +32,12 @@ pub struct ResourceLocation<T: ResourceType> {
     #[serde(deserialize_with = "deserialize_from_str")]
     id: ResourceId,
     phantom_data: PhantomData<T>,
+}
+
+impl<T: ResourceType> Display for ResourceLocation<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.namespace, self.id)
+    }
 }
 
 impl<T: ResourceType> ResourceLocation<T> {
@@ -96,6 +109,11 @@ impl FromStr for Namespace {
         Ok(Self(s.to_string()))
     }
 }
+impl Display for Namespace {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }   
+}
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 #[serde(try_from = "String")]
@@ -123,6 +141,11 @@ impl FromStr for ResourceId {
         Ok(Self(s.to_string()))
     }
 }
+impl Display for ResourceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ResourceLocationParseError {
@@ -145,3 +168,6 @@ impl ResourceType for SpriteResource {
         "images"
     }
 }
+
+#[derive(Debug, Clone, Asset, Reflect)]
+pub struct SpriteImageAsset;

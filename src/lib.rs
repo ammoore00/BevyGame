@@ -47,6 +47,7 @@ impl Plugin for AppPlugin {
         app.add_plugins((
             asset_tracking::plugin,
             audio::plugin,
+            data::plugin,
             game::plugin,
             gamepad::plugin,
             menus::plugin,

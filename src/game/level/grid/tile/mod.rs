@@ -6,7 +6,6 @@ use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;
 use std::fmt::Debug;
-use std::hash::Hash;
 use std::ops::{Add, AddAssign};
 
 pub mod assets;
@@ -14,7 +13,7 @@ mod collision;
 pub mod tile_types;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins(assets::plugin);
+    app.add_plugins((assets::plugin, codec::plugin));
     app.add_systems(
         Update,
         update_tile_collision
@@ -157,12 +156,17 @@ impl AddAssign for TileEdges {
 }
 
 pub mod codec {
-    use bevy::math::Vec3;
+    use bevy::prelude::*;
     use serde::{Deserialize, Serialize};
     use crate::data::{ResourceLocation, ResourceType, SpriteResource};
+    use crate::data::registry::ResourceRegistry;
     use crate::datagen_api::tile::collision;
     use crate::game::level::grid::coords::WorldCoords;
     use crate::game::physics::components::Collider;
+    
+    pub fn plugin(app: &mut App) {
+        app.init_resource::<ResourceRegistry<TileResource, TileAsset>>();
+    }
 
     #[derive(Serialize, Deserialize)]
     pub struct TileCodec {
@@ -171,12 +175,17 @@ pub mod codec {
         sprite_index: u8,
     }
 
-    #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
+    #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default)]
     pub struct TileResource;
     impl ResourceType for TileResource {
         fn root_dir() -> &'static str {
             "tiles"
         }
+    }
+    
+    #[derive(Debug, Clone, Asset, Reflect)]
+    pub struct TileAsset {
+        
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
