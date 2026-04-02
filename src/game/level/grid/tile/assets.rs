@@ -24,8 +24,6 @@ static LIGHT_FRAMED_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = 
 fn register_tile_assets(
     mut sprite_registry: ResMut<SpriteRegistry>
 ) {
-    let msg = "Invalid resource location";
-
     sprite_registry.insert_manifest(GRASS_SPRITE.clone());
     sprite_registry.insert_manifest(PLANKS_SPRITE.clone());
     sprite_registry.insert_manifest(LIGHT_PLANKS_SPRITE.clone());
@@ -33,21 +31,21 @@ fn register_tile_assets(
     sprite_registry.insert_manifest(LIGHT_FRAMED_PLANKS_SPRITE.clone());
 }
 
+static TILE_SPRITE_LAYOUT: LazyLock<TextureAtlasLayout> = LazyLock::new(|| TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None));
+
 fn populate_tile_assets(
     asset_server: Res<AssetServer>,
     sprite_registry: Res<SpriteRegistry>,
     mut commands: Commands,
 ) {
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
-
     let tile_assets = TileAssets {
-        layout: asset_server.add(layout),
+        layout: asset_server.add(TILE_SPRITE_LAYOUT.clone()),
 
-        grass_sprite: sprite_registry.get(&*GRASS_SPRITE).unwrap().clone(),
-        dark_planks_sprite: sprite_registry.get(&*PLANKS_SPRITE).unwrap().clone(),
-        light_planks_sprite: sprite_registry.get(&*LIGHT_PLANKS_SPRITE).unwrap().clone(),
-        dark_framed_planks_sprite: sprite_registry.get(&*FRAMED_PLANKS_SPRITE).unwrap().clone(),
-        light_framed_planks_sprite: sprite_registry.get(&*LIGHT_FRAMED_PLANKS_SPRITE).unwrap().clone(),
+        grass_sprite: sprite_registry.get(&GRASS_SPRITE).unwrap().clone(),
+        dark_planks_sprite: sprite_registry.get(&PLANKS_SPRITE).unwrap().clone(),
+        light_planks_sprite: sprite_registry.get(&LIGHT_PLANKS_SPRITE).unwrap().clone(),
+        dark_framed_planks_sprite: sprite_registry.get(&FRAMED_PLANKS_SPRITE).unwrap().clone(),
+        light_framed_planks_sprite: sprite_registry.get(&LIGHT_FRAMED_PLANKS_SPRITE).unwrap().clone(),
     };
 
     commands.insert_resource(tile_assets);

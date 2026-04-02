@@ -1,6 +1,10 @@
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use std::sync::Arc;
+use bevy::asset::{AssetLoader, LoadContext};
+use bevy::asset::io::Reader;
 use bevy::prelude::*;
+use serde::de::DeserializeOwned;
 use crate::data::registry::ResourceRegistry;
 use crate::data::ResourceType;
 use crate::StartupSystems;
@@ -10,7 +14,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn load_assets(world: &mut World) {
-    let loader = world.resource::<AssetLoader>();
+    let loader = world.resource::<GameAssetLoader>();
     let jobs = loader.jobs.clone();
     jobs.iter().for_each(|job| job.load(world).expect("Failed to load assets"));
 }
@@ -19,10 +23,10 @@ fn load_assets(world: &mut World) {
 /// The jobs retrieve the `ResourceRegistry` from the World,
 /// load each asset, then insert them into the registry
 #[derive(Default, Resource)]
-pub struct AssetLoader {
+pub struct GameAssetLoader {
     jobs: Vec<Arc<dyn RegistryLoader>>,
 }
-impl AssetLoader {
+impl GameAssetLoader {
     pub fn new() -> Self {
         Self { jobs: Vec::new() }
     }
@@ -42,11 +46,11 @@ impl LoaderJobManager for App {
         let world = self.world_mut();
         world.insert_resource(ResourceRegistry::<T, A>::default());
 
-        if !world.contains_resource::<AssetLoader>() {
-            world.insert_resource(AssetLoader::new());
+        if !world.contains_resource::<GameAssetLoader>() {
+            world.insert_resource(GameAssetLoader::new());
         }
 
-        let mut asset_loader = world.resource_mut::<AssetLoader>();
+        let mut asset_loader = world.resource_mut::<GameAssetLoader>();
         asset_loader.add_job::<T, A>();
     }
 }
@@ -57,7 +61,7 @@ trait RegistryLoader: Send + Sync + 'static {
 
 #[derive(Debug)]
 struct LoaderJob<T: ResourceType, A: Asset> {
-    phantom_data: std::marker::PhantomData<(T, A)>,
+    phantom_data: PhantomData<(T, A)>,
 }
 impl<T: ResourceType, A: Asset> Default for LoaderJob<T, A> {
     fn default() -> Self {
@@ -88,6 +92,59 @@ impl<T: ResourceType, A: Asset> RegistryLoader for LoaderJob<T, A> {
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum LoaderError {
+}
+
+pub struct RonAssetLoader<Codec, AssetType>
+where
+    Codec: DeserializeOwned + Into<AssetType> + Send + Sync + 'static,
+    AssetType: Asset + Send + Sync + 'static,
+{
+    phantom_data: PhantomData<(Codec, AssetType)>,
+}
+impl<Codec, AssetType> Default for RonAssetLoader<Codec, AssetType>
+where
+    Codec: DeserializeOwned + Into<AssetType> + Send + Sync + 'static,
+    AssetType: Asset + Send + Sync + 'static,
+{
+    fn default() -> Self {
+        Self {
+            phantom_data: PhantomData,
+        }
+    }
+}
+impl<Codec, AssetType> AssetLoader for RonAssetLoader<Codec, AssetType>
+where
+    Codec: DeserializeOwned + Into<AssetType> + Send + Sync + 'static,
+    AssetType: Asset + Send + Sync + 'static,
+{
+    type Asset = AssetType;
+    type Settings = ();
+    type Error = RonLoaderError;
+
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let codec = ron::de::from_bytes::<Codec>(&bytes)?;
+        Ok(codec.into())
+    }
+
+    fn extensions(&self) -> &[&str] {
+        &["ron"]
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RonLoaderError {
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("RON parse error: {0}")]
+    Ron(#[from] ron::error::SpannedError),
 }

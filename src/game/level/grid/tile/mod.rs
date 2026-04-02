@@ -159,24 +159,29 @@ pub mod codec {
     use bevy::prelude::*;
     use serde::{Deserialize, Serialize};
     use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
+    use crate::data::loader::{LoaderJobManager, RonAssetLoader};
     use crate::data::registry::ResourceRegistry;
     use crate::data::sprite::SpriteResource;
     use crate::datagen_api::tile::collision;
     use crate::game::level::grid::coords::WorldCoords;
     use crate::game::physics::components::Collider;
+    
+    pub type TileRegistry = ResourceRegistry<TileResource, TileAsset>;
 
     pub fn plugin(app: &mut App) {
-        app.init_resource::<ResourceRegistry<TileResource, TileAsset>>();
+        app.init_asset_loader::<RonAssetLoader<TileCodec, TileAsset>>();
+        app.init_asset::<TileAsset>();
+        app.add_resource_registry::<TileResource, TileAsset>();
     }
 
     #[derive(Serialize, Deserialize)]
     pub struct TileCodec {
         format: u8,
-        sprite: ResourceLocation<SpriteResource>,
+        sprite_sheet: ResourceLocation<SpriteResource>,
         sprite_index: u8,
     }
 
-    #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default)]
+    #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
     pub struct TileResource;
     impl ResourceType for TileResource {
         fn root_dir() -> &'static str {
@@ -188,9 +193,18 @@ pub mod codec {
         }
     }
 
-    #[derive(Debug, Clone, Asset, Reflect)]
+    #[derive(Debug, Clone, Asset, TypePath)]
     pub struct TileAsset {
-
+        sprite_sheet: ResourceLocation<SpriteResource>,
+        sprite_index: u8,
+    }
+    impl From<TileCodec> for TileAsset {
+        fn from(codec: TileCodec) -> Self {
+            Self {
+                sprite_sheet: codec.sprite_sheet,
+                sprite_index: codec.sprite_index,
+            }
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]

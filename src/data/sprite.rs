@@ -9,14 +9,13 @@ pub fn plugin(app: &mut App) {
     app.add_resource_registry::<SpriteResource, Image>();
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
 pub struct SpriteResource;
 
 impl ResourceType for SpriteResource {
     fn root_dir() -> &'static str {
         "images"
     }
-
     fn file_type() -> ResourceFileType {
         ResourceFileType::Image
     }

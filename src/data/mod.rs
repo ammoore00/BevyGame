@@ -26,7 +26,7 @@ where
     T::from_str(&s).map_err(de::Error::custom)
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Reflect)]
 pub struct ResourceLocation<T: ResourceType> {
     #[serde(deserialize_with = "deserialize_from_str")]
     namespace: Namespace,
@@ -78,7 +78,7 @@ impl<T: ResourceType> FromStr for ResourceLocation<T> {
     }
 }
 
-pub trait ResourceType: Clone + Hash + Eq + Send + Sync + 'static {
+pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + 'static {
     fn root_dir() -> &'static str;
     fn file_type() -> ResourceFileType;
 }
@@ -106,7 +106,7 @@ static DEFAULT_NAMESPACE_NAME: &str = "base";
 static NAMESPACE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9_-]+$").unwrap());
 static RESOURCE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9/_-]+$").unwrap());
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Reflect)]
 #[serde(try_from = "String")]
 pub struct Namespace(String);
 impl Default for Namespace {
@@ -139,7 +139,7 @@ impl Display for Namespace {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Reflect)]
 #[serde(try_from = "String")]
 pub struct ResourceId(String);
 impl FromStr for ResourceId {
