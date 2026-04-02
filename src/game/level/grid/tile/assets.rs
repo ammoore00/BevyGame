@@ -1,8 +1,26 @@
+use std::str::FromStr;
 use crate::asset_tracking::LoadResource;
 use bevy::prelude::*;
+use crate::data::ResourceLocation;
+use crate::data::sprite::SpriteRegistry;
+use crate::StartupSystems;
 
 pub(in crate::game) fn plugin(app: &mut App) {
+    app.add_systems(Startup, register_tile_assets.in_set(StartupSystems::RegisterManifests));
+    
     app.load_resource::<TileAssets>();
+}
+
+pub fn register_tile_assets(
+    mut sprite_registry: ResMut<SpriteRegistry>
+) {
+    let msg = "Invalid resource location";
+    
+    sprite_registry.insert_manifest(ResourceLocation::from_str("grass").expect(msg));
+    sprite_registry.insert_manifest(ResourceLocation::from_str("planks").expect(msg));
+    sprite_registry.insert_manifest(ResourceLocation::from_str("light_planks").expect(msg));
+    sprite_registry.insert_manifest(ResourceLocation::from_str("framed_planks").expect(msg));
+    sprite_registry.insert_manifest(ResourceLocation::from_str("light_framed_planks").expect(msg));
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]

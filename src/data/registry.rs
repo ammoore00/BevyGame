@@ -52,13 +52,9 @@ impl<T: ResourceType, A: Asset> ResourceRegistry<T, A> {
     pub fn get(&self, loc: &ResourceLocation<T>) -> Option<&Handle<A>> {
         self.registry.get(loc)
     }
-
-    pub fn is_empty(&self) -> bool {
-        self.registry.is_empty()
-    }
-
-    pub fn len(&self) -> usize {
-        self.registry.len()
+    
+    pub fn manifest(&self) -> &HashSet<ResourceLocation<T>> {
+        &self.manifest
     }
 }
 

@@ -1,4 +1,6 @@
 pub mod registry;
+pub mod sprite;
+pub mod loader;
 
 use std::fmt::Display;
 use std::hash::Hash;
@@ -9,17 +11,16 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 use bevy::prelude::*;
 use serde::{de, Deserialize, Deserializer, Serialize};
-use crate::data::registry::ResourceRegistry;
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<ResourceRegistry<SpriteResource, SpriteImageAsset>>();
+    app.add_plugins((sprite::plugin, loader::plugin));
 }
 
 fn deserialize_from_str<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
     T: FromStr,
-    T::Err: std::fmt::Display,
+    T::Err: Display,
 {
     let s = String::deserialize(deserializer)?;
     T::from_str(&s).map_err(de::Error::custom)
@@ -46,7 +47,10 @@ impl<T: ResourceType> ResourceLocation<T> {
     }
 
     pub fn as_path(&self) -> PathBuf {
-        Path::new(&self.namespace.0).join(T::root_dir()).join(&self.id.0)
+        Path::new(&self.namespace.0)
+            .join(T::root_dir())
+            .join(&self.id.0)
+            .with_extension(T::file_type().to_string())
     }
 }
 
@@ -74,8 +78,28 @@ impl<T: ResourceType> FromStr for ResourceLocation<T> {
     }
 }
 
-pub trait ResourceType: Hash + Eq {
+pub trait ResourceType: Clone + Hash + Eq + Send + Sync + 'static {
     fn root_dir() -> &'static str;
+    fn file_type() -> ResourceFileType;
+}
+
+pub enum ResourceFileType {
+    Image,
+    Audio,
+    Font,
+    Data,
+    Other(String),
+}
+impl Display for ResourceFileType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ResourceFileType::Image => write!(f, "png"),
+            ResourceFileType::Audio => write!(f, "ogg"),
+            ResourceFileType::Font => write!(f, "ttf"),
+            ResourceFileType::Data => write!(f, "ron"),
+            ResourceFileType::Other(s) => write!(f, "{}", s),
+        }
+    }
 }
 
 static DEFAULT_NAMESPACE_NAME: &str = "base";
@@ -112,7 +136,7 @@ impl FromStr for Namespace {
 impl Display for Namespace {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
-    }   
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
@@ -160,14 +184,3 @@ pub enum ResourceLocationParseError {
     #[error("Resource locations must contain at least one component")]
     Empty,
 }
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct SpriteResource;
-impl ResourceType for SpriteResource {
-    fn root_dir() -> &'static str {
-        "images"
-    }
-}
-
-#[derive(Debug, Clone, Asset, Reflect)]
-pub struct SpriteImageAsset;

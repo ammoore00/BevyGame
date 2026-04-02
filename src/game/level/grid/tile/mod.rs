@@ -158,12 +158,13 @@ impl AddAssign for TileEdges {
 pub mod codec {
     use bevy::prelude::*;
     use serde::{Deserialize, Serialize};
-    use crate::data::{ResourceLocation, ResourceType, SpriteResource};
+    use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
     use crate::data::registry::ResourceRegistry;
+    use crate::data::sprite::SpriteResource;
     use crate::datagen_api::tile::collision;
     use crate::game::level::grid::coords::WorldCoords;
     use crate::game::physics::components::Collider;
-    
+
     pub fn plugin(app: &mut App) {
         app.init_resource::<ResourceRegistry<TileResource, TileAsset>>();
     }
@@ -181,11 +182,15 @@ pub mod codec {
         fn root_dir() -> &'static str {
             "tiles"
         }
+
+        fn file_type() -> ResourceFileType {
+            ResourceFileType::Data
+        }
     }
-    
+
     #[derive(Debug, Clone, Asset, Reflect)]
     pub struct TileAsset {
-        
+
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]

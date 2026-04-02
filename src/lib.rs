@@ -46,8 +46,9 @@ impl Plugin for AppPlugin {
         // Add other plugins.
         app.add_plugins((
             asset_tracking::plugin,
-            audio::plugin,
             data::plugin,
+
+            audio::plugin,
             game::plugin,
             gamepad::plugin,
             menus::plugin,
@@ -65,6 +66,15 @@ impl Plugin for AppPlugin {
                 AppSystems::RecordInput,
                 AppSystems::Update,
                 AppSystems::Respond,
+            )
+                .chain(),
+        );
+
+        app.configure_sets(
+            Startup,
+            (
+                StartupSystems::RegisterManifests,
+                StartupSystems::LoadAssets,
             )
                 .chain(),
         );
@@ -93,6 +103,12 @@ enum AppSystems {
     Update,
     /// Respond to changes in update
     Respond,
+}
+
+#[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
+enum StartupSystems {
+    RegisterManifests,
+    LoadAssets,
 }
 
 /// Whether or not the game is paused.
