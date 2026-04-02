@@ -1,26 +1,56 @@
 use std::str::FromStr;
-use crate::asset_tracking::LoadResource;
+use std::sync::LazyLock;
 use bevy::prelude::*;
 use crate::data::ResourceLocation;
-use crate::data::sprite::SpriteRegistry;
+use crate::data::sprite::{SpriteRegistry, SpriteResource};
 use crate::StartupSystems;
 
 pub(in crate::game) fn plugin(app: &mut App) {
-    app.add_systems(Startup, register_tile_assets.in_set(StartupSystems::RegisterManifests));
-    
-    app.load_resource::<TileAssets>();
+    app.add_systems(
+        Startup,
+        (
+            register_tile_assets.in_set(StartupSystems::RegisterManifests),
+            populate_tile_assets.in_set(StartupSystems::PopulateAssets)
+        )
+    );
 }
 
-pub fn register_tile_assets(
+static GRASS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("grass").unwrap());
+static PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("planks").unwrap());
+static LIGHT_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("light_planks").unwrap());
+static FRAMED_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("framed_planks").unwrap());
+static LIGHT_FRAMED_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("light_framed_planks").unwrap());
+
+fn register_tile_assets(
     mut sprite_registry: ResMut<SpriteRegistry>
 ) {
     let msg = "Invalid resource location";
-    
-    sprite_registry.insert_manifest(ResourceLocation::from_str("grass").expect(msg));
-    sprite_registry.insert_manifest(ResourceLocation::from_str("planks").expect(msg));
-    sprite_registry.insert_manifest(ResourceLocation::from_str("light_planks").expect(msg));
-    sprite_registry.insert_manifest(ResourceLocation::from_str("framed_planks").expect(msg));
-    sprite_registry.insert_manifest(ResourceLocation::from_str("light_framed_planks").expect(msg));
+
+    sprite_registry.insert_manifest(GRASS_SPRITE.clone());
+    sprite_registry.insert_manifest(PLANKS_SPRITE.clone());
+    sprite_registry.insert_manifest(LIGHT_PLANKS_SPRITE.clone());
+    sprite_registry.insert_manifest(FRAMED_PLANKS_SPRITE.clone());
+    sprite_registry.insert_manifest(LIGHT_FRAMED_PLANKS_SPRITE.clone());
+}
+
+fn populate_tile_assets(
+    asset_server: Res<AssetServer>,
+    sprite_registry: Res<SpriteRegistry>,
+    mut commands: Commands,
+) {
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
+
+    let tile_assets = TileAssets {
+        layout: asset_server.add(layout),
+
+        grass_sprite: sprite_registry.get(&*GRASS_SPRITE).unwrap().clone(),
+        dark_planks_sprite: sprite_registry.get(&*PLANKS_SPRITE).unwrap().clone(),
+        light_planks_sprite: sprite_registry.get(&*LIGHT_PLANKS_SPRITE).unwrap().clone(),
+        dark_framed_planks_sprite: sprite_registry.get(&*FRAMED_PLANKS_SPRITE).unwrap().clone(),
+        light_framed_planks_sprite: sprite_registry.get(&*LIGHT_FRAMED_PLANKS_SPRITE).unwrap().clone(),
+    };
+
+    commands.insert_resource(tile_assets);
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]
@@ -28,7 +58,7 @@ pub fn register_tile_assets(
 pub struct TileAssets {
     //#[dependency]
     layout: Handle<TextureAtlasLayout>,
-    
+
     #[dependency]
     grass_sprite: Handle<Image>,
     #[dependency]
@@ -54,23 +84,6 @@ impl TileAssets {
     
     pub fn layout(&self) -> Handle<TextureAtlasLayout> {
         self.layout.clone()
-    }
-}
-
-impl FromWorld for TileAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-        let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None);
-        
-        TileAssets {
-            layout: assets.add(layout),
-            
-            grass_sprite: assets.load("images/grass.png"),
-            dark_planks_sprite: assets.load("images/planks.png"),
-            light_planks_sprite: assets.load("images/light_planks.png"),
-            dark_framed_planks_sprite: assets.load("images/framed_planks.png"),
-            light_framed_planks_sprite: assets.load("images/light_framed_planks.png"),
-        }
     }
 }
 

@@ -37,11 +37,13 @@ impl<T: ResourceType, A: Asset> ResourceRegistry<T, A> {
     }
 
     /// Checks if the provided resource location is present in the registry
-    pub fn asset_loaded(&self, loc: &ResourceLocation<T>) -> Result<bool, ResourceRegistryError> {
-        if !self.manifest.contains(loc) {
-            return Err(ResourceRegistryError::ResourceLocationNotInManifest(loc.to_string()));
-        }
-        Ok(self.registry.contains_key(loc))
+    pub fn is_loaded(&self, loc: &ResourceLocation<T>) -> bool {
+        self.registry.contains_key(loc)
+    }
+
+    /// Checks if the provided resource location is present in the manifest
+    pub fn is_requested(&self, loc: &ResourceLocation<T>) -> bool {
+        self.manifest.contains(loc)
     }
 
     /// Checks if all assets in the manifest have been loaded
@@ -52,14 +54,8 @@ impl<T: ResourceType, A: Asset> ResourceRegistry<T, A> {
     pub fn get(&self, loc: &ResourceLocation<T>) -> Option<&Handle<A>> {
         self.registry.get(loc)
     }
-    
+
     pub fn manifest(&self) -> &HashSet<ResourceLocation<T>> {
         &self.manifest
     }
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum ResourceRegistryError {
-    #[error("Resource location {0} is not in the manifest")]
-    ResourceLocationNotInManifest(String)
 }

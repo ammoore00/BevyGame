@@ -3,11 +3,10 @@ use crate::data::{ResourceFileType, ResourceType};
 use crate::data::loader::LoaderJobManager;
 use crate::data::registry::ResourceRegistry;
 
-pub type SpriteRegistry = ResourceRegistry<SpriteResource, SpriteImageAsset>;
+pub type SpriteRegistry = ResourceRegistry<SpriteResource, Image>;
 
 pub fn plugin(app: &mut App) {
-    app.init_asset::<SpriteImageAsset>();
-    app.add_resource_registry::<SpriteResource, SpriteImageAsset>();
+    app.add_resource_registry::<SpriteResource, Image>();
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -22,6 +21,3 @@ impl ResourceType for SpriteResource {
         ResourceFileType::Image
     }
 }
-
-#[derive(Debug, Clone, Asset, Reflect)]
-pub struct SpriteImageAsset;

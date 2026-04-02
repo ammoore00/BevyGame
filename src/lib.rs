@@ -75,6 +75,7 @@ impl Plugin for AppPlugin {
             (
                 StartupSystems::RegisterManifests,
                 StartupSystems::LoadAssets,
+                StartupSystems::PopulateAssets,
             )
                 .chain(),
         );
@@ -109,6 +110,7 @@ enum AppSystems {
 enum StartupSystems {
     RegisterManifests,
     LoadAssets,
+    PopulateAssets,
 }
 
 /// Whether or not the game is paused.
