@@ -1,10 +1,6 @@
-use std::array;
 use bevy::prelude::*;
-use crate::data::ResourceLocation;
-use crate::datagen_api::tile::TileResource;
 use crate::game::level::map::transition::{TransitionRoom, TransitionRoomPool};
 use crate::game::level::map::{MapDefinition, MapPool, MapType};
-use crate::game::level::map::room::{ConnectionFacing, ConnectionSize, RoomConnection, RoomDefinition, RoomLayout, RoomRegistry, RoomType};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<Palette>();
@@ -69,71 +65,9 @@ impl PaletteDefinition for StandardPalette {
     }
 
     fn create_transition_pool() -> TransitionRoomPool {
-        const SIZE: usize = 7;
-        const HALF_SIZE: usize = SIZE / 2;
-
-        let basic_room = |tile: ResourceLocation<TileResource>| {
-            let mut layout = vec![vec![vec![1; SIZE]; SIZE]];
-
-            for x in 0..SIZE {
-                for z in 0..SIZE {
-                    if (x == 0 || x == SIZE - 1
-                        || z == 0 || z == SIZE - 1)
-                        && x != HALF_SIZE
-                        && z != HALF_SIZE
-                    {
-                        layout[0][z][x] = 0;
-                    }
-                }
-            }
-
-            (vec![tile], layout)
-        };
-
-        let basic_connections = vec![
-            RoomConnection::new(
-                IVec3::new(HALF_SIZE as i32, 0, 0).into(),
-                ConnectionSize::Small,
-                ConnectionFacing::North
-            ),
-            RoomConnection::new(
-                IVec3::new(SIZE as i32, 0, HALF_SIZE as i32).into(),
-                ConnectionSize::Small,
-                ConnectionFacing::East
-            ),
-            RoomConnection::new(
-                IVec3::new(HALF_SIZE as i32, 0, SIZE as i32).into(),
-                ConnectionSize::Small,
-                ConnectionFacing::South
-            ),
-            RoomConnection::new(
-                IVec3::new(0, 0, HALF_SIZE as i32).into(),
-                ConnectionSize::Small,
-                ConnectionFacing::West
-            ),
-        ];
-
-        let grass_layer = "grass".parse().unwrap();
-        let (palette, layout) = basic_room(grass_layer);
-        let grass_room = RoomDefinition::new(
-            RoomType::Transition,
-            basic_connections.clone(),
-            RoomLayout::new(palette, layout).unwrap(),
-        );
-        let grass_room = TransitionRoom::new(grass_room, 1.0);
-
-        let plank_layer = "planks".parse().unwrap();
-        let (palette, layout) = basic_room(plank_layer);
-        let plank_room = RoomDefinition::new(
-            RoomType::Transition,
-            basic_connections.clone(),
-            RoomLayout::new(palette, layout).unwrap(),
-        );
-        let plank_room = TransitionRoom::new(plank_room, 1.0);
-
         TransitionRoomPool(vec![
-            grass_room,
-            plank_room,
+            TransitionRoom::new("basic_grass".parse().unwrap(), 1.0),
+            TransitionRoom::new("basic_planks".parse().unwrap(), 1.0),
         ])
     }
 }

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use rand::Rng;
-use crate::datagen_api::room::RoomRegistry;
 use crate::game::level::grid;
 use crate::game::level::grid::{grid_bundle, Grid, merge_tile_map};
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
@@ -65,8 +64,12 @@ impl MapDefinition {
         
         for _ in 0..self.map_size {
             let index = rand.random_range(0..transition_pool.0.len());
-            let room = &transition_pool.0[index];
-            let room_tile_map = room.room().build(room_builder_context);
+            let room = transition_pool.0[index].room();
+
+            let room = room_builder_context.room_registry.get(room).unwrap();
+            let room = room_builder_context.room_assets.get(room).unwrap();
+
+            let room_tile_map = room.build(room_builder_context);
 
             let grid_size = grid.size();
             merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))

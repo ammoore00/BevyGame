@@ -6,6 +6,7 @@ use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
 use std::fmt::Debug;
+use std::sync::LazyLock;
 use serde::{Deserialize, Serialize};
 use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
@@ -16,8 +17,14 @@ use crate::datagen_api::tile::{TileAsset, TileRegistry, TileResource};
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
     app.init_asset::<RoomDefinition>();
-    app.add_resource_registry::<RoomResource>();
+    app.add_registry_with_manifest::<RoomResource>(vec![
+        BASIC_GRASS.clone(),
+        BASIC_PLANKS.clone(),
+    ]);
 }
+
+static BASIC_GRASS: LazyLock<ResourceLocation<RoomResource>> = LazyLock::new(|| "basic_grass".parse().unwrap());
+static BASIC_PLANKS: LazyLock<ResourceLocation<RoomResource>> = LazyLock::new(|| "basic_planks".parse().unwrap());
 
 type RoomTileCoords = TileCoords;
 type RoomWorldCoords = WorldCoords;
@@ -27,7 +34,23 @@ pub struct RoomCodec {
     format: u8,
     tile_palette: Vec<ResourceLocation<TileResource>>,
     /// Stored in YZX order (outer to inner)
-    tiles: Vec<Vec<Vec<u8>>>
+    tiles: Vec<Vec<Vec<u8>>>,
+    connections: Vec<RoomConnection>,
+}
+impl RoomCodec {
+    pub fn new(
+        format: u8,
+        tile_palette: Vec<ResourceLocation<TileResource>>,
+        tiles: Vec<Vec<Vec<u8>>>,
+        connections: Vec<RoomConnection>,
+    ) -> Self {
+        Self {
+            format,
+            tile_palette,
+            tiles,
+            connections,
+        }
+    }
 }
 
 /// The type of room this is
@@ -58,7 +81,7 @@ impl From<RoomCodec> for RoomDefinition {
         
         Self {
             room_type: RoomType::Transition,
-            connections: Vec::new(),
+            connections: codec.connections,
             bounds: UVec3::ZERO,
             layout,
         }
@@ -89,7 +112,7 @@ impl RoomDefinition {
 }
 
 /// Definition for the connection itself
-#[derive(Debug, Clone, Reflect)]
+#[derive(Debug, Clone, Reflect, Serialize, Deserialize)]
 pub struct RoomConnection {
     /// Where in the room this connection is located
     location: RoomTileCoords,
@@ -107,7 +130,7 @@ impl RoomConnection {
 
 /// The type of connection this is
 /// Standardized connection sizes are used to allow for flexibility when matching rooms dynamically
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Debug, Clone, Copy, PartialEq, Reflect, Serialize, Deserialize)]
 pub enum ConnectionSize {
     Small,
     Medium,
@@ -118,7 +141,7 @@ pub enum ConnectionSize {
 ///
 /// E.g., a North facing exits the current room to the north side
 /// and requires a South facing connection to match
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Debug, Clone, Copy, PartialEq, Reflect, Serialize, Deserialize)]
 pub enum ConnectionFacing {
     North,
     East,
@@ -233,15 +256,17 @@ pub struct RoomBuilderContext<'a, 'w, 's> {
     pub scale: Scale,
     pub tile_layout: &'a TileLayout,
     pub tile_registry: &'a TileRegistry,
-    pub sprite_registry: &'a SpriteRegistry,
     pub tile_assets: &'a Assets<TileAsset>,
+    pub sprite_registry: &'a SpriteRegistry,
+    pub room_registry: &'a RoomRegistry,
+    pub room_assets: &'a Assets<RoomDefinition>,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
 pub struct RoomResource;
 impl ResourceType for RoomResource {
     type AssetType = RoomDefinition;
-    
+
     fn root_dir() -> &'static str {
         "rooms"
     }

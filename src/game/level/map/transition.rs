@@ -1,5 +1,7 @@
 use crate::game::level::map::room::RoomDefinition;
 use bevy::prelude::*;
+use crate::data::ResourceLocation;
+use crate::datagen_api::room::RoomResource;
 
 pub(super) fn plugin(app: &mut App) {}
 
@@ -12,7 +14,7 @@ pub struct TransitionRoomPool(pub Vec<TransitionRoom>);
 /// Definition for rooms to be used for populating transition sections
 pub struct TransitionRoom {
     /// The physical room layout
-    room: RoomDefinition,
+    room: ResourceLocation<RoomResource>,
     /// The weight for how often this room will appear
     weight: f32,
     /// The rule for how many times this room can appear
@@ -22,7 +24,7 @@ pub struct TransitionRoom {
 }
 
 impl TransitionRoom {
-    pub fn new(room: RoomDefinition, weight: f32) -> Self {
+    pub fn new(room: ResourceLocation<RoomResource>, weight: f32) -> Self {
         Self {
             room,
             weight,
@@ -30,11 +32,11 @@ impl TransitionRoom {
         }
     }
 
-    pub fn with_rule(room: RoomDefinition, weight: f32, rule: TransitionRoomRule) -> Self {
+    pub fn with_rule(room: ResourceLocation<RoomResource>, weight: f32, rule: TransitionRoomRule) -> Self {
         Self { room, weight, rule }
     }
 
-    pub fn room(&self) -> &RoomDefinition {
+    pub fn room(&self) -> &ResourceLocation<RoomResource> {
         &self.room
     }
 

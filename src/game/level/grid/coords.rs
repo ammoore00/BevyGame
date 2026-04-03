@@ -4,6 +4,8 @@ use bevy::prelude::*;
 use parry3d::math::Isometry;
 use std::cmp::Ordering;
 use std::ops::Deref;
+use bevy::reflect::erased_serde::serialize;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub(in crate::game) const SCREEN_Z_SCALE: f32 = 2.0;
 
@@ -88,13 +90,17 @@ impl From<Vec3> for TileCoords {
         ))
     }
 }
+impl From<[i32; 3]> for TileCoords {
+    fn from(value: [i32; 3]) -> Self {
+        TileCoords(IVec3::new(value[0], value[1], value[2]))
+    }   
+}
 impl Deref for TileCoords {
     type Target = IVec3;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-
 impl Ord for TileCoords {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.y.cmp(&other.y) {
@@ -111,6 +117,24 @@ impl PartialOrd for TileCoords {
         Some(self.cmp(other))
     }
 }
+impl Serialize for TileCoords {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        [self.0.x, self.0.y, self.0.z].serialize(serializer)
+    }
+}
+impl<'de> Deserialize<'de> for TileCoords {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let [x, y, z]: [i32; 3] = Deserialize::deserialize(deserializer)?;
+        Ok(TileCoords(IVec3::new(x, y, z)))
+    }
+}
+
 
 #[derive(Debug, PartialEq, Clone, Reflect)]
 pub struct WorldCoords(pub Vec3);

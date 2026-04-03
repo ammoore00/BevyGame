@@ -6,7 +6,7 @@ use bevy::asset::io::Reader;
 use bevy::prelude::*;
 use serde::de::DeserializeOwned;
 use crate::data::registry::ResourceRegistry;
-use crate::data::ResourceType;
+use crate::data::{ResourceLocation, ResourceType};
 use crate::StartupSystems;
 
 pub(super) fn plugin(app: &mut App) {
@@ -38,6 +38,7 @@ impl GameAssetLoader {
 
 pub trait LoaderJobManager {
     fn add_resource_registry<T: ResourceType>(&mut self);
+    fn add_registry_with_manifest<T: ResourceType>(&mut self, manifest: Vec<ResourceLocation<T>>);
 }
 
 impl LoaderJobManager for App {
@@ -52,6 +53,13 @@ impl LoaderJobManager for App {
 
         let mut asset_loader = world.resource_mut::<GameAssetLoader>();
         asset_loader.add_job::<T>();
+    }
+
+    fn add_registry_with_manifest<T: ResourceType>(&mut self, manifest: Vec<ResourceLocation<T>>) {
+        self.add_resource_registry::<T>();
+        let world = self.world_mut();
+        let mut registry = world.resource_mut::<ResourceRegistry<T>>();
+        registry.extend_manifest(manifest);
     }
 }
 

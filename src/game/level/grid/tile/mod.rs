@@ -12,7 +12,6 @@ use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::registry::ResourceRegistry;
 use crate::data::sprite::{SpriteRegistry, SpriteResource};
-use crate::StartupSystems;
 
 pub mod assets;
 mod collision;
@@ -22,11 +21,11 @@ pub fn plugin(app: &mut App) {
 
     app.init_asset_loader::<RonAssetLoader<TileCodec, TileAsset>>();
     app.init_asset::<TileAsset>();
-    app.add_resource_registry::<TileResource>();
-
-    app.add_systems(
-        Startup,
-        register_tiles.in_set(StartupSystems::RegisterManifests)
+    app.add_registry_with_manifest::<TileResource>(
+        vec![
+            GRASS_TILE.clone(),
+            PLANKS_TILE.clone(),
+        ]   
     );
     
     app.add_systems(
@@ -37,13 +36,6 @@ pub fn plugin(app: &mut App) {
 
 static GRASS_TILE: LazyLock<ResourceLocation<TileResource>> = LazyLock::new(|| "grass".parse().unwrap());
 static PLANKS_TILE: LazyLock<ResourceLocation<TileResource>> = LazyLock::new(|| "planks".parse().unwrap());
-
-fn register_tiles(
-    mut tile_registry: ResMut<TileRegistry>,
-) {
-    tile_registry.insert_manifest(GRASS_TILE.clone());
-    tile_registry.insert_manifest(PLANKS_TILE.clone());
-}
 
 pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;

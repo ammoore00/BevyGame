@@ -9,6 +9,7 @@ use crate::game::character::player::{PlayerAssets, player};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
 use crate::data::sprite::SpriteRegistry;
+use crate::datagen_api::room::{RoomDefinition, RoomRegistry};
 use crate::datagen_api::tile::{TileAsset, TileRegistry};
 use crate::game::level::grid::tile::assets::TileLayout;
 use crate::game::level::map::palette::{Palette, Palettes};
@@ -46,6 +47,9 @@ pub fn spawn_level(
     palette_assets: Res<Assets<Palette>>,
 
     sprite_registry: Res<SpriteRegistry>,
+
+    room_registry: Res<RoomRegistry>,
+    room_assets: Res<Assets<RoomDefinition>>,
     
     tile_registry: Res<TileRegistry>,
     tile_layout: Res<TileLayout>,
@@ -98,8 +102,10 @@ pub fn spawn_level(
         scale: *scale,
         tile_layout: &tile_layout,
         tile_registry: &tile_registry,
-        sprite_registry: &sprite_registry,
         tile_assets: &tile_assets,
+        sprite_registry: &sprite_registry,
+        room_registry: &room_registry,
+        room_assets: &room_assets,
     };
     
     let map = &palette.main_map_pool().0[0];
