@@ -1,6 +1,6 @@
 use std::io::Write;
 use bevy_game_2d::data::ResourceLocation;
-use bevy_game_2d::datagen_api::tile::codec::{TileCodec, TileResource};
+use bevy_game_2d::datagen_api::tile::{TileCodec, TileResource};
 use crate::{ROOT, ROOT_BASE};
 
 pub fn generate_tiles() -> Result<(), TileError> {

@@ -11,7 +11,7 @@ use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::registry::ResourceRegistry;
 use crate::data::sprite::SpriteRegistry;
-use crate::datagen_api::tile::codec::{TileAsset, TileRegistry, TileResource};
+use crate::datagen_api::tile::{TileAsset, TileRegistry, TileResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();

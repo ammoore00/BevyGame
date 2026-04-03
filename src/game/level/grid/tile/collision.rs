@@ -1,7 +1,7 @@
 use crate::game::level::grid::coords::WorldCoords;
-use crate::datagen_api::tile::codec::TileFacing;
 use crate::game::physics::components::Collider;
 use bevy::prelude::*;
+use crate::datagen_api::tile::TileFacing;
 
 pub(in crate::game) fn full() -> impl Fn(WorldCoords) -> Collider {
     cuboid(Vec3::splat(0.5))

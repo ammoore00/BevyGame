@@ -1,7 +1,7 @@
 use std::array;
 use bevy::prelude::*;
 use crate::data::ResourceLocation;
-use crate::datagen_api::tile::codec::TileResource;
+use crate::datagen_api::tile::TileResource;
 use crate::game::level::map::transition::{TransitionRoom, TransitionRoomPool};
 use crate::game::level::map::{MapDefinition, MapPool, MapType};
 use crate::game::level::map::room::{ConnectionFacing, ConnectionSize, RoomConnection, RoomDefinition, RoomLayout, RoomRegistry, RoomType};

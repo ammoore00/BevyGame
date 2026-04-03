@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::path::Path;
 use std::sync::Arc;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::asset::io::Reader;
