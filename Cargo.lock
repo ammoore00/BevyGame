@@ -702,6 +702,7 @@ name = "bevy_game_2d"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "derive-new",
  "getrandom",
  "parry3d",
  "rand",
@@ -2062,7 +2063,19 @@ name = "datagen"
 version = "0.1.0"
 dependencies = [
  "bevy_game_2d",
+ "ron 0.10.1",
  "thiserror 2.0.17",
+]
+
+[[package]]
+name = "derive-new"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2cdc8d50f426189eef89dac62fabfa0abb27d5cc008f25bf4156a0203325becc"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

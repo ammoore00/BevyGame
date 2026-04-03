@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use std::sync::LazyLock;
 use bevy::prelude::*;
 use crate::data::ResourceLocation;
@@ -15,11 +14,11 @@ pub(in crate::game) fn plugin(app: &mut App) {
     );
 }
 
-static GRASS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("grass").unwrap());
-static PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("planks").unwrap());
-static LIGHT_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("light_planks").unwrap());
-static FRAMED_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("framed_planks").unwrap());
-static LIGHT_FRAMED_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| ResourceLocation::from_str("light_framed_planks").unwrap());
+static GRASS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| "grass".parse().unwrap());
+static PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| "planks".parse().unwrap());
+static LIGHT_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| "light_planks".parse().unwrap());
+static FRAMED_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| "framed_planks".parse().unwrap());
+static LIGHT_FRAMED_PLANKS_SPRITE: LazyLock<ResourceLocation<SpriteResource>> = LazyLock::new(|| "light_framed_planks".parse().unwrap());
 
 fn register_tile_assets(
     mut sprite_registry: ResMut<SpriteRegistry>

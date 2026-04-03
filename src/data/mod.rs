@@ -10,7 +10,7 @@ use regex::Regex;
 use std::str::FromStr;
 use std::sync::LazyLock;
 use bevy::prelude::*;
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((sprite::plugin, loader::plugin));
@@ -26,13 +26,21 @@ where
     T::from_str(&s).map_err(de::Error::custom)
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Reflect)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Reflect)]
 pub struct ResourceLocation<T: ResourceType> {
     #[serde(deserialize_with = "deserialize_from_str")]
     namespace: Namespace,
     #[serde(deserialize_with = "deserialize_from_str")]
     id: ResourceId,
     phantom_data: PhantomData<T>,
+}
+impl<T: ResourceType> Serialize for ResourceLocation<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
 }
 
 impl<T: ResourceType> Display for ResourceLocation<T> {

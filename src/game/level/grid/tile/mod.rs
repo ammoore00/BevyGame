@@ -174,11 +174,11 @@ pub mod codec {
         app.add_resource_registry::<TileResource, TileAsset>();
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(derive_new::new, Serialize, Deserialize)]
     pub struct TileCodec {
-        format: u8,
-        sprite_sheet: ResourceLocation<SpriteResource>,
-        sprite_index: u8,
+        pub format: u8,
+        pub sprite_sheet: ResourceLocation<SpriteResource>,
+        pub sprite_index: u8,
     }
 
     #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
