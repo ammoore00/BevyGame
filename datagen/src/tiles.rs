@@ -1,9 +1,9 @@
-use bevy_game_2d::data::ResourceLocation;
+use bevy_game_2d::data::{ResourceLocation, ResourceType};
 use bevy_game_2d::datagen_api::tile::{TileCodec, TileResource};
-use crate::{create_dir, write_data, WriteError, ROOT};
+use crate::{create_dir, write_data, WriteError};
 
 pub fn generate_tiles() -> Result<(), WriteError> {
-    create_dir("tiles")?;
+    create_dir(TileResource::root_dir())?;
 
     create_tile_data(DIRT)?;
     create_tile_data(DIRT_LAYER)?;

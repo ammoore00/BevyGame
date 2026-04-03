@@ -85,7 +85,7 @@ impl<T: ResourceType> FromStr for ResourceLocation<T> {
 
 pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + 'static {
     type AssetType: Asset + Send + Sync + 'static;
-    
+
     fn root_dir() -> &'static str;
     fn file_type() -> ResourceFileType;
 }

@@ -1,10 +1,10 @@
-use bevy_game_2d::data::ResourceLocation;
+use bevy_game_2d::data::{ResourceLocation, ResourceType};
 use bevy_game_2d::datagen_api::room::{ConnectionFacing, ConnectionSize, RoomCodec, RoomConnection, RoomResource};
 use bevy_game_2d::datagen_api::tile::TileResource;
 use crate::{create_dir, write_data, WriteError};
 
 pub fn generate_rooms() -> Result<(), WriteError> {
-    create_dir("rooms")?;
+    create_dir(RoomResource::root_dir())?;
     
     create_room_data(basic_room("grass"))?;
     create_room_data(basic_room("planks"))?;
