@@ -32,27 +32,27 @@ impl GameAssetLoader {
         Self { jobs: Vec::new() }
     }
 
-    pub fn add_job<T: ResourceType, A: Asset>(&mut self) {
-        self.jobs.push(Arc::new(LoaderJob::<T, A>::default()));
+    pub fn add_job<T: ResourceType>(&mut self) {
+        self.jobs.push(Arc::new(LoaderJob::<T>::default()));
     }
 }
 
 pub trait LoaderJobManager {
-    fn add_resource_registry<T: ResourceType, A: Asset>(&mut self);
+    fn add_resource_registry<T: ResourceType>(&mut self);
 }
 
 impl LoaderJobManager for App {
     /// Adds a job to the asset loader which will load all assets in the registry
-    fn add_resource_registry<T: ResourceType, A: Asset>(&mut self) {
+    fn add_resource_registry<T: ResourceType>(&mut self) {
         let world = self.world_mut();
-        world.insert_resource(ResourceRegistry::<T, A>::default());
+        world.insert_resource(ResourceRegistry::<T>::default());
 
         if !world.contains_resource::<GameAssetLoader>() {
             world.insert_resource(GameAssetLoader::new());
         }
 
         let mut asset_loader = world.resource_mut::<GameAssetLoader>();
-        asset_loader.add_job::<T, A>();
+        asset_loader.add_job::<T>();
     }
 }
 
@@ -61,32 +61,32 @@ trait RegistryLoader: Send + Sync + 'static {
 }
 
 #[derive(Debug)]
-struct LoaderJob<T: ResourceType, A: Asset> {
-    phantom_data: PhantomData<(T, A)>,
+struct LoaderJob<T: ResourceType> {
+    phantom_data: PhantomData<T>,
 }
-impl<T: ResourceType, A: Asset> Default for LoaderJob<T, A> {
+impl<T: ResourceType> Default for LoaderJob<T> {
     fn default() -> Self {
         Self {
             phantom_data: Default::default()
         }
     }
 }
-impl<T: ResourceType, A: Asset> RegistryLoader for LoaderJob<T, A> {
+impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
     /// Iterate through all registered assets for the associated registry and loads them
     fn load(&self, world: &mut World) -> Result<(), LoaderError> {
         let asset_server = world.resource::<AssetServer>();
 
         let mut assets = HashMap::new();
 
-        let registry = world.resource::<ResourceRegistry<T, A>>();
+        let registry = world.resource::<ResourceRegistry<T>>();
         let manifest = registry.manifest();
         manifest.iter().for_each(|loc| {
             let path = loc.as_path();
-            let asset = asset_server.load::<A>(path);
+            let asset = asset_server.load::<T::AssetType>(path);
             assets.insert(loc.clone(), asset);
         });
 
-        let mut registry = world.resource_mut::<ResourceRegistry<T, A>>();
+        let mut registry = world.resource_mut::<ResourceRegistry<T>>();
         assets.into_iter().for_each(|(loc, asset)| registry.register_asset(loc, asset));
 
         Ok(())

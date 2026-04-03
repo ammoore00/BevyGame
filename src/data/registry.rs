@@ -4,14 +4,14 @@ use crate::data::{ResourceLocation, ResourceType};
 
 /// Maps resource locations to bevy asset handles
 #[derive(Debug, Resource)]
-pub struct ResourceRegistry<T: ResourceType, A: Asset> {
+pub struct ResourceRegistry<T: ResourceType> {
     /// Stores the mapping between resource locations and asset handles
-    registry: HashMap<ResourceLocation<T>, Handle<A>>,
+    registry: HashMap<ResourceLocation<T>, Handle<T::AssetType>>,
     /// Stores a list of desired resource locations
     manifest: HashSet<ResourceLocation<T>>,
 }
 
-impl<T: ResourceType, A: Asset> Default for ResourceRegistry<T, A> {
+impl<T: ResourceType> Default for ResourceRegistry<T> {
     fn default() -> Self {
         Self {
             registry: Default::default(),
@@ -20,7 +20,7 @@ impl<T: ResourceType, A: Asset> Default for ResourceRegistry<T, A> {
     }
 }
 
-impl<T: ResourceType, A: Asset> ResourceRegistry<T, A> {
+impl<T: ResourceType> ResourceRegistry<T> {
     /// Adds a resource location to the manifest
     pub fn insert_manifest(&mut self, loc: ResourceLocation<T>) {
         self.manifest.insert(loc);
@@ -32,7 +32,7 @@ impl<T: ResourceType, A: Asset> ResourceRegistry<T, A> {
     }
 
     /// Inserts a resource location and asset handle into the registry after the asset has been loaded
-    pub fn register_asset(&mut self, loc: ResourceLocation<T>, handle: Handle<A>) {
+    pub fn register_asset(&mut self, loc: ResourceLocation<T>, handle: Handle<T::AssetType>) {
         self.registry.insert(loc, handle);
     }
 
@@ -51,7 +51,7 @@ impl<T: ResourceType, A: Asset> ResourceRegistry<T, A> {
         self.manifest.iter().all(|e| self.registry.contains_key(e))
     }
 
-    pub fn get(&self, loc: &ResourceLocation<T>) -> Option<&Handle<A>> {
+    pub fn get(&self, loc: &ResourceLocation<T>) -> Option<&Handle<T::AssetType>> {
         self.registry.get(loc)
     }
 

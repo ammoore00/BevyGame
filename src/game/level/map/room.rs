@@ -15,8 +15,8 @@ use crate::datagen_api::tile::codec::{TileAsset, TileRegistry, TileResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
-    app.init_asset::<TileAsset>();
-    app.add_resource_registry::<TileResource, TileAsset>();
+    app.init_asset::<RoomDefinition>();
+    app.add_resource_registry::<RoomResource>();
 }
 
 type RoomTileCoords = TileCoords;
@@ -126,7 +126,7 @@ pub enum ConnectionFacing {
     West,
 }
 
-pub type RoomRegistry = ResourceRegistry<RoomResource, RoomDefinition>;
+pub type RoomRegistry = ResourceRegistry<RoomResource>;
 
 /// Struct which contains the specific tile layout for a room
 #[derive(Debug, Clone)]
@@ -240,6 +240,8 @@ pub struct RoomBuilderContext<'a, 'w, 's> {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
 pub struct RoomResource;
 impl ResourceType for RoomResource {
+    type AssetType = RoomDefinition;
+    
     fn root_dir() -> &'static str {
         "rooms"
     }

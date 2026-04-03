@@ -51,8 +51,6 @@ pub fn tile(
     tile_coords: impl Into<TileCoords> + Clone,
     tile_layout: &TileLayout,
 ) -> impl Bundle {
-    println!("Creating tile: {:?}", tile_id);
-
     let tile = tile_registry.get(tile_id).unwrap();
     let tile = tile_assets.get(tile).unwrap();
 
@@ -196,12 +194,12 @@ pub mod codec {
     use crate::game::level::grid::coords::WorldCoords;
     use crate::game::physics::components::Collider;
     
-    pub type TileRegistry = ResourceRegistry<TileResource, TileAsset>;
+    pub type TileRegistry = ResourceRegistry<TileResource>;
 
     pub fn plugin(app: &mut App) {
         app.init_asset_loader::<RonAssetLoader<TileCodec, TileAsset>>();
         app.init_asset::<TileAsset>();
-        app.add_resource_registry::<TileResource, TileAsset>();
+        app.add_resource_registry::<TileResource>();
     }
 
     #[derive(derive_new::new, Serialize, Deserialize)]
@@ -214,6 +212,8 @@ pub mod codec {
     #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
     pub struct TileResource;
     impl ResourceType for TileResource {
+        type AssetType = TileAsset;
+
         fn root_dir() -> &'static str {
             "tiles"
         }
