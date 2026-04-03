@@ -16,21 +16,9 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((sprite::plugin, loader::plugin));
 }
 
-fn deserialize_from_str<'de, D, T>(deserializer: D) -> Result<T, D::Error>
-where
-    D: Deserializer<'de>,
-    T: FromStr,
-    T::Err: Display,
-{
-    let s = String::deserialize(deserializer)?;
-    T::from_str(&s).map_err(de::Error::custom)
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Reflect)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
 pub struct ResourceLocation<T: ResourceType> {
-    #[serde(deserialize_with = "deserialize_from_str")]
     namespace: Namespace,
-    #[serde(deserialize_with = "deserialize_from_str")]
     id: ResourceId,
     phantom_data: PhantomData<T>,
 }
@@ -40,6 +28,15 @@ impl<T: ResourceType> Serialize for ResourceLocation<T> {
         S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
+    }
+}
+impl<'de, T: ResourceType> Deserialize<'de> for ResourceLocation<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(de::Error::custom)
     }
 }
 

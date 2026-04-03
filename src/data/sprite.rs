@@ -11,7 +11,6 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
 pub struct SpriteResource;
-
 impl ResourceType for SpriteResource {
     fn root_dir() -> &'static str {
         "images"

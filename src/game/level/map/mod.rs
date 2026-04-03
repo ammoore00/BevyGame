@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 use rand::Rng;
+use crate::datagen_api::room::RoomRegistry;
 use crate::game::level::grid;
 use crate::game::level::grid::{grid_bundle, Grid, merge_tile_map};
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::map::palette::Palette;
-use crate::game::level::map::room::{RoomBuilderContext, RoomRegistryContext};
+use crate::game::level::map::room::RoomBuilderContext;
 
 pub mod palette;
 pub mod room;
@@ -56,7 +57,6 @@ impl MapDefinition {
         &self,
         mut rand: impl Rng,
         palette: &Palette,
-        room_registry_context: &RoomRegistryContext,
         room_builder_context: &mut RoomBuilderContext,
     ) -> MapState {
         let transition_pool = palette.transition_pool();
@@ -66,7 +66,7 @@ impl MapDefinition {
         for _ in 0..self.map_size {
             let index = rand.random_range(0..transition_pool.0.len());
             let room = &transition_pool.0[index];
-            let room_tile_map = room.room().build(room_registry_context, room_builder_context);
+            let room_tile_map = room.room().build(room_builder_context);
 
             let grid_size = grid.size();
             merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))

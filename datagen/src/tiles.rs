@@ -12,6 +12,9 @@ pub fn generate_tiles() -> Result<(), TileError> {
     create_tile_data(GRASS)?;
     create_tile_data(GRASS_LAYER)?;
 
+    create_tile_data(PLANKS)?;
+    create_tile_data(PLANKS_LAYER)?;
+
     Ok(())
 }
 
@@ -61,3 +64,6 @@ const DIRT_LAYER: TileData = TileData::new("dirt_layer", "grass", 3);
 
 const GRASS: TileData = TileData::new("grass", "grass", 0);
 const GRASS_LAYER: TileData = TileData::new("grass_layer", "grass", 2);
+
+const PLANKS: TileData = TileData::new("planks", "planks", 0);
+const PLANKS_LAYER: TileData = TileData::new("planks_layer", "planks", 2);

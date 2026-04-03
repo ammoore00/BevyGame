@@ -8,9 +8,11 @@ use crate::game::character::animation::CharacterAnimationData;
 use crate::game::character::player::{PlayerAssets, player};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
-use crate::game::level::grid::tile::assets::TileAssets;
+use crate::data::sprite::SpriteRegistry;
+use crate::datagen_api::tile::codec::{TileAsset, TileRegistry};
+use crate::game::level::grid::tile::assets::TileLayout;
 use crate::game::level::map::palette::{Palette, Palettes};
-use crate::game::level::map::room::{RoomBuilderContext, RoomRegistryContext};
+use crate::game::level::map::room::RoomBuilderContext;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();
@@ -43,9 +45,11 @@ pub fn spawn_level(
     level_palettes: Res<Palettes>,
     palette_assets: Res<Assets<Palette>>,
 
-    room_registry_context: Res<RoomRegistryContext>,
-
-    tile_assets: Res<TileAssets>,
+    sprite_registry: Res<SpriteRegistry>,
+    
+    tile_registry: Res<TileRegistry>,
+    tile_layout: Res<TileLayout>,
+    tile_assets: Res<Assets<TileAsset>>,
 
     player_assets: Res<PlayerAssets>,
     object_assets: Res<ObjectAssets>,
@@ -92,6 +96,9 @@ pub fn spawn_level(
     let mut builder_context = RoomBuilderContext {
         commands: &mut commands,
         scale: *scale,
+        tile_layout: &tile_layout,
+        tile_registry: &tile_registry,
+        sprite_registry: &sprite_registry,
         tile_assets: &tile_assets,
     };
     
@@ -100,7 +107,6 @@ pub fn spawn_level(
     let map_state = map.bake(
         rng,
         palette,
-        &room_registry_context,
         &mut builder_context,
     );
     commands.entity(level).add_child(map_state.grid());

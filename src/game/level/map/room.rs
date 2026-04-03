@@ -1,20 +1,34 @@
 use crate::Scale;
 use crate::game::level::grid;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
-use crate::game::level::grid::tile::assets::TileAssets;
+use crate::game::level::grid::tile::assets::TileLayout;
 use crate::game::level::grid::tile::tile;
-use crate::game::level::grid::tile::tile_types::TileType;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
-use std::collections::HashMap;
 use std::fmt::Debug;
+use serde::{Deserialize, Serialize};
+use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
+use crate::data::registry::ResourceRegistry;
+use crate::data::sprite::SpriteRegistry;
+use crate::datagen_api::tile::codec::{TileAsset, TileRegistry, TileResource};
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_resource::<RoomRegistryContext>();
+    app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
+    app.init_asset::<TileAsset>();
+    app.add_resource_registry::<TileResource, TileAsset>();
 }
 
 type RoomTileCoords = TileCoords;
 type RoomWorldCoords = WorldCoords;
+
+#[derive(Serialize, Deserialize)]
+pub struct RoomCodec {
+    format: u8,
+    tile_palette: Vec<ResourceLocation<TileResource>>,
+    /// Stored in YZX order (outer to inner)
+    tiles: Vec<Vec<Vec<u8>>>
+}
 
 /// The type of room this is
 /// Set pieces and injectables are rooms designed for a specific instance
@@ -27,7 +41,7 @@ pub enum RoomType {
 }
 
 /// Elements required to build a room dynamically
-#[derive(Debug, Reflect)]
+#[derive(TypePath, Asset)]
 pub struct RoomDefinition {
     /// How this room is intended to be used
     room_type: RoomType,
@@ -36,35 +50,41 @@ pub struct RoomDefinition {
     /// How big this room is
     bounds: UVec3,
     /// Unique ID for this room
-    id: RoomID,
+    layout: RoomLayout,
 }
-
+impl From<RoomCodec> for RoomDefinition {
+    fn from(codec: RoomCodec) -> Self {
+        let layout = RoomLayout::new(codec.tile_palette, codec.tiles).unwrap();
+        
+        Self {
+            room_type: RoomType::Transition,
+            connections: Vec::new(),
+            bounds: UVec3::ZERO,
+            layout,
+        }
+    }
+}
 impl RoomDefinition {
     pub fn new(
         room_type: RoomType,
         connections: Vec<RoomConnection>,
-        layout: Box<dyn RoomBuilder>,
-        registry_context: &mut RoomRegistryContext,
+        layout: RoomLayout,
     ) -> Self {
         let bounds = layout.bounds();
-
-        let id = registry_context.ids.next_id();
-        registry_context.registry.room_builders.insert(id, layout);
 
         Self {
             room_type,
             connections,
             bounds,
-            id,
+            layout,
         }
     }
 
     pub fn build(
         &self,
-        registry_context: &RoomRegistryContext,
         builder_context: &mut RoomBuilderContext,
     ) -> TileMap {
-        registry_context.registry.room_builders[&self.id].build(builder_context)
+        self.layout.build(builder_context)
     }
 }
 
@@ -106,69 +126,64 @@ pub enum ConnectionFacing {
     West,
 }
 
-/// Context holding references to data necessary to register rooms globally
-#[derive(Resource, Default)]
-pub struct RoomRegistryContext {
-    ids: RoomIDTracker,
-    registry: RoomBuilderRegistry,
-}
-
-/// Manager for ensuring unique identifiers for rooms
-/// These ids do not need to be the same every time, they only need to be unique from other rooms
-#[derive(Debug, Default)]
-pub struct RoomIDTracker(RoomID);
-impl RoomIDTracker {
-    pub fn next_id(&mut self) -> RoomID {
-        let next = self.0;
-        self.0 += 1;
-        next
-    }
-}
-type RoomID = usize;
-
-/// Registry which holds references from each room id to the builder which can generate the room
-/// from the definition
-///
-/// This is kept separate from the room definitions to allow for reflection in the room definitions
-/// while keeping the room builders generic
-#[derive(Default)]
-pub struct RoomBuilderRegistry {
-    room_builders: HashMap<RoomID, Box<dyn RoomBuilder>>,
-}
-
-/// Trait for building rooms from a layout
-///
-/// This is implemented as a trait to allow for const generic room layouts
-pub trait RoomBuilder: Send + Sync {
-    fn build(&self, context: &mut RoomBuilderContext) -> TileMap;
-
-    fn bounds(&self) -> UVec3;
-}
+pub type RoomRegistry = ResourceRegistry<RoomResource, RoomDefinition>;
 
 /// Struct which contains the specific tile layout for a room
 #[derive(Debug, Clone)]
-pub struct RoomLayout<
-    const X: usize,
-    const Y: usize,
-    const Z: usize
-> {
-    tiles: [[[Option<TileType>; X]; Z]; Y],
+pub struct RoomLayout {
+    bounds: UVec3,
+    tiles: Vec<Option<ResourceLocation<TileResource>>>,
 }
+impl RoomLayout {
+    pub fn new(
+        tile_palette: Vec<ResourceLocation<TileResource>>,
+        tiles: Vec<Vec<Vec<u8>>>
+    ) -> Result<Self, RoomLayoutError> {
+        let bounds = UVec3::new(tiles[0][0].len() as u32, tiles.len() as u32, tiles[0].len() as u32);
+        
+        if tiles.iter().any(|yz| yz.len() != bounds.z as usize
+            || yz.iter().any(|xyz| xyz.len() != bounds.x as usize))
+        {
+            return Err(RoomLayoutError::MismatchedSize);
+        }
 
-impl<const X: usize, const Y: usize, const Z: usize> RoomLayout<X, Y, Z> {
-    pub const fn new(tiles: [[[Option<TileType>; X]; Z]; Y]) -> Self {
-        Self { tiles }
+        let tiles = tiles
+            .into_iter()
+            .flat_map(|yz| yz.into_iter())
+            .flat_map(|x| x.into_iter())
+            .map(|index: u8| {
+                match index {
+                    0 => None,
+                    _ => {
+                        if index as usize > tile_palette.len() {
+                            return None;
+                        }
+                        Some(tile_palette[index as usize - 1].clone())
+                    },
+                }
+            })
+            .collect();
+
+        Ok(Self {
+            bounds,
+            tiles
+        })
     }
-}
-
-impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<X, Y, Z> {
-    fn build(&self, context: &mut RoomBuilderContext) -> TileMap {
+    
+    fn index_of(&self, coords: impl Into<UVec3>) -> usize {
+        let coords = coords.into();
+        (coords.x
+            + coords.z * self.bounds.x
+            + coords.y * self.bounds.x * self.bounds.z) as usize
+    }
+    
+    pub fn build(&self, context: &mut RoomBuilderContext) -> TileMap {
         let tile_map = grid::tile_map();
 
-        for y in 0..Y {
-            for z in 0..Z {
-                for x in 0..X {
-                    let Some(tile_type) = self.tiles[y][z][x].clone() else {
+        for y in 0..self.bounds.y {
+            for z in 0..self.bounds.z {
+                for x in 0..self.bounds.x {
+                    let Some(tile_type) = self.tiles[self.index_of([x, y, z])].clone() else {
                         continue;
                     };
 
@@ -177,9 +192,12 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
                     let tile = context
                         .commands
                         .spawn(tile(
-                            tile_type,
-                            coords.clone(),
+                            context.tile_registry,
                             context.tile_assets,
+                            context.sprite_registry,
+                            &tile_type,
+                            coords.clone(),
+                            context.tile_layout,
                         ))
                         .id();
 
@@ -195,8 +213,16 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
     }
 
     fn bounds(&self) -> UVec3 {
-        UVec3::new(X as u32, Y as u32, Z as u32)
+        self.bounds
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RoomLayoutError {
+    #[error("Mismatched tile layout sizes")]
+    MismatchedSize,
+    #[error("Index out of bounds: {0}")]
+    IndexOutOfBounds(u8),
 }
 
 /// Context holding references to data necessary to build rooms from their definitions
@@ -205,18 +231,20 @@ impl<const X: usize, const Y: usize, const Z: usize> RoomBuilder for RoomLayout<
 pub struct RoomBuilderContext<'a, 'w, 's> {
     pub commands: &'a mut Commands<'w, 's>,
     pub scale: Scale,
-    pub tile_assets: &'a TileAssets,
+    pub tile_layout: &'a TileLayout,
+    pub tile_registry: &'a TileRegistry,
+    pub sprite_registry: &'a SpriteRegistry,
+    pub tile_assets: &'a Assets<TileAsset>,
 }
 
-pub mod codec {
-    use serde::{Deserialize, Serialize};
-    use crate::data::ResourceLocation;
-    use crate::datagen_api::tile::codec::TileResource;
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
+pub struct RoomResource;
+impl ResourceType for RoomResource {
+    fn root_dir() -> &'static str {
+        "rooms"
+    }
 
-    #[derive(Serialize, Deserialize)]
-    pub struct RoomCodec {
-        format: u8,
-        tile_palette: Vec<ResourceLocation<TileResource>>,
-        tiles: Vec<Vec<Vec<u8>>>
+    fn file_type() -> ResourceFileType {
+        ResourceFileType::Data
     }
 }

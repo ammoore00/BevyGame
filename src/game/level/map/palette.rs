@@ -1,10 +1,10 @@
 use std::array;
 use bevy::prelude::*;
-use crate::game::level::grid::tile::tile_types;
-use crate::game::level::grid::tile::tile_types::TileType;
+use crate::data::ResourceLocation;
+use crate::datagen_api::tile::codec::TileResource;
 use crate::game::level::map::transition::{TransitionRoom, TransitionRoomPool};
 use crate::game::level::map::{MapDefinition, MapPool, MapType};
-use crate::game::level::map::room::{ConnectionFacing, ConnectionSize, RoomConnection, RoomDefinition, RoomLayout, RoomRegistryContext, RoomType};
+use crate::game::level::map::room::{ConnectionFacing, ConnectionSize, RoomConnection, RoomDefinition, RoomLayout, RoomRegistry, RoomType};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<Palette>();
@@ -19,8 +19,7 @@ pub struct Palettes {
 
 impl FromWorld for Palettes {
     fn from_world(world: &mut World) -> Self {
-        let mut context = world.resource_mut::<RoomRegistryContext>();
-        let standard_palette = StandardPalette::create_palette(&mut context);
+        let standard_palette = StandardPalette::create_palette();
 
         let assets = world.resource::<AssetServer>();
 
@@ -30,7 +29,7 @@ impl FromWorld for Palettes {
     }
 }
 
-#[derive(Asset, Debug, Reflect)]
+#[derive(Asset, TypePath)]
 pub struct Palette {
     main_map_pool: MapPool,
     transition_pool: TransitionRoomPool,
@@ -47,19 +46,17 @@ impl Palette {
 }
 
 trait PaletteDefinition {
-    fn create_palette(context: &mut RoomRegistryContext) -> Palette;
+    fn create_palette() -> Palette;
     fn create_main_map_pool() -> MapPool;
-    fn create_transition_pool(context: &mut RoomRegistryContext) -> TransitionRoomPool;
+    fn create_transition_pool() -> TransitionRoomPool;
 }
 
 struct StandardPalette;
 impl PaletteDefinition for StandardPalette {
-    fn create_palette(
-        context: &mut RoomRegistryContext,
-    ) -> Palette {
+    fn create_palette() -> Palette {
         Palette {
             main_map_pool: Self::create_main_map_pool(),
-            transition_pool: Self::create_transition_pool(context),
+            transition_pool: Self::create_transition_pool(),
         }
     }
 
@@ -71,18 +68,12 @@ impl PaletteDefinition for StandardPalette {
         MapPool(vec![main_map])
     }
 
-    fn create_transition_pool(context: &mut RoomRegistryContext) -> TransitionRoomPool {
+    fn create_transition_pool() -> TransitionRoomPool {
         const SIZE: usize = 7;
         const HALF_SIZE: usize = SIZE / 2;
 
-        let basic_room = |tile: Option<TileType>| {
-            let mut layout: [[[_; SIZE]; SIZE]; 1] = array::from_fn(
-                |_| array::from_fn(
-                    |_| array::from_fn(
-                        |_| tile.clone()
-                    )
-                )
-            );
+        let basic_room = |tile: ResourceLocation<TileResource>| {
+            let mut layout = vec![vec![vec![1; SIZE]; SIZE]];
 
             for x in 0..SIZE {
                 for z in 0..SIZE {
@@ -91,12 +82,12 @@ impl PaletteDefinition for StandardPalette {
                         && x != HALF_SIZE
                         && z != HALF_SIZE
                     {
-                        layout[0][z][x] = None;
+                        layout[0][z][x] = 0;
                     }
                 }
             }
 
-            layout
+            (vec![tile], layout)
         };
 
         let basic_connections = vec![
@@ -122,21 +113,21 @@ impl PaletteDefinition for StandardPalette {
             ),
         ];
 
-        let grass_layer = Some(tile_types::grass::LAYER);
+        let grass_layer = "grass".parse().unwrap();
+        let (palette, layout) = basic_room(grass_layer);
         let grass_room = RoomDefinition::new(
             RoomType::Transition,
             basic_connections.clone(),
-            Box::new(RoomLayout::new(basic_room(grass_layer))),
-            context,
+            RoomLayout::new(palette, layout).unwrap(),
         );
         let grass_room = TransitionRoom::new(grass_room, 1.0);
 
-        let plank_layer = Some(tile_types::light_planks::LAYER);
+        let plank_layer = "planks".parse().unwrap();
+        let (palette, layout) = basic_room(plank_layer);
         let plank_room = RoomDefinition::new(
             RoomType::Transition,
             basic_connections.clone(),
-            Box::new(RoomLayout::new(basic_room(plank_layer))),
-            context,
+            RoomLayout::new(palette, layout).unwrap(),
         );
         let plank_room = TransitionRoom::new(plank_room, 1.0);
 

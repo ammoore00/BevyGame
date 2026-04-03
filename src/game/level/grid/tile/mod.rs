@@ -1,16 +1,19 @@
 use crate::game::level::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
-use crate::game::level::grid::tile::assets::TileAssets;
-use crate::game::level::grid::tile::tile_types::TileType;
+use crate::game::level::grid::tile::assets::TileLayout;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign};
+use std::sync::LazyLock;
+use crate::data::ResourceLocation;
+use crate::data::sprite::SpriteRegistry;
+use crate::datagen_api::tile::codec::{TileAsset, TileRegistry, TileResource};
+use crate::StartupSystems;
 
 pub mod assets;
 mod collision;
-pub mod tile_types;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((assets::plugin, codec::plugin));
@@ -18,18 +21,45 @@ pub fn plugin(app: &mut App) {
         Update,
         update_tile_collision
     );
+
+    app.add_systems(
+        Startup,
+        register_tiles.in_set(StartupSystems::RegisterManifests)
+    );
+}
+
+static GRASS_TILE: LazyLock<ResourceLocation<TileResource>> = LazyLock::new(|| "grass".parse().unwrap());
+static PLANKS_TILE: LazyLock<ResourceLocation<TileResource>> = LazyLock::new(|| "planks".parse().unwrap());
+
+fn register_tiles(
+    mut tile_registry: ResMut<TileRegistry>,
+) {
+    tile_registry.insert_manifest(GRASS_TILE.clone());
+    tile_registry.insert_manifest(PLANKS_TILE.clone());
 }
 
 pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;
 
 pub fn tile(
-    tile_type: TileType,
+    tile_registry: &TileRegistry,
+    tile_assets: &Assets<TileAsset>,
+
+    sprite_registry: &SpriteRegistry,
+
+    tile_id: &ResourceLocation<TileResource>,
     tile_coords: impl Into<TileCoords> + Clone,
-    tile_assets: &TileAssets,
+    tile_layout: &TileLayout,
 ) -> impl Bundle {
-    let sprite_sheet = tile_assets.get_asset_set_for_material(tile_type.material);
-    let layout = tile_assets.layout().clone();
+    println!("Creating tile: {:?}", tile_id);
+
+    let tile = tile_registry.get(tile_id).unwrap();
+    let tile = tile_assets.get(tile).unwrap();
+
+    let sprite_sheet = sprite_registry.get(tile.sprite_sheet())
+        .cloned()
+        .unwrap_or_else(|| panic!("Failed to retrieve sprite sheet '{}' for tile '{}'", tile.sprite_sheet(), tile_id));
+    let layout = tile_layout.layout().clone();
 
     let edge_indices = Vec::new();
 
@@ -40,14 +70,14 @@ pub fn tile(
         TilePosition(tile_coords.clone().into()),
         Transform::from_translation(*Into::<ScreenCoords>::into(tile_coords.into())),
         // Physics
-        tile_type.shape.get_collision(world_coords),
+        tile.shape().get_collision(world_coords),
         PhysicsData::Static,
         // Rendering
         Sprite::from_atlas_image(
             sprite_sheet.clone(),
             TextureAtlas {
                 layout: layout.clone(),
-                index: tile_type.index,
+                index: tile.sprite_index() as usize,
             },
         ),
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
@@ -162,7 +192,7 @@ pub mod codec {
     use crate::data::loader::{LoaderJobManager, RonAssetLoader};
     use crate::data::registry::ResourceRegistry;
     use crate::data::sprite::SpriteResource;
-    use crate::datagen_api::tile::collision;
+    use crate::datagen_api::tile::{collision, Tile};
     use crate::game::level::grid::coords::WorldCoords;
     use crate::game::physics::components::Collider;
     
@@ -204,6 +234,19 @@ pub mod codec {
                 sprite_sheet: codec.sprite_sheet,
                 sprite_index: codec.sprite_index,
             }
+        }
+    }
+    impl TileAsset {
+        pub fn sprite_sheet(&self) -> &ResourceLocation<SpriteResource> {
+            &self.sprite_sheet
+        }
+
+        pub fn sprite_index(&self) -> u8 {
+            self.sprite_index
+        }
+
+        pub fn shape(&self) -> TileShape {
+            TileShape::Full { is_top: true }
         }
     }
 
