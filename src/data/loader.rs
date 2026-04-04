@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::path::Path;
 use std::sync::Arc;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::asset::io::Reader;
 use bevy::prelude::*;
+use bevy::tasks::futures_lite::StreamExt;
 use serde::de::DeserializeOwned;
+use walkdir::WalkDir;
 use crate::data::registry::ResourceRegistry;
 use crate::data::{ResourceLocation, ResourceType};
 use crate::StartupSystems;
@@ -37,12 +40,15 @@ impl GameAssetLoader {
 }
 
 pub trait LoaderJobManager {
+    /// Adds a job to the asset loader which will load all assets in the registry
     fn add_resource_registry<T: ResourceType>(&mut self);
+    /// Adds a job to the asset loader with a pre-filled manifest
     fn add_registry_with_manifest<T: ResourceType>(&mut self, manifest: Vec<ResourceLocation<T>>);
+    /// Adds a job to the asset loader which will discover all assets in the registry automatically
+    fn add_registry_with_discovery<T: ResourceType>(&mut self);
 }
 
 impl LoaderJobManager for App {
-    /// Adds a job to the asset loader which will load all assets in the registry
     fn add_resource_registry<T: ResourceType>(&mut self) {
         let world = self.world_mut();
         world.insert_resource(ResourceRegistry::<T>::default());
@@ -60,6 +66,40 @@ impl LoaderJobManager for App {
         let world = self.world_mut();
         let mut registry = world.resource_mut::<ResourceRegistry<T>>();
         registry.extend_manifest(manifest);
+    }
+
+    // TODO: Eventually I want to be able to load assets from multiple places (e.g. mod files)
+    //       This will require a way to check all places, not just the normal assets folder
+    fn add_registry_with_discovery<T: ResourceType>(&mut self) {
+        // Find all namespaces currently available
+        let Ok(namespaces) = std::fs::read_dir("./assets/") else {
+            return;
+        };
+
+        let mut manifest = Vec::new();
+
+        // For each namespace, find the root dir of the resource type
+        // and load any files found within
+        for namespace in namespaces.flatten() {
+            // Make sure the namespace is actually a directory
+            let namespace_path = &namespace.path();
+            if !namespace_path.is_dir() {
+                continue;
+            }
+
+            let namespace = namespace_path.strip_prefix("./assets").unwrap();
+
+            // Find all files under the namespace
+            WalkDir::new(namespace_path)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .map(|e| e.path().strip_prefix("./assets").unwrap().to_path_buf())
+                .filter(|path| path.strip_prefix(namespace).unwrap().starts_with(T::root_dir()))
+                .filter_map(|path| ResourceLocation::from_path(path).ok())
+                .for_each(|location| manifest.push(location));
+        }
+
+        self.add_registry_with_manifest::<T>(manifest);
     }
 }
 

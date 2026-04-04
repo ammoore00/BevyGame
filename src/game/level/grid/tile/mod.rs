@@ -6,7 +6,6 @@ use bevy::math::Vec3;
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign};
-use std::sync::LazyLock;
 use serde::{Deserialize, Serialize};
 use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
@@ -21,21 +20,13 @@ pub fn plugin(app: &mut App) {
 
     app.init_asset_loader::<RonAssetLoader<TileCodec, TileAsset>>();
     app.init_asset::<TileAsset>();
-    app.add_registry_with_manifest::<TileResource>(
-        vec![
-            GRASS_TILE.clone(),
-            PLANKS_TILE.clone(),
-        ]   
-    );
-    
+    app.add_registry_with_discovery::<TileResource>();
+
     app.add_systems(
         Update,
         update_tile_collision
     );
 }
-
-static GRASS_TILE: LazyLock<ResourceLocation<TileResource>> = LazyLock::new(|| "grass".parse().unwrap());
-static PLANKS_TILE: LazyLock<ResourceLocation<TileResource>> = LazyLock::new(|| "planks".parse().unwrap());
 
 pub const TILE_WIDTH: i32 = 32;
 pub const TILE_HEIGHT: i32 = 16;

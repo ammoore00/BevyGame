@@ -711,6 +711,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.17",
  "tracing",
+ "walkdir",
 ]
 
 [[package]]

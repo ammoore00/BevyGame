@@ -6,7 +6,7 @@ use crate::data::registry::ResourceRegistry;
 pub type SpriteRegistry = ResourceRegistry<SpriteResource>;
 
 pub fn plugin(app: &mut App) {
-    app.add_resource_registry::<SpriteResource>();
+    app.add_registry_with_discovery::<SpriteResource>();
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]

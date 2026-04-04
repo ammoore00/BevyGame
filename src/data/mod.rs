@@ -39,16 +39,67 @@ impl<'de, T: ResourceType> Deserialize<'de> for ResourceLocation<T> {
         s.parse().map_err(de::Error::custom)
     }
 }
-
 impl<T: ResourceType> Display for ResourceLocation<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}", self.namespace, self.id)
     }
 }
-
 impl<T: ResourceType> ResourceLocation<T> {
     pub fn new(namespace: Namespace, id: ResourceId) -> Self {
         Self { namespace, id, phantom_data: Default::default() }
+    }
+
+    pub fn from_path(path: impl AsRef<Path>) -> Result<Self, ResourceLocationParseError> {
+        let path = path.as_ref();
+
+        let path = if let Some(ext) = path.extension() {
+            if ext.to_str().unwrap_or_default() != T::file_type().to_string() {
+                return Err(ResourceLocationParseError::InvalidPath(format!(
+                    "Mismatched extension: {}, expected: {}",
+                    ext.to_str().unwrap_or_default(),
+                    T::file_type()
+                )));
+            }
+
+            path.with_extension("")
+        }
+        else {
+            path.to_path_buf()
+        };
+
+        let mut components = path.components();
+
+        let namespace = components.next()
+            .ok_or(ResourceLocationParseError::Empty)?
+            .as_os_str()
+            .to_str()
+            .ok_or(ResourceLocationParseError::InvalidPath(path.display().to_string()))?;
+        let namespace = Namespace::from_str(namespace)?;
+
+        let Some(component) = components.next() else {
+            return Err(ResourceLocationParseError::Empty);
+        };
+
+        if component.as_os_str() != T::root_dir() {
+            return Err(ResourceLocationParseError::InvalidPath(format!(
+                "Mismatched root dir: {}, expected: {}",
+                path.display(),
+                T::root_dir()
+            )));
+        }
+
+        let id = components
+            .map(|c| c.as_os_str().to_str().ok_or(ResourceLocationParseError::InvalidPath(path.display().to_string())))
+            .filter_map(|s| s.ok())
+            .collect::<Vec<_>>()
+            .join("/");
+        let id = ResourceId::from_str(&id)?;
+
+        Ok(Self {
+            namespace,
+            id,
+            phantom_data: Default::default(),
+        })
     }
 
     pub fn as_path(&self) -> PathBuf {
@@ -58,7 +109,6 @@ impl<T: ResourceType> ResourceLocation<T> {
             .with_extension(T::file_type().to_string())
     }
 }
-
 impl<T: ResourceType> FromStr for ResourceLocation<T> {
     type Err = ResourceLocationParseError;
 

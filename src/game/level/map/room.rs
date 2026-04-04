@@ -6,7 +6,6 @@ use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
 use std::fmt::Debug;
-use std::sync::LazyLock;
 use serde::{Deserialize, Serialize};
 use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
@@ -17,14 +16,8 @@ use crate::datagen_api::tile::{TileAsset, TileRegistry, TileResource};
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
     app.init_asset::<RoomDefinition>();
-    app.add_registry_with_manifest::<RoomResource>(vec![
-        BASIC_GRASS.clone(),
-        BASIC_PLANKS.clone(),
-    ]);
+    app.add_registry_with_discovery::<RoomResource>();
 }
-
-static BASIC_GRASS: LazyLock<ResourceLocation<RoomResource>> = LazyLock::new(|| "basic_grass".parse().unwrap());
-static BASIC_PLANKS: LazyLock<ResourceLocation<RoomResource>> = LazyLock::new(|| "basic_planks".parse().unwrap());
 
 type RoomTileCoords = TileCoords;
 type RoomWorldCoords = WorldCoords;
