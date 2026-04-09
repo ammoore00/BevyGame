@@ -31,11 +31,78 @@ where
     D: ?Sized + Serialize
 {
     let serialized = ron::ser::to_string_pretty(&codec, ron::ser::PrettyConfig::default())?;
-    
+    let serialized = compact_integer_arrays(&serialized);
+
     let file = std::fs::File::create(ROOT_GENERATED.join(loc.as_path()))?;
     let mut writer = std::io::BufWriter::new(file);
     writer.write_all(serialized.as_bytes())?;
     Ok(())
+}
+
+fn compact_integer_arrays(input: &str) -> String {
+    let bytes = input.as_bytes();
+    let mut stack: Vec<usize> = Vec::new();
+    let mut replacements: Vec<(usize, usize, String)> = Vec::new();
+    let mut in_string = false;
+    let mut escaped = false;
+
+    for (i, &b) in bytes.iter().enumerate() {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if b == b'\\' {
+                escaped = true;
+            } else if b == b'"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        match b {
+            b'"' => in_string = true,
+            b'[' => stack.push(i),
+            b']' => {
+                if let Some(start) = stack.pop() {
+                    let end = i + 1;
+                    let inner = &input[start + 1..i];
+
+                    if is_simple_integer_array(inner) {
+                        let compact = compact_array_inner(inner);
+                        replacements.push((start, end, format!("[{}]", compact)));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let mut out = input.to_string();
+    for (start, end, replacement) in replacements.into_iter().rev() {
+        out.replace_range(start..end, &replacement);
+    }
+    out
+}
+
+fn is_simple_integer_array(text: &str) -> bool {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+
+    trimmed.chars().all(|c| {
+        c.is_ascii_digit()
+            || c == ','
+            || c.is_ascii_whitespace()
+            || c == '-'
+    })
+}
+
+fn compact_array_inner(text: &str) -> String {
+    text.split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 #[derive(Debug, thiserror::Error)]

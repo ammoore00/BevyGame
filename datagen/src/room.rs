@@ -48,9 +48,9 @@ const LATEST_FORMAT: u8 = 1;
 fn basic_room(tile: &str) -> RoomData {
     const SIZE: usize = 7;
     const HALF_SIZE: usize = SIZE / 2;
-    const HEIGHT: usize = 7;
+    const HEIGHT: usize = 2;
 
-    let mut layout = vec![vec![vec![0; HEIGHT]; SIZE]; SIZE];
+    let mut layout = vec![vec![vec![0; SIZE]; SIZE]; HEIGHT];
     layout[0] = vec![vec![1; SIZE]; SIZE];
 
     for x in 0..SIZE {
