@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use std::ops::{Add, AddAssign};
 use serde::{Deserialize, Serialize};
 use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
+use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
 use crate::data::registry::ResourceRegistry;
 use crate::data::sprite::{SpriteRegistry, SpriteResource};
 
@@ -180,6 +180,8 @@ pub struct TileCodec {
     pub format: u8,
     pub sprite_sheet: ResourceLocation<SpriteResource>,
     pub sprite_index: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shape: Maybe<TileShape>,
 }
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
@@ -200,12 +202,14 @@ impl ResourceType for TileResource {
 pub struct TileAsset {
     sprite_sheet: ResourceLocation<SpriteResource>,
     sprite_index: u8,
+    pub shape: TileShape,
 }
 impl From<TileCodec> for TileAsset {
     fn from(codec: TileCodec) -> Self {
         Self {
             sprite_sheet: codec.sprite_sheet,
             sprite_index: codec.sprite_index,
+            shape: codec.shape.into_inner().unwrap_or_default(),
         }
     }
 }
@@ -218,19 +222,14 @@ impl TileAsset {
         self.sprite_index
     }
 
-    pub fn shape(&self) -> TileShape {
-        TileShape::Full { is_top: true }
+    pub fn shape(&self) -> &TileShape {
+        &self.shape
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TileShape {
-    Full {
-        is_top: bool,
-    },
-    Layer {
-        is_top: bool,
-    },
+    Full,
     SlopeLower(TileFacing),
     SlopeUpper(TileFacing),
     Stairs(TileFacing),
@@ -241,8 +240,7 @@ pub enum TileShape {
 impl PartialEq for TileShape {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (TileShape::Full { is_top: a }, TileShape::Full { is_top: b }) => a == b,
-            (TileShape::Layer { is_top: a }, TileShape::Layer { is_top: b }) => a == b,
+            (TileShape::Full, TileShape::Full) => true,
             (TileShape::SlopeLower(a), TileShape::SlopeLower(b)) => a == b,
             (TileShape::SlopeUpper(a), TileShape::SlopeUpper(b)) => a == b,
             (TileShape::Stairs(a), TileShape::Stairs(b)) => a == b,
@@ -277,7 +275,7 @@ impl PartialEq for TileShape {
 
 impl Default for TileShape {
     fn default() -> Self {
-        Self::Full { is_top: true }
+        Self::Full
     }
 }
 

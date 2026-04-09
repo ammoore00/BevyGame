@@ -1,18 +1,48 @@
 use bevy_game_2d::data::{ResourceLocation, ResourceType};
-use bevy_game_2d::datagen_api::tile::{TileCodec, TileResource};
+use bevy_game_2d::datagen_api::tile::{TileCodec, TileFacing, TileResource, TileShape};
 use crate::{create_dir, write_data, WriteError};
+
+const LATEST_FORMAT: u8 = 1;
+
+const GRASS_SPRITE_SHEET: &str = "grass";
+const GRASS: &str = "grass";
+const GRASS_LAYER: &str = "grass_layer";
+const GRASS_STAIRS_TOP_LEFT: &str = "grass_stairs_top_left";
+const GRASS_STAIRS_TOP_RIGHT: &str = "grass_stairs_top_right";
+const GRASS_STAIRS_BOTTOM_LEFT: &str = "grass_stairs_bottom_left";
+const GRASS_STAIRS_BOTTOM_RIGHT: &str = "grass_stairs_bottom_right";
+
+const DIRT_SPRITE_SHEET: &str = "dirt";
+const DIRT: &str = "dirt";
+const DIRT_LAYER: &str = "dirt_layer";
+
+const PLANKS_SPRITE_SHEET: &str = "planks";
+const PLANKS: &str = "planks";
+const PLANKS_LAYER: &str = "planks_layer";
+
+const LIGHT_PLANKS_SPRITE_SHEET: &str = "light_planks";
+const LIGHT_PLANKS: &str = "light_planks";
+const LIGHT_PLANKS_LAYER: &str = "light_planks_layer";
 
 pub fn generate_tiles() -> Result<(), WriteError> {
     create_dir(TileResource::root_dir())?;
 
-    create_tile_data(DIRT)?;
-    create_tile_data(DIRT_LAYER)?;
+    create_tile_data(TileData::new(GRASS, GRASS_SPRITE_SHEET, 0))?;
+    create_tile_data(TileData::new(GRASS_LAYER, GRASS_SPRITE_SHEET, 2))?;
+    create_tile_data(TileData::new(GRASS_STAIRS_TOP_LEFT, GRASS_SPRITE_SHEET, 24)
+        .with_shape(TileShape::Stairs(TileFacing::NegX)))?;
+    create_tile_data(TileData::new(GRASS_STAIRS_TOP_RIGHT, GRASS_SPRITE_SHEET, 25)
+        .with_shape(TileShape::Stairs(TileFacing::NegZ)))?;
+    create_tile_data(TileData::new(GRASS_STAIRS_BOTTOM_LEFT, GRASS_SPRITE_SHEET, 26)
+        .with_shape(TileShape::Stairs(TileFacing::PosX)))?;
+    create_tile_data(TileData::new(GRASS_STAIRS_BOTTOM_RIGHT, GRASS_SPRITE_SHEET, 27)
+        .with_shape(TileShape::Stairs(TileFacing::PosZ)))?;
 
-    create_tile_data(GRASS)?;
-    create_tile_data(GRASS_LAYER)?;
+    create_tile_data(TileData::new(DIRT, DIRT_SPRITE_SHEET, 1))?;
+    create_tile_data(TileData::new(DIRT_LAYER, DIRT_SPRITE_SHEET, 3))?;
 
-    create_tile_data(PLANKS)?;
-    create_tile_data(PLANKS_LAYER)?;
+    create_tile_data(TileData::new(PLANKS, PLANKS_SPRITE_SHEET, 0))?;
+    create_tile_data(TileData::new(PLANKS_LAYER, PLANKS_SPRITE_SHEET, 2))?;
 
     Ok(())
 }
@@ -28,26 +58,28 @@ fn create_tile_data(
 struct TileData {
     loc: &'static str,
     sprite_sheet: &'static str,
-    index: u8
+    index: u8,
+    shape: Option<TileShape>,
 }
 impl TileData {
-    const fn new(loc: &'static str, sprite_sheet: &'static str, index: u8) -> Self {
-        Self { loc, sprite_sheet, index }
+    pub fn new(loc: &'static str, sprite_sheet: &'static str, index: u8) -> Self {
+        Self {
+            loc,
+            sprite_sheet,
+            index,
+            shape: None,
+        }
+    }
+
+    pub fn with_shape(self, shape: TileShape) -> Self {
+        Self {
+            shape: Some(shape),
+            ..self
+        }
     }
 }
 impl From<TileData> for TileCodec {
     fn from(data: TileData) -> Self {
-        TileCodec::new(LATEST_FORMAT, data.sprite_sheet.parse().unwrap(), data.index)
+        TileCodec::new(LATEST_FORMAT, data.sprite_sheet.parse().unwrap(), data.index, data.shape.into())
     }
 }
-
-const LATEST_FORMAT: u8 = 1;
-
-const DIRT: TileData = TileData::new("dirt", "grass", 1);
-const DIRT_LAYER: TileData = TileData::new("dirt_layer", "grass", 3);
-
-const GRASS: TileData = TileData::new("grass", "grass", 0);
-const GRASS_LAYER: TileData = TileData::new("grass_layer", "grass", 2);
-
-const PLANKS: TileData = TileData::new("planks", "planks", 0);
-const PLANKS_LAYER: TileData = TileData::new("planks_layer", "planks", 2);

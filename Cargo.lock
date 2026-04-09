@@ -2064,6 +2064,7 @@ name = "datagen"
 version = "0.1.0"
 dependencies = [
  "bevy_game_2d",
+ "derive-new",
  "ron 0.10.1",
  "serde",
  "thiserror 2.0.17",

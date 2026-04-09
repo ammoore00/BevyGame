@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::ops::Deref;
 use std::path::Path;
 use std::sync::Arc;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::asset::io::Reader;
 use bevy::prelude::*;
+use bevy::reflect::erased_serde::__private::serde::Deserializer;
 use bevy::tasks::futures_lite::StreamExt;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 use crate::data::registry::ResourceRegistry;
 use crate::data::{ResourceLocation, ResourceType};
@@ -195,4 +198,49 @@ pub enum RonLoaderError {
     Io(#[from] std::io::Error),
     #[error("RON parse error: {0}")]
     Ron(#[from] ron::error::SpannedError),
+}
+
+/// Wrapper around Option<T> to be used as an optional value within a codec
+/// Used instead of Option to avoid Option enum values being included in
+/// output files
+#[derive(Default)]
+pub struct Maybe<T: Serialize>(pub Option<T>);
+impl<T: Serialize> Maybe<T> {
+    pub fn into_inner(self) -> Option<T> {
+        self.0
+    }
+}
+impl<T: Serialize> Deref for Maybe<T> {
+    type Target = Option<T>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl<T: Serialize> Serialize for Maybe<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match &self.0 {
+            Some(value) => value.serialize(serializer),
+            None => serializer.serialize_none(),
+        }
+    }
+}
+impl<'de, T> Deserialize<'de> for Maybe<T>
+where
+    T: Deserialize<'de> + Serialize
+{
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        let opt = Option::<T>::deserialize(deserializer)?;
+        Ok(Maybe(opt))
+    }
+}
+impl<T: Serialize> From<Option<T>> for Maybe<T> {
+    fn from(opt: Option<T>) -> Self {
+        Maybe(opt)
+    }
 }
