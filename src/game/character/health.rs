@@ -28,14 +28,14 @@ pub struct HealthEvent {
 }
 
 impl HealthEvent {
-    pub fn new(entity: Entity, event_type: HealthEventType) -> Self {
+    pub fn _new(entity: Entity, event_type: HealthEventType) -> Self {
         Self { entity, event_type }
     }
 }
 
 pub enum HealthEventType {
-    Heal(usize),
-    Damage(usize, DamageType),
+    _Heal(usize),
+    _Damage(usize, DamageType),
     _Set(usize),
     _FullHeal,
     _InstantDeath,
@@ -43,7 +43,7 @@ pub enum HealthEventType {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum DamageType {
-    Generic,
+    _Generic,
     _Fall,
 
     _Slash,
@@ -67,10 +67,10 @@ pub enum _DamageModifier {
 fn on_health_event(event: On<HealthEvent>, mut query: Query<&mut Health>) {
     if let Ok(mut health) = query.get_mut(event.entity) {
         match event.event_type {
-            HealthEventType::Heal(amount) => {
+            HealthEventType::_Heal(amount) => {
                 health.current += amount.min(health.max - health.current)
             }
-            HealthEventType::Damage(amount, _damage_type) => {
+            HealthEventType::_Damage(amount, _damage_type) => {
                 health.current -= amount.min(health.current)
             }
             HealthEventType::_Set(amount) => health.current = amount.clamp(0, health.max),

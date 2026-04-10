@@ -17,6 +17,7 @@ bevy = { version = "0.17", default-features = false, features = [
     "bevy_audio",
     "bevy_core_pipeline",
     "bevy_input_focus",
+    "bevy_log",
     "bevy_picking",
     "bevy_render",
     "bevy_sprite",
@@ -28,9 +29,15 @@ bevy = { version = "0.17", default-features = false, features = [
     "bevy_ui_render",
     "bevy_winit",
     "bevy_window",
+    "debug",
     "multi_threaded",
     "png",
+    "reflect_auto_register",
+    "serialize",
+    "std",
+    "sysinfo_plugin",
     "vorbis",
+    "wayland",
     "x11",
 ] }
 rand = "0.9"

@@ -152,8 +152,8 @@ pub fn merge_tile_map(map: &TileMap, other: TileMap, offset: IVec3) -> Result<()
             .entry(coords.clone())
             .and_modify(|_| {
                 overlaps.push(MergeTileCoords {
-                    coords: coords.clone(),
-                    offset,
+                    _coords: coords.clone(),
+                    _offset: offset,
                 });
             })
             .or_insert(*tile_entity);
@@ -174,17 +174,17 @@ pub enum TileMapMergeError {
 
 #[derive(Debug, Clone)]
 pub struct MergeTileCoords {
-    pub coords: TileCoords,
-    pub offset: IVec3,
+    pub _coords: TileCoords,
+    pub _offset: IVec3,
 }
 
 impl MergeTileCoords {
-    pub fn original_grid_coords(&self) -> IVec3 {
-        self.coords.0
+    pub fn _original_grid_coords(&self) -> IVec3 {
+        self._coords.0
     }
 
-    pub fn other_grid_coords(&self) -> IVec3 {
-        self.coords.0 - self.offset
+    pub fn _other_grid_coords(&self) -> IVec3 {
+        self._coords.0 - self._offset
     }
 }
 

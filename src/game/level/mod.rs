@@ -68,7 +68,7 @@ pub fn spawn_level(
         scale.0
     );
 
-    let rock = object(
+    let _rock = object(
         ObjectType::Rock,
         &object_assets,
         Vec3::new(7.0, 5.0, 6.0),

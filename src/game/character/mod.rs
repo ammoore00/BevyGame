@@ -341,7 +341,7 @@ mod state_transitions {
         IllegalTransition,
         BlockedByState(String),
         StateNotAllowed,
-        Other(String),
+        _Other(String),
     }
 
     impl Display for InvalidTransitionReason {
@@ -352,7 +352,7 @@ mod state_transitions {
                     write!(f, "Transition blocked: {}", msg)
                 }
                 InvalidTransitionReason::StateNotAllowed => write!(f, "State not allowed"),
-                InvalidTransitionReason::Other(msg) => write!(f, "Other: {}", msg),
+                InvalidTransitionReason::_Other(msg) => write!(f, "Other: {}", msg),
             }
         }
     }
@@ -373,7 +373,7 @@ pub mod default_states {
         app.register_type::<Attacking>();
     }
 
-    pub const DEFAULT_STATES: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
+    pub const _DEFAULT_STATES: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
         vec![
             TypeId::of::<Idle>(),
             TypeId::of::<Walking>(),
@@ -383,7 +383,7 @@ pub mod default_states {
         ]
     });
 
-    pub const DEFAULT_STATES_PASSIVE: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
+    pub const _DEFAULT_STATES_PASSIVE: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
         vec![
             TypeId::of::<Idle>(),
             TypeId::of::<Walking>(),
@@ -397,22 +397,22 @@ pub mod default_states {
             // Constructor automatically ignores self-transition rules,
             // so duplicates here are fine
             StateTransitionRule::always(
-                StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone()),
-                StateMatcher::Multiple(DEFAULT_STATES.clone()),
+                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
+                StateMatcher::Multiple(_DEFAULT_STATES.clone()),
             ),
             StateTransitionRule::new(
                 StateMatcher::Single(TypeId::of::<Attacking>()),
-                StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone()),
+                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
                 StateTransitionChecker::custom(Box::new(can_transition_from_attacking)),
             ),
         ]
     });
 
-    pub const DEFAULT_TRANSITIONS_PASSIVE: LazyCell<Vec<StateTransitionRule>> =
+    pub const _DEFAULT_TRANSITIONS_PASSIVE: LazyCell<Vec<StateTransitionRule>> =
         LazyCell::new(|| {
             vec![StateTransitionRule::always(
-                StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone()),
-                StateMatcher::Multiple(DEFAULT_STATES_PASSIVE.clone()),
+                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
+                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
             )]
         });
 

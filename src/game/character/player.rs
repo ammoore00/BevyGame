@@ -82,7 +82,7 @@ pub fn player(
         ..default()
     };
 
-    let default_states = default_states::DEFAULT_STATES;
+    let default_states = default_states::_DEFAULT_STATES;
     let states = default_states.clone();
 
     let default_transitions = default_states::DEFAULT_TRANSITIONS;

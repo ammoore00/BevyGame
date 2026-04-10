@@ -108,4 +108,4 @@ impl MapState {
 /// Data required to save the generation criteria and state changes to persistent storage
 /// for recreation when loading the game
 #[derive(Debug)]
-pub struct MapPersistence {}
+pub struct _MapPersistence {}

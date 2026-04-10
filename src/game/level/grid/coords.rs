@@ -4,7 +4,6 @@ use bevy::prelude::*;
 use parry3d::math::Isometry;
 use std::cmp::Ordering;
 use std::ops::Deref;
-use bevy::reflect::erased_serde::serialize;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub(in crate::game) const SCREEN_Z_SCALE: f32 = 2.0;

@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops::Deref;
-use std::path::Path;
 use std::sync::Arc;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::asset::io::Reader;
 use bevy::prelude::*;
 use bevy::reflect::erased_serde::__private::serde::Deserializer;
-use bevy::tasks::futures_lite::StreamExt;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;

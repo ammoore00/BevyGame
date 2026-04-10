@@ -189,11 +189,11 @@ impl From<Contact> for CollisionEvent {
 }
 
 pub mod codec {
-    pub struct ColliderCodec {
-        collider_type: ColliderTypeCodec,
+    pub struct _ColliderCodec {
+        collider_type: _ColliderTypeCodec,
     }
 
-    pub enum ColliderTypeCodec {
+    pub enum _ColliderTypeCodec {
         Cuboid,
         Capsule,
         ConvexHull,

@@ -6,7 +6,7 @@ use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
 use std::fmt::Debug;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::registry::ResourceRegistry;
@@ -20,7 +20,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 type RoomTileCoords = TileCoords;
-type RoomWorldCoords = WorldCoords;
+type _RoomWorldCoords = WorldCoords;
 
 #[derive(Serialize, Deserialize)]
 pub struct RoomCodec {
@@ -60,23 +60,23 @@ pub enum RoomType {
 #[derive(TypePath, Asset)]
 pub struct RoomDefinition {
     /// How this room is intended to be used
-    room_type: RoomType,
+    _room_type: RoomType,
     /// Connections to other rooms
-    connections: Vec<RoomConnection>,
+    _connections: Vec<RoomConnection>,
     /// How big this room is
-    bounds: UVec3,
+    _bounds: UVec3,
     /// Unique ID for this room
-    layout: RoomLayout,
+    _layout: RoomLayout,
 }
 impl From<RoomCodec> for RoomDefinition {
     fn from(codec: RoomCodec) -> Self {
         let layout = RoomLayout::new(codec.tile_palette, codec.tiles).unwrap();
         
         Self {
-            room_type: RoomType::Transition,
-            connections: codec.connections,
-            bounds: UVec3::ZERO,
-            layout,
+            _room_type: RoomType::Transition,
+            _connections: codec.connections,
+            _bounds: UVec3::ZERO,
+            _layout: layout,
         }
     }
 }
@@ -89,10 +89,10 @@ impl RoomDefinition {
         let bounds = layout.bounds();
 
         Self {
-            room_type,
-            connections,
-            bounds,
-            layout,
+            _room_type: room_type,
+            _connections: connections,
+            _bounds: bounds,
+            _layout: layout,
         }
     }
 
@@ -100,7 +100,7 @@ impl RoomDefinition {
         &self,
         builder_context: &mut RoomBuilderContext,
     ) -> TileMap {
-        self.layout.build(builder_context)
+        self._layout.build(builder_context)
     }
 }
 
