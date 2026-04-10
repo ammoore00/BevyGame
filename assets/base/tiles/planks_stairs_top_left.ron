@@ -1,0 +1,6 @@
+(
+    format: 1,
+    sprite_sheet: "base:planks",
+    sprite_index: 24,
+    shape: Stairs(NegX),
+)

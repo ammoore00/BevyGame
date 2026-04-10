@@ -2,6 +2,10 @@
     format: 1,
     tile_palette: [
         "base:grass",
+        "base:grass_stairs_top_left",
+        "base:grass_stairs_top_right",
+        "base:grass_stairs_bottom_left",
+        "base:grass_stairs_bottom_right",
     ],
     tiles: [
         [
@@ -16,10 +20,10 @@
         [
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
         ],
     ],

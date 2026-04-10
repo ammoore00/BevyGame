@@ -41,7 +41,8 @@ pub fn tile(
     tile_coords: impl Into<TileCoords> + Clone,
     tile_layout: &TileLayout,
 ) -> impl Bundle {
-    let tile = tile_registry.get(tile_id).unwrap();
+    let tile = tile_registry.get(tile_id)
+        .unwrap_or_else(|| panic!("Failed to find tile '{}' in registry!", tile_id));;
     let tile = tile_assets.get(tile).unwrap();
 
     let sprite_sheet = sprite_registry.get(tile.sprite_sheet())

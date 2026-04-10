@@ -235,7 +235,7 @@ where
     where
         D: Deserializer<'de>
     {
-        let opt = Option::<T>::deserialize(deserializer)?;
+        let opt = Some(T::deserialize(deserializer)?);
         Ok(Maybe(opt))
     }
 }

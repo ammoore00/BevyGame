@@ -2,6 +2,10 @@
     format: 1,
     tile_palette: [
         "base:planks",
+        "base:planks_stairs_top_left",
+        "base:planks_stairs_top_right",
+        "base:planks_stairs_bottom_left",
+        "base:planks_stairs_bottom_right",
     ],
     tiles: [
         [
@@ -16,10 +20,10 @@
         [
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
         ],
     ],

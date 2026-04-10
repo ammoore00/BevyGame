@@ -65,6 +65,9 @@ fn basic_room(tile: &str) -> RoomData {
         }
     }
 
+    layout[1][2][1] = 2;
+    layout[1][SIZE - 2][1] = 2;
+
     let basic_connections = vec![
         RoomConnection::new(
             [HALF_SIZE as i32, 0, 0].into(),
@@ -91,7 +94,13 @@ fn basic_room(tile: &str) -> RoomData {
     let loc = format!("basic_{}", tile);
     RoomData::new(
         loc.as_str(),
-        vec![tile.parse().unwrap()],
+        vec![
+            tile.parse().unwrap(),
+            format!("{}_stairs_top_left", tile).parse().unwrap(),
+            format!("{}_stairs_top_right", tile).parse().unwrap(),
+            format!("{}_stairs_bottom_left", tile).parse().unwrap(),
+            format!("{}_stairs_bottom_right", tile).parse().unwrap(),
+        ],
         layout,
         basic_connections,
     )
