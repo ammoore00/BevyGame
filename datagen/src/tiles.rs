@@ -18,7 +18,9 @@ const DIRT_LAYER: &str = "dirt_layer";
 
 const PLANKS_SPRITE_SHEET: &str = "planks";
 const PLANKS: &str = "planks";
+const PLANKS_LOWER: &str = "planks_lower";
 const PLANKS_LAYER: &str = "planks_layer";
+const PLANKS_LAYER_LOWER: &str = "planks_layer_lower";
 const PLANKS_STAIRS_TOP_LEFT: &str = "planks_stairs_top_left";
 const PLANKS_STAIRS_TOP_RIGHT: &str = "planks_stairs_top_right";
 const PLANKS_STAIRS_BOTTOM_LEFT: &str = "planks_stairs_bottom_left";
@@ -27,6 +29,10 @@ const PLANKS_STAIRS_BOTTOM_RIGHT: &str = "planks_stairs_bottom_right";
 const LIGHT_PLANKS_SPRITE_SHEET: &str = "light_planks";
 const LIGHT_PLANKS: &str = "light_planks";
 const LIGHT_PLANKS_LAYER: &str = "light_planks_layer";
+const LIGHT_PLANKS_STAIRS_TOP_LEFT: &str = "light_planks_stairs_top_left";
+const LIGHT_PLANKS_STAIRS_TOP_RIGHT: &str = "light_planks_stairs_top_right";
+const LIGHT_PLANKS_STAIRS_BOTTOM_LEFT: &str = "light_planks_stairs_bottom_left";
+const LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT: &str = "light_planks_stairs_bottom_right";
 
 pub fn generate_tiles() -> Result<(), WriteError> {
     create_dir(TileResource::root_dir())?;
@@ -54,6 +60,17 @@ pub fn generate_tiles() -> Result<(), WriteError> {
     create_tile_data(TileData::new(PLANKS_STAIRS_BOTTOM_LEFT, PLANKS_SPRITE_SHEET, 26)
         .with_shape(TileShape::Stairs(TileFacing::PosX)))?;
     create_tile_data(TileData::new(PLANKS_STAIRS_BOTTOM_RIGHT, PLANKS_SPRITE_SHEET, 27)
+        .with_shape(TileShape::Stairs(TileFacing::PosZ)))?;
+
+    create_tile_data(TileData::new(LIGHT_PLANKS, LIGHT_PLANKS_SPRITE_SHEET, 0))?;
+    create_tile_data(TileData::new(LIGHT_PLANKS_LAYER, LIGHT_PLANKS_SPRITE_SHEET, 2))?;
+    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_TOP_LEFT, LIGHT_PLANKS_SPRITE_SHEET, 24)
+        .with_shape(TileShape::Stairs(TileFacing::NegX)))?;
+    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_TOP_RIGHT, LIGHT_PLANKS_SPRITE_SHEET, 25)
+        .with_shape(TileShape::Stairs(TileFacing::NegZ)))?;
+    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_BOTTOM_LEFT, LIGHT_PLANKS_SPRITE_SHEET, 26)
+        .with_shape(TileShape::Stairs(TileFacing::PosX)))?;
+    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT, LIGHT_PLANKS_SPRITE_SHEET, 27)
         .with_shape(TileShape::Stairs(TileFacing::PosZ)))?;
 
     Ok(())

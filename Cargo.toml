@@ -12,7 +12,27 @@ members = [
 resolver = "2"
 
 [dependencies]
-bevy = { version = "0.17" }
+bevy = { version = "0.17", default-features = false, features = [
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_core_pipeline",
+    "bevy_input_focus",
+    "bevy_picking",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_sprite_picking_backend",
+    "bevy_state",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_ui_picking_backend",
+    "bevy_ui_render",
+    "bevy_winit",
+    "bevy_window",
+    "multi_threaded",
+    "png",
+    "vorbis",
+    "x11",
+] }
 rand = "0.9"
 # Compile out low-severity logs to improve performance.
 # Remove these features if you want to profile your game with tracy.
