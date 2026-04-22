@@ -187,15 +187,3 @@ impl From<Contact> for CollisionEvent {
         Self(contact)
     }
 }
-
-pub mod codec {
-    pub struct _ColliderCodec {
-        collider_type: _ColliderTypeCodec,
-    }
-
-    pub enum _ColliderTypeCodec {
-        Cuboid,
-        Capsule,
-        ConvexHull,
-    }
-}

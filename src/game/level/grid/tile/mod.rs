@@ -229,8 +229,9 @@ impl TileAsset {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub enum TileShape {
+    #[default]
     Full,
     SlopeLower(TileFacing),
     SlopeUpper(TileFacing),
@@ -253,11 +254,11 @@ impl PartialEq for TileShape {
                         .map(|v| [v.x, v.y, v.z])
                         .collect();
 
-                    s.sort_by(|a, b| {
-                        a[0].total_cmp(&b[0])
+                    s.sort_by(
+                        |a, b| a[0].total_cmp(&b[0])
                             .then(a[1].total_cmp(&b[1]))
                             .then(a[2].total_cmp(&b[2]))
-                    });
+                    );
 
                     s
                 };
@@ -272,12 +273,6 @@ impl PartialEq for TileShape {
             },
             _ => false,
         }
-    }
-}
-
-impl Default for TileShape {
-    fn default() -> Self {
-        Self::Full
     }
 }
 
