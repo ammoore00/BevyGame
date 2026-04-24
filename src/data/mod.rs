@@ -11,6 +11,7 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 use bevy::prelude::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use crate::data::registry::ResourceRegistry;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((sprite::plugin, loader::plugin));
@@ -21,6 +22,19 @@ pub struct ResourceLocation<T: ResourceType> {
     namespace: Namespace,
     id: ResourceId,
     phantom_data: PhantomData<T>,
+}
+impl<T: ResourceType> ResourceLocation<T> {
+    pub fn namespace(&self) -> &Namespace {
+        &self.namespace
+    }
+    
+    pub fn id(&self) -> &ResourceId {
+        &self.id
+    }
+    
+    pub fn get(&self, registry: &ResourceRegistry<T>) -> Option<Handle<T::AssetType>> {
+        registry.get(self).cloned()
+    }
 }
 impl<T: ResourceType> Serialize for ResourceLocation<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

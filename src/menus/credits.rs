@@ -5,6 +5,7 @@ use crate::theme::widget::ButtonAssets;
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
 use bevy::input_focus::InputFocus;
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
+use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu);
@@ -21,6 +22,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn spawn_credits_menu(
     button_assets: Res<ButtonAssets>,
+    font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
@@ -31,13 +33,13 @@ fn spawn_credits_menu(
             GlobalZIndex(2),
             DespawnOnExit(Menu::Credits),
             children![
-                widget::header("Created by"),
-                created_by(),
-                widget::header("Assets"),
-                assets(),
-                widget::header("License"),
-                widget::label("This game is provided under the Mozilla Public License 2.0"),
-                license(),
+                widget::header("Created by", &font_builder),
+                created_by(&font_builder),
+                widget::header("Assets", &font_builder),
+                assets(&font_builder),
+                widget::header("License", &font_builder),
+                widget::label("This game is provided under the Mozilla Public License 2.0", &font_builder),
+                license(&font_builder),
             ],
         ))
         .id();
@@ -47,6 +49,7 @@ fn spawn_credits_menu(
             &button_assets,
             &mut texture_atlas_layouts,
             "Back",
+            &font_builder,
             go_back_on_click,
         ))
         .id();
@@ -54,11 +57,11 @@ fn spawn_credits_menu(
     input_focus.0 = Some(back_button);
 }
 
-fn created_by() -> impl Bundle {
-    grid(vec![["The Lady Dawn", "Art, Programming"]])
+fn created_by(font_builder: &FontBuilder) -> impl Bundle {
+    grid(vec![["The Lady Dawn", "Art, Programming"]], font_builder)
 }
 
-fn assets() -> impl Bundle {
+fn assets(font_builder: &FontBuilder) -> impl Bundle {
     grid(vec![
         ["Button SFX", "CC0 by Jaszunio15"],
         [
@@ -72,10 +75,10 @@ fn assets() -> impl Bundle {
             "Bevy Logo",
             "All rights reserved by the Bevy Foundation, permission granted for splash screen use when unmodified",
         ],
-    ])
+    ], font_builder)
 }
 
-fn license() -> impl Bundle {
+fn license(font_builder: &FontBuilder) -> impl Bundle {
     grid(vec![
         [
             "More Information",
@@ -85,10 +88,18 @@ fn license() -> impl Bundle {
             "Full License Text",
             "https://www.mozilla.org/en-US/MPL/2.0/",
         ],
-    ])
+    ], font_builder)
 }
 
-fn grid(content: Vec<[&'static str; 2]>) -> impl Bundle {
+fn grid(content: Vec<[&'static str; 2]>, font_builder: &FontBuilder) -> impl Bundle {
+    let content = content.into_iter().map(|row| {
+        [
+            widget::label(row[0], &font_builder),
+            widget::label(row[1], &font_builder)
+        ]
+    })
+        .collect::<Vec<_>>();
+    
     (
         Name::new("Grid"),
         Node {
@@ -101,7 +112,7 @@ fn grid(content: Vec<[&'static str; 2]>) -> impl Bundle {
         Children::spawn(SpawnIter(content.into_iter().flatten().enumerate().map(
             |(i, text)| {
                 (
-                    widget::label(text),
+                    text,
                     Node {
                         justify_self: if i.is_multiple_of(2) {
                             JustifySelf::End

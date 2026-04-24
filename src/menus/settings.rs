@@ -9,6 +9,7 @@ use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::InputFocus;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
+use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu);
@@ -27,6 +28,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn spawn_settings_menu(
     button_assets: Res<ButtonAssets>,
+    font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
@@ -34,6 +36,7 @@ fn spawn_settings_menu(
 ) {
     let grid = settings_grid(
         &button_assets,
+        &font_builder,
         &mut texture_atlas_layouts,
         directional_nav_map,
         &mut commands,
@@ -44,7 +47,7 @@ fn spawn_settings_menu(
             widget::ui_root("Settings Menu"),
             GlobalZIndex(2),
             DespawnOnExit(Menu::Settings),
-            children![widget::header("Settings"),],
+            children![widget::header("Settings", &font_builder),],
         ))
         .id();
 
@@ -55,6 +58,7 @@ fn spawn_settings_menu(
             &button_assets,
             &mut texture_atlas_layouts,
             "Back",
+            &font_builder,
             go_back_on_click,
         ))
         .id();
@@ -65,12 +69,14 @@ fn spawn_settings_menu(
 
 fn settings_grid(
     button_assets: &ButtonAssets,
+    font_builder: &FontBuilder,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     directional_nav_map: ResMut<DirectionalNavigationMap>,
     commands: &mut Commands,
 ) -> Entity {
     let volume_widget = global_volume_widget(
         button_assets,
+        &font_builder,
         texture_atlas_layouts,
         directional_nav_map,
         commands,
@@ -87,7 +93,7 @@ fn settings_grid(
                 ..default()
             },
             children![(
-                widget::label("Master Volume"),
+                widget::label("Master Volume", &font_builder),
                 Node {
                     justify_self: JustifySelf::End,
                     ..default()
@@ -103,6 +109,7 @@ fn settings_grid(
 
 fn global_volume_widget(
     button_assets: &ButtonAssets,
+    font_builder: &FontBuilder,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     _directional_nav_map: ResMut<DirectionalNavigationMap>,
     commands: &mut Commands,
@@ -122,6 +129,7 @@ fn global_volume_widget(
             button_assets,
             texture_atlas_layouts,
             "-",
+            &font_builder,
             lower_global_volume,
         ))
         .id();
@@ -135,7 +143,7 @@ fn global_volume_widget(
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            children![(widget::label(""), GlobalVolumeLabel)],
+            children![(widget::label("", &font_builder), GlobalVolumeLabel)],
         ))
         .id();
     commands.entity(ui_root).add_child(current_volume_display);
@@ -145,6 +153,7 @@ fn global_volume_widget(
             button_assets,
             texture_atlas_layouts,
             "+",
+            &font_builder,
             raise_global_volume,
         ))
         .id();

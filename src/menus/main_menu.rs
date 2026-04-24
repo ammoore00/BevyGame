@@ -5,6 +5,7 @@ use bevy::input_focus::InputFocus;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::math::CompassOctant;
 use bevy::prelude::*;
+use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Main), spawn_main_menu);
@@ -12,6 +13,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn spawn_main_menu(
     button_assets: Res<widget::ButtonAssets>,
+    font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
@@ -32,6 +34,7 @@ fn spawn_main_menu(
                 &button_assets,
                 &mut texture_atlas_layouts,
                 "Play",
+                &font_builder,
                 enter_loading_or_gameplay_screen,
             ))
             .id();
@@ -42,6 +45,7 @@ fn spawn_main_menu(
                 &button_assets,
                 &mut texture_atlas_layouts,
                 "Settings",
+                &font_builder,
                 open_settings_menu,
             ))
             .id();
@@ -52,6 +56,7 @@ fn spawn_main_menu(
                 &button_assets,
                 &mut texture_atlas_layouts,
                 "Credits",
+                &font_builder,
                 open_credits_menu,
             ))
             .id();
@@ -62,6 +67,7 @@ fn spawn_main_menu(
                 &button_assets,
                 &mut texture_atlas_layouts,
                 "Exit",
+                &font_builder,
                 exit_app,
             ))
             .id();
@@ -79,6 +85,7 @@ fn spawn_main_menu(
         let play_button = commands
             .spawn(widget::button(
                 "Play",
+                &font_builder,
                 crate::menus::main_menu::enter_loading_or_gameplay_screen,
             ))
             .id();
@@ -87,6 +94,7 @@ fn spawn_main_menu(
         let settings_button = commands
             .spawn(widget::button(
                 "Settings",
+                &font_builder,
                 crate::menus::main_menu::open_settings_menu,
             ))
             .id();
@@ -95,6 +103,7 @@ fn spawn_main_menu(
         let credits_button = commands
             .spawn(widget::button(
                 "Credits",
+                &font_builder,
                 crate::menus::main_menu::open_credits_menu,
             ))
             .id();

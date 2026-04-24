@@ -6,6 +6,7 @@ mod hud;
 mod main_menu;
 mod pause;
 mod settings;
+pub(super) mod font;
 
 use bevy::prelude::*;
 
@@ -14,6 +15,7 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_plugins((
         credits::plugin,
+        font::plugin,
         hud::plugin,
         main_menu::plugin,
         settings::plugin,

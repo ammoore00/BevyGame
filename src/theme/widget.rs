@@ -8,6 +8,7 @@ use bevy::{
     ecs::{spawn::SpawnWith, system::IntoObserverSystem},
     prelude::*,
 };
+use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<ButtonAssets>();
@@ -16,20 +17,12 @@ pub(super) fn plugin(app: &mut App) {
         &mut app.world_mut().resource_mut(),
         AssetId::default(),
         Font {
-            data: include_bytes!("../../assets/BoldPixels.ttf")
+            data: include_bytes!("../../assets/base/fonts/bold_pixels.ttf")
                 .to_vec()
                 .into(),
         },
     )
     .expect("Failed to load font");
-}
-
-#[derive(Resource)]
-struct GameFont(Handle<Font>);
-
-fn load_font(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let font_handle = asset_server.load("assets/BoldPixels.ttf");
-    commands.insert_resource(GameFont(font_handle));
 }
 
 #[derive(Component, Debug)]
@@ -78,21 +71,27 @@ pub fn scrollable_ui_root(name: impl Into<Cow<'static, str>>) -> impl Bundle {
 }
 
 /// A simple header label. Bigger than [`label`].
-pub fn header(text: impl Into<String>) -> impl Bundle {
+pub fn header(
+    text: impl Into<String>,
+    font_builder: &FontBuilder,
+) -> impl Bundle {
     (
         Name::new("Header"),
         Text(text.into()),
-        TextFont::from_font_size(40.0),
+        font_builder.with_size(40.0),
         TextColor(HEADER_TEXT),
     )
 }
 
 /// A simple text label.
-pub fn label(text: impl Into<String>) -> impl Bundle {
+pub fn label(
+    text: impl Into<String>,
+    font_builder: &FontBuilder,
+) -> impl Bundle {
     (
         Name::new("Label"),
         Text(text.into()),
-        TextFont::from_font_size(24.0),
+        font_builder.with_size(24.0),
         TextColor(LABEL_TEXT),
     )
 }
@@ -102,6 +101,7 @@ pub fn button<E, B, M, I>(
     button_assets: &ButtonAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
+    font_builder: &FontBuilder,
     action: I,
 ) -> impl Bundle
 where
@@ -113,6 +113,7 @@ where
         button_assets,
         texture_atlas_layouts,
         text,
+        font_builder,
         action,
         (Node {
             width: px(380),
@@ -129,6 +130,7 @@ pub fn button_small<E, B, M, I>(
     button_assets: &ButtonAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
+    font_builder: &FontBuilder,
     action: I,
 ) -> impl Bundle
 where
@@ -140,6 +142,7 @@ where
         button_assets,
         texture_atlas_layouts,
         text,
+        font_builder,
         action,
         Node {
             width: px(30),
@@ -156,6 +159,7 @@ fn button_base<E, B, M, I>(
     button_assets: &ButtonAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
+    font_builder: &FontBuilder,
     action: I,
     button_bundle: impl Bundle,
 ) -> impl Bundle
@@ -172,6 +176,8 @@ where
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 8, 8, None, None);
     let layout = texture_atlas_layouts.add(layout);
 
+    let font = font_builder.with_size(40.0);
+    
     (
         Name::new("Button"),
         ButtonRoot,
@@ -195,7 +201,7 @@ where
                     children![(
                         Name::new("Button Text"),
                         Text(text),
-                        TextFont::from_font_size(40.0),
+                        font,
                         TextColor(BUTTON_TEXT),
                         Node {
                             justify_self: JustifySelf::Center,

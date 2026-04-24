@@ -7,6 +7,7 @@ use bevy::input_focus::InputFocus;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::math::CompassOctant;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
+use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Pause), spawn_pause_menu);
@@ -24,6 +25,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn spawn_pause_menu(
     button_assets: Res<ButtonAssets>,
+    font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
@@ -34,7 +36,7 @@ fn spawn_pause_menu(
             widget::ui_root("Pause Menu"),
             GlobalZIndex(2),
             DespawnOnExit(Menu::Pause),
-            children![widget::header("Game paused")],
+            children![widget::header("Game paused", &font_builder)],
         ))
         .id();
 
@@ -43,6 +45,7 @@ fn spawn_pause_menu(
             &button_assets,
             &mut texture_atlas_layouts,
             "Continue",
+            &font_builder,
             close_menu,
         ))
         .id();
@@ -53,6 +56,7 @@ fn spawn_pause_menu(
             &button_assets,
             &mut texture_atlas_layouts,
             "Settings",
+            &font_builder,
             open_settings_menu,
         ))
         .id();
@@ -63,6 +67,7 @@ fn spawn_pause_menu(
             &button_assets,
             &mut texture_atlas_layouts,
             "Quit to title",
+            &font_builder,
             quit_to_title,
         ))
         .id();
