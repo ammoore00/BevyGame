@@ -177,7 +177,7 @@ impl AddAssign for TileEdges {
 
 pub type TileRegistry = ResourceRegistry<TileResource>;
 
-#[derive(derive_new::new, Serialize, Deserialize)]
+#[derive(derive_new::new, Serialize, Deserialize, TypePath)]
 pub struct TileCodec {
     pub format: u8,
     pub sprite_sheet: ResourceLocation<SpriteResource>,

@@ -23,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 type RoomTileCoords = TileCoords;
 type _RoomWorldCoords = WorldCoords;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, TypePath)]
 pub struct RoomCodec {
     format: u8,
     tile_palette: Vec<ResourceLocation<TileResource>>,

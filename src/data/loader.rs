@@ -146,16 +146,17 @@ impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
 pub enum LoaderError {
 }
 
+#[derive(TypePath)]
 pub struct RonAssetLoader<Codec, AssetType>
 where
-    Codec: DeserializeOwned + Into<AssetType> + Send + Sync + 'static,
+    Codec: DeserializeOwned + TypePath + Into<AssetType> + Send + Sync + 'static,
     AssetType: Asset + Send + Sync + 'static,
 {
     phantom_data: PhantomData<(Codec, AssetType)>,
 }
 impl<Codec, AssetType> Default for RonAssetLoader<Codec, AssetType>
 where
-    Codec: DeserializeOwned + Into<AssetType> + Send + Sync + 'static,
+    Codec: DeserializeOwned + TypePath + Into<AssetType> + Send + Sync + 'static,
     AssetType: Asset + Send + Sync + 'static,
 {
     fn default() -> Self {
@@ -166,7 +167,7 @@ where
 }
 impl<Codec, AssetType> AssetLoader for RonAssetLoader<Codec, AssetType>
 where
-    Codec: DeserializeOwned + Into<AssetType> + Send + Sync + 'static,
+    Codec: DeserializeOwned + TypePath + Into<AssetType> + Send + Sync + 'static,
     AssetType: Asset + Send + Sync + 'static,
 {
     type Asset = AssetType;

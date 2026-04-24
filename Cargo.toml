@@ -12,7 +12,7 @@ members = [
 resolver = "2"
 
 [dependencies]
-bevy = { version = "0.17", default-features = false, features = [
+bevy = { version = "0.18.1", default-features = false, features = [
     "bevy_asset",
     "bevy_audio",
     "bevy_core_pipeline",
@@ -22,11 +22,9 @@ bevy = { version = "0.17", default-features = false, features = [
     "bevy_picking",
     "bevy_render",
     "bevy_sprite",
-    "bevy_sprite_picking_backend",
     "bevy_state",
     "bevy_text",
     "bevy_ui",
-    "bevy_ui_picking_backend",
     "bevy_ui_render",
     "bevy_winit",
     "bevy_window",
@@ -35,8 +33,10 @@ bevy = { version = "0.17", default-features = false, features = [
     "png",
     "reflect_auto_register",
     "serialize",
+    "sprite_picking",
     "std",
     "sysinfo_plugin",
+    "ui_picking",
     "vorbis",
     "wayland",
     "x11",
