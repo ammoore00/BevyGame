@@ -67,7 +67,7 @@ impl MapDefinition {
             let room = transition_pool.0[index].room();
 
             let room = room_builder_context.room_registry.get(room).unwrap();
-            let room = room_builder_context.room_assets.get(room).unwrap();
+            let room = room_builder_context.room_assets.get(room).cloned().unwrap();
 
             let room_tile_map = room.build(room_builder_context);
 
@@ -84,7 +84,7 @@ impl MapDefinition {
             room_builder_context.commands.entity(grid_entity).add_child(*tile);
 
             let tile = TileEntity(room_builder_context.commands.entity(*tile).id());
-            set_tile_location(tile, tile_coords.clone(), room_builder_context.commands);
+            set_tile_location(tile, tile_coords.clone(), &mut room_builder_context.commands);
         }
 
         MapState {

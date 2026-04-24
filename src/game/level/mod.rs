@@ -39,21 +39,13 @@ impl FromWorld for LevelAssets {
 
 /// A system that spawns the main level.
 pub fn spawn_level(
-    mut commands: Commands,
     scale: Res<Scale>,
 
     level_assets: Res<LevelAssets>,
     level_palettes: Res<Palettes>,
     palette_assets: Res<Assets<Palette>>,
 
-    sprite_registry: Res<SpriteRegistry>,
-
-    room_registry: Res<RoomRegistry>,
-    room_assets: Res<Assets<RoomDefinition>>,
-    
-    tile_registry: Res<TileRegistry>,
-    tile_layout: Res<TileLayout>,
-    tile_assets: Res<Assets<TileAsset>>,
+    mut builder_context: RoomBuilderContext,
 
     player_assets: Res<PlayerAssets>,
     object_assets: Res<ObjectAssets>,
@@ -77,7 +69,7 @@ pub fn spawn_level(
         0.5,
     );
 
-    let level = commands
+    let level = builder_context.commands
         .spawn((
             Name::new("Level"),
             Transform::default(),
@@ -96,17 +88,6 @@ pub fn spawn_level(
 
     let palettes = level_palettes.into_inner();
     let palette = palette_assets.get(palettes.standard.id()).unwrap();
-        
-    let mut builder_context = RoomBuilderContext {
-        commands: &mut commands,
-        scale: *scale,
-        tile_layout: &tile_layout,
-        tile_registry: &tile_registry,
-        tile_assets: &tile_assets,
-        sprite_registry: &sprite_registry,
-        room_registry: &room_registry,
-        room_assets: &room_assets,
-    };
     
     let map = &palette.main_map_pool().0[0];
     let rng = rand::rng();
@@ -115,5 +96,5 @@ pub fn spawn_level(
         palette,
         &mut builder_context,
     );
-    commands.entity(level).add_child(map_state.grid());
+    builder_context.commands.entity(level).add_child(map_state.grid());
 }

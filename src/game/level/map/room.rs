@@ -6,6 +6,7 @@ use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
 use std::fmt::Debug;
+use bevy::ecs::system::SystemParam;
 use serde::{Deserialize, Serialize};
 use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
@@ -49,7 +50,7 @@ impl RoomCodec {
 /// The type of room this is
 /// Set pieces and injectables are rooms designed for a specific instance
 /// Transitions are designed to be randomly selected in connector sections from a pool
-#[derive(Debug, Reflect)]
+#[derive(Debug, Clone, Copy, Reflect)]
 pub enum RoomType {
     SetPiece,
     Injectable,
@@ -57,7 +58,7 @@ pub enum RoomType {
 }
 
 /// Elements required to build a room dynamically
-#[derive(TypePath, Asset)]
+#[derive(Debug, Clone, TypePath, Asset)]
 pub struct RoomDefinition {
     /// How this room is intended to be used
     _room_type: RoomType,
@@ -208,12 +209,12 @@ impl RoomLayout {
                     let tile = context
                         .commands
                         .spawn(tile(
-                            context.tile_registry,
-                            context.tile_assets,
-                            context.sprite_registry,
+                            context.tile_registry.as_ref(),
+                            context.tile_assets.as_ref(),
+                            context.sprite_registry.as_ref(),
                             &tile_type,
                             coords.clone(),
-                            context.tile_layout,
+                            context.tile_layout.as_ref(),
                         ))
                         .id();
 
@@ -242,17 +243,16 @@ pub enum RoomLayoutError {
 }
 
 /// Context holding references to data necessary to build rooms from their definitions
-///
-/// RoomBuilderContext is a reference type which is designed to be passed by value
-pub struct RoomBuilderContext<'a, 'w, 's> {
-    pub commands: &'a mut Commands<'w, 's>,
-    pub scale: Scale,
-    pub tile_layout: &'a TileLayout,
-    pub tile_registry: &'a TileRegistry,
-    pub tile_assets: &'a Assets<TileAsset>,
-    pub sprite_registry: &'a SpriteRegistry,
-    pub room_registry: &'a RoomRegistry,
-    pub room_assets: &'a Assets<RoomDefinition>,
+#[derive(SystemParam)]
+pub struct RoomBuilderContext<'w, 's> {
+    pub commands: Commands<'w, 's>,
+    pub scale: Res<'w, Scale>,
+    pub tile_layout: Res<'w, TileLayout>,
+    pub tile_registry: Res<'w, TileRegistry>,
+    pub tile_assets: Res<'w, Assets<TileAsset>>,
+    pub sprite_registry: Res<'w, SpriteRegistry>,
+    pub room_registry: Res<'w, RoomRegistry>,
+    pub room_assets: Res<'w, Assets<RoomDefinition>>,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
