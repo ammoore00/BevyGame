@@ -1,5 +1,4 @@
 pub mod registry;
-pub mod sprite;
 pub mod loader;
 
 use std::fmt::Display;
@@ -14,7 +13,7 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use crate::data::registry::ResourceRegistry;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((sprite::plugin, loader::plugin));
+    app.add_plugins((loader::plugin,));
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
@@ -90,19 +89,18 @@ impl<T: ResourceType> ResourceLocation<T> {
             .ok_or(ResourceLocationParseError::InvalidPath(path.display().to_string()))?;
         let namespace = Namespace::from_str(namespace)?;
 
-        let Some(component) = components.next() else {
-            return Err(ResourceLocationParseError::Empty);
-        };
+        let path_without_namespace = components.as_path();
 
-        if component.as_os_str() != T::root_dir() {
-            return Err(ResourceLocationParseError::InvalidPath(format!(
+        let id_path = path_without_namespace
+            .strip_prefix(T::root_dir())
+            .map_err(|_| ResourceLocationParseError::InvalidPath(format!(
                 "Mismatched root dir: {}, expected: {}",
                 path.display(),
                 T::root_dir()
-            )));
-        }
+            )))?;
 
-        let id = components
+        let id = id_path
+            .components()
             .map(|c| c.as_os_str().to_str().ok_or(ResourceLocationParseError::InvalidPath(path.display().to_string())))
             .filter_map(|s| s.ok())
             .collect::<Vec<_>>()

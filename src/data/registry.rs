@@ -4,7 +4,9 @@ use bevy::prelude::*;
 use crate::data::{ResourceLocation, ResourceType};
 
 #[derive(SystemParam)]
-pub struct SystemRegistry<'w, T: ResourceType>(Res<'w, ResourceRegistry<T>>);
+pub struct SystemRegistry<'w, T: ResourceType> {
+    _registry: Res<'w, ResourceRegistry<T> >
+}
 
 /// Maps resource locations to bevy asset handles
 #[derive(Debug, Resource)]
@@ -61,5 +63,18 @@ impl<T: ResourceType> ResourceRegistry<T> {
 
     pub fn manifest(&self) -> &HashSet<ResourceLocation<T>> {
         &self.manifest
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&ResourceLocation<T>, &Handle<T::AssetType>)> {
+        self.registry.iter()
+    }
+}
+
+impl<T: ResourceType> IntoIterator for ResourceRegistry<T> {
+    type Item = (ResourceLocation<T>, Handle<T::AssetType>);
+    type IntoIter = std::collections::hash_map::IntoIter<ResourceLocation<T>, Handle<T::AssetType>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.registry.into_iter()
     }
 }

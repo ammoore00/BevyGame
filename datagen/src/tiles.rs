@@ -1,5 +1,6 @@
 use bevy_game_2d::data::{ResourceLocation, ResourceType};
-use bevy_game_2d::datagen_api::tile::{TileCodec, TileFacing, TileResource, TileShape};
+use bevy_game_2d::datagen_api::tile::{TileFacing, TileShape};
+use bevy_game_2d::datagen_api::tile::assets::{TileCodec, TileResource};
 use crate::{create_dir, write_data, WriteError};
 
 const LATEST_FORMAT: u8 = 1;

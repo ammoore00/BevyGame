@@ -1,7 +1,7 @@
 use crate::Scale;
 use crate::game::level::grid;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
-use crate::game::level::grid::tile::assets::TileLayout;
+use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource};
 use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
@@ -11,8 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::registry::ResourceRegistry;
-use crate::data::sprite::SpriteRegistry;
-use crate::datagen_api::tile::{TileAsset, TileRegistry, TileResource};
+use crate::datagen_api::tile::assets::TileSpriteRegistry;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
@@ -250,7 +249,7 @@ pub struct RoomBuilderContext<'w, 's> {
     pub tile_layout: Res<'w, TileLayout>,
     pub tile_registry: Res<'w, TileRegistry>,
     pub tile_assets: Res<'w, Assets<TileAsset>>,
-    pub sprite_registry: Res<'w, SpriteRegistry>,
+    pub sprite_registry: Res<'w, TileSpriteRegistry>,
     pub room_registry: Res<'w, RoomRegistry>,
     pub room_assets: Res<'w, Assets<RoomDefinition>>,
 }

@@ -7,10 +7,10 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign};
 use serde::{Deserialize, Serialize};
-use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
-use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
-use crate::data::registry::ResourceRegistry;
-use crate::data::sprite::{SpriteRegistry, SpriteResource};
+use assets::{TileAsset, TileCodec, TileRegistry, TileResource};
+use crate::data::ResourceLocation;
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
+use crate::datagen_api::tile::assets::TileSpriteRegistry;
 
 pub mod assets;
 mod collision;
@@ -35,7 +35,7 @@ pub fn tile(
     tile_registry: &TileRegistry,
     tile_assets: &Assets<TileAsset>,
 
-    sprite_registry: &SpriteRegistry,
+    sprite_registry: &TileSpriteRegistry,
 
     tile_id: &ResourceLocation<TileResource>,
     tile_coords: impl Into<TileCoords> + Clone,
@@ -48,7 +48,7 @@ pub fn tile(
 
     let sprite_sheet = sprite_registry.get(tile.sprite_sheet())
         .cloned()
-        .unwrap_or_else(|| panic!("Failed to retrieve sprite sheet '{}' for tile '{}'", tile.sprite_sheet(), tile_id));
+        .unwrap_or_else(|| panic!("Failed to retrieve sprite sheet '{}' for tile '{}'. Full sprite sheet path: {}", tile.sprite_sheet(), tile_id, tile.sprite_sheet().as_path().to_string_lossy()));
     let layout = tile_layout.layout().clone();
 
     let edge_indices = Vec::new();
@@ -172,60 +172,6 @@ impl AddAssign for TileEdges {
         self.neg_x |= other.neg_x;
         self.pos_z |= other.pos_z;
         self.neg_z |= other.neg_z;
-    }
-}
-
-pub type TileRegistry = ResourceRegistry<TileResource>;
-
-#[derive(derive_new::new, Serialize, Deserialize, TypePath)]
-pub struct TileCodec {
-    pub format: u8,
-    pub sprite_sheet: ResourceLocation<SpriteResource>,
-    pub sprite_index: u8,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub shape: Maybe<TileShape>,
-}
-
-#[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
-pub struct TileResource;
-impl ResourceType for TileResource {
-    type AssetType = TileAsset;
-
-    fn root_dir() -> &'static str {
-        "tiles"
-    }
-
-    fn file_type() -> ResourceFileType {
-        ResourceFileType::Data
-    }
-}
-
-#[derive(Debug, Clone, Asset, TypePath)]
-pub struct TileAsset {
-    sprite_sheet: ResourceLocation<SpriteResource>,
-    sprite_index: u8,
-    pub shape: TileShape,
-}
-impl From<TileCodec> for TileAsset {
-    fn from(codec: TileCodec) -> Self {
-        Self {
-            sprite_sheet: codec.sprite_sheet,
-            sprite_index: codec.sprite_index,
-            shape: codec.shape.into_inner().unwrap_or_default(),
-        }
-    }
-}
-impl TileAsset {
-    pub fn sprite_sheet(&self) -> &ResourceLocation<SpriteResource> {
-        &self.sprite_sheet
-    }
-
-    pub fn sprite_index(&self) -> u8 {
-        self.sprite_index
-    }
-
-    pub fn shape(&self) -> &TileShape {
-        &self.shape
     }
 }
 
