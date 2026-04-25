@@ -243,7 +243,7 @@ impl FromWorld for ButtonAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            button_sprite: assets.load("images/ui/buttons.png"),
+            button_sprite: assets.load("base/images/ui/buttons.png"),
         }
     }
 }

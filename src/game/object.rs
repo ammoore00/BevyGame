@@ -31,8 +31,8 @@ impl FromWorld for ObjectAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         ObjectAssets {
-            boulder: assets.load("images/boulder.png"),
-            boulder_shadow: assets.load("images/boulder_shadow.png"),
+            boulder: assets.load("base/images/boulder.png"),
+            boulder_shadow: assets.load("base/images/boulder_shadow.png"),
         }
     }
 }

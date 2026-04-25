@@ -94,6 +94,7 @@ impl LoaderJobManager for App {
             WalkDir::new(namespace_path)
                 .into_iter()
                 .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().is_file())
                 .map(|e| e.path().strip_prefix("./assets").unwrap().to_path_buf())
                 .filter(|path| path.strip_prefix(namespace).unwrap().starts_with(T::root_dir()))
                 .filter_map(|path| ResourceLocation::from_path(path).ok())

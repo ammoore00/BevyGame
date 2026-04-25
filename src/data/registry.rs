@@ -1,6 +1,10 @@
 use std::collections::{HashMap, HashSet};
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use crate::data::{ResourceLocation, ResourceType};
+
+#[derive(SystemParam)]
+pub struct SystemRegistry<'w, T: ResourceType>(Res<'w, ResourceRegistry<T>>);
 
 /// Maps resource locations to bevy asset handles
 #[derive(Debug, Resource)]

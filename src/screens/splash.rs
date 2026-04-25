@@ -62,7 +62,7 @@ fn spawn_splash_screen(mut commands: Commands, asset_server: Res<AssetServer>) {
             ImageNode::new(asset_server.load_with_settings(
                 // This should be an embedded asset for instant loading, but that is
                 // currently [broken on Windows Wasm builds](https://github.com/bevyengine/bevy/issues/14246).
-                "images/splash.png",
+                "base/images/ui/splash.png",
                 |settings: &mut ImageLoaderSettings| {
                     // Make an exception for the splash image in case
                     // `ImagePlugin::default_nearest()` is used for pixel art.

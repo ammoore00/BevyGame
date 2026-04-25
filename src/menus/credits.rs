@@ -146,7 +146,7 @@ impl FromWorld for CreditsAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            music: assets.load("audio/music/Monkeys Spinning Monkeys.ogg"),
+            music: assets.load("base/audio/music/Monkeys Spinning Monkeys.ogg"),
         }
     }
 }

@@ -589,10 +589,10 @@ impl FromWorld for PlayerAssets {
 
         let assets = world.resource::<AssetServer>();
 
-        let idle_sprite = assets.load("images/characters/idle.png");
-        let walk_sprite = assets.load("images/characters/walk.png");
-        let run_sprite = assets.load("images/characters/run.png");
-        let attack_sprite = assets.load("images/characters/attack.png");
+        let idle_sprite = assets.load("base/images/characters/idle.png");
+        let walk_sprite = assets.load("base/images/characters/walk.png");
+        let run_sprite = assets.load("base/images/characters/run.png");
+        let attack_sprite = assets.load("base/images/characters/attack.png");
 
         Self {
             idle_animation: assets.add(CharacterAnimationData {
@@ -648,17 +648,17 @@ impl FromWorld for PlayerAssets {
                 frames: 7,
                 interval: Duration::from_millis(ATTACK_DURATION / 7),
             }),
-            attack_sprite: assets.load("images/characters/attack.png"),
-            attack_particle_sprite: assets.load("images/characters/attack_particle.png"),
+            attack_sprite: assets.load("base/images/characters/attack.png"),
+            attack_particle_sprite: assets.load("base/images/characters/attack_particle.png"),
 
-            indicator_ring_sprite: assets.load("images/characters/indicator_ring.png"),
+            indicator_ring_sprite: assets.load("base/images/characters/indicator_ring.png"),
             indicator_ring_layout,
 
             steps: vec![
-                assets.load("audio/sound_effects/step1.ogg"),
-                assets.load("audio/sound_effects/step2.ogg"),
-                assets.load("audio/sound_effects/step3.ogg"),
-                assets.load("audio/sound_effects/step4.ogg"),
+                assets.load("base/audio/sound_effects/step1.ogg"),
+                assets.load("base/audio/sound_effects/step2.ogg"),
+                assets.load("base/audio/sound_effects/step3.ogg"),
+                assets.load("base/audio/sound_effects/step4.ogg"),
             ],
         }
     }

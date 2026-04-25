@@ -87,7 +87,7 @@ impl FromWorld for StatBarAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            stat_bars: assets.load("images/ui/bars.png"),
+            stat_bars: assets.load("base/images/ui/bars.png"),
         }
     }
 }
