@@ -8,10 +8,6 @@ use crate::game::character::animation::CharacterAnimationData;
 use crate::game::character::player::{PlayerAssets, player};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
-use crate::data::sprite::SpriteRegistry;
-use crate::datagen_api::room::{RoomDefinition, RoomRegistry};
-use crate::datagen_api::tile::{TileAsset, TileRegistry};
-use crate::game::level::grid::tile::assets::TileLayout;
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
 

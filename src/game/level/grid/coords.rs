@@ -1,7 +1,7 @@
 use crate::Scale;
 use crate::game::level::grid::tile::{TILE_HEIGHT, TILE_WIDTH};
 use bevy::prelude::*;
-use parry3d::math::Isometry;
+use parry3d::math::Pose;
 use std::cmp::Ordering;
 use std::ops::Deref;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -31,7 +31,7 @@ impl WorldPosition {
     }
 }
 
-impl From<WorldPosition> for Isometry<f32> {
+impl From<WorldPosition> for Pose {
     fn from(value: WorldPosition) -> Self {
         Self::translation(value.0.x, value.0.y, value.0.z)
     }

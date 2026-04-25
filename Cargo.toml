@@ -50,7 +50,7 @@ tracing = { version = "0.1", features = [
     "release_max_level_warn",
 ] }
 
-parry3d = "0.25.1"
+parry3d = "0.26.0"
 
 thiserror = "2.0.17"
 

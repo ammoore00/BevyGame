@@ -1,7 +1,6 @@
 use crate::game::level::grid::coords::{WorldCoords, WorldPosition};
 use bevy::prelude::*;
-use parry3d::math::Isometry;
-use parry3d::na::{Const, OPoint, Vector3};
+use parry3d::math::Pose;
 use parry3d::query;
 use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
@@ -73,28 +72,28 @@ fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
 #[derive(Component, Debug, Clone, PartialEq)]
 pub struct Collider {
     collider_type: ColliderType,
-    position: Isometry<f32>,
+    position: Pose,
 }
 
 impl Collider {
     pub fn cuboid(size: Vec3, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
-        let size: Vector3<f32> = Vector3::new(size.x, size.y, size.z);
+        let size: Vec3 = Vec3::new(size.x, size.y, size.z);
 
         Self {
             collider_type: ColliderType::Cuboid(Cuboid::new(size)),
-            position: Isometry::translation(position.x, position.y, position.z),
+            position: Pose::translation(position.x, position.y, position.z),
         }
     }
 
     pub fn capsule(start: Vec3, end: Vec3, radius: f32, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
-        let start = OPoint::<f32, Const<3>>::new(start.x, start.y, start.z);
-        let end = OPoint::<f32, Const<3>>::new(end.x, end.y, end.z);
+        let start = Vec3::new(start.x, start.y, start.z);
+        let end = Vec3::new(end.x, end.y, end.z);
 
         Self {
             collider_type: ColliderType::Capsule(Capsule::new(start, end, radius)),
-            position: Isometry::translation(position.x, position.y, position.z),
+            position: Pose::translation(position.x, position.y, position.z),
         }
     }
 
@@ -110,11 +109,6 @@ impl Collider {
     pub fn convex_hull(vertices: Vec<Vec3>, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
 
-        let vertices = vertices
-            .iter()
-            .map(|v| OPoint::<f32, Const<3>>::new(v.x, v.y, v.z))
-            .collect::<Vec<_>>();
-
         let convex_hull = convex_hull(vertices.as_slice());
         let convex_polyhedron = ConvexPolyhedron::from_convex_hull(convex_hull.0.as_slice());
 
@@ -122,7 +116,7 @@ impl Collider {
             collider_type: ColliderType::ConvexHull(
                 convex_polyhedron.expect("Failed to create convex hull"),
             ),
-            position: Isometry::translation(position.x, position.y, position.z),
+            position: Pose::translation(position.x, position.y, position.z),
         }
     }
 
@@ -130,7 +124,7 @@ impl Collider {
         let position = position.into();
         Self {
             collider_type,
-            position: Isometry::translation(position.x, position.y, position.z),
+            position: Pose::translation(position.x, position.y, position.z),
         }
     }
 
@@ -153,7 +147,7 @@ impl Collider {
 
     pub fn set_position(&mut self, position: impl Into<WorldCoords>) {
         let position = position.into();
-        self.position = Isometry::translation(position.x, position.y, position.z);
+        self.position = Pose::translation(position.x, position.y, position.z);
     }
 }
 
@@ -164,8 +158,8 @@ impl CollisionEvent {
     pub fn _contact_points(&self) -> (Vec3, Vec3) {
         let contact = &self.0;
 
-        let p1 = contact.point1.coords;
-        let p2 = contact.point2.coords;
+        let p1 = contact.point1;
+        let p2 = contact.point2;
 
         let p1 = Vec3::new(p1.x, p1.y, p1.z);
         let p2 = Vec3::new(p2.x, p2.y, p2.z);
