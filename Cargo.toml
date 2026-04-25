@@ -41,7 +41,7 @@ bevy = { version = "0.18.1", default-features = false, features = [
     "wayland",
     "x11",
 ] }
-rand = "0.9"
+rand = "0.10.1"
 # Compile out low-severity logs to improve performance.
 # Remove these features if you want to profile your game with tracy.
 # (see <https://github.com/bevyengine/bevy/blob/main/docs/profiling.md#tracy-profiler>)
@@ -57,12 +57,12 @@ thiserror = "2.0.17"
 regex = "1.12.3"
 
 serde = "1.0.228"
-ron = "0.12.0"
+ron = "0.12.1"
 derive-new = "0.7.0"
 walkdir = "2.5.0"
 
 [target.wasm32-unknown-unknown.dependencies]
-getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom = { version = "0.4.2", features = ["wasm_js"] }
 
 [features]
 # Default to a native dev build.

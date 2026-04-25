@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use crate::game::level::grid;
 use crate::game::level::grid::{grid_bundle, Grid, merge_tile_map};
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
