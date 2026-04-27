@@ -4,7 +4,7 @@ use bevy_game_2d::datagen_api::tile::assets::TileResource;
 use crate::{create_dir, write_data, WriteError};
 
 pub fn generate_rooms() -> Result<(), WriteError> {
-    create_dir(RoomResource::root_dir())?;
+    create_dir(RoomResource::ROOT_DIR)?;
     
     create_room_data(basic_room("grass"))?;
     create_room_data(basic_room("planks"))?;

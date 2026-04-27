@@ -36,7 +36,7 @@ const LIGHT_PLANKS_STAIRS_BOTTOM_LEFT: &str = "light_planks_stairs_bottom_left";
 const LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT: &str = "light_planks_stairs_bottom_right";
 
 pub fn generate_tiles() -> Result<(), WriteError> {
-    create_dir(TileResource::root_dir())?;
+    create_dir(TileResource::ROOT_DIR)?;
 
     create_tile_data(TileData::new(GRASS, GRASS_SPRITE_SHEET, 0))?;
     create_tile_data(TileData::new(GRASS_LAYER, GRASS_SPRITE_SHEET, 2))?;

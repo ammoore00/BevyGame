@@ -258,12 +258,6 @@ pub struct RoomBuilderContext<'w, 's> {
 pub struct RoomResource;
 impl ResourceType for RoomResource {
     type AssetType = RoomDefinition;
-
-    fn root_dir() -> &'static str {
-        "rooms"
-    }
-
-    fn file_type() -> ResourceFileType {
-        ResourceFileType::Data
-    }
+    const ROOT_DIR: &'static str = "rooms";
+    const FILE_TYPE: ResourceFileType = ResourceFileType::Data;
 }

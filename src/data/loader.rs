@@ -96,7 +96,7 @@ impl LoaderJobManager for App {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file())
                 .map(|e| e.path().strip_prefix("./assets").unwrap().to_path_buf())
-                .filter(|path| path.strip_prefix(namespace).unwrap().starts_with(T::root_dir()))
+                .filter(|path| path.strip_prefix(namespace).unwrap().starts_with(T::ROOT_DIR))
                 .filter_map(|path| ResourceLocation::from_path(path).ok())
                 .for_each(|location| manifest.push(location));
         }

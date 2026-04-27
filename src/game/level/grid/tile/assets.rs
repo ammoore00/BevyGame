@@ -58,14 +58,8 @@ pub struct TileResource;
 
 impl ResourceType for TileResource {
     type AssetType = TileAsset;
-
-    fn root_dir() -> &'static str {
-        "tiles"
-    }
-
-    fn file_type() -> ResourceFileType {
-        ResourceFileType::Data
-    }
+    const ROOT_DIR: &'static str = "tiles";
+    const FILE_TYPE: ResourceFileType = ResourceFileType::Data;
 }
 
 #[derive(Debug, Clone, Asset, TypePath)]
@@ -105,10 +99,6 @@ pub type TileSpriteRegistry = ResourceRegistry<TileSpriteResource>;
 pub struct TileSpriteResource;
 impl ResourceType for TileSpriteResource {
     type AssetType = Image;
-    fn root_dir() -> &'static str {
-        "images/tiles"
-    }
-    fn file_type() -> ResourceFileType {
-        ResourceFileType::Image
-    }
+    const ROOT_DIR: &'static str = "images/tiles";
+    const FILE_TYPE: ResourceFileType = ResourceFileType::Image;
 }

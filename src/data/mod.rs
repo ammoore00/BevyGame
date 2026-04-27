@@ -66,11 +66,11 @@ impl<T: ResourceType> ResourceLocation<T> {
         let path = path.as_ref();
 
         let path = if let Some(ext) = path.extension() {
-            if ext.to_str().unwrap_or_default() != T::file_type().to_string() {
+            if ext.to_str().unwrap_or_default() != T::FILE_TYPE.ext() {
                 return Err(ResourceLocationParseError::InvalidPath(format!(
                     "Mismatched extension: {}, expected: {}",
                     ext.to_str().unwrap_or_default(),
-                    T::file_type()
+                    T::FILE_TYPE.ext()
                 )));
             }
 
@@ -92,11 +92,11 @@ impl<T: ResourceType> ResourceLocation<T> {
         let path_without_namespace = components.as_path();
 
         let id_path = path_without_namespace
-            .strip_prefix(T::root_dir())
+            .strip_prefix(T::ROOT_DIR)
             .map_err(|_| ResourceLocationParseError::InvalidPath(format!(
                 "Mismatched root dir: {}, expected: {}",
                 path.display(),
-                T::root_dir()
+                T::ROOT_DIR
             )))?;
 
         let id = id_path
@@ -116,9 +116,9 @@ impl<T: ResourceType> ResourceLocation<T> {
 
     pub fn as_path(&self) -> PathBuf {
         Path::new(&self.namespace.0)
-            .join(T::root_dir())
+            .join(T::ROOT_DIR)
             .join(&self.id.0)
-            .with_extension(T::file_type().to_string())
+            .with_extension(T::FILE_TYPE.ext())
     }
 }
 impl<T: ResourceType> FromStr for ResourceLocation<T> {
@@ -147,27 +147,27 @@ impl<T: ResourceType> FromStr for ResourceLocation<T> {
 
 pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + 'static {
     type AssetType: Asset + Send + Sync + 'static;
-
-    fn root_dir() -> &'static str;
-    fn file_type() -> ResourceFileType;
+    const ROOT_DIR: &'static str;
+    const FILE_TYPE: ResourceFileType;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ResourceFileType {
     Image,
     Audio,
     Font,
     Data,
-    Other(String),
+    Other(&'static str),
 }
-impl Display for ResourceFileType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ResourceFileType::Image => write!(f, "png"),
-            ResourceFileType::Audio => write!(f, "ogg"),
-            ResourceFileType::Font => write!(f, "ttf"),
-            ResourceFileType::Data => write!(f, "ron"),
-            ResourceFileType::Other(s) => write!(f, "{}", s),
-        }
+impl ResourceFileType {
+    pub const fn ext(self) -> &'static str {
+         match self {
+             ResourceFileType::Image => "png",
+             ResourceFileType::Audio => "ogg",
+             ResourceFileType::Font => "ttf",
+             ResourceFileType::Data => "ron",
+             ResourceFileType::Other(s) => s,
+         }
     }
 }
 

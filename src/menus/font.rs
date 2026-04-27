@@ -14,12 +14,8 @@ pub(super) fn plugin(app: &mut App) {
 pub struct FontResource;
 impl ResourceType for FontResource {
     type AssetType = Font;
-    fn root_dir() -> &'static str {
-        "fonts"
-    }
-    fn file_type() -> ResourceFileType {
-        ResourceFileType::Font
-    }
+    const ROOT_DIR: &'static str = "fonts";
+    const FILE_TYPE: ResourceFileType = ResourceFileType::Font;
 }
 
 #[derive(Debug, Clone, Resource)]
