@@ -76,6 +76,7 @@ impl Plugin for AppPlugin {
                 StartupSystems::RegisterManifests,
                 StartupSystems::LoadAssets,
                 StartupSystems::ResolveAssets,
+                StartupSystems::PopulateAssetRefs,
             )
                 .chain(),
         );
@@ -108,9 +109,14 @@ enum AppSystems {
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 enum StartupSystems {
+    /// Register which assets need to be loaded
     RegisterManifests,
+    /// Load the assets themselves based on registered manifests
     LoadAssets,
+    /// Resolve any inter-asset references
     ResolveAssets,
+    /// Populate asset reference resources
+    PopulateAssetRefs,
 }
 
 /// Whether or not the game is paused.

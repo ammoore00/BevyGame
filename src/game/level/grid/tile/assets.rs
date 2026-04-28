@@ -15,13 +15,13 @@ pub(in crate::game) fn plugin(app: &mut App) {
 
     app.add_systems(
         Startup,
-        resolve_tile_assets.in_set(StartupSystems::ResolveAssets)
+        populate_tile_assets.in_set(StartupSystems::PopulateAssetRefs)
     );
 }
 
 static TILE_SPRITE_LAYOUT: LazyLock<TextureAtlasLayout> = LazyLock::new(|| TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None));
 
-fn resolve_tile_assets(
+fn populate_tile_assets(
     asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use crate::data::registry::SystemRegistry;
+use crate::data::registry::{SystemRegistry, SystemRegistryMut};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::sprite::TextureAtlasCodec;
@@ -170,15 +170,14 @@ pub struct ResolvedAnimationData {
 }
 
 fn resolve_animation_data(
-    // Registry and assets are separated here due to the need
-    // to mutably access both at the same time while iterating
-    mut animation_registry: ResMut<AnimationRegistry>,
-    mut animation_assets: ResMut<Assets<AnimationAsset>>,
+    mut animation_registry: SystemRegistryMut<AnimationResource>,
     animation_sprite_registry: SystemRegistry<AnimationSpriteResource>,
     mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
 ) {
-    for (_, animation) in animation_registry.iter_mut() {
+    let (animation_registry, animation_assets) = animation_registry.split();
+    
+    for animation in animation_registry.handles() {
         let animation = animation_assets.get_mut(&animation.clone())
             .unwrap_or_else(|| panic!("Failed to retrieve animation asset from handle from registry! This is a bug!"));
 

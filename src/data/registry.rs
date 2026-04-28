@@ -62,6 +62,15 @@ impl<T: ResourceType> SystemRegistryMut<'_, T> {
     pub fn registry_mut(&mut self) -> &mut ResourceRegistry<T> {
         &mut self.registry
     }
+
+    pub fn split(
+        &mut self,
+    ) -> (
+        &mut ResourceRegistry<T>,
+        &mut Assets<T::AssetType>,
+    ) {
+        (&mut self.registry, &mut self.assets)
+    }
 }
 
 /// Maps resource locations to bevy asset handles
@@ -119,6 +128,10 @@ impl<T: ResourceType> ResourceRegistry<T> {
 
     pub fn manifest(&self) -> &HashSet<ResourceLocation<T>> {
         &self.manifest
+    }
+
+    pub fn handles(&self) -> impl Iterator<Item = &Handle<T::AssetType>> {
+        self.registry.values()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&ResourceLocation<T>, &Handle<T::AssetType>)> {
