@@ -148,17 +148,21 @@ impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
 pub enum LoaderError {
 }
 
+/// Marker trait for types which can be loaded from a file
+pub trait RonCodec<AssetType>: Into<AssetType> + TypePath + Send + Sync + 'static {}
+impl<T, AssetType> RonCodec<AssetType> for T where T: Into<AssetType> + TypePath + Send + Sync + 'static {}
+
 #[derive(TypePath)]
 pub struct RonAssetLoader<Codec, AssetType>
 where
-    Codec: DeserializeOwned + TypePath + Into<AssetType> + Send + Sync + 'static,
+    Codec: DeserializeOwned + RonCodec<AssetType>,
     AssetType: Asset + Send + Sync + 'static,
 {
     phantom_data: PhantomData<(Codec, AssetType)>,
 }
 impl<Codec, AssetType> Default for RonAssetLoader<Codec, AssetType>
 where
-    Codec: DeserializeOwned + TypePath + Into<AssetType> + Send + Sync + 'static,
+    Codec: DeserializeOwned + RonCodec<AssetType>,
     AssetType: Asset + Send + Sync + 'static,
 {
     fn default() -> Self {
@@ -169,7 +173,7 @@ where
 }
 impl<Codec, AssetType> AssetLoader for RonAssetLoader<Codec, AssetType>
 where
-    Codec: DeserializeOwned + TypePath + Into<AssetType> + Send + Sync + 'static,
+    Codec: DeserializeOwned + RonCodec<AssetType>,
     AssetType: Asset + Send + Sync + 'static,
 {
     type Asset = AssetType;
@@ -218,6 +222,7 @@ impl<T: Serialize> Deref for Maybe<T> {
         &self.0
     }
 }
+
 impl<T: Serialize> Serialize for Maybe<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -264,3 +269,15 @@ impl<T: Serialize + Clone> Clone for Maybe<T> {
     }
 }
 impl<T: Serialize + Copy> Copy for Maybe<T> {}
+
+/// A type which allows either inline data, or a reference to an asset
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RefOrInline<T, Codec>
+where
+    T: ResourceType,
+    Codec: RonCodec<T::AssetType>,
+{
+    Ref(ResourceLocation<T>),
+    Inline(Codec),
+}

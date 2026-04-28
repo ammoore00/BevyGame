@@ -1,5 +1,5 @@
 use crate::{data, define_sprite_resource};
-use crate::game::character::{CharacterStateTracker, Facing};
+use crate::game::character::Facing;
 use crate::screens::Screen;
 use crate::{define_resource, AppSystems, PausableSystems, StartupSystems};
 use bevy::prelude::*;
@@ -12,6 +12,7 @@ use crate::data::registry::{SystemRegistry, SystemRegistryMut};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::sprite::TextureAtlasCodec;
+use crate::game::character::state::CharacterStateTracker;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AnimationAsset>();
@@ -217,6 +218,7 @@ pub struct AnimationAsset {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct AnimationCodec {
+    pub format: u8,
     pub image: ResourceLocation<AnimationSpriteResource>,
     pub atlas: TextureAtlasCodec,
     pub frames: usize,

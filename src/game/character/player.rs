@@ -1,14 +1,11 @@
 //! Player-specific behavior.
 
 use crate::game::character::animation::{
-    AnimationStateMap, ResolvedAnimationData, CharacterAnimationTracker,
+    AnimationStateMap, CharacterAnimationTracker, ResolvedAnimationData,
 };
-use crate::game::character::{
-    Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, character,
-    default_states, is_in_movement_state,
-};
+use crate::game::character::{character, state, Character, Facing};
 use crate::game::level::grid::coords::{
-    WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
+    rotate_screen_space_to_facing, rotate_screen_space_to_movement, WorldPosition,
 };
 use bevy::prelude::*;
 use std::any::{Any, TypeId};
@@ -16,17 +13,17 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tracing::warn;
 //use crate::game::object::Shadow;
-use crate::game::character;
-use crate::game::character::default_states::{Attacking, Idle, Running, Sprinting, Walking};
+use crate::game::character::state::default_states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
-use crate::game::character::state_transitions::StateCapabilities;
+use crate::game::character::state::state_transitions::StateCapabilities;
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
-use crate::{AppSystems, PausableSystems, asset_tracking::LoadResource};
+use crate::{asset_tracking::LoadResource, AppSystems, PausableSystems};
+use crate::game::character::state::{default_states, is_in_movement_state, CharacterState, CharacterStateEvent, CharacterStateTracker};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -288,7 +285,7 @@ fn record_player_movement_input(world: &mut World) {
     for entity in entities {
         // Get the current state
         let tracker = world.get::<CharacterStateTracker>(entity).cloned().unwrap();
-        let Some(prev_state) = character::get_state(entity, &tracker, world) else {
+        let Some(prev_state) = state::get_state(entity, &tracker, world) else {
             warn!("Failed to get reflect component for entity {}", entity);
             continue;
         };
@@ -429,7 +426,7 @@ fn record_action_input(world: &mut World) {
     let prev_state = {
         let state_tracker = world.get::<CharacterStateTracker>(player).cloned().unwrap();
 
-        let Some(prev_state) = character::get_state(player, &state_tracker, world) else {
+        let Some(prev_state) = state::get_state(player, &state_tracker, world) else {
             warn!("Failed to get reflect component for entity {}", player);
             return;
         };
