@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -210,6 +211,7 @@ impl<T: Serialize> Maybe<T> {
         self.0
     }
 }
+
 impl<T: Serialize> Deref for Maybe<T> {
     type Target = Option<T>;
     fn deref(&self) -> &Self::Target {
@@ -239,8 +241,26 @@ where
         Ok(Maybe(opt))
     }
 }
+
 impl<T: Serialize> From<Option<T>> for Maybe<T> {
     fn from(opt: Option<T>) -> Self {
         Maybe(opt)
     }
 }
+impl<T: Serialize> From<Maybe<T>> for Option<T> {
+    fn from(maybe: Maybe<T>) -> Self {
+        maybe.0
+    }
+}
+
+impl<T: Serialize + Debug> Debug for Maybe<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Maybe").field(&self.0).finish()
+    }
+}
+impl<T: Serialize + Clone> Clone for Maybe<T> {
+    fn clone(&self) -> Self {
+        Maybe(self.0.clone())
+    }
+}
+impl<T: Serialize + Copy> Copy for Maybe<T> {}

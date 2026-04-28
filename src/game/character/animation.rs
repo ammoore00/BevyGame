@@ -1,14 +1,29 @@
+use crate::{data, define_sprite_resource};
 use crate::game::character::{CharacterStateTracker, Facing};
 use crate::screens::Screen;
-use crate::{AppSystems, PausableSystems};
+use crate::{define_resource, AppSystems, PausableSystems, StartupSystems};
 use bevy::prelude::*;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
+use serde::{Deserialize, Serialize};
+use crate::data::registry::SystemRegistry;
+use crate::data::{ResourceFileType, ResourceLocation};
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
+use crate::data::sprite::TextureAtlasCodec;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_asset::<CharacterAnimationData>();
+    app.init_asset::<AnimationAsset>();
+    app.init_asset::<ResolvedAnimationData>();
+    app.init_asset_loader::<RonAssetLoader<AnimationCodec, AnimationAsset>>();
+    app.add_registry_with_discovery::<AnimationResource>();
+    app.add_registry_with_discovery::<AnimationSpriteResource>();
+
+    app.add_systems(
+        Startup,
+        resolve_animation_data.in_set(StartupSystems::ResolveAssets)
+    );
 
     app.add_systems(
         Update,
@@ -25,7 +40,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn update_animation_timer(
     time: Res<Time>,
-    assets: Res<Assets<CharacterAnimationData>>,
+    assets: Res<Assets<ResolvedAnimationData>>,
     mut query: Query<&mut CharacterAnimationTracker>,
 ) {
     for mut animation in &mut query {
@@ -34,7 +49,7 @@ fn update_animation_timer(
 }
 
 fn update_animation_state(
-    assets: Res<Assets<CharacterAnimationData>>,
+    assets: Res<Assets<ResolvedAnimationData>>,
     mut query: Query<(
         &CharacterStateTracker,
         &Facing,
@@ -61,7 +76,7 @@ fn update_animation_state(
 }
 
 fn update_animation_atlas(
-    assets: Res<Assets<CharacterAnimationData>>,
+    assets: Res<Assets<ResolvedAnimationData>>,
     mut query: Query<(
         &CharacterStateTracker,
         &CharacterAnimationTracker,
@@ -86,8 +101,8 @@ fn update_animation_atlas(
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {
-    default: Handle<CharacterAnimationData>,
-    current: Handle<CharacterAnimationData>,
+    default: Handle<ResolvedAnimationData>,
+    current: Handle<ResolvedAnimationData>,
 
     facing: Facing,
     timer: Timer,
@@ -96,8 +111,8 @@ pub struct CharacterAnimationTracker {
 
 impl CharacterAnimationTracker {
     pub fn new(
-        default: Handle<CharacterAnimationData>,
-        assets: &Assets<CharacterAnimationData>,
+        default: Handle<ResolvedAnimationData>,
+        assets: &Assets<ResolvedAnimationData>,
     ) -> Self {
         let interval = assets.get(default.id()).unwrap().interval;
 
@@ -111,14 +126,14 @@ impl CharacterAnimationTracker {
         }
     }
 
-    pub fn default_sprite(&self, assets: &Assets<CharacterAnimationData>) -> Sprite {
+    pub fn default_sprite(&self, assets: &Assets<ResolvedAnimationData>) -> Sprite {
         Sprite::from_atlas_image(
             self.get_image(assets).clone(),
             self.get_atlas(assets).clone(),
         )
     }
 
-    fn update_timer(&mut self, delta: Duration, assets: &Assets<CharacterAnimationData>) {
+    fn update_timer(&mut self, delta: Duration, assets: &Assets<ResolvedAnimationData>) {
         self.timer.tick(delta);
 
         if !self.timer.is_finished() {
@@ -128,28 +143,97 @@ impl CharacterAnimationTracker {
         self.frame = (self.frame + 1) % assets.get(self.current.id()).unwrap().frames;
     }
 
-    fn get_image(&self, assets: &Assets<CharacterAnimationData>) -> Handle<Image> {
+    fn get_image(&self, assets: &Assets<ResolvedAnimationData>) -> Handle<Image> {
         assets.get(self.current.id()).unwrap().image.clone()
     }
 
-    fn get_atlas(&self, assets: &Assets<CharacterAnimationData>) -> TextureAtlas {
+    fn get_atlas(&self, assets: &Assets<ResolvedAnimationData>) -> TextureAtlas {
         assets.get(self.current.id()).unwrap().atlas.clone()
     }
 
-    fn get_atlas_index(&self, assets: &Assets<CharacterAnimationData>) -> usize {
+    fn get_atlas_index(&self, assets: &Assets<ResolvedAnimationData>) -> usize {
         self.frame + self.facing as usize * assets.get(self.current.id()).unwrap().frames
     }
 }
 
-/// Stores the sprite and frame data for an animation
-#[derive(Asset, Debug, Clone, PartialEq, Reflect)]
-pub struct CharacterAnimationData {
+/// Maps character states to animation data
+#[derive(Component, Debug, Clone, Reflect)]
+pub struct AnimationStateMap(pub HashMap<TypeId, Handle<ResolvedAnimationData>>);
+
+/// Resolved asset references for an animation, including handles to other assets
+#[derive(Debug, Clone, PartialEq, Asset, Reflect)]
+pub struct ResolvedAnimationData {
     pub image: Handle<Image>,
     pub atlas: TextureAtlas,
     pub frames: usize,
     pub interval: Duration,
 }
 
-/// Maps character states to animation data
-#[derive(Component, Debug, Clone, Reflect)]
-pub struct AnimationStateMap(pub HashMap<TypeId, Handle<CharacterAnimationData>>);
+fn resolve_animation_data(
+    // Registry and assets are separated here due to the need
+    // to mutably access both at the same time while iterating
+    mut animation_registry: ResMut<AnimationRegistry>,
+    mut animation_assets: ResMut<Assets<AnimationAsset>>,
+    animation_sprite_registry: SystemRegistry<AnimationSpriteResource>,
+    mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    asset_server: Res<AssetServer>,
+) {
+    for (_, animation) in animation_registry.iter_mut() {
+        let animation = animation_assets.get_mut(&animation.clone())
+            .unwrap_or_else(|| panic!("Failed to retrieve animation asset from handle from registry! This is a bug!"));
+
+        let Some(image) = animation_sprite_registry.get_handle(animation.image.clone()) else {
+            // TODO: Real error handling, since this could come up in normal operation
+            dbg!("Failed to find image for animation: {:?}", animation.image.clone());
+            return;
+        };
+
+        let layout = atlas_layouts.add(animation.atlas.clone());
+        let atlas = TextureAtlas {
+            layout,
+            index: 0,
+        };
+
+        let resolved_animation = ResolvedAnimationData {
+            image,
+            atlas,
+            frames: animation.frames,
+            interval: animation.interval,
+        };
+
+        let resolved_animation_handle = asset_server.add(resolved_animation);
+        animation.resolved_handle = Some(resolved_animation_handle);
+    }
+}
+
+/// Stores the sprite and frame data for an animation
+#[derive(Debug, Clone, PartialEq, Asset, TypePath)]
+pub struct AnimationAsset {
+    image: ResourceLocation<AnimationSpriteResource>,
+    atlas: TextureAtlasLayout,
+    frames: usize,
+    interval: Duration,
+    resolved_handle: Option<Handle<ResolvedAnimationData>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+pub struct AnimationCodec {
+    pub image: ResourceLocation<AnimationSpriteResource>,
+    pub atlas: TextureAtlasCodec,
+    pub frames: usize,
+    pub duration: usize,
+}
+impl From<AnimationCodec> for AnimationAsset {
+    fn from(codec: AnimationCodec) -> Self {
+        AnimationAsset {
+            image: codec.image,
+            atlas: codec.atlas.into(),
+            frames: codec.frames,
+            interval: Duration::from_millis(codec.duration as u64),
+            resolved_handle: None,
+        }
+    }
+}
+
+define_resource!(Animation, "animations", AnimationAsset, ResourceFileType::Data);
+define_sprite_resource!(Animation, "animations");

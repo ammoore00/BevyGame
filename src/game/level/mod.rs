@@ -4,7 +4,7 @@ pub mod grid;
 pub mod map;
 
 use bevy::prelude::*;
-use crate::game::character::animation::CharacterAnimationData;
+use crate::game::character::animation::ResolvedAnimationData;
 use crate::game::character::player::{PlayerAssets, player};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
@@ -45,7 +45,7 @@ pub fn spawn_level(
 
     player_assets: Res<PlayerAssets>,
     object_assets: Res<ObjectAssets>,
-    animation_assets: Res<Assets<CharacterAnimationData>>,
+    animation_assets: Res<Assets<ResolvedAnimationData>>,
 ) {
     let player = player(
         Vec3::new(3.0, 1.0, 3.0),

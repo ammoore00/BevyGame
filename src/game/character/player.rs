@@ -1,7 +1,7 @@
 //! Player-specific behavior.
 
 use crate::game::character::animation::{
-    AnimationStateMap, CharacterAnimationData, CharacterAnimationTracker,
+    AnimationStateMap, ResolvedAnimationData, CharacterAnimationTracker,
 };
 use crate::game::character::{
     Character, CharacterState, CharacterStateEvent, CharacterStateTracker, Facing, character,
@@ -58,7 +58,7 @@ pub fn player(
     position: Vec3,
     max_speed: f32,
     player_assets: &PlayerAssets,
-    animation_assets: &Assets<CharacterAnimationData>,
+    animation_assets: &Assets<ResolvedAnimationData>,
     scale: f32,
 ) -> impl Bundle {
     let character_animation_map = AnimationStateMap(HashMap::from([
@@ -538,29 +538,29 @@ pub struct PlayerAssets {
     #[dependency]
     idle_sprite: Handle<Image>,
     #[dependency]
-    idle_animation: Handle<CharacterAnimationData>,
+    idle_animation: Handle<ResolvedAnimationData>,
 
     #[dependency]
     walk_sprite: Handle<Image>,
     #[dependency]
-    walk_animation: Handle<CharacterAnimationData>,
+    walk_animation: Handle<ResolvedAnimationData>,
 
     #[dependency]
     run_sprite: Handle<Image>,
     #[dependency]
-    run_animation: Handle<CharacterAnimationData>,
+    run_animation: Handle<ResolvedAnimationData>,
 
     #[dependency]
     sprint_sprite: Handle<Image>,
     #[dependency]
-    sprint_animation: Handle<CharacterAnimationData>,
+    sprint_animation: Handle<ResolvedAnimationData>,
 
     #[dependency]
     attack_sprite: Handle<Image>,
     #[dependency]
     attack_particle_sprite: Handle<Image>,
     #[dependency]
-    attack_animation: Handle<CharacterAnimationData>,
+    attack_animation: Handle<ResolvedAnimationData>,
 
     #[dependency]
     indicator_ring_sprite: Handle<Image>,
@@ -595,7 +595,7 @@ impl FromWorld for PlayerAssets {
         let attack_sprite = assets.load("base/images/characters/attack.png");
 
         Self {
-            idle_animation: assets.add(CharacterAnimationData {
+            idle_animation: assets.add(ResolvedAnimationData {
                 image: idle_sprite.clone(),
                 atlas: TextureAtlas {
                     layout: idle_layout,
@@ -606,7 +606,7 @@ impl FromWorld for PlayerAssets {
             }),
             idle_sprite,
 
-            walk_animation: assets.add(CharacterAnimationData {
+            walk_animation: assets.add(ResolvedAnimationData {
                 image: walk_sprite.clone(),
                 atlas: TextureAtlas {
                     layout: walk_layout,
@@ -617,7 +617,7 @@ impl FromWorld for PlayerAssets {
             }),
             walk_sprite,
 
-            run_animation: assets.add(CharacterAnimationData {
+            run_animation: assets.add(ResolvedAnimationData {
                 image: run_sprite.clone(),
                 atlas: TextureAtlas {
                     layout: run_layout.clone(),
@@ -628,7 +628,7 @@ impl FromWorld for PlayerAssets {
             }),
             run_sprite: run_sprite.clone(),
 
-            sprint_animation: assets.add(CharacterAnimationData {
+            sprint_animation: assets.add(ResolvedAnimationData {
                 image: run_sprite.clone(),
                 atlas: TextureAtlas {
                     layout: run_layout,
@@ -639,7 +639,7 @@ impl FromWorld for PlayerAssets {
             }),
             sprint_sprite: run_sprite,
 
-            attack_animation: assets.add(CharacterAnimationData {
+            attack_animation: assets.add(ResolvedAnimationData {
                 image: attack_sprite.clone(),
                 atlas: TextureAtlas {
                     layout: attack_layout,

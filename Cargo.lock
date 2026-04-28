@@ -674,6 +674,7 @@ dependencies = [
  "derive-new",
  "getrandom 0.4.2",
  "parry3d",
+ "paste",
  "rand 0.10.1",
  "regex",
  "ron 0.12.1",

@@ -5,7 +5,63 @@ use crate::data::{ResourceLocation, ResourceType};
 
 #[derive(SystemParam)]
 pub struct SystemRegistry<'w, T: ResourceType> {
-    _registry: Res<'w, ResourceRegistry<T> >
+    registry: Res<'w, ResourceRegistry<T>>,
+    assets: Res<'w, Assets<<T as ResourceType>::AssetType>>,
+}
+impl<T: ResourceType> SystemRegistry<'_, T> {
+    pub fn get_handle(&self, id: ResourceLocation<T>) -> Option<Handle<T::AssetType>> {
+        self.registry.registry.get(&id).cloned()
+    }
+
+    pub fn get_asset(&self, id: ResourceLocation<T>) -> Option<&T::AssetType> {
+        let handle = self.get_handle(id);
+        handle.and_then(|handle| self.get_asset_from_handle(handle))
+    }
+
+    pub fn get_asset_from_handle(&self, handle: Handle<T::AssetType>) -> Option<&T::AssetType> {
+        self.assets.get(handle.id())
+    }
+
+    pub fn registry(&self) -> &ResourceRegistry<T> {
+        &self.registry
+    }
+}
+
+#[derive(SystemParam)]
+pub struct SystemRegistryMut<'w, T: ResourceType> {
+    registry: ResMut<'w, ResourceRegistry<T>>,
+    assets: ResMut<'w, Assets<<T as ResourceType>::AssetType>>,
+}
+impl<T: ResourceType> SystemRegistryMut<'_, T> {
+    pub fn get_handle(&self, id: ResourceLocation<T>) -> Option<Handle<T::AssetType>> {
+        self.registry.registry.get(&id).cloned()
+    }
+
+    pub fn get_asset(&self, id: ResourceLocation<T>) -> Option<&T::AssetType> {
+        let handle = self.get_handle(id);
+        handle.and_then(|handle| self.get_asset_from_handle(handle))
+    }
+
+    pub fn get_asset_mut(&mut self, id: ResourceLocation<T>) -> Option<&mut T::AssetType> {
+        let handle = self.get_handle(id);
+        handle.and_then(|handle| self.get_asset_from_handle_mut(handle))
+    }
+
+    pub fn get_asset_from_handle(&self, handle: Handle<T::AssetType>) -> Option<&T::AssetType> {
+        self.assets.get(handle.id())
+    }
+
+    pub fn get_asset_from_handle_mut(&mut self, handle: Handle<T::AssetType>) -> Option<&mut T::AssetType> {
+        self.assets.get_mut(handle.id())
+    }
+
+    pub fn registry(&self) -> &ResourceRegistry<T> {
+        &self.registry
+    }
+
+    pub fn registry_mut(&mut self) -> &mut ResourceRegistry<T> {
+        &mut self.registry
+    }
 }
 
 /// Maps resource locations to bevy asset handles
@@ -67,6 +123,10 @@ impl<T: ResourceType> ResourceRegistry<T> {
 
     pub fn iter(&self) -> impl Iterator<Item = (&ResourceLocation<T>, &Handle<T::AssetType>)> {
         self.registry.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&ResourceLocation<T>, &mut Handle<T::AssetType>)> {
+        self.registry.iter_mut()
     }
 }
 

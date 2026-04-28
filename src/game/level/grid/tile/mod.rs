@@ -7,9 +7,8 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign};
 use serde::{Deserialize, Serialize};
-use assets::{TileAsset, TileCodec, TileRegistry, TileResource};
+use assets::{TileAsset, TileRegistry, TileResource};
 use crate::data::ResourceLocation;
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::datagen_api::tile::assets::TileSpriteRegistry;
 
 pub mod assets;
@@ -17,10 +16,6 @@ mod collision;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((assets::plugin,));
-
-    app.init_asset_loader::<RonAssetLoader<TileCodec, TileAsset>>();
-    app.init_asset::<TileAsset>();
-    app.add_registry_with_discovery::<TileResource>();
 
     app.add_systems(
         Update,

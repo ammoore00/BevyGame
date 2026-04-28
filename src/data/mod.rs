@@ -1,5 +1,6 @@
 pub mod registry;
 pub mod loader;
+pub mod sprite;
 
 use std::fmt::Display;
 use std::hash::Hash;
@@ -145,7 +146,7 @@ impl<T: ResourceType> FromStr for ResourceLocation<T> {
     }
 }
 
-pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + 'static {
+pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static {
     type AssetType: Asset + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
@@ -169,6 +170,25 @@ impl ResourceFileType {
              ResourceFileType::Other(s) => s,
          }
     }
+}
+
+#[macro_export]
+macro_rules! define_resource {
+    ($name:ident, $path:expr, $asset_type:ty, $file_type:expr) => {
+        paste::paste! {
+            pub type [<$name Registry>] = data::registry::ResourceRegistry<[<$name Resource>]>;
+
+            #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
+            pub struct [<$name Resource>];
+
+            impl data::ResourceType for [<$name Resource>] {
+                type AssetType = $asset_type;
+
+                const ROOT_DIR: &'static str = $path;
+                const FILE_TYPE: ResourceFileType = $file_type;
+            }
+        }
+    };
 }
 
 static DEFAULT_NAMESPACE_NAME: &str = "base";
