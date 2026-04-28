@@ -10,7 +10,7 @@ use bevy::reflect::erased_serde::__private::serde::Deserializer;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
-use crate::data::registry::ResourceRegistry;
+use crate::data::registry::{ResourceRegistry, SystemRegistry};
 use crate::data::{ResourceLocation, ResourceType};
 use crate::StartupSystems;
 
@@ -280,4 +280,16 @@ where
 {
     Ref(ResourceLocation<T>),
     Inline(Codec),
+}
+impl<T, Codec> RefOrInline<T, Codec>
+where
+    T: ResourceType,
+    Codec: RonCodec<T::AssetType>,
+{
+    pub fn resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetType> {
+        match self {
+            RefOrInline::Ref(location) => registry.get_asset(location.clone()).cloned(),
+            RefOrInline::Inline(codec) => Some(codec.into()),
+        }
+    }
 }

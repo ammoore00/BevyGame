@@ -147,7 +147,7 @@ impl<T: ResourceType> FromStr for ResourceLocation<T> {
 }
 
 pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static {
-    type AssetType: Asset + Send + Sync + 'static;
+    type AssetType: Asset + Clone + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
 }
