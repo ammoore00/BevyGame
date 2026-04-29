@@ -1,6 +1,6 @@
 use crate::asset_tracking::LoadResource;
 use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
-use state::state_transitions::StateCapabilities;
+use state::state_transitions::ActionStateCapabilities;
 use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
@@ -8,7 +8,7 @@ use std::any::TypeId;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use state::default_states;
+use state::action_states;
 
 pub mod animation;
 pub mod health;
@@ -16,12 +16,14 @@ pub mod player;
 pub mod stamina;
 mod assets;
 mod state;
+mod attack;
 
 pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
 
     app.add_plugins((
         animation::plugin,
+        assets::plugin,
         health::plugin,
         player::plugin,
         stamina::plugin,
@@ -32,7 +34,7 @@ pub fn plugin(app: &mut App) {
 pub fn character(
     name: impl Into<String>,
     position: Vec3,
-    state_capabilities: StateCapabilities,
+    state_capabilities: ActionStateCapabilities,
     sprite: Sprite,
     animation_tracker: CharacterAnimationTracker,
     animation_map: AnimationStateMap,
@@ -42,7 +44,7 @@ pub fn character(
     (
         Name::new(name.into()),
         Character,
-        state::character_state(default_states::Idle),
+        state::action_state(action_states::Idle),
         state_capabilities,
         Facing::default(),
         // Physics

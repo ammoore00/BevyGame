@@ -15,6 +15,8 @@ The asset loader registration can either use discovery, in which case it will au
 
 Codecs should have a `format` field, which allows for updating the format of the codec without breaking compatibility.
 
+`Maybe` can be used for optional fields. It will serialize to `Maybe(Option::None)` if the field is missing, and `Maybe(Option::Some(value))` if the field is present. If a codec contains `Maybe` fields, it should have the `#[maybe_fields]` attribute on the struct to ensure proper (de)serialization.
+
 ### Referencing other assets
 
 Other assets should usually be referenced by `ResourceLocation`. This allows assets to reference one another without introducing any dependency management.

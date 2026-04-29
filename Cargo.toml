@@ -8,6 +8,7 @@ edition = "2024"
 members = [
     ".",
     "datagen",
+    "maybe_fields_macro",
 ]
 resolver = "2"
 
@@ -62,6 +63,8 @@ derive-new = "0.7.0"
 walkdir = "2.5.0"
 
 paste = "1.0.15"
+
+maybe_fields_macro = { path = "maybe_fields_macro" }
 
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.4.2", features = ["wasm_js"] }

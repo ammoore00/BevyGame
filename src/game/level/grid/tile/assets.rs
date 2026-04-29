@@ -2,6 +2,7 @@ use crate::data;
 use std::sync::LazyLock;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use maybe_fields_macro::maybe_fields;
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
 use crate::datagen_api::tile::TileShape;
@@ -44,12 +45,12 @@ impl TileLayout {
     }
 }
 
+#[maybe_fields]
 #[derive(derive_new::new, Serialize, Deserialize, TypePath)]
 pub struct TileCodec {
     pub format: u8,
     pub sprite_sheet: ResourceLocation<TileSpriteResource>,
     pub sprite_index: u8,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shape: Maybe<TileShape>,
 }
 

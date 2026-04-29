@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use bevy::prelude::*;
 use tracing::warn;
 use bevy::ecs::world::DeferredWorld;
-use state_transitions::{StateCapabilities, StateTransitionError};
+use state_transitions::{ActionStateCapabilities, StateTransitionError};
 use crate::AppSystems;
 use crate::game::character::Character;
 
@@ -11,12 +11,12 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
     app.add_observer(on_state_change);
 
-    default_states::register_states(app);
+    action_states::register_states(app);
 }
 
-pub fn character_state(state: impl CharacterState + Component) -> impl Bundle {
+pub fn action_state(state: impl ActionState + Component) -> impl Bundle {
     (
-        CharacterStateTracker {
+        ActionStateTracker {
             type_id: state.type_id(),
         },
         state,
@@ -25,24 +25,24 @@ pub fn character_state(state: impl CharacterState + Component) -> impl Bundle {
 
 #[derive(Component, Debug, Clone, Reflect)]
 #[reflect(Component)]
-pub struct CharacterStateTracker {
+pub struct ActionStateTracker {
     pub(crate) type_id: TypeId,
 }
 
-pub trait CharacterStateMarker: Reflect + Send + Sync + Debug + 'static {}
+pub trait ActionStateMarker: Reflect + Send + Sync + Debug + 'static {}
 
 #[reflect_trait]
-pub trait CharacterState: Reflect + Send + Sync + Debug + 'static {
+pub trait ActionState: Reflect + Send + Sync + Debug + 'static {
     fn clone_value(&self) -> Box<dyn Reflect>;
-    fn box_clone(&self) -> Box<dyn CharacterState>;
+    fn box_clone(&self) -> Box<dyn ActionState>;
     fn as_any(&self) -> &dyn Any;
 }
 
-impl<T: CharacterStateMarker + Clone> CharacterState for T {
+impl<T: ActionStateMarker + Clone> ActionState for T {
     fn clone_value(&self) -> Box<dyn Reflect> {
         Box::new(self.clone())
     }
-    fn box_clone(&self) -> Box<dyn CharacterState> {
+    fn box_clone(&self) -> Box<dyn ActionState> {
         Box::new(self.clone())
     }
     fn as_any(&self) -> &dyn Any {
@@ -51,10 +51,10 @@ impl<T: CharacterStateMarker + Clone> CharacterState for T {
 }
 
 #[reflect_trait]
-pub trait MovementState: CharacterState {}
+pub trait MovementActionState: ActionState {}
 
 #[reflect_trait]
-pub trait TimedState: CharacterState {
+pub trait TimedActionState: ActionState {
     fn time_left(&self) -> f32;
     fn set_time(&mut self, time: f32);
 }
@@ -62,17 +62,17 @@ pub trait TimedState: CharacterState {
 pub mod state_transitions {
     use crate::game::character::*;
     use std::collections::HashMap;
-    use crate::game::character::state::CharacterState;
+    use crate::game::character::state::ActionState;
+    use crate::game::character::state::action_states::DEFAULT_TRANSITIONS;
 
     #[derive(Component, Debug, Clone)]
-    pub struct StateCapabilities {
+    pub struct ActionStateCapabilities {
         transition_graph: HashMap<(TypeId, TypeId), StateTransitionRule>,
     }
 
-    impl StateCapabilities {
+    impl ActionStateCapabilities {
         pub fn new(
             allowed_states: Vec<TypeId>,
-            transition_rules: Vec<StateTransitionRule>,
         ) -> Self {
             let mut transition_graph = HashMap::new();
 
@@ -85,7 +85,7 @@ pub mod state_transitions {
                     }
 
                     // Add supplied rules
-                    if let Some(rule) = transition_rules
+                    if let Some(rule) = DEFAULT_TRANSITIONS
                         .iter()
                         .find(|rule| rule.matches_type(*from_state, *to_state))
                     {
@@ -108,8 +108,8 @@ pub mod state_transitions {
 
         pub fn can_transition(
             &self,
-            prev: &dyn CharacterState,
-            next: &dyn CharacterState,
+            prev: &dyn ActionState,
+            next: &dyn ActionState,
         ) -> Result<(), StateTransitionError> {
             if let Some(matcher) = self.transition_graph.get(&(prev.type_id(), next.type_id())) {
                 matcher.can_transition(prev, next)
@@ -160,7 +160,7 @@ pub mod state_transitions {
             }
         }
 
-        fn matches(&self, prev: &dyn CharacterState, next: &dyn CharacterState) -> bool {
+        fn matches(&self, prev: &dyn ActionState, next: &dyn ActionState) -> bool {
             self.prev_matcher.matches(prev) && self.next_matcher.matches(next)
         }
 
@@ -170,8 +170,8 @@ pub mod state_transitions {
 
         fn can_transition(
             &self,
-            prev: &dyn CharacterState,
-            next: &dyn CharacterState,
+            prev: &dyn ActionState,
+            next: &dyn ActionState,
         ) -> Result<(), StateTransitionError> {
             if prev.type_id() == next.type_id() {
                 return Err(StateTransitionError::SelfTransition);
@@ -213,7 +213,7 @@ pub mod state_transitions {
     }
 
     impl StateMatcher {
-        fn matches(&self, state: &dyn CharacterState) -> bool {
+        fn matches(&self, state: &dyn ActionState) -> bool {
             self.matches_type(state.type_id())
         }
 
@@ -229,7 +229,7 @@ pub mod state_transitions {
     pub enum StateTransitionChecker {
         Always,
         Custom(Arc<RwLock<
-            dyn for<'a> Fn(&'a dyn CharacterState, &'a dyn CharacterState) -> bool
+            dyn for<'a> Fn(&'a dyn ActionState, &'a dyn ActionState) -> bool
             + Send + Sync
         >>),
         Never,
@@ -238,7 +238,7 @@ pub mod state_transitions {
     impl StateTransitionChecker {
         pub fn custom(
             function: Box<
-                dyn for<'a> Fn(&'a dyn CharacterState, &'a dyn CharacterState) -> bool
+                dyn for<'a> Fn(&'a dyn ActionState, &'a dyn ActionState) -> bool
                 + Send + Sync,
             >,
         ) -> Self {
@@ -260,8 +260,8 @@ pub mod state_transitions {
     pub enum StateTransitionError {
         #[error("Invalid transition from {from:?} to {to:?}: {reason}")]
         InvalidTransition {
-            from: Box<dyn CharacterState>,
-            to: Box<dyn CharacterState>,
+            from: Box<dyn ActionState>,
+            to: Box<dyn ActionState>,
             reason: InvalidTransitionReason,
         },
         #[error("Invalid matcher: {0}")]
@@ -292,14 +292,14 @@ pub mod state_transitions {
     }
 }
 
-pub mod default_states {
+pub mod action_states {
     use crate::game::character::*;
     use crate::game::character::state::state_transitions::{
         StateMatcher, StateTransitionChecker, StateTransitionRule,
     };
     use super::*;
     use std::cell::LazyCell;
-    use crate::game::character::state::{CharacterState, CharacterStateMarker, MovementState, TimedState};
+    use crate::game::character::state::{ActionState, ActionStateMarker, MovementActionState, TimedActionState};
 
     pub(in crate::game::character) fn register_states(app: &mut App) {
         app.register_type::<Idle>();
@@ -309,7 +309,7 @@ pub mod default_states {
         app.register_type::<Attacking>();
     }
 
-    pub const _DEFAULT_STATES: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
+    pub const DEFAULT_STATES: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
         vec![
             TypeId::of::<Idle>(),
             TypeId::of::<Walking>(),
@@ -319,7 +319,7 @@ pub mod default_states {
         ]
     });
 
-    pub const _DEFAULT_STATES_PASSIVE: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
+    pub const DEFAULT_STATES_NON_ATTACKING: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
         vec![
             TypeId::of::<Idle>(),
             TypeId::of::<Walking>(),
@@ -333,27 +333,19 @@ pub mod default_states {
             // Constructor automatically ignores self-transition rules,
             // so duplicates here are fine
             StateTransitionRule::always(
-                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
-                StateMatcher::Multiple(_DEFAULT_STATES.clone()),
+                StateMatcher::Multiple(DEFAULT_STATES_NON_ATTACKING.clone()),
+                StateMatcher::Multiple(DEFAULT_STATES.clone()),
             ),
             StateTransitionRule::new(
                 StateMatcher::Single(TypeId::of::<Attacking>()),
-                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
+                StateMatcher::Multiple(DEFAULT_STATES_NON_ATTACKING.clone()),
                 StateTransitionChecker::custom(Box::new(can_transition_from_attacking)),
             ),
         ]
     });
 
-    pub const _DEFAULT_TRANSITIONS_PASSIVE: LazyCell<Vec<StateTransitionRule>> =
-        LazyCell::new(|| {
-            vec![StateTransitionRule::always(
-                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
-                StateMatcher::Multiple(_DEFAULT_STATES_PASSIVE.clone()),
-            )]
-        });
-
-    fn can_transition_from_attacking(prev: &dyn CharacterState, _: &dyn CharacterState) -> bool {
-        if let Some(attacking) = CharacterState::as_any(prev).downcast_ref::<Attacking>()
+    fn can_transition_from_attacking(prev: &dyn ActionState, _: &dyn ActionState) -> bool {
+        if let Some(attacking) = ActionState::as_any(prev).downcast_ref::<Attacking>()
             && attacking.time_left > 0.0
         {
             false
@@ -363,35 +355,35 @@ pub mod default_states {
     }
 
     #[derive(Component, Debug, Clone, PartialEq, Reflect, Default)]
-    #[reflect(Component, CharacterState)]
+    #[reflect(Component, ActionState)]
     pub struct Idle;
-    impl CharacterStateMarker for Idle {}
+    impl ActionStateMarker for Idle {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
-    #[reflect(Component, CharacterState, MovementState)]
+    #[reflect(Component, ActionState, MovementActionState)]
     pub struct Walking;
-    impl CharacterStateMarker for Walking {}
-    impl MovementState for Walking {}
+    impl ActionStateMarker for Walking {}
+    impl MovementActionState for Walking {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
-    #[reflect(Component, CharacterState, MovementState)]
+    #[reflect(Component, ActionState, MovementActionState)]
     pub struct Running;
-    impl CharacterStateMarker for Running {}
-    impl MovementState for Running {}
+    impl ActionStateMarker for Running {}
+    impl MovementActionState for Running {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
-    #[reflect(Component, CharacterState, MovementState)]
+    #[reflect(Component, ActionState, MovementActionState)]
     pub struct Sprinting;
-    impl CharacterStateMarker for Sprinting {}
-    impl MovementState for Sprinting {}
+    impl ActionStateMarker for Sprinting {}
+    impl MovementActionState for Sprinting {}
 
     #[derive(Component, Debug, Clone, Reflect, Default)]
-    #[reflect(Component, CharacterState, TimedState)]
+    #[reflect(Component, ActionState, TimedActionState)]
     pub struct Attacking {
         pub time_left: f32,
     }
-    impl CharacterStateMarker for Attacking {}
-    impl TimedState for Attacking {
+    impl ActionStateMarker for Attacking {}
+    impl TimedActionState for Attacking {
         fn time_left(&self) -> f32 {
             self.time_left
         }
@@ -403,15 +395,15 @@ pub mod default_states {
 
 pub fn get_state(
     entity: Entity,
-    tracker: &CharacterStateTracker,
+    tracker: &ActionStateTracker,
     world: &mut World,
-) -> Option<Box<dyn CharacterState>> {
+) -> Option<Box<dyn ActionState>> {
     let type_registry = world.resource::<AppTypeRegistry>().clone();
     let type_registry = type_registry.read();
 
     let reg = type_registry.get(tracker.type_id).unwrap();
     let reflect_component = reg.data::<ReflectComponent>().unwrap();
-    let reflect_state = reg.data::<ReflectCharacterState>().unwrap();
+    let reflect_state = reg.data::<ReflectActionState>().unwrap();
 
     if let Ok(mut entity_mut) = world.get_entity_mut(entity)
         && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
@@ -426,7 +418,7 @@ pub fn get_state(
 
 pub fn is_in_movement_state(
     entity: Entity,
-    tracker: &CharacterStateTracker,
+    tracker: &ActionStateTracker,
     world: &mut World,
 ) -> bool {
     let registry = world.resource::<AppTypeRegistry>().clone();
@@ -436,7 +428,7 @@ pub fn is_in_movement_state(
 
     if let Ok(entity) = world.get_entity(entity)
         && let Some(reflect_data) = reflect_component.reflect(entity)
-        && let Some(reflect_movement_state) = reg.data::<ReflectMovementState>()
+        && let Some(reflect_movement_state) = reg.data::<ReflectMovementActionState>()
     {
         reflect_movement_state.get(reflect_data).is_some()
     } else {
@@ -447,16 +439,16 @@ pub fn is_in_movement_state(
 #[derive(EntityEvent, Debug)]
 pub struct CharacterStateEvent {
     entity: Entity,
-    new_state: Box<dyn CharacterState>,
-    prev_state: Box<dyn CharacterState>,
+    new_state: Box<dyn ActionState>,
+    prev_state: Box<dyn ActionState>,
 }
 
 impl CharacterStateEvent {
     pub fn try_new(
         entity: Entity,
-        transitions: &StateCapabilities,
-        new_state: Box<dyn CharacterState>,
-        prev_state: Box<dyn CharacterState>,
+        transitions: &ActionStateCapabilities,
+        new_state: Box<dyn ActionState>,
+        prev_state: Box<dyn ActionState>,
     ) -> Result<Self, StateTransitionError> {
         transitions.can_transition(prev_state.as_ref(), new_state.as_ref())?;
 
@@ -494,7 +486,7 @@ fn on_state_change(event: On<CharacterStateEvent>, mut world: DeferredWorld) {
             next_reflect_component.insert(&mut entity_mut, new_state.as_reflect(), &type_registry);
 
             // Update the tracker component
-            entity_mut.insert(CharacterStateTracker {
+            entity_mut.insert(ActionStateTracker {
                 type_id: new_type_id,
             });
         } else {
@@ -507,7 +499,7 @@ fn update_timed_state(
     time: Res<Time>,
     mut commands: Commands,
     registry: Res<AppTypeRegistry>,
-    query: Query<(Entity, &CharacterStateTracker, &StateCapabilities), With<Character>>,
+    query: Query<(Entity, &ActionStateTracker, &ActionStateCapabilities), With<Character>>,
 ) {
     let delta = time.delta_secs();
     let type_registry = registry.read();
@@ -517,7 +509,7 @@ fn update_timed_state(
         let Some(registration) = type_registry.get(tracker.type_id) else {
             continue;
         };
-        let Some(_) = registration.data::<ReflectTimedState>() else {
+        let Some(_) = registration.data::<ReflectTimedActionState>() else {
             continue;
         };
         let Some(_) = registration.data::<ReflectComponent>() else {
@@ -534,7 +526,7 @@ fn update_timed_state(
 
             // Re-fetch helpers inside closure
             let reg = type_registry.get(type_id).unwrap();
-            let reflect_timed_state = reg.data::<ReflectTimedState>().unwrap();
+            let reflect_timed_state = reg.data::<ReflectTimedActionState>().unwrap();
             let reflect_component = reg.data::<ReflectComponent>().unwrap();
 
             if let Ok(mut entity_mut) = world.get_entity_mut(entity)
@@ -553,7 +545,7 @@ fn update_timed_state(
                 match CharacterStateEvent::try_new(
                     entity,
                     &state_capabilities,
-                    Box::new(default_states::Idle),
+                    Box::new(action_states::Idle),
                     prev_data,
                 ) {
                     Ok(event) => {

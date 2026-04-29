@@ -13,17 +13,17 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tracing::warn;
 //use crate::game::object::Shadow;
-use crate::game::character::state::default_states::{Attacking, Idle, Running, Sprinting, Walking};
+use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
-use crate::game::character::state::state_transitions::StateCapabilities;
+use crate::game::character::state::state_transitions::ActionStateCapabilities;
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::components::{Collider, PhysicsData};
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
 use crate::{asset_tracking::LoadResource, AppSystems, PausableSystems};
-use crate::game::character::state::{default_states, is_in_movement_state, CharacterState, CharacterStateEvent, CharacterStateTracker};
+use crate::game::character::state::{action_states, is_in_movement_state, ActionState, CharacterStateEvent, ActionStateTracker};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -79,13 +79,10 @@ pub fn player(
         ..default()
     };
 
-    let default_states = default_states::_DEFAULT_STATES;
+    let default_states = action_states::DEFAULT_STATES;
     let states = default_states.clone();
 
-    let default_transitions = default_states::DEFAULT_TRANSITIONS;
-    let transitions = default_transitions.clone();
-
-    let state_capabilities = StateCapabilities::new(states, transitions);
+    let state_capabilities = ActionStateCapabilities::new(states);
 
     let character_data = character(
         "Player",
@@ -276,15 +273,15 @@ fn record_player_movement_input(world: &mut World) {
         With<MovementController>,
         With<PhysicsData>,
         With<WorldPosition>,
-        With<CharacterStateTracker>,
-        With<StateCapabilities>,
+        With<ActionStateTracker>,
+        With<ActionStateCapabilities>,
     )>();
 
     let entities: Vec<Entity> = controller_query.iter(world).collect();
 
     for entity in entities {
         // Get the current state
-        let tracker = world.get::<CharacterStateTracker>(entity).cloned().unwrap();
+        let tracker = world.get::<ActionStateTracker>(entity).cloned().unwrap();
         let Some(prev_state) = state::get_state(entity, &tracker, world) else {
             warn!("Failed to get reflect component for entity {}", entity);
             continue;
@@ -293,7 +290,7 @@ fn record_player_movement_input(world: &mut World) {
         // Check if the current state is movement
         let is_movement = is_in_movement_state(
             entity,
-            &world.get::<CharacterStateTracker>(entity).unwrap().clone(),
+            &world.get::<ActionStateTracker>(entity).unwrap().clone(),
             world,
         );
 
@@ -303,7 +300,7 @@ fn record_player_movement_input(world: &mut World) {
             controller.sprinting
         };
 
-        let new_state: Box<dyn CharacterState> = if intent.length() > 1e-6 {
+        let new_state: Box<dyn ActionState> = if intent.length() > 1e-6 {
             if intent.length() < 0.7 {
                 sprinting = false;
                 Box::new(Walking)
@@ -336,7 +333,7 @@ fn record_player_movement_input(world: &mut World) {
             Box::new(Idle)
         };
 
-        let state_capabilities = world.get::<StateCapabilities>(entity).cloned().unwrap();
+        let state_capabilities = world.get::<ActionStateCapabilities>(entity).cloned().unwrap();
 
         // If the character state has changed
         if (*prev_state).type_id() != (*new_state).type_id() {
@@ -404,17 +401,17 @@ fn record_action_input(world: &mut World) {
         With<Character>,
         With<Facing>,
         With<Stamina>,
-        With<CharacterStateTracker>,
-        With<StateCapabilities>,
+        With<ActionStateTracker>,
+        With<ActionStateCapabilities>,
     )>();
     let player = player_query.single(world).unwrap();
 
-    let state_capabilities = world.get::<StateCapabilities>(player).cloned().unwrap();
+    let state_capabilities = world.get::<ActionStateCapabilities>(player).cloned().unwrap();
 
     // 2. Check if it's a movement state (this takes &mut World)
     let is_movement = is_in_movement_state(
         player,
-        &world.get::<CharacterStateTracker>(player).unwrap().clone(),
+        &world.get::<ActionStateTracker>(player).unwrap().clone(),
         world,
     );
 
@@ -424,7 +421,7 @@ fn record_action_input(world: &mut World) {
         .is_ok();
 
     let prev_state = {
-        let state_tracker = world.get::<CharacterStateTracker>(player).cloned().unwrap();
+        let state_tracker = world.get::<ActionStateTracker>(player).cloned().unwrap();
 
         let Some(prev_state) = state::get_state(player, &state_tracker, world) else {
             warn!("Failed to get reflect component for entity {}", player);

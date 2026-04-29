@@ -242,7 +242,8 @@ where
     where
         D: Deserializer<'de>
     {
-        let opt = Some(T::deserialize(deserializer)?);
+        let result = T::deserialize(deserializer);
+        let opt = Some(result?);
         Ok(Maybe(opt))
     }
 }
@@ -271,25 +272,31 @@ impl<T: Serialize + Clone> Clone for Maybe<T> {
 impl<T: Serialize + Copy> Copy for Maybe<T> {}
 
 /// A type which allows either inline data, or a reference to an asset
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum RefOrInline<T, Codec>
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+#[serde(
+    untagged,
+    bound(
+        serialize = "ResourceLocation<T>: Serialize, Codec: Serialize",
+        deserialize = "ResourceLocation<T>: Deserialize<'de>, Codec: Deserialize<'de>"
+    )
+)]
+pub enum InlineOrResourceLocation<T, Codec>
 where
     T: ResourceType,
     Codec: RonCodec<T::AssetType>,
 {
-    Ref(ResourceLocation<T>),
     Inline(Codec),
+    ResourceLocation(ResourceLocation<T>),
 }
-impl<T, Codec> RefOrInline<T, Codec>
+impl<T, Codec> InlineOrResourceLocation<T, Codec>
 where
     T: ResourceType,
     Codec: RonCodec<T::AssetType>,
 {
     pub fn resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetType> {
         match self {
-            RefOrInline::Ref(location) => registry.get_asset(location.clone()).cloned(),
-            RefOrInline::Inline(codec) => Some(codec.into()),
+            InlineOrResourceLocation::Inline(codec) => Some(codec.into()),
+            InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(location.clone()).cloned(),
         }
     }
 }

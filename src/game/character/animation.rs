@@ -12,7 +12,7 @@ use crate::data::registry::{SystemRegistry, SystemRegistryMut};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::sprite::TextureAtlasCodec;
-use crate::game::character::state::CharacterStateTracker;
+use crate::game::character::state::ActionStateTracker;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AnimationAsset>();
@@ -52,7 +52,7 @@ fn update_animation_timer(
 fn update_animation_state(
     assets: Res<Assets<ResolvedAnimationData>>,
     mut query: Query<(
-        &CharacterStateTracker,
+        &ActionStateTracker,
         &Facing,
         &AnimationStateMap,
         &mut CharacterAnimationTracker,
@@ -79,7 +79,7 @@ fn update_animation_state(
 fn update_animation_atlas(
     assets: Res<Assets<ResolvedAnimationData>>,
     mut query: Query<(
-        &CharacterStateTracker,
+        &ActionStateTracker,
         &CharacterAnimationTracker,
         &AnimationStateMap,
         &mut Sprite,
@@ -222,7 +222,7 @@ pub struct AnimationCodec {
     pub image: ResourceLocation<AnimationSpriteResource>,
     pub atlas: TextureAtlasCodec,
     pub frames: usize,
-    pub duration: usize,
+    pub interval: u64,
 }
 impl From<AnimationCodec> for AnimationAsset {
     fn from(codec: AnimationCodec) -> Self {
@@ -230,7 +230,7 @@ impl From<AnimationCodec> for AnimationAsset {
             image: codec.image,
             atlas: codec.atlas.into(),
             frames: codec.frames,
-            interval: Duration::from_millis(codec.duration as u64),
+            interval: Duration::from_millis(codec.interval),
             resolved_handle: None,
         }
     }

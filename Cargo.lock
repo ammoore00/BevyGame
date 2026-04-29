@@ -673,6 +673,7 @@ dependencies = [
  "bevy",
  "derive-new",
  "getrandom 0.4.2",
+ "maybe_fields_macro",
  "parry3d",
  "paste",
  "rand 0.10.1",
@@ -2897,6 +2898,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9"
 dependencies = [
  "regex-automata",
+]
+
+[[package]]
+name = "maybe_fields_macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
