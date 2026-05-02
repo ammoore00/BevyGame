@@ -567,13 +567,9 @@ fn update_timed_state(
                     prev_data,
                 ) {
                     Ok(event) => {
-                        println!(
-                            "Transitioning from {:?} to {:?}",
-                            event.prev_state, event.new_state
-                        );
                         world.commands().trigger(event);
                     }
-                    Err(_) => warn!("Failed to transition to Idle state for entity {}", entity),
+                    Err(_) => error!("Failed to transition to Idle state for entity {}", entity),
                 }
             }
         });

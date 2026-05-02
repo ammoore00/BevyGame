@@ -82,8 +82,8 @@ fn generate_player() -> Result<(), WriteError> {
 
     let basic_attack = AttackData::new(
         basic_attack_loc,
+        basic_attack_length as u64,
         basic_attack_stamina_cost,
-        basic_attack_length as usize,
         basic_attack_loc,
         format!("{}_particle", basic_attack_loc).as_str()
     );

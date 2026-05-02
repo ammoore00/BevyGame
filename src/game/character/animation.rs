@@ -9,11 +9,13 @@ use std::fmt::Debug;
 use std::time::Duration;
 use getset::{CloneGetters, CopyGetters, Getters};
 use serde::{Deserialize, Serialize};
-use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistryMut, SystemRegistry};
+use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistry, ResolvedSystemRegistryMut, SystemRegistry};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::sprite::TextureAtlasCodec;
 use crate::datagen_api::assets::CharacterSpriteResource;
+use crate::datagen_api::attack::AttackResource;
+use crate::game::character::state::action_states::Attacking;
 use crate::game::character::state::ActionStateTracker;
 
 pub(super) fn plugin(app: &mut App) {
@@ -51,60 +53,99 @@ fn update_animation_timer(
 }
 
 fn update_animation_state(
-    assets: Res<Assets<ResolvedAnimationData>>,
     mut query: Query<(
         &ActionStateTracker,
         &Facing,
         &AnimationStateMap,
         &mut CharacterAnimationTracker,
+        Option<&Attacking>,
     )>,
+    attack_context: SystemRegistry<AttackResource>,
+    animation_context: ResolvedSystemRegistry<AnimationResource>,
 ) {
-    for (state, facing, map, mut animation) in &mut query {
-        let state_id = state.type_id;
+    for (
+        state_tracker,
+        facing,
+        animation_state_map,
+        mut animation_tracker,
+        attacking_state
+    ) in &mut query {
+        animation_tracker.facing = *facing;
 
-        animation.facing = *facing;
+        // Get the current animation, either from the state map or from the current attack
+        let animation_handle = if let Some(attacking_state) = attacking_state {
+            let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
+                warn!("Could not find attack definition for {}!", attacking_state.attack());
+                continue;
+            };
+            animation_context.get_resolved_handle(attack.animation()).unwrap()
+        } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
+            animation_handle
+        } else {
+            warn!("Could not find animation data for state!");
+            return;
+        };
 
-        // If the state changed, reset the animation timer/frame based on new map data
-        if Some(animation.current.clone()) != map.0.get(&state_id).cloned()
-            && let Some(data) = map.0.get(&state_id).cloned()
-        {
-            let data = assets.get(data.id()).unwrap();
+        // Update animation tracker state if the animation has changed
+        animation_tracker.current_animation = animation_handle.clone();
+        let animation = animation_context.get_resolved_asset_from_handle(animation_handle.clone()).unwrap();
 
-            animation.timer = Timer::new(data.interval, TimerMode::Repeating);
-            animation.frame = 0;
-            animation.current = map.0.get(&state_id).cloned().unwrap();
+        if animation_tracker.prev_animation != animation_tracker.current_animation {
+            animation_tracker.timer = Timer::new(animation.interval, TimerMode::Repeating);
+            animation_tracker.frame = 0;
         }
+
+        animation_tracker.prev_animation = animation_handle;
     }
 }
 
 fn update_animation_atlas(
-    assets: Res<Assets<ResolvedAnimationData>>,
     mut query: Query<(
         &ActionStateTracker,
         &CharacterAnimationTracker,
         &AnimationStateMap,
         &mut Sprite,
+        Option<&Attacking>,
     )>,
+    attack_context: SystemRegistry<AttackResource>,
+    animation_context: ResolvedSystemRegistry<AnimationResource>,
 ) {
-    for (state, animation, map, mut sprite) in &mut query {
-        let Some(data) = map.0.get(&state.type_id).cloned() else {
+    for (
+        state_tracker,
+        animation_tracker,
+        animation_state_map,
+        mut sprite,
+        attacking_state
+    ) in &mut query {
+        let animation_handle = if let Some(attacking_state) = attacking_state {
+            let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
+                warn!("Could not find attack definition for {}!", attacking_state.attack());
+                continue;
+            };
+            animation_context.get_resolved_handle(attack.animation()).unwrap()
+        } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
+            animation_handle
+        } else {
+            warn!("Could not find animation data for state!");
             continue;
         };
-        let data = assets.get(data.id()).unwrap();
 
-        sprite.image = data.image.clone();
+        let animation = animation_context.get_resolved_asset_from_handle(animation_handle).unwrap();
 
-        let mut atlas = data.atlas.clone();
+        sprite.image = animation.image.clone();
+
+        let mut atlas = animation.atlas.clone();
         // Calculate index: (Direction Row * Frames per row) + Current Frame
-        atlas.index = animation.get_atlas_index(&assets);
+        atlas.index = animation_tracker.get_atlas_index(animation_context.resolved_assets());
         sprite.texture_atlas = Some(atlas);
     }
 }
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {
-    default: Handle<ResolvedAnimationData>,
-    current: Handle<ResolvedAnimationData>,
+    default_animation: Handle<ResolvedAnimationData>,
+    current_animation: Handle<ResolvedAnimationData>,
+    prev_animation: Handle<ResolvedAnimationData>,
 
     facing: Facing,
     timer: Timer,
@@ -119,8 +160,9 @@ impl CharacterAnimationTracker {
         let interval = assets.get(default.id()).unwrap().interval;
 
         Self {
-            current: default.clone(),
-            default,
+            current_animation: default.clone(),
+            prev_animation: default.clone(),
+            default_animation: default,
 
             facing: Facing::default(),
             timer: Timer::new(interval, TimerMode::Repeating),
@@ -142,19 +184,19 @@ impl CharacterAnimationTracker {
             return;
         }
 
-        self.frame = (self.frame + 1) % assets.get(self.current.id()).unwrap().frames;
+        self.frame = (self.frame + 1) % assets.get(self.current_animation.id()).unwrap().frames;
     }
 
     fn get_image(&self, assets: &Assets<ResolvedAnimationData>) -> Handle<Image> {
-        assets.get(self.current.id()).unwrap().image.clone()
+        assets.get(self.current_animation.id()).unwrap().image.clone()
     }
 
     fn get_atlas(&self, assets: &Assets<ResolvedAnimationData>) -> TextureAtlas {
-        assets.get(self.current.id()).unwrap().atlas.clone()
+        assets.get(self.current_animation.id()).unwrap().atlas.clone()
     }
 
     fn get_atlas_index(&self, assets: &Assets<ResolvedAnimationData>) -> usize {
-        self.frame + self.facing as usize * assets.get(self.current.id()).unwrap().frames
+        self.frame + self.facing as usize * assets.get(self.current_animation.id()).unwrap().frames
     }
 }
 
@@ -205,8 +247,6 @@ fn resolve_animation_data(
     ) = animation_registry.split();
 
     for (loc, animation) in animation_registry.iter() {
-        //dbg!(animation_assets.iter().collect::<Vec<_>>());
-
         info!("Resolving animation: {}", loc);
 
         let animation = animation_assets.get_mut(&animation.clone())
