@@ -72,17 +72,14 @@ fn update_animation_state(
     ) in &mut query {
         animation_tracker.facing = *facing;
 
-        // Get the current animation, either from the state map or from the current attack
-        let animation_handle = if let Some(attacking_state) = attacking_state {
-            let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
-                warn!("Could not find attack definition for {}!", attacking_state.attack());
-                continue;
-            };
-            animation_context.get_resolved_handle(attack.animation()).unwrap()
-        } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
-            animation_handle
-        } else {
-            warn!("Could not find animation data for state!");
+        let Some(animation_handle) = get_animation_handle(
+            state_tracker,
+            animation_state_map,
+            attacking_state,
+            &attack_context,
+            &animation_context,
+        ) else {
+            warn!("Failed to get animation handle!");
             return;
         };
 
@@ -117,17 +114,15 @@ fn update_animation_atlas(
         mut sprite,
         attacking_state
     ) in &mut query {
-        let animation_handle = if let Some(attacking_state) = attacking_state {
-            let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
-                warn!("Could not find attack definition for {}!", attacking_state.attack());
-                continue;
-            };
-            animation_context.get_resolved_handle(attack.animation()).unwrap()
-        } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
-            animation_handle
-        } else {
-            warn!("Could not find animation data for state!");
-            continue;
+        let Some(animation_handle) = get_animation_handle(
+            state_tracker,
+            animation_state_map,
+            attacking_state,
+            &attack_context,
+            &animation_context,
+        ) else {
+            warn!("Failed to get animation handle!");
+            return;
         };
 
         let animation = animation_context.get_resolved_asset_from_handle(animation_handle).unwrap();
@@ -138,6 +133,33 @@ fn update_animation_atlas(
         // Calculate index: (Direction Row * Frames per row) + Current Frame
         atlas.index = animation_tracker.get_atlas_index(animation_context.resolved_assets());
         sprite.texture_atlas = Some(atlas);
+    }
+}
+
+fn get_animation_handle(
+    state_tracker: &ActionStateTracker,
+    animation_state_map: &AnimationStateMap,
+    attacking_state: Option<&Attacking>,
+    attack_context: &SystemRegistry<AttackResource>,
+    animation_context: &ResolvedSystemRegistry<AnimationResource>,
+) -> Option<Handle<ResolvedAnimationData>> {
+    if let Some(attacking_state) = attacking_state {
+        let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
+            warn!("Could not find attack definition for {}!", attacking_state.attack());
+            return None;
+        };
+
+        let Some(animation_handle) = animation_context.get_resolved_handle(attack.animation()) else {
+            warn!("Could not find animation definition for attack: {}!", attacking_state.attack());
+            return None;
+        };
+
+        Some(animation_handle)
+    } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
+        Some(animation_handle)
+    } else {
+        warn!("Could not find animation data for state!");
+        None
     }
 }
 
