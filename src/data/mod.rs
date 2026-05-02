@@ -195,21 +195,21 @@ macro_rules! define_resource {
 }
 
 #[macro_export]
+macro_rules! define_data_resource {
+    ($name:ident, $path:expr, $asset_type:ty, $file_type:expr) => {
+        paste::paste! {
+            define_resource!($name, const_format::concatcp!("data/", $path), $asset_type, $file_type);
+        }
+    }
+}
+
+#[macro_export]
 macro_rules! define_resolvable_resource {
     ($name:ident, $path:expr, $asset_type:ty, $resolved_asset_type:ty, $file_type:expr) => {
         paste::paste! {
-            pub type [<$name Registry>] = data::registry::ResourceRegistry<[<$name Resource>]>;
+            define_data_resource!($name, $path, $asset_type, $file_type);
+
             pub type [<Resolved $name Registry>] = data::registry::ResolvedResourceRegistry<[<$name Resource>]>;
-
-            #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
-            pub struct [<$name Resource>];
-
-            impl data::ResourceType for [<$name Resource>] {
-                type AssetType = $asset_type;
-
-                const ROOT_DIR: &'static str = $path;
-                const FILE_TYPE: ResourceFileType = $file_type;
-            }
 
             impl data::ResolvableResource for [<$name Resource>] {
                 type ResolvedAssetType = $resolved_asset_type;

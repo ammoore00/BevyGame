@@ -1,4 +1,4 @@
-use crate::data;
+use crate::{data, define_data_resource};
 use bevy::prelude::*;
 use crate::data::ResourceFileType;
 use crate::data::loader::LoaderJobManager;
@@ -49,4 +49,4 @@ fn apply_global_volume(
     }
 }
 
-define_resource!(Audio, "audio", AudioSource, ResourceFileType::Audio);
+define_data_resource!(Audio, "audio", AudioSource, ResourceFileType::Audio);

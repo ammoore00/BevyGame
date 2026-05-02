@@ -1,6 +1,6 @@
 use std::time::Duration;
 use bevy::ecs::system::SystemParam;
-use crate::data;
+use crate::{data, define_data_resource};
 use bevy::prelude::*;
 use getset::{CopyGetters, Getters};
 use serde::{Deserialize, Serialize};
@@ -48,7 +48,7 @@ pub struct AttackCodec {
     pub particle_sprite: ResourceLocation<CharacterSpriteResource>,
 }
 
-define_resource!(Attack, "attacks", AttackDefinition, ResourceFileType::Data);
+define_data_resource!(Attack, "characters/attacks", AttackDefinition, ResourceFileType::Data);
 
 #[derive(SystemParam)]
 pub struct AttackContext<'w> {

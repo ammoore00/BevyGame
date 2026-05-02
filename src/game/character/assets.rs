@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use std::collections::HashMap;
-use crate::{data, define_resource, define_sprite_resource};
+use crate::{data, define_data_resource, define_resource, define_sprite_resource};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use maybe_fields_macro::maybe_fields;
@@ -104,7 +104,7 @@ impl AllowedStatesCodec {
     }
 }
 
-define_resource!(Character, "characters", CharacterData, ResourceFileType::Data);
+define_data_resource!(Character, "characters/characters", CharacterData, ResourceFileType::Data);
 
 /// Enum used for referencing action states in data context
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

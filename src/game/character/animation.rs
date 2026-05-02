@@ -1,4 +1,5 @@
-use crate::{data, define_resolvable_resource, AssetLoadState};
+use crate::define_resource;
+use crate::{data, define_resolvable_resource, define_data_resource, AssetLoadState};
 use crate::game::character::Facing;
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems, AssetSystems};
@@ -338,4 +339,4 @@ impl From<AnimationCodec> for PartialAnimationData {
     }
 }
 
-define_resolvable_resource!(Animation, "animations", PartialAnimationData, ResolvedAnimationData, ResourceFileType::Data);
+define_resolvable_resource!(Animation, "characters/animations", PartialAnimationData, ResolvedAnimationData, ResourceFileType::Data);

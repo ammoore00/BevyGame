@@ -1,4 +1,4 @@
-use crate::data;
+use crate::{data, define_data_resource};
 use std::sync::LazyLock;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -82,5 +82,5 @@ impl From<TileCodec> for TileAsset {
 }
 
 
-define_resource!(Tile, "tiles", TileAsset, ResourceFileType::Data);
+define_data_resource!(Tile, "tiles", TileAsset, ResourceFileType::Data);
 define_sprite_resource!(Tile, "tiles");

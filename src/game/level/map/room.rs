@@ -1,4 +1,7 @@
-use crate::Scale;
+use crate::data;
+use crate::data::registry;
+use crate::define_resource;
+use crate::{define_data_resource, Scale};
 use crate::game::level::grid;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource};
@@ -142,8 +145,6 @@ pub enum ConnectionFacing {
     West,
 }
 
-pub type RoomRegistry = ResourceRegistry<RoomResource>;
-
 /// Struct which contains the specific tile layout for a room
 #[derive(Debug, Clone)]
 pub struct RoomLayout {
@@ -254,10 +255,4 @@ pub struct RoomBuilderContext<'w, 's> {
     pub room_assets: Res<'w, Assets<RoomDefinition>>,
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
-pub struct RoomResource;
-impl ResourceType for RoomResource {
-    type AssetType = RoomDefinition;
-    const ROOT_DIR: &'static str = "rooms";
-    const FILE_TYPE: ResourceFileType = ResourceFileType::Data;
-}
+define_data_resource!(Room, "rooms", RoomDefinition, ResourceFileType::Data);
