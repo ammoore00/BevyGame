@@ -152,6 +152,10 @@ pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 's
     const FILE_TYPE: ResourceFileType;
 }
 
+pub trait ResolvableResource: ResourceType {
+    type ResolvedAssetType: Asset + Clone + Send + Sync + 'static;
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ResourceFileType {
     Image,
@@ -186,6 +190,30 @@ macro_rules! define_resource {
 
                 const ROOT_DIR: &'static str = $path;
                 const FILE_TYPE: ResourceFileType = $file_type;
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! define_resolvable_resource {
+    ($name:ident, $path:expr, $asset_type:ty, $resolved_asset_type:ty, $file_type:expr) => {
+        paste::paste! {
+            pub type [<$name Registry>] = data::registry::ResourceRegistry<[<$name Resource>]>;
+            pub type [<Resolved $name Registry>] = data::registry::ResolvedResourceRegistry<[<$name Resource>]>;
+
+            #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
+            pub struct [<$name Resource>];
+
+            impl data::ResourceType for [<$name Resource>] {
+                type AssetType = $asset_type;
+
+                const ROOT_DIR: &'static str = $path;
+                const FILE_TYPE: ResourceFileType = $file_type;
+            }
+
+            impl data::ResolvableResource for [<$name Resource>] {
+                type ResolvedAssetType = $resolved_asset_type;
             }
         }
     };

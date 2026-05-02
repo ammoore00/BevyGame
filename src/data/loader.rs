@@ -10,18 +10,30 @@ use bevy::reflect::erased_serde::__private::serde::Deserializer;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
-use crate::data::registry::{ResourceRegistry, SystemRegistry};
-use crate::data::{ResourceLocation, ResourceType};
+use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
+use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
 use crate::StartupSystems;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Startup, load_assets.in_set(StartupSystems::LoadAssets));
+    app.add_systems(
+        Startup,
+        (
+            load_assets.in_set(StartupSystems::LoadAssets),
+            load_resolved_assets.in_set(StartupSystems::LoadResolvedAssets)
+        )
+    );
 }
 
 fn load_assets(world: &mut World) {
     let loader = world.resource::<GameAssetLoader>();
-    let jobs = loader.jobs.clone();
+    let jobs = loader.loader_jobs.clone();
     jobs.iter().for_each(|job| job.load(world).expect("Failed to load assets"));
+}
+
+fn load_resolved_assets(world: &mut World) {
+    let loader = world.resource::<GameAssetLoader>();
+    let jobs = loader.resolver_jobs.clone();
+    jobs.iter().for_each(|job| job.resolve(world).expect("Failed to resolve assets"));
 }
 
 /// Resource which holds a list of jobs to load assets
@@ -29,15 +41,23 @@ fn load_assets(world: &mut World) {
 /// load each asset, then insert them into the registry
 #[derive(Default, Resource)]
 pub struct GameAssetLoader {
-    jobs: Vec<Arc<dyn RegistryLoader>>,
+    loader_jobs: Vec<Arc<dyn RegistryLoader>>,
+    resolver_jobs: Vec<Arc<dyn RegistryResolver>>,
 }
 impl GameAssetLoader {
     pub fn new() -> Self {
-        Self { jobs: Vec::new() }
+        Self {
+            loader_jobs: Vec::new(),
+            resolver_jobs: Vec::new(),
+        }
     }
 
-    pub fn add_job<T: ResourceType>(&mut self) {
-        self.jobs.push(Arc::new(LoaderJob::<T>::default()));
+    pub fn add_loader_job<T: ResourceType>(&mut self) {
+        self.loader_jobs.push(Arc::new(LoaderJob::<T>::default()));
+    }
+
+    pub fn add_resolver_job<T: ResolvableResource>(&mut self) {
+        self.resolver_jobs.push(Arc::new(ResolverJob::<T>::default()));
     }
 }
 
@@ -48,11 +68,20 @@ pub trait LoaderJobManager {
     fn add_registry_with_manifest<T: ResourceType>(&mut self, manifest: Vec<ResourceLocation<T>>);
     /// Adds a job to the asset loader which will discover all assets in the registry automatically
     fn add_registry_with_discovery<T: ResourceType>(&mut self);
+
+
+    fn add_resolved_registry<T: ResolvableResource>(&mut self);
+    fn add_resolved_registry_with_manifest<T: ResolvableResource>(&mut self, manifest: Vec<ResourceLocation<T>>);
+    fn add_resolved_registry_with_discovery<T: ResolvableResource>(&mut self);
 }
 
 impl LoaderJobManager for App {
     fn add_resource_registry<T: ResourceType>(&mut self) {
         let world = self.world_mut();
+
+        if world.contains_resource::<ResourceRegistry<T>>() {
+            panic!("Cannot contain duplicate registries!")
+        }
         world.insert_resource(ResourceRegistry::<T>::default());
 
         if !world.contains_resource::<GameAssetLoader>() {
@@ -60,7 +89,7 @@ impl LoaderJobManager for App {
         }
 
         let mut asset_loader = world.resource_mut::<GameAssetLoader>();
-        asset_loader.add_job::<T>();
+        asset_loader.add_loader_job::<T>();
     }
 
     fn add_registry_with_manifest<T: ResourceType>(&mut self, manifest: Vec<ResourceLocation<T>>) {
@@ -104,6 +133,30 @@ impl LoaderJobManager for App {
 
         self.add_registry_with_manifest::<T>(manifest);
     }
+
+    fn add_resolved_registry<T: ResolvableResource>(&mut self) {
+        self.add_resource_registry::<T>();
+        insert_resolved_registry::<T>(self);
+    }
+
+    fn add_resolved_registry_with_manifest<T: ResolvableResource>(&mut self, manifest: Vec<ResourceLocation<T>>) {
+        self.add_registry_with_manifest::<T>(manifest);
+        insert_resolved_registry::<T>(self);
+    }
+
+    fn add_resolved_registry_with_discovery<T: ResolvableResource>(&mut self) {
+        self.add_registry_with_discovery::<T>();
+        insert_resolved_registry::<T>(self);
+    }
+}
+
+fn insert_resolved_registry<T: ResolvableResource>(app: &mut App) {
+    let world = app.world_mut();
+    world.insert_resource(ResolvedResourceRegistry::<T>::default());
+
+    // TODO: See if there is some way to automatically resolve assets?
+    let _asset_loader = world.resource_mut::<GameAssetLoader>();
+    //asset_loader.add_resolver_job::<T>();
 }
 
 trait RegistryLoader: Send + Sync + 'static {
@@ -116,9 +169,7 @@ struct LoaderJob<T: ResourceType> {
 }
 impl<T: ResourceType> Default for LoaderJob<T> {
     fn default() -> Self {
-        Self {
-            phantom_data: Default::default()
-        }
+        Self { phantom_data: Default::default() }
     }
 }
 impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
@@ -140,6 +191,28 @@ impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
         assets.into_iter().for_each(|(loc, asset)| registry.register_asset(loc, asset));
 
         Ok(())
+    }
+}
+
+trait RegistryResolver: Send + Sync + 'static {
+    fn resolve(&self, world: &mut World) -> Result<(), LoaderError>;
+}
+
+#[derive(Debug)]
+struct ResolverJob<T: ResolvableResource> {
+    phantom_data: PhantomData<T>,
+}
+impl<T: ResolvableResource> Default for ResolverJob<T> {
+    fn default() -> Self {
+        Self { phantom_data: Default::default() }
+    }
+}
+impl<T: ResolvableResource> RegistryResolver for ResolverJob<T> {
+    fn resolve(&self, world: &mut World) -> Result<(), LoaderError> {
+        let _partial_registry = world.resource::<ResourceRegistry<T>>();
+        let _resolved_registry = world.resource_mut::<ResolvedResourceRegistry<T>>();
+
+        todo!()
     }
 }
 
@@ -296,7 +369,7 @@ where
     pub fn resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetType> {
         match self {
             InlineOrResourceLocation::Inline(codec) => Some(codec.into()),
-            InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(location.clone()).cloned(),
+            InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(&location).cloned(),
         }
     }
 }

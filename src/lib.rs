@@ -112,9 +112,13 @@ enum StartupSystems {
     /// Register which assets need to be loaded
     RegisterManifests,
     /// Load the assets themselves based on registered manifests
+    /// This should only be used by the asset loader!
     LoadAssets,
     /// Resolve any inter-asset references
     ResolveAssets,
+    /// Load resolved assets into resolved registries
+    /// This should only be used by the asset loader!
+    LoadResolvedAssets,
     /// Populate asset reference resources
     PopulateAssetRefs,
 }

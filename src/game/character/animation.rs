@@ -1,24 +1,24 @@
-use crate::{data, define_sprite_resource};
+use crate::{data, define_resolvable_resource, define_sprite_resource};
 use crate::game::character::Facing;
 use crate::screens::Screen;
-use crate::{define_resource, AppSystems, PausableSystems, StartupSystems};
+use crate::{AppSystems, PausableSystems, StartupSystems};
 use bevy::prelude::*;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use crate::data::registry::{SystemRegistry, SystemRegistryMut};
+use crate::data::registry::{ResolvedResourceRegistry, SystemRegistry, SystemRegistryMut};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::sprite::TextureAtlasCodec;
 use crate::game::character::state::ActionStateTracker;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_asset::<AnimationAsset>();
+    app.init_asset::<PartialAnimationData>();
     app.init_asset::<ResolvedAnimationData>();
-    app.init_asset_loader::<RonAssetLoader<AnimationCodec, AnimationAsset>>();
-    app.add_registry_with_discovery::<AnimationResource>();
+    app.init_asset_loader::<RonAssetLoader<AnimationCodec, PartialAnimationData>>();
+    app.add_resolved_registry_with_discovery::<AnimationResource>();
     app.add_registry_with_discovery::<AnimationSpriteResource>();
 
     app.add_systems(
@@ -160,6 +160,16 @@ impl CharacterAnimationTracker {
 /// Maps character states to animation data
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct AnimationStateMap(pub HashMap<TypeId, Handle<ResolvedAnimationData>>);
+impl AnimationStateMap {
+    pub fn from_resource_location_map(map: &HashMap<TypeId, ResourceLocation<AnimationResource>>, registry: &ResolvedResourceRegistry<AnimationResource>) -> Self {
+        let resolved_map = map.iter()
+            .map(|(type_id, location)| {
+                (*type_id, registry.get(location).unwrap().clone())
+            })
+            .collect();
+        AnimationStateMap(resolved_map)
+    }
+}
 
 /// Resolved asset references for an animation, including handles to other assets
 #[derive(Debug, Clone, PartialEq, Asset, Reflect)]
@@ -172,17 +182,18 @@ pub struct ResolvedAnimationData {
 
 fn resolve_animation_data(
     mut animation_registry: SystemRegistryMut<AnimationResource>,
+    mut resolved_animation_registry: ResMut<ResolvedResourceRegistry<AnimationResource>>,
     animation_sprite_registry: SystemRegistry<AnimationSpriteResource>,
     mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
 ) {
     let (animation_registry, animation_assets) = animation_registry.split();
     
-    for animation in animation_registry.handles() {
+    for (loc, animation) in animation_registry.iter() {
         let animation = animation_assets.get_mut(&animation.clone())
             .unwrap_or_else(|| panic!("Failed to retrieve animation asset from handle from registry! This is a bug!"));
 
-        let Some(image) = animation_sprite_registry.get_handle(animation.image.clone()) else {
+        let Some(image) = animation_sprite_registry.get_handle(&animation.image) else {
             // TODO: Real error handling, since this could come up in normal operation
             dbg!("Failed to find image for animation: {:?}", animation.image.clone());
             return;
@@ -202,13 +213,14 @@ fn resolve_animation_data(
         };
 
         let resolved_animation_handle = asset_server.add(resolved_animation);
+        resolved_animation_registry.register_asset(loc.clone(), resolved_animation_handle.clone());
         animation.resolved_handle = Some(resolved_animation_handle);
     }
 }
 
 /// Stores the sprite and frame data for an animation
 #[derive(Debug, Clone, PartialEq, Asset, TypePath)]
-pub struct AnimationAsset {
+pub struct PartialAnimationData {
     image: ResourceLocation<AnimationSpriteResource>,
     atlas: TextureAtlasLayout,
     frames: usize,
@@ -224,9 +236,9 @@ pub struct AnimationCodec {
     pub frames: usize,
     pub interval: u64,
 }
-impl From<AnimationCodec> for AnimationAsset {
+impl From<AnimationCodec> for PartialAnimationData {
     fn from(codec: AnimationCodec) -> Self {
-        AnimationAsset {
+        PartialAnimationData {
             image: codec.image,
             atlas: codec.atlas.into(),
             frames: codec.frames,
@@ -236,5 +248,5 @@ impl From<AnimationCodec> for AnimationAsset {
     }
 }
 
-define_resource!(Animation, "animations", AnimationAsset, ResourceFileType::Data);
+define_resolvable_resource!(Animation, "animations", PartialAnimationData, ResolvedAnimationData, ResourceFileType::Data);
 define_sprite_resource!(Animation, "animations");

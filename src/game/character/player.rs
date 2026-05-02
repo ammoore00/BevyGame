@@ -1,15 +1,15 @@
 //! Player-specific behavior.
 
 use crate::game::character::animation::{
-    AnimationStateMap, CharacterAnimationTracker, ResolvedAnimationData,
+    CharacterAnimationTracker, ResolvedAnimationData,
 };
-use crate::game::character::{character, state, Character, Facing};
+use crate::game::character::{character, state, Character, CharacterBuilderContext, Facing};
 use crate::game::level::grid::coords::{
     rotate_screen_space_to_facing, rotate_screen_space_to_movement, WorldPosition,
 };
 use bevy::prelude::*;
-use std::any::{Any, TypeId};
-use std::collections::HashMap;
+use std::any::TypeId;
+use std::str::FromStr;
 use std::time::Duration;
 use tracing::warn;
 //use crate::game::object::Shadow;
@@ -23,7 +23,9 @@ use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
 use crate::{asset_tracking::LoadResource, AppSystems, PausableSystems};
-use crate::game::character::state::{action_states, is_in_movement_state, ActionState, CharacterStateEvent, ActionStateTracker};
+use crate::data::ResourceLocation;
+use crate::game::character::assets::CharacterResource;
+use crate::game::character::state::{is_in_movement_state, ActionState, CharacterStateEvent, ActionStateTracker};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<PlayerAssets>();
@@ -57,42 +59,28 @@ pub fn player(
     player_assets: &PlayerAssets,
     animation_assets: &Assets<ResolvedAnimationData>,
     scale: f32,
+    context: &CharacterBuilderContext,
 ) -> impl Bundle {
-    let character_animation_map = AnimationStateMap(HashMap::from([
-        (Idle.type_id(), player_assets.idle_animation.clone()),
-        (Walking.type_id(), player_assets.walk_animation.clone()),
-        (Running.type_id(), player_assets.run_animation.clone()),
-        (Sprinting.type_id(), player_assets.sprint_animation.clone()),
-        (
-            Attacking::default().type_id(),
-            player_assets.attack_animation.clone(),
-        ),
-    ]));
-
-    let character_animation =
+    let animation_tracker =
         CharacterAnimationTracker::new(player_assets.idle_animation.clone(), animation_assets);
 
-    let sprite = character_animation.default_sprite(animation_assets);
+    let sprite = animation_tracker.default_sprite(animation_assets);
 
     let movement_controller = MovementController {
         max_speed,
         ..default()
     };
-
-    let default_states = action_states::DEFAULT_STATES;
-    let states = default_states.clone();
-
-    let state_capabilities = ActionStateCapabilities::new(states);
+    
+    let player_data_location = ResourceLocation::<CharacterResource>::from_str("player").unwrap();
 
     let character_data = character(
-        "Player",
+        player_data_location,
         position,
-        state_capabilities,
         sprite,
-        character_animation,
-        character_animation_map,
+        animation_tracker,
         Collider::vertical_capsule(1.25, 0.25, position),
         scale,
+        context,
     );
 
     //let shadow = player_assets.shadow.clone();

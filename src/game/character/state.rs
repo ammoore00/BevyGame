@@ -63,13 +63,12 @@ pub mod state_transitions {
     use crate::game::character::*;
     use std::collections::HashMap;
     use crate::game::character::state::ActionState;
-    use crate::game::character::state::action_states::DEFAULT_TRANSITIONS;
+    use crate::game::character::state::action_states::{DEFAULT_STATES, DEFAULT_TRANSITIONS};
 
     #[derive(Component, Debug, Clone)]
     pub struct ActionStateCapabilities {
         transition_graph: HashMap<(TypeId, TypeId), StateTransitionRule>,
     }
-
     impl ActionStateCapabilities {
         pub fn new(
             allowed_states: Vec<TypeId>,
@@ -120,6 +119,11 @@ pub mod state_transitions {
                     reason: InvalidTransitionReason::StateNotAllowed,
                 })
             }
+        }
+    }
+    impl Default for ActionStateCapabilities {
+        fn default() -> Self {
+            Self::new(DEFAULT_STATES.clone())
         }
     }
 

@@ -9,12 +9,12 @@ use crate::define_resource;
 
 #[derive(Debug, Clone, Asset, TypePath)]
 pub struct AttackDefinition {
-    length: Duration,
+    _length: Duration,
 }
 impl From<AttackCodec> for AttackDefinition {
     fn from(value: AttackCodec) -> Self {
         AttackDefinition {
-            length: Duration::from_millis(value.length),
+            _length: Duration::from_millis(value.length),
         }
     }
 }

@@ -8,6 +8,7 @@ use crate::game::character::animation::ResolvedAnimationData;
 use crate::game::character::player::{PlayerAssets, player};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
+use crate::game::character::CharacterBuilderContext;
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
 
@@ -42,6 +43,7 @@ pub fn spawn_level(
     palette_assets: Res<Assets<Palette>>,
 
     mut builder_context: RoomBuilderContext,
+    character_context: CharacterBuilderContext,
 
     player_assets: Res<PlayerAssets>,
     object_assets: Res<ObjectAssets>,
@@ -53,7 +55,8 @@ pub fn spawn_level(
         4.5,
         &player_assets,
         &animation_assets,
-        scale.0
+        scale.0,
+        &character_context,
     );
 
     let _rock = object(

@@ -1,6 +1,5 @@
 use crate::asset_tracking::LoadResource;
 use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
-use state::state_transitions::ActionStateCapabilities;
 use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
@@ -8,7 +7,13 @@ use std::any::TypeId;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use bevy::ecs::system::SystemParam;
 use state::action_states;
+use crate::data::loader::LoaderJobManager;
+use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
+use crate::data::ResourceLocation;
+use crate::datagen_api::animation::AnimationResource;
+use crate::game::character::assets::{CharacterData, CharacterResource};
 
 pub mod animation;
 pub mod health;
@@ -20,6 +25,7 @@ mod attack;
 
 pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
+    app.add_registry_with_discovery::<CharacterResource>();
 
     app.add_plugins((
         animation::plugin,
@@ -32,17 +38,27 @@ pub fn plugin(app: &mut App) {
 }
 
 pub fn character(
-    name: impl Into<String>,
+    data_loc: ResourceLocation<CharacterResource>,
     position: Vec3,
-    state_capabilities: ActionStateCapabilities,
     sprite: Sprite,
     animation_tracker: CharacterAnimationTracker,
-    animation_map: AnimationStateMap,
     collider: Collider,
     scale: f32,
+    context: &CharacterBuilderContext,
 ) -> impl Bundle {
+    // TODO: Proper error handling
+    let data = context.get_character_data(&data_loc)
+        .unwrap_or_else(|| panic!("Failed to find character data for {}", data_loc));
+
+    let name = data.name().to_string();
+
+    let animation_registry = context.animation_registry().resolved_registry();
+    let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_registry));
+
+    let state_capabilities = data.state_capabilities().clone();
+    
     (
-        Name::new(name.into()),
+        Name::new(name),
         Character,
         state::action_state(action_states::Idle),
         state_capabilities,
@@ -57,6 +73,19 @@ pub fn character(
         animation_tracker,
         animation_map,
     )
+}
+
+#[derive(SystemParam, getset::Getters)]
+pub struct CharacterBuilderContext<'w> {
+    #[getset(get = "pub")]
+    character_registry: SystemRegistry<'w, CharacterResource>,
+    #[getset(get = "pub")]
+    animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
+}
+impl CharacterBuilderContext<'_> {
+    pub fn get_character_data(&self, loc: &ResourceLocation<CharacterResource>) -> Option<&CharacterData> {
+        self.character_registry.get_asset(loc)
+    }
 }
 
 #[derive(Component, Asset, Clone, Copy, Reflect)]

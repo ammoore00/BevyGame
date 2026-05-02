@@ -1,52 +1,62 @@
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::collections::HashMap;
-use crate::data;
+use crate::{data, define_resource};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use maybe_fields_macro::maybe_fields;
-use crate::data::loader::{Maybe, InlineOrResourceLocation, RonAssetLoader};
+use crate::data::loader::{Maybe, RonAssetLoader};
 use crate::data::{ResourceFileType, ResourceLocation};
-use crate::datagen_api::animation::{AnimationCodec, AnimationResource};
-use crate::define_resource;
-use crate::game::character::attack::{AttackCodec, AttackResource};
+use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry};
+use crate::datagen_api::animation::{AnimationResource, ResolvedAnimationData};
+use crate::game::character::attack::{AttackDefinition, AttackResource};
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_asset::<CharacterAsset>();
-    app.init_asset_loader::<RonAssetLoader::<CharacterCodec, CharacterAsset>>();
+    app.init_asset::<CharacterData>();
+    app.init_asset_loader::<RonAssetLoader::<CharacterCodec, CharacterData>>();
 }
 
-/// Enum used for referencing action states in data context
-/// Attacking is not present here as it has its own special handling
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum ActionStateEnum {
-    Idle,
-    Walking,
-    Running,
-    Sprinting,
-    Attacking,
-}
-impl ActionStateEnum {
-    pub fn into_type_id(self) -> TypeId {
-        match self {
-            ActionStateEnum::Idle => TypeId::of::<Idle>(),
-            ActionStateEnum::Walking => TypeId::of::<Walking>(),
-            ActionStateEnum::Running => TypeId::of::<Running>(),
-            ActionStateEnum::Sprinting => TypeId::of::<Sprinting>(),
-            ActionStateEnum::Attacking => TypeId::of::<Attacking>(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Asset, TypePath)]
-pub struct CharacterAsset {
+#[derive(Debug, Clone, Asset, TypePath, derive_new::new)]
+pub struct CharacterData {
     name: String,
     state_capabilities: ActionStateCapabilities,
-    animations: HashMap<TypeId, InlineOrResourceLocation<AnimationResource, AnimationCodec>>,
-    attacks: Vec<ResourceLocation<AttackResource>>
+    animations: HashMap<TypeId, ResourceLocation<AnimationResource>>,
+    _attacks: Vec<ResourceLocation<AttackResource>>
 }
-impl From<CharacterCodec> for CharacterAsset {
+impl CharacterData {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    
+    pub fn state_capabilities(&self) -> &ActionStateCapabilities {
+        &self.state_capabilities
+    }
+    
+    pub fn resolve_animation_handles(&self, animation_registry: &ResolvedResourceRegistry<AnimationResource>) -> HashMap<TypeId, Handle<ResolvedAnimationData>> {
+        self.animations.iter()
+            .map(|(type_id, animation_location)| {
+                let animation = animation_registry.get(animation_location)
+                    .cloned()
+                    // TODO: Replace with non-panic error handling
+                    .expect("Failed to retrieve animation handle from registry!");
+                (*type_id, animation)
+            })
+            .collect()
+    }
+    
+    pub fn _resolve_attack_handles(&self, attack_registry: &Res<ResourceRegistry<AttackResource>>) -> Vec<Handle<AttackDefinition>> {
+        self._attacks.iter()
+            .map(|attack_location| {
+                attack_registry.get(attack_location)
+                    .cloned()
+                    // TODO: Replace with non-panic error handling
+                    .expect("Failed to retrieve attack handle from registry!")
+            })
+            .collect()
+    }
+}
+impl From<CharacterCodec> for CharacterData {
     fn from(codec: CharacterCodec) -> Self {
         let animations = codec.animations.into_iter()
             .map(|(state, animation)| {
@@ -61,13 +71,13 @@ impl From<CharacterCodec> for CharacterAsset {
             .unwrap_or_else(|| DEFAULT_STATES.clone());
         let state_capabilities = ActionStateCapabilities::new(states);
 
-        let attacks = codec.attacks.into_inner().unwrap_or_default();
+        let _attacks = codec.attacks.into_inner().unwrap_or_default();
 
-        CharacterAsset {
+        CharacterData {
             name: codec.name,
             state_capabilities,
             animations,
-            attacks,
+            _attacks,
         }
     }
 }
@@ -78,7 +88,7 @@ pub struct CharacterCodec {
     pub format: u8,
     pub name: String,
     pub allowed_states: Maybe<AllowedStatesCodec>,
-    pub animations: HashMap<ActionStateEnum, InlineOrResourceLocation<AnimationResource, AnimationCodec>>,
+    pub animations: HashMap<ActionStateEnum, ResourceLocation<AnimationResource>>,
     pub attacks: Maybe<Vec<ResourceLocation<AttackResource>>>,
 }
 
@@ -100,4 +110,25 @@ impl AllowedStatesCodec {
     }
 }
 
-define_resource!(Character, "characters", CharacterAsset, ResourceFileType::Data);
+define_resource!(Character, "characters", CharacterData, ResourceFileType::Data);
+
+/// Enum used for referencing action states in data context
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ActionStateEnum {
+    Idle,
+    Walking,
+    Running,
+    Sprinting,
+    Attacking,
+}
+impl ActionStateEnum {
+    pub fn into_type_id(self) -> TypeId {
+        match self {
+            ActionStateEnum::Idle => TypeId::of::<Idle>(),
+            ActionStateEnum::Walking => TypeId::of::<Walking>(),
+            ActionStateEnum::Running => TypeId::of::<Running>(),
+            ActionStateEnum::Sprinting => TypeId::of::<Sprinting>(),
+            ActionStateEnum::Attacking => TypeId::of::<Attacking>(),
+        }
+    }
+}
