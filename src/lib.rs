@@ -58,7 +58,9 @@ impl Plugin for AppPlugin {
             dev_tools::plugin,
         ));
 
-        // Order new `AppSystems` variants by adding them here:
+        app.insert_resource(Scale(6.0));
+
+        // Main game loop systems
         app.configure_sets(
             Update,
             (
@@ -70,19 +72,30 @@ impl Plugin for AppPlugin {
                 .chain(),
         );
 
+        // Asset loading systems
+        app.init_state::<AssetLoadState>();
         app.configure_sets(
             Startup,
             (
                 AssetSystems::RegisterManifests,
                 AssetSystems::LoadAssets,
-                AssetSystems::ResolveAssets,
-                AssetSystems::LoadResolvedAssets,
-                AssetSystems::PopulateAssetRefs,
             )
                 .chain(),
         );
 
-        app.insert_resource(Scale(6.0));
+        app.configure_sets(
+            OnEnter(AssetLoadState::Resolving),
+            (
+                AssetSystems::ResolveAssets,
+                AssetSystems::PopulateResolvedAssets,
+            )
+                .chain(),
+        );
+
+        app.configure_sets(
+            OnEnter(AssetLoadState::Done),
+            AssetSystems::PopulateAssetRefs,
+        );
 
         // Set up the `Pause` state.
         app.init_state::<Pause>();
@@ -119,9 +132,17 @@ enum AssetSystems {
     ResolveAssets,
     /// Load resolved assets into resolved registries
     /// This should only be used by the asset loader!
-    LoadResolvedAssets,
+    PopulateResolvedAssets,
     /// Populate asset reference resources
     PopulateAssetRefs,
+}
+
+#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+enum AssetLoadState {
+    #[default]
+    Loading,
+    Resolving,
+    Done,
 }
 
 /// Whether or not the game is paused.

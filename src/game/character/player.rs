@@ -572,9 +572,9 @@ impl FromWorld for PlayerAssets {
         let assets = world.resource::<AssetServer>();
 
         let idle_sprite = assets.load("base/images/characters/player/idle.png");
-        let walk_sprite = assets.load("base/images/characters/player/walk.png");
-        let run_sprite = assets.load("base/images/characters/player/run.png");
-        let attack_sprite = assets.load("base/images/characters/player/attack.png");
+        let walk_sprite = assets.load("base/images/characters/player/walking.png");
+        let run_sprite = assets.load("base/images/characters/player/running.png");
+        let attack_sprite = assets.load("base/images/characters/player/attacking.png");
 
         Self {
             idle_animation: assets.add(ResolvedAnimationData {
@@ -630,7 +630,7 @@ impl FromWorld for PlayerAssets {
                 frames: 7,
                 interval: Duration::from_millis(ATTACK_DURATION / 7),
             }),
-            attack_sprite: assets.load("base/images/characters/player/attack.png"),
+            attack_sprite: assets.load("base/images/characters/player/attacking.png"),
             attack_particle_sprite: assets.load("base/images/characters/player/attack_particle.png"),
 
             indicator_ring_sprite: assets.load("base/images/characters/player/indicator_ring.png"),

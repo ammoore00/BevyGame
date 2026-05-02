@@ -12,15 +12,25 @@ use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
 use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
-use crate::AssetSystems;
+use crate::{AssetLoadState, AssetSystems};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Startup,
         (
             load_assets.in_set(AssetSystems::LoadAssets),
-            load_resolved_assets.in_set(AssetSystems::LoadResolvedAssets)
         )
+    );
+
+    app.add_systems(
+        Update,
+        advance_from_loading_to_resolving
+            .run_if(in_state(AssetLoadState::Loading)),
+    );
+
+    app.add_systems(
+        OnEnter(AssetLoadState::Resolving),
+        populate_resolved_assets.in_set(AssetSystems::PopulateResolvedAssets),
     );
 }
 
@@ -30,7 +40,16 @@ fn load_assets(world: &mut World) {
     jobs.iter().for_each(|job| job.load(world).expect("Failed to load assets"));
 }
 
-fn load_resolved_assets(world: &mut World) {
+fn advance_from_loading_to_resolving(world: &mut World) {
+    let loader = world.resource::<GameAssetLoader>();
+
+    if loader.loader_jobs.iter().all(|job| job.is_loaded(world)) {
+        let mut next_state = world.resource_mut::<NextState<AssetLoadState>>();
+        next_state.set(AssetLoadState::Resolving);
+    }
+}
+
+fn populate_resolved_assets(world: &mut World) {
     let loader = world.resource::<GameAssetLoader>();
     let jobs = loader.resolver_jobs.clone();
     jobs.iter().for_each(|job| job.resolve(world).expect("Failed to resolve assets"));
@@ -54,6 +73,11 @@ impl GameAssetLoader {
 
     pub fn add_loader_job<T: ResourceType>(&mut self) {
         self.loader_jobs.push(Arc::new(LoaderJob::<T>::default()));
+    }
+
+    pub fn all_jobs_loaded(&self, world: &World) -> bool {
+        self.loader_jobs.iter()
+            .all(|job| job.is_loaded(world))
     }
 
     pub fn add_resolver_job<T: ResolvableResource>(&mut self) {
@@ -161,6 +185,7 @@ fn insert_resolved_registry<T: ResolvableResource>(app: &mut App) {
 
 trait RegistryLoader: Send + Sync + 'static {
     fn load(&self, world: &mut World) -> Result<(), LoaderError>;
+    fn is_loaded(&self, world: &World) -> bool;
 }
 
 #[derive(Debug)]
@@ -191,6 +216,15 @@ impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
         assets.into_iter().for_each(|(loc, asset)| registry.register_asset(loc, asset));
 
         Ok(())
+    }
+
+    fn is_loaded(&self, world: &World) -> bool {
+        let asset_server = world.resource::<AssetServer>();
+        let registry = world.resource::<ResourceRegistry<T>>();
+
+        registry
+            .iter()
+            .all(|(_, handle)| asset_server.is_loaded_with_dependencies(handle))
     }
 }
 

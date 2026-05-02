@@ -1,4 +1,4 @@
-use crate::{data, define_resolvable_resource, define_sprite_resource};
+use crate::{data, define_resolvable_resource};
 use crate::game::character::Facing;
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems, AssetSystems};
@@ -22,7 +22,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_resolved_registry_with_discovery::<AnimationResource>();
 
     app.add_systems(
-        Startup,
+        Update,
         resolve_animation_data.in_set(AssetSystems::ResolveAssets)
     );
 
@@ -181,19 +181,23 @@ pub struct ResolvedAnimationData {
 }
 
 fn resolve_animation_data(
+    mut resolved: Local<bool>,
     mut animation_registry: SystemRegistryMut<AnimationResource>,
     mut resolved_animation_registry: ResMut<ResolvedResourceRegistry<AnimationResource>>,
     animation_sprite_registry: SystemRegistry<CharacterSpriteResource>,
     mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
 ) {
+    if *resolved {
+        return;
+    }
+    
+    info!("Resolving animation data!");
+
     let (
         animation_registry,
         animation_assets
     ) = animation_registry.split();
-
-    println!("Animation Registry: {:#?}", animation_registry);
-    println!("Animation Assets: {:#?}", animation_assets.iter().collect::<Vec<_>>());
 
     for (loc, animation) in animation_registry.iter() {
         let animation = animation_assets.get_mut(&animation.clone())
@@ -229,6 +233,8 @@ fn resolve_animation_data(
         resolved_animation_registry.register_asset(loc.clone(), resolved_animation_handle.clone());
         animation.resolved_handle = Some(resolved_animation_handle);
     }
+
+    *resolved = true;
 }
 
 /// Stores the sprite and frame data for an animation
