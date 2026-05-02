@@ -2,18 +2,23 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use serde::Serialize;
+use tracing::info;
 use bevy_game_2d::data::{ResourceLocation, ResourceType};
+use crate::characters::generate_characters;
 use crate::room::generate_rooms;
 use crate::tiles::generate_tiles;
 
 pub mod room;
 pub mod tiles;
+mod characters;
+mod sprite;
 
 static ROOT_GENERATED: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from(Path::new("../assets/generated")));
 pub static ROOT: LazyLock<PathBuf> = LazyLock::new(|| ROOT_GENERATED.join("base"));
 
 fn main() {
     std::fs::create_dir_all(ROOT_GENERATED.join("base")).expect("Failed to create directory");
+    generate_characters().expect("Failed to generate characters");
     generate_tiles().expect("Failed to generate tiles");
     generate_rooms().expect("Failed to generate rooms");
 }
@@ -33,9 +38,19 @@ where
     let serialized = ron::ser::to_string_pretty(&codec, ron::ser::PrettyConfig::default())?;
     let serialized = compact_integer_arrays(&serialized);
 
-    let file = std::fs::File::create(ROOT_GENERATED.join(loc.as_path()))?;
+    // Create all parent directories
+    let path = ROOT_GENERATED.join(loc.as_path());
+    if let Some(parent) = path.parent() {
+        info!("Creating directory: {}", parent.display());
+        std::fs::create_dir_all(parent)
+            .map_err(|err| WriteError::io(&loc, err))?;
+    }
+
+    let file = std::fs::File::create(ROOT_GENERATED.join(loc.as_path()))
+        .map_err(|err| WriteError::io(&loc, err))?;
     let mut writer = std::io::BufWriter::new(file);
-    writer.write_all(serialized.as_bytes())?;
+    writer.write_all(serialized.as_bytes())
+        .map_err(|err| WriteError::io(&loc, err))?;
     Ok(())
 }
 
@@ -107,8 +122,25 @@ fn compact_array_inner(text: &str) -> String {
 
 #[derive(Debug, thiserror::Error)]
 pub enum WriteError {
+    #[error("Error when writing resource {loc} to {path}: {err}")]
+    File {
+        loc: String,
+        path: String,
+        err: std::io::Error
+    },
     #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
+    OtherIo(#[from] std::io::Error),
     #[error("RON serialize error: {0}")]
     Ron(#[from] ron::Error),
+}
+impl WriteError {
+    fn io<T: ResourceType>(loc: &ResourceLocation<T>, err: std::io::Error) -> Self {
+        Self::File {
+            loc: loc.to_string(),
+            path: loc.as_path()
+                .to_string_lossy()
+                .parse().unwrap(),
+            err
+        }
+    }
 }

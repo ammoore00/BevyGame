@@ -19,9 +19,9 @@ pub mod animation;
 pub mod health;
 pub mod player;
 pub mod stamina;
-mod assets;
+pub mod assets;
 mod state;
-mod attack;
+pub mod attack;
 
 pub fn plugin(app: &mut App) {
     app.load_resource::<CharacterAssets>();
@@ -50,15 +50,12 @@ pub fn character(
     let data = context.get_character_data(&data_loc)
         .unwrap_or_else(|| panic!("Failed to find character data for {}", data_loc));
 
-    let name = data.name().to_string();
-
     let animation_registry = context.animation_registry().resolved_registry();
     let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_registry));
 
     let state_capabilities = data.state_capabilities().clone();
     
     (
-        Name::new(name),
         Character,
         state::action_state(action_states::Idle),
         state_capabilities,

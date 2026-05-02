@@ -18,13 +18,14 @@ macro_rules! define_sprite_resource {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct TextureAtlasCodec {
-    size: UVec2,
-    columns: u32,
-    rows: u32,
+    pub format: u8,
+    pub size: UVec2,
+    pub columns: u32,
+    pub rows: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    padding: Maybe<UVec2>,
+    pub padding: Maybe<UVec2>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    offset: Maybe<UVec2>,
+    pub offset: Maybe<UVec2>,
 }
 impl From<TextureAtlasCodec> for TextureAtlasLayout {
     fn from(codec: TextureAtlasCodec) -> Self {

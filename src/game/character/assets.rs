@@ -19,16 +19,11 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Debug, Clone, Asset, TypePath, derive_new::new)]
 pub struct CharacterData {
-    name: String,
     state_capabilities: ActionStateCapabilities,
     animations: HashMap<TypeId, ResourceLocation<AnimationResource>>,
     _attacks: Vec<ResourceLocation<AttackResource>>
 }
 impl CharacterData {
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-    
     pub fn state_capabilities(&self) -> &ActionStateCapabilities {
         &self.state_capabilities
     }
@@ -74,7 +69,6 @@ impl From<CharacterCodec> for CharacterData {
         let _attacks = codec.attacks.into_inner().unwrap_or_default();
 
         CharacterData {
-            name: codec.name,
             state_capabilities,
             animations,
             _attacks,
@@ -86,7 +80,6 @@ impl From<CharacterCodec> for CharacterData {
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct CharacterCodec {
     pub format: u8,
-    pub name: String,
     pub allowed_states: Maybe<AllowedStatesCodec>,
     pub animations: HashMap<ActionStateEnum, ResourceLocation<AnimationResource>>,
     pub attacks: Maybe<Vec<ResourceLocation<AttackResource>>>,
