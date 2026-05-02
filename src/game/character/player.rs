@@ -24,6 +24,7 @@ use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
 use crate::{asset_tracking::LoadResource, AppSystems, PausableSystems};
 use crate::data::ResourceLocation;
+use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::datagen_api::attack::{AttackContext, AttackResource};
 use crate::game::character::assets::CharacterResource;
 use crate::game::character::state::{is_in_movement_state, ActionState, CharacterStateEvent, ActionStateTracker};
@@ -101,7 +102,8 @@ pub fn player(
     //    Transform::from_translation(Vec3::new(0.25 * scale, -0.375 * scale, -0.1)),
     //);
 
-    let indicator_ring_sprite = player_assets.indicator_ring_sprite.clone();
+    let indicator_ring_loc = "player/indicator_ring".parse::<ResourceLocation<CharacterSpriteResource>>().unwrap();
+    let indicator_ring_sprite = context.sprite_registry.get_handle(&indicator_ring_loc).unwrap();
     let indicator_ring_layout = player_assets.indicator_ring_layout.clone();
 
     let indicator_ring = (
@@ -532,12 +534,7 @@ fn on_player_attack(
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct PlayerAssets {
-    #[dependency]
-    indicator_ring_sprite: Handle<Image>,
     indicator_ring_layout: Handle<TextureAtlasLayout>,
-
-    #[dependency]
-    pub steps: Vec<Handle<AudioSource>>,
 }
 
 impl FromWorld for PlayerAssets {
@@ -546,18 +543,8 @@ impl FromWorld for PlayerAssets {
         let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
         let indicator_ring_layout = texture_atlas_layouts.add(indicator_ring_layout);
 
-        let assets = world.resource::<AssetServer>();
-
         Self {
-            indicator_ring_sprite: assets.load("base/images/characters/player/indicator_ring.png"),
             indicator_ring_layout,
-
-            steps: vec![
-                assets.load("base/audio/sound_effects/step1.ogg"),
-                assets.load("base/audio/sound_effects/step2.ogg"),
-                assets.load("base/audio/sound_effects/step3.ogg"),
-                assets.load("base/audio/sound_effects/step4.ogg"),
-            ],
         }
     }
 }

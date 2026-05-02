@@ -13,6 +13,7 @@ use crate::data::loader::LoaderJobManager;
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
 use crate::data::ResourceLocation;
 use crate::datagen_api::animation::AnimationResource;
+use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::game::character::assets::{CharacterData, CharacterResource};
 
 pub mod animation;
@@ -24,7 +25,6 @@ mod state;
 pub mod attack;
 
 pub fn plugin(app: &mut App) {
-    app.load_resource::<CharacterAssets>();
     app.add_registry_with_discovery::<CharacterResource>();
 
     app.add_plugins((
@@ -79,6 +79,8 @@ pub struct CharacterBuilderContext<'w> {
     character_registry: SystemRegistry<'w, CharacterResource>,
     #[getset(get = "pub")]
     animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
+    #[getset(get = "pub")]
+    sprite_registry: SystemRegistry<'w, CharacterSpriteResource>,
 }
 impl CharacterBuilderContext<'_> {
     pub fn get_character_data(&self, loc: &ResourceLocation<CharacterResource>) -> Option<&CharacterData> {
@@ -88,17 +90,6 @@ impl CharacterBuilderContext<'_> {
 
 #[derive(Component, Asset, Clone, Copy, Reflect)]
 pub struct Character;
-
-#[derive(Resource, Asset, Clone, Reflect)]
-#[reflect(Resource)]
-pub struct CharacterAssets {}
-
-impl FromWorld for CharacterAssets {
-    fn from_world(world: &mut World) -> Self {
-        let _assets = world.resource::<AssetServer>();
-        Self {}
-    }
-}
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
 pub enum Facing {
