@@ -1,5 +1,4 @@
 use crate::data;
-use crate::data::registry;
 use crate::define_resource;
 use crate::{define_data_resource, Scale};
 use crate::game::level::grid;
@@ -11,9 +10,8 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use bevy::ecs::system::SystemParam;
 use serde::{Deserialize, Serialize};
-use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
+use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
-use crate::data::registry::ResourceRegistry;
 use crate::datagen_api::tile::assets::TileSpriteRegistry;
 
 pub(super) fn plugin(app: &mut App) {

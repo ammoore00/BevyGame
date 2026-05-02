@@ -246,7 +246,7 @@ pub struct ResolvedAnimationData {
     atlas: TextureAtlas,
     #[getset(get_copy = "pub")]
     frames: usize,
-    #[getset(get = "pub")]
+    #[getset(get_copy = "pub")]
     interval: Duration,
 }
 

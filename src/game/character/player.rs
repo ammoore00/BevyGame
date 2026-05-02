@@ -10,7 +10,6 @@ use crate::game::level::grid::coords::{
 use bevy::prelude::*;
 use std::any::TypeId;
 use std::str::FromStr;
-use std::time::Duration;
 use tracing::warn;
 //use crate::game::object::Shadow;
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking};
@@ -25,7 +24,7 @@ use crate::screens::Screen;
 use crate::{asset_tracking::LoadResource, AppSystems, PausableSystems};
 use crate::data::ResourceLocation;
 use crate::datagen_api::assets::CharacterSpriteResource;
-use crate::datagen_api::attack::{AttackContext, AttackResource};
+use crate::datagen_api::attack::{AttackContext, AttackDefinition, AttackRegistry, AttackResource};
 use crate::game::character::assets::CharacterResource;
 use crate::game::character::state::{is_in_movement_state, ActionState, CharacterStateEvent, ActionStateTracker};
 
@@ -450,10 +449,22 @@ fn record_action_input(world: &mut World) {
             attack: attack_loc.clone(),
         });
 
+        let attack_registry = world.resource::<AttackRegistry>();
+        let attack_assets = world.resource::<Assets<AttackDefinition>>();
+
+        let Some(attack_handle) = attack_registry.get(&attack_loc) else {
+            error!("Failed to find attack resource for location: {}", attack_loc);
+            return;
+        };
+        let Some(attack) = attack_assets.get(attack_handle) else {
+            error!("Failed to find attack asset for handle: {:?}", attack_handle);
+            return;
+        };
+
         match CharacterStateEvent::try_new(
             player,
             &state_capabilities,
-            Box::new(Attacking::new(&attack_loc, Duration::from_millis(ATTACK_DURATION))),
+            Box::new(Attacking::new(&attack_loc, *attack.duration())),
             prev_state,
         ) {
             Ok(event) => world.trigger(event),
@@ -487,8 +498,6 @@ struct PlayerAttackEvent {
     attack: ResourceLocation<AttackResource>,
 }
 
-const ATTACK_DURATION: u64 = 350;
-
 fn on_player_attack(
     event: On<PlayerAttackEvent>,
     context: AttackContext,
@@ -519,7 +528,7 @@ fn on_player_attack(
     let particle_animation = ParticleAnimation::new(
         event.facing as usize * animation.frames(),
         animation.frames(),
-        Duration::from_millis(ATTACK_DURATION / animation.frames() as u64),
+        animation.interval(),
     );
 
     commands.trigger(ParticleSpawnEvent::with_parent(
