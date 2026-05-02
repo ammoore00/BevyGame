@@ -571,10 +571,10 @@ impl FromWorld for PlayerAssets {
 
         let assets = world.resource::<AssetServer>();
 
-        let idle_sprite = assets.load("base/images/characters/idle.png");
-        let walk_sprite = assets.load("base/images/characters/walk.png");
-        let run_sprite = assets.load("base/images/characters/run.png");
-        let attack_sprite = assets.load("base/images/characters/attack.png");
+        let idle_sprite = assets.load("base/images/characters/player/idle.png");
+        let walk_sprite = assets.load("base/images/characters/player/walk.png");
+        let run_sprite = assets.load("base/images/characters/player/run.png");
+        let attack_sprite = assets.load("base/images/characters/player/attack.png");
 
         Self {
             idle_animation: assets.add(ResolvedAnimationData {
@@ -630,10 +630,10 @@ impl FromWorld for PlayerAssets {
                 frames: 7,
                 interval: Duration::from_millis(ATTACK_DURATION / 7),
             }),
-            attack_sprite: assets.load("base/images/characters/attack.png"),
-            attack_particle_sprite: assets.load("base/images/characters/attack_particle.png"),
+            attack_sprite: assets.load("base/images/characters/player/attack.png"),
+            attack_particle_sprite: assets.load("base/images/characters/player/attack_particle.png"),
 
-            indicator_ring_sprite: assets.load("base/images/characters/indicator_ring.png"),
+            indicator_ring_sprite: assets.load("base/images/characters/player/indicator_ring.png"),
             indicator_ring_layout,
 
             steps: vec![

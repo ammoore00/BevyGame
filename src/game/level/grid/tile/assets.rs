@@ -6,7 +6,7 @@ use maybe_fields_macro::maybe_fields;
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
 use crate::datagen_api::tile::TileShape;
-use crate::{define_resource, define_sprite_resource, StartupSystems};
+use crate::{define_resource, define_sprite_resource, AssetSystems};
 
 pub(in crate::game) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();
@@ -16,7 +16,7 @@ pub(in crate::game) fn plugin(app: &mut App) {
 
     app.add_systems(
         Startup,
-        populate_tile_assets.in_set(StartupSystems::PopulateAssetRefs)
+        populate_tile_assets.in_set(AssetSystems::PopulateAssetRefs)
     );
 }
 

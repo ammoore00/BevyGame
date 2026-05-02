@@ -12,14 +12,14 @@ use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
 use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
-use crate::StartupSystems;
+use crate::AssetSystems;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Startup,
         (
-            load_assets.in_set(StartupSystems::LoadAssets),
-            load_resolved_assets.in_set(StartupSystems::LoadResolvedAssets)
+            load_assets.in_set(AssetSystems::LoadAssets),
+            load_resolved_assets.in_set(AssetSystems::LoadResolvedAssets)
         )
     );
 }

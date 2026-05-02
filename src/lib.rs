@@ -73,10 +73,11 @@ impl Plugin for AppPlugin {
         app.configure_sets(
             Startup,
             (
-                StartupSystems::RegisterManifests,
-                StartupSystems::LoadAssets,
-                StartupSystems::ResolveAssets,
-                StartupSystems::PopulateAssetRefs,
+                AssetSystems::RegisterManifests,
+                AssetSystems::LoadAssets,
+                AssetSystems::ResolveAssets,
+                AssetSystems::LoadResolvedAssets,
+                AssetSystems::PopulateAssetRefs,
             )
                 .chain(),
         );
@@ -108,7 +109,7 @@ enum AppSystems {
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-enum StartupSystems {
+enum AssetSystems {
     /// Register which assets need to be loaded
     RegisterManifests,
     /// Load the assets themselves based on registered manifests

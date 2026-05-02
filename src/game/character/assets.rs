@@ -1,10 +1,10 @@
 use std::any::TypeId;
 use std::collections::HashMap;
-use crate::{data, define_resource};
+use crate::{data, define_resource, define_sprite_resource};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use maybe_fields_macro::maybe_fields;
-use crate::data::loader::{Maybe, RonAssetLoader};
+use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry};
 use crate::datagen_api::animation::{AnimationResource, ResolvedAnimationData};
@@ -13,8 +13,9 @@ use crate::game::character::state::action_states::{Attacking, Idle, Running, Spr
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_registry_with_discovery::<CharacterSpriteResource>();
     app.init_asset::<CharacterData>();
-    app.init_asset_loader::<RonAssetLoader::<CharacterCodec, CharacterData>>();
+    app.init_asset_loader::<RonAssetLoader<CharacterCodec, CharacterData>>();
 }
 
 #[derive(Debug, Clone, Asset, TypePath, derive_new::new)]
@@ -125,3 +126,5 @@ impl ActionStateEnum {
         }
     }
 }
+
+define_sprite_resource!(Character, "characters");

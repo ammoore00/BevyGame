@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use bevy_game_2d::data::{ResourceLocation, ResourceType};
 use bevy_game_2d::data::sprite::TextureAtlasCodec;
-use bevy_game_2d::datagen_api::animation::{AnimationCodec, AnimationResource, AnimationSpriteResource};
-use bevy_game_2d::datagen_api::assets::{ActionStateEnum, AllowedStatesCodec, CharacterCodec, CharacterResource};
+use bevy_game_2d::datagen_api::animation::{AnimationCodec, AnimationResource};
+use bevy_game_2d::datagen_api::assets::{ActionStateEnum, AllowedStatesCodec, CharacterCodec, CharacterResource, CharacterSpriteResource};
 use bevy_game_2d::datagen_api::attack::AttackResource;
 use crate::{create_dir, write_data, WriteError};
 use crate::sprite::TextureAtlasData;
@@ -123,7 +123,7 @@ impl From<CharacterData> for CharacterCodec {
 
 struct AnimationData {
     loc: ResourceLocation<AnimationResource>,
-    image: ResourceLocation<AnimationSpriteResource>,
+    image: ResourceLocation<CharacterSpriteResource>,
     atlas: TextureAtlasCodec,
     frames: usize,
     interval: u64,
