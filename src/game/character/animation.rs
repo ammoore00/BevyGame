@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use crate::data::registry::{ResolvedResourceRegistry, SystemRegistry, SystemRegistryMut};
+use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistryMut, SystemRegistry, SystemRegistryMut};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::sprite::TextureAtlasCodec;
@@ -182,8 +182,7 @@ pub struct ResolvedAnimationData {
 
 fn resolve_animation_data(
     mut resolved: Local<bool>,
-    mut animation_registry: SystemRegistryMut<AnimationResource>,
-    mut resolved_animation_registry: ResMut<ResolvedResourceRegistry<AnimationResource>>,
+    mut animation_registry: ResolvedSystemRegistryMut<AnimationResource>,
     animation_sprite_registry: SystemRegistry<CharacterSpriteResource>,
     mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
@@ -196,7 +195,8 @@ fn resolve_animation_data(
 
     let (
         animation_registry,
-        animation_assets
+        resolved_animation_registry,
+        animation_assets,
     ) = animation_registry.split();
 
     for (loc, animation) in animation_registry.iter() {
@@ -212,7 +212,7 @@ fn resolve_animation_data(
 
         let Some(image) = animation_sprite_registry.get_handle(&animation.image) else {
             // TODO: Real error handling, since this could come up in normal operation
-            dbg!("Failed to find image for animation: {:?}", animation.image.clone());
+            warn!("Failed to find image for animation: {:?}", animation.image.clone());
             return;
         };
 

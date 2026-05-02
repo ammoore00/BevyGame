@@ -54,7 +54,6 @@ pub fn spawn_level(
         //Vec3::new(0.0, 1.0, 0.0),
         4.5,
         &player_assets,
-        &animation_assets,
         scale.0,
         &character_context,
     );

@@ -297,6 +297,17 @@ pub struct ResolvedSystemRegistryMut<'w, T: ResolvableResource> {
     #[getset(get = "pub", get_mut = "pub")]
     resolved_assets: ResMut<'w, Assets<<T as ResolvableResource>::ResolvedAssetType>>,
 }
+impl<T: ResolvableResource> ResolvedSystemRegistryMut<'_, T> {
+    pub fn split(
+        &mut self,
+    ) -> (
+        &mut ResourceRegistry<T>,
+        &mut ResolvedResourceRegistry<T>,
+        &mut Assets<T::AssetType>,
+    ) {
+        (&mut self.registry, &mut self.resolved_registry, &mut self.assets)
+    }
+}
 registry_read_only_impl!(
     impl<T: ResolvableResource> ResolvedSystemRegistryMut {
         get_partial_handle,

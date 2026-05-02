@@ -57,12 +57,20 @@ pub fn player(
     position: Vec3,
     max_speed: f32,
     player_assets: &PlayerAssets,
-    animation_assets: &Assets<ResolvedAnimationData>,
     scale: f32,
     context: &CharacterBuilderContext,
 ) -> impl Bundle {
+    let player_data_location = ResourceLocation::<CharacterResource>::from_str("player").unwrap();
+    let player_data = context.character_registry().get_asset(&player_data_location)
+        .expect("Failed to find player character data");
+
+    let player_animations = player_data.resolve_animation_handles(context.animation_registry().resolved_registry());
+    let idle_animation = player_animations.get(&TypeId::of::<Idle>()).cloned()
+        .expect("Failed to find idle animation for player character");
+
+    let animation_assets = context.animation_registry().resolved_assets();
     let animation_tracker =
-        CharacterAnimationTracker::new(player_assets.idle_animation.clone(), animation_assets);
+        CharacterAnimationTracker::new(idle_animation, animation_assets);
 
     let sprite = animation_tracker.default_sprite(animation_assets);
 
@@ -70,8 +78,6 @@ pub fn player(
         max_speed,
         ..default()
     };
-    
-    let player_data_location = ResourceLocation::<CharacterResource>::from_str("player").unwrap();
 
     let character_data = character(
         player_data_location,
@@ -518,26 +524,6 @@ fn on_player_attack(
 #[reflect(Resource)]
 pub struct PlayerAssets {
     #[dependency]
-    idle_sprite: Handle<Image>,
-    #[dependency]
-    idle_animation: Handle<ResolvedAnimationData>,
-
-    #[dependency]
-    walk_sprite: Handle<Image>,
-    #[dependency]
-    walk_animation: Handle<ResolvedAnimationData>,
-
-    #[dependency]
-    run_sprite: Handle<Image>,
-    #[dependency]
-    run_animation: Handle<ResolvedAnimationData>,
-
-    #[dependency]
-    sprint_sprite: Handle<Image>,
-    #[dependency]
-    sprint_animation: Handle<ResolvedAnimationData>,
-
-    #[dependency]
     attack_sprite: Handle<Image>,
     #[dependency]
     attack_particle_sprite: Handle<Image>,
@@ -555,71 +541,19 @@ pub struct PlayerAssets {
 
 impl FromWorld for PlayerAssets {
     fn from_world(world: &mut World) -> Self {
-        let idle_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 12, 8, None, None);
-        let walk_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
-        let run_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 8, None, None);
         let attack_layout = TextureAtlasLayout::from_grid(UVec2::new(96, 96), 7, 8, None, None);
         let indicator_ring_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 1, None, None);
 
         let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
 
-        let idle_layout = texture_atlas_layouts.add(idle_layout);
-        let walk_layout = texture_atlas_layouts.add(walk_layout);
-        let run_layout = texture_atlas_layouts.add(run_layout);
         let attack_layout = texture_atlas_layouts.add(attack_layout);
         let indicator_ring_layout = texture_atlas_layouts.add(indicator_ring_layout);
 
         let assets = world.resource::<AssetServer>();
 
-        let idle_sprite = assets.load("base/images/characters/player/idle.png");
-        let walk_sprite = assets.load("base/images/characters/player/walking.png");
-        let run_sprite = assets.load("base/images/characters/player/running.png");
         let attack_sprite = assets.load("base/images/characters/player/attacking.png");
 
         Self {
-            idle_animation: assets.add(ResolvedAnimationData {
-                image: idle_sprite.clone(),
-                atlas: TextureAtlas {
-                    layout: idle_layout,
-                    index: 0,
-                },
-                frames: 12,
-                interval: Duration::from_millis(150),
-            }),
-            idle_sprite,
-
-            walk_animation: assets.add(ResolvedAnimationData {
-                image: walk_sprite.clone(),
-                atlas: TextureAtlas {
-                    layout: walk_layout,
-                    index: 0,
-                },
-                frames: 8,
-                interval: Duration::from_millis(50),
-            }),
-            walk_sprite,
-
-            run_animation: assets.add(ResolvedAnimationData {
-                image: run_sprite.clone(),
-                atlas: TextureAtlas {
-                    layout: run_layout.clone(),
-                    index: 0,
-                },
-                frames: 8,
-                interval: Duration::from_millis(50),
-            }),
-            run_sprite: run_sprite.clone(),
-
-            sprint_animation: assets.add(ResolvedAnimationData {
-                image: run_sprite.clone(),
-                atlas: TextureAtlas {
-                    layout: run_layout,
-                    index: 0,
-                },
-                frames: 8,
-                interval: Duration::from_millis(35),
-            }),
-            sprint_sprite: run_sprite,
 
             attack_animation: assets.add(ResolvedAnimationData {
                 image: attack_sprite.clone(),
