@@ -303,6 +303,9 @@ pub mod action_states {
     };
     use super::*;
     use std::cell::LazyCell;
+    use std::time::Duration;
+    use getset::{Getters, Setters};
+    use crate::datagen_api::attack::AttackResource;
     use crate::game::character::state::{ActionState, ActionStateMarker, MovementActionState, TimedActionState};
 
     pub(in crate::game::character) fn register_states(app: &mut App) {
@@ -381,10 +384,21 @@ pub mod action_states {
     impl ActionStateMarker for Sprinting {}
     impl MovementActionState for Sprinting {}
 
-    #[derive(Component, Debug, Clone, Reflect, Default)]
+    #[derive(Component, Debug, Clone, Reflect, Getters, Setters)]
     #[reflect(Component, ActionState, TimedActionState)]
     pub struct Attacking {
-        pub time_left: f32,
+        #[getset(get = "pub")]
+        attack: ResourceLocation<AttackResource>,
+        #[getset(get = "pub", set = "pub")]
+        time_left: f32,
+    }
+    impl Attacking {
+        pub fn new(attack: &ResourceLocation<AttackResource>, duration: Duration) -> Self {
+            Self {
+                attack: attack.clone(),
+                time_left: duration.as_secs_f32(),
+            }
+        }
     }
     impl ActionStateMarker for Attacking {}
     impl TimedActionState for Attacking {

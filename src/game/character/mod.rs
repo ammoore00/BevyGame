@@ -30,6 +30,7 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         animation::plugin,
         assets::plugin,
+        attack::plugin,
         health::plugin,
         player::plugin,
         stamina::plugin,

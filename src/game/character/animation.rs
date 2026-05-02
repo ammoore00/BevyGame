@@ -1,4 +1,4 @@
-use crate::{data, define_resolvable_resource};
+use crate::{data, define_resolvable_resource, AssetLoadState};
 use crate::game::character::Facing;
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems, AssetSystems};
@@ -7,8 +7,9 @@ use std::any::TypeId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
+use getset::{CloneGetters, CopyGetters, Getters};
 use serde::{Deserialize, Serialize};
-use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistryMut, SystemRegistry, SystemRegistryMut};
+use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistryMut, SystemRegistry};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::sprite::TextureAtlasCodec;
@@ -22,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_resolved_registry_with_discovery::<AnimationResource>();
 
     app.add_systems(
-        Update,
+        OnEnter(AssetLoadState::Resolving),
         resolve_animation_data.in_set(AssetSystems::ResolveAssets)
     );
 
@@ -172,12 +173,16 @@ impl AnimationStateMap {
 }
 
 /// Resolved asset references for an animation, including handles to other assets
-#[derive(Debug, Clone, PartialEq, Asset, Reflect)]
+#[derive(Debug, Clone, PartialEq, Asset, Reflect, Getters, CopyGetters, CloneGetters)]
 pub struct ResolvedAnimationData {
-    pub image: Handle<Image>,
-    pub atlas: TextureAtlas,
-    pub frames: usize,
-    pub interval: Duration,
+    #[getset(get_clone = "pub")]
+    image: Handle<Image>,
+    #[getset(get = "pub")]
+    atlas: TextureAtlas,
+    #[getset(get_copy = "pub")]
+    frames: usize,
+    #[getset(get = "pub")]
+    interval: Duration,
 }
 
 fn resolve_animation_data(
@@ -191,7 +196,7 @@ fn resolve_animation_data(
         return;
     }
     
-    info!("Resolving animation data!");
+    info!("RESOLVING ANIMATIONS");
 
     let (
         animation_registry,
@@ -200,6 +205,10 @@ fn resolve_animation_data(
     ) = animation_registry.split();
 
     for (loc, animation) in animation_registry.iter() {
+        //dbg!(animation_assets.iter().collect::<Vec<_>>());
+
+        info!("Resolving animation: {}", loc);
+
         let animation = animation_assets.get_mut(&animation.clone())
             .unwrap_or_else(|| {
                 panic!(

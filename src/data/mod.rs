@@ -10,6 +10,7 @@ use regex::Regex;
 use std::str::FromStr;
 use std::sync::LazyLock;
 use bevy::prelude::*;
+use getset::Getters;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use crate::data::registry::ResourceRegistry;
 
@@ -17,47 +18,16 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((loader::plugin,));
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Getters, Reflect)]
 pub struct ResourceLocation<T: ResourceType> {
+    #[getset(get = "pub")]
     namespace: Namespace,
+    #[getset(get = "pub")]
     id: ResourceId,
+    #[reflect(ignore)]
     phantom_data: PhantomData<T>,
 }
-impl<T: ResourceType> ResourceLocation<T> {
-    pub fn namespace(&self) -> &Namespace {
-        &self.namespace
-    }
-    
-    pub fn id(&self) -> &ResourceId {
-        &self.id
-    }
-    
-    pub fn get(&self, registry: &ResourceRegistry<T>) -> Option<Handle<T::AssetType>> {
-        registry.get(self).cloned()
-    }
-}
-impl<T: ResourceType> Serialize for ResourceLocation<T> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-impl<'de, T: ResourceType> Deserialize<'de> for ResourceLocation<T> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        s.parse().map_err(de::Error::custom)
-    }
-}
-impl<T: ResourceType> Display for ResourceLocation<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.namespace, self.id)
-    }
-}
+
 impl<T: ResourceType> ResourceLocation<T> {
     pub fn new(namespace: Namespace, id: ResourceId) -> Self {
         Self { namespace, id, phantom_data: Default::default() }
@@ -121,7 +91,36 @@ impl<T: ResourceType> ResourceLocation<T> {
             .join(&self.id.0)
             .with_extension(T::FILE_TYPE.ext())
     }
+    
+    pub fn get(&self, registry: &ResourceRegistry<T>) -> Option<Handle<T::AssetType>> {
+        registry.get(self).cloned()
+    }
 }
+
+impl<T: ResourceType> Serialize for ResourceLocation<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+impl<'de, T: ResourceType> Deserialize<'de> for ResourceLocation<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(de::Error::custom)
+    }
+}
+
+impl<T: ResourceType> Display for ResourceLocation<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.namespace, self.id)
+    }
+}
+
 impl<T: ResourceType> FromStr for ResourceLocation<T> {
     type Err = ResourceLocationParseError;
 

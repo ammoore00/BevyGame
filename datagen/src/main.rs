@@ -17,7 +17,12 @@ static ROOT_GENERATED: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from(Path::
 pub static ROOT: LazyLock<PathBuf> = LazyLock::new(|| ROOT_GENERATED.join("base"));
 
 fn main() {
+    // Clean the directory if it exists
+    if ROOT_GENERATED.exists() {
+        std::fs::remove_dir_all(ROOT_GENERATED.as_path()).expect("Failed to remove existing generated directory");
+    }
     std::fs::create_dir_all(ROOT_GENERATED.join("base")).expect("Failed to create directory");
+    
     generate_characters().expect("Failed to generate characters");
     generate_tiles().expect("Failed to generate tiles");
     generate_rooms().expect("Failed to generate rooms");

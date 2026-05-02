@@ -1,7 +1,7 @@
 //! Player-specific behavior.
 
 use crate::game::character::animation::{
-    CharacterAnimationTracker, ResolvedAnimationData,
+    CharacterAnimationTracker,
 };
 use crate::game::character::{character, state, Character, CharacterBuilderContext, Facing};
 use crate::game::level::grid::coords::{
@@ -24,6 +24,7 @@ use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
 use crate::{asset_tracking::LoadResource, AppSystems, PausableSystems};
 use crate::data::ResourceLocation;
+use crate::datagen_api::attack::{AttackContext, AttackResource};
 use crate::game::character::assets::CharacterResource;
 use crate::game::character::state::{is_in_movement_state, ActionState, CharacterStateEvent, ActionStateTracker};
 
@@ -418,7 +419,7 @@ fn record_action_input(world: &mut World) {
         let state_tracker = world.get::<ActionStateTracker>(player).cloned().unwrap();
 
         let Some(prev_state) = state::get_state(player, &state_tracker, world) else {
-            warn!("Failed to get reflect component for entity {}", player);
+            error!("Failed to get reflect component for entity {}", player);
             return;
         };
         prev_state
@@ -439,22 +440,23 @@ fn record_action_input(world: &mut World) {
             *facing
         };
 
+        let attack_loc: ResourceLocation<AttackResource> = "player/basic_attack".parse().unwrap();
+
         world.trigger(PlayerAttackEvent {
             entity: player,
             facing,
+            attack: attack_loc.clone(),
         });
 
         match CharacterStateEvent::try_new(
             player,
             &state_capabilities,
-            Box::new(Attacking {
-                time_left: ATTACK_DURATION as f32 / 1000.0,
-            }),
+            Box::new(Attacking::new(&attack_loc, Duration::from_millis(ATTACK_DURATION))),
             prev_state,
         ) {
             Ok(event) => world.trigger(event),
             Err(_) => {
-                warn!("Failed to create CharacterStateEvent for Attacking state");
+                error!("Failed to create CharacterStateEvent for Attacking state");
             }
         }
     }
@@ -480,37 +482,42 @@ fn camera_follow_player(
 struct PlayerAttackEvent {
     entity: Entity,
     facing: Facing,
+    attack: ResourceLocation<AttackResource>,
 }
 
 const ATTACK_DURATION: u64 = 350;
-const ATTACK_STAMINA_COST: usize = 20;
 
 fn on_player_attack(
     event: On<PlayerAttackEvent>,
-    player_assets: Res<PlayerAssets>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    context: AttackContext,
     mut commands: Commands,
 ) {
-    commands.trigger(StaminaEvent::new(event.entity, ATTACK_STAMINA_COST));
+    let Some(attack) = context.attack_registry.get_asset(&event.attack) else {
+        error!("Invalid player attack event: attack {} does not exist!", event.attack);
+        return;
+    };
 
-    const NUM_FRAMES: u32 = 7;
+    let Some(animation) = context.animation_registry.get_resolved_asset(attack.animation()) else {
+        warn!("Invalid player attack definition: animation {} does not exist!", attack.animation());
+        return;
+    };
 
-    let particle_layout =
-        TextureAtlasLayout::from_grid(UVec2::new(96, 96), NUM_FRAMES, 8, None, None);
-    let particle_layout = texture_atlas_layouts.add(particle_layout);
+    let Some(particle_sprite) = context.character_sprite_registry.get_handle(attack.particle_sprite()) else {
+        warn!("Invalid player attack definition: particle sprite {} does not exist!", attack.particle_sprite());
+        return;
+    };
+
+    let particle_atlas = animation.atlas().clone().with_index(event.facing as usize);
 
     let particle_sprite = Sprite::from_atlas_image(
-        player_assets.attack_particle_sprite.clone(),
-        TextureAtlas {
-            layout: particle_layout,
-            index: event.facing as usize,
-        },
+        particle_sprite,
+        particle_atlas,
     );
 
     let particle_animation = ParticleAnimation::new(
-        event.facing as usize * NUM_FRAMES as usize,
-        NUM_FRAMES as usize,
-        Duration::from_millis(ATTACK_DURATION / NUM_FRAMES as u64),
+        event.facing as usize * animation.frames(),
+        animation.frames(),
+        Duration::from_millis(ATTACK_DURATION / animation.frames() as u64),
     );
 
     commands.trigger(ParticleSpawnEvent::with_parent(
@@ -518,22 +525,16 @@ fn on_player_attack(
         particle_animation,
         event.entity,
     ));
+
+    commands.trigger(StaminaEvent::new(event.entity, attack.stamina_cost()));
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct PlayerAssets {
     #[dependency]
-    attack_sprite: Handle<Image>,
-    #[dependency]
-    attack_particle_sprite: Handle<Image>,
-    #[dependency]
-    attack_animation: Handle<ResolvedAnimationData>,
-
-    #[dependency]
     indicator_ring_sprite: Handle<Image>,
     indicator_ring_layout: Handle<TextureAtlasLayout>,
-
 
     #[dependency]
     pub steps: Vec<Handle<AudioSource>>,
@@ -541,32 +542,13 @@ pub struct PlayerAssets {
 
 impl FromWorld for PlayerAssets {
     fn from_world(world: &mut World) -> Self {
-        let attack_layout = TextureAtlasLayout::from_grid(UVec2::new(96, 96), 7, 8, None, None);
         let indicator_ring_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 8, 1, None, None);
-
         let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
-
-        let attack_layout = texture_atlas_layouts.add(attack_layout);
         let indicator_ring_layout = texture_atlas_layouts.add(indicator_ring_layout);
 
         let assets = world.resource::<AssetServer>();
 
-        let attack_sprite = assets.load("base/images/characters/player/attacking.png");
-
         Self {
-
-            attack_animation: assets.add(ResolvedAnimationData {
-                image: attack_sprite.clone(),
-                atlas: TextureAtlas {
-                    layout: attack_layout,
-                    index: 0,
-                },
-                frames: 7,
-                interval: Duration::from_millis(ATTACK_DURATION / 7),
-            }),
-            attack_sprite: assets.load("base/images/characters/player/attacking.png"),
-            attack_particle_sprite: assets.load("base/images/characters/player/attack_particle.png"),
-
             indicator_ring_sprite: assets.load("base/images/characters/player/indicator_ring.png"),
             indicator_ring_layout,
 

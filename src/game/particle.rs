@@ -2,6 +2,8 @@ use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::time::Duration;
 
+// TODO: Convert particles to use data driven systems
+
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
