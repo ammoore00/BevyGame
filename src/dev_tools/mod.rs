@@ -29,7 +29,7 @@ pub(super) fn plugin(app: &mut App) {
         ),
     );
 
-    app.add_observer(on_debug_ui_toggled);
+    app.add_observer(on_ui_debug);
 }
 
 const TOGGLE_KEY: KeyCode = KeyCode::Backquote;
@@ -43,17 +43,14 @@ struct DebugMenu {
 struct DebugMenuRoot;
 
 #[derive(EntityEvent, Debug)]
-struct DebugToggleEvent {
+struct DebugMenuEvent {
     entity: Entity,
 }
 
 #[derive(Component, Debug, Clone)]
-struct DebugState {
+struct DebugCheckbox {
     enabled: bool,
 }
-
-#[derive(Component)]
-struct DebugCheckbox;
 
 trait DebugSetting: Component {}
 
@@ -110,9 +107,6 @@ fn spawn_debug_menu(
                     parent,
                     "UI debug overlay",
                     ui_debug_options.enabled,
-                    DebugState {
-                        enabled: false,
-                    },
                     DebugUi,
                 );
             });
@@ -127,7 +121,6 @@ fn spawn_checkbox_row(
     parent: &mut ChildSpawnerCommands,
     label: impl Into<String>,
     checked: bool,
-    setting: DebugState,
     marker: impl DebugSetting,
 ) {
     parent
@@ -142,13 +135,14 @@ fn spawn_checkbox_row(
                 ..default()
             },
             BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
-            DebugCheckbox,
-            setting,
+            DebugCheckbox {
+                enabled: checked,
+            },
             marker,
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new(if checked { "[x]" } else { "[ ]" }),
+                Text::new(if checked { CHECKED } else { UNCHECKED }),
                 TextFont {
                     font_size: 16.0,
                     ..default()
@@ -169,8 +163,8 @@ fn spawn_checkbox_row(
 
 fn update_debug_menu(
     checkbox_query: Query<
-        (&DebugState, &Children),
-        (Changed<DebugState>, With<DebugCheckbox>)
+        (&DebugCheckbox, &Children),
+        (Changed<DebugCheckbox>)
     >,
     mut text_query: Query<&mut Text>,
 ) {
@@ -178,19 +172,18 @@ fn update_debug_menu(
         if let Some(checkbox_text_entity) = children.first()
             && let Ok(mut text) = text_query.get_mut(*checkbox_text_entity)
         {
-            **text = if setting.enabled {
-                "[x]".to_string()
-            } else {
-                "[ ]".to_string()
-            };
+            **text = if setting.enabled { CHECKED } else { UNCHECKED }.to_string();
         }
     }
 }
 
+const CHECKED: &str = "[x]";
+const UNCHECKED: &str = "[ ]";
+
 fn handle_debug_menu_buttons(
     mut interaction_query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut DebugState),
-        (Changed<Interaction>, With<DebugCheckbox>),
+        (Entity, &Interaction, &mut BackgroundColor, &mut DebugCheckbox),
+        (Changed<Interaction>),
     >,
     mut commands: Commands,
 ) {
@@ -198,7 +191,7 @@ fn handle_debug_menu_buttons(
         match *interaction {
             Interaction::Pressed => {
                 setting.enabled = !setting.enabled;
-                commands.trigger(DebugToggleEvent {
+                commands.trigger(DebugMenuEvent {
                     entity,
                 });
                 *background_color = BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.20));
@@ -213,20 +206,41 @@ fn handle_debug_menu_buttons(
     }
 }
 
-fn on_debug_ui_toggled(
-    event: On<DebugToggleEvent>,
-    query: Query<Entity, With<DebugUi>>,
-    mut ui_debug_options: ResMut<UiDebugOptions>,
-) {
-    match query.single() {
-        Ok(entity) => {
-            if event.entity == entity {
-                ui_debug_options.toggle();
-                info!("Debug UI toggled: {}", ui_debug_options.enabled);
+macro_rules! debug_menu_event {
+    (
+        $marker:ty,
+        fn $fn_name:ident(
+            $event:ident: $event_ty:ty,
+            $($args:tt)*
+        ) $content:block
+    ) => {
+        fn $fn_name(
+            $event: $event_ty,
+            __entity_query: Query<Entity, With<$marker>>,
+            $($args)*
+        ) {
+            let $event: On<DebugMenuEvent> = $event;
+            match __entity_query.single() {
+                Ok(entity) => {
+                    if $event.entity == entity {
+                        $content
+                    }
+                }
+                Err(err) => {
+                    error!("Failed to obtain entity: {}", err);
+                }
             }
         }
-        Err(err) => {
-            error!("Failed to toggle debug UI: {}", err);
-        }
-    }
+    };
 }
+
+debug_menu_event!(
+    DebugUi,
+    fn on_ui_debug(
+        event: On<DebugMenuEvent>,
+        mut ui_debug_options: ResMut<UiDebugOptions>,
+    ) {
+        ui_debug_options.toggle();
+        info!("UI Debug toggled: {}", ui_debug_options.enabled);
+    }
+);
