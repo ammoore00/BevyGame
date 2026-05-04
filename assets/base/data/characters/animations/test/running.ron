@@ -1,0 +1,12 @@
+(
+    format: 1,
+    image: "base:player/running",
+    atlas: (
+        format: 1,
+        size: (64, 64),
+        columns: 8,
+        rows: 8,
+    ),
+    frames: 8,
+    interval: 50,
+)

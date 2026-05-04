@@ -1,0 +1,7 @@
+(
+    format: 1,
+    duration: 350,
+    stamina_cost: 20,
+    animation: "base:player/basic_attack",
+    particle_sprite: "base:test/basic_attack_particle",
+)

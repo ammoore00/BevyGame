@@ -2,6 +2,7 @@ use std::any::TypeId;
 use std::collections::HashMap;
 use crate::{data, define_data_resource, define_resource, define_sprite_resource};
 use bevy::prelude::*;
+use getset::Getters;
 use serde::{Deserialize, Serialize};
 use maybe_fields_macro::maybe_fields;
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
@@ -12,6 +13,7 @@ use crate::datagen_api::attack::{AttackContext, AttackSetResource};
 use crate::game::character::attack::{AttackDefinition};
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
+use crate::game::physics::components::ColliderCodec;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterSpriteResource>();
@@ -19,11 +21,13 @@ pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<CharacterCodec, CharacterData>>();
 }
 
-#[derive(Debug, Clone, Asset, TypePath, derive_new::new)]
+#[derive(Debug, Clone, Asset, TypePath, derive_new::new, Getters)]
 pub struct CharacterData {
     state_capabilities: ActionStateCapabilities,
     animations: HashMap<TypeId, ResourceLocation<AnimationResource>>,
     _attack_set: Option<ResourceLocation<AttackSetResource>>,
+    #[getset(get = "pub")]
+    collider: ColliderCodec,
 }
 impl CharacterData {
     pub fn state_capabilities(&self) -> &ActionStateCapabilities {
@@ -87,6 +91,7 @@ impl From<CharacterCodec> for CharacterData {
             state_capabilities,
             animations,
             _attack_set,
+            collider: codec.collider,
         }
     }
 }
@@ -98,6 +103,7 @@ pub struct CharacterCodec {
     pub allowed_states: Maybe<AllowedStatesCodec>,
     pub animations: HashMap<ActionStateEnum, ResourceLocation<AnimationResource>>,
     pub attack_set: Maybe<ResourceLocation<AttackSetResource>>,
+    pub collider: ColliderCodec,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]

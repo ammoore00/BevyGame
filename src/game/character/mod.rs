@@ -1,19 +1,19 @@
 use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::level::grid::coords::WorldPosition;
-use crate::game::physics::components::{Collider, PhysicsData};
+use crate::game::physics::components::PhysicsData;
 use bevy::prelude::*;
 use std::any::TypeId;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 use bevy::ecs::system::SystemParam;
-use state::action_states;
 use crate::data::loader::LoaderJobManager;
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
 use crate::data::ResourceLocation;
 use crate::datagen_api::animation::AnimationResource;
 use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::game::character::assets::{CharacterData, CharacterResource};
+use crate::game::character::state::action_states::Idle;
 
 pub mod animation;
 pub mod health;
@@ -40,9 +40,6 @@ pub fn plugin(app: &mut App) {
 pub fn character(
     data_loc: ResourceLocation<CharacterResource>,
     position: Vec3,
-    sprite: Sprite,
-    animation_tracker: CharacterAnimationTracker,
-    collider: Collider,
     scale: f32,
     context: &CharacterBuilderContext,
 ) -> impl Bundle {
@@ -54,10 +51,23 @@ pub fn character(
     let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_registry));
 
     let state_capabilities = data.state_capabilities().clone();
-    
+
+    let animations =
+        data.resolve_animation_handles(context.animation_registry().resolved_registry());
+    let idle_animation =
+        animations.get(&TypeId::of::<Idle>()).cloned()
+            .expect("Failed to find idle animation for player character");
+
+    let animation_assets = context.animation_registry().resolved_assets();
+    let animation_tracker =
+        CharacterAnimationTracker::new(idle_animation, animation_assets);
+    let sprite = animation_tracker.default_sprite(animation_assets);
+
+    let collider = data.collider().make_collider(position);
+
     (
         Character,
-        state::action_state(action_states::Idle),
+        state::action_state(Idle),
         state_capabilities,
         Facing::default(),
         // Physics

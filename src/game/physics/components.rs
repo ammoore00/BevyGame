@@ -5,6 +5,7 @@ use parry3d::query;
 use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
+use serde::{Deserialize, Serialize};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);
@@ -39,7 +40,6 @@ pub enum ColliderType {
     Capsule(Capsule),
     ConvexHull(ConvexPolyhedron),
 }
-
 impl ColliderType {
     fn get_shape(&self) -> &dyn Shape {
         match &self {
@@ -49,7 +49,6 @@ impl ColliderType {
         }
     }
 }
-
 impl PartialEq for ColliderType {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -59,6 +58,59 @@ impl PartialEq for ColliderType {
             }
             (ColliderType::ConvexHull(a), ColliderType::ConvexHull(b)) => a == b,
             _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+pub struct ColliderCodec {
+    pub format: u8,
+    pub collider: ColliderTypeCodec,
+}
+impl ColliderCodec {
+    pub fn make_collider(&self, pos: Vec3) -> Collider {
+        match &self.collider {
+            ColliderTypeCodec::Cuboid { x, y, z } => Collider::cuboid((*x, *y, *z).into(), pos),
+            ColliderTypeCodec::ConvexHull(points) => Collider::convex_hull(points, pos),
+            ColliderTypeCodec::Capsule(capsule) => capsule.make_collider(pos),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+pub enum ColliderTypeCodec {
+    Cuboid {
+        x: f32,
+        y: f32,
+        z: f32,
+    },
+    ConvexHull(Vec<Vec3>),
+    #[serde(untagged)]
+    Capsule(CapsuleCodec),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+#[serde(untagged)]
+pub enum CapsuleCodec {
+    Oriented {
+        start: Vec3,
+        end: Vec3,
+        radius: f32,
+    },
+    Vertical {
+        height: f32,
+        radius: f32,
+    },
+}
+impl CapsuleCodec {
+    pub fn make_collider(&self, pos: Vec3) -> Collider {
+        match self {
+            CapsuleCodec::Oriented { start, end, radius } => {
+                Collider::capsule(*start, *end, *radius, pos)
+            }
+            CapsuleCodec::Vertical { height, radius } => {
+                Collider::vertical_capsule(*height, *radius, pos)
+            }
         }
     }
 }
@@ -74,7 +126,6 @@ pub struct Collider {
     collider_type: ColliderType,
     position: Pose,
 }
-
 impl Collider {
     pub fn cuboid(size: Vec3, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
@@ -106,10 +157,10 @@ impl Collider {
         Self::capsule(start, end, radius, position)
     }
 
-    pub fn convex_hull(vertices: Vec<Vec3>, position: impl Into<WorldCoords>) -> Self {
+    pub fn convex_hull(vertices: &[Vec3], position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
 
-        let convex_hull = convex_hull(vertices.as_slice());
+        let convex_hull = convex_hull(vertices);
         let convex_polyhedron = ConvexPolyhedron::from_convex_hull(convex_hull.0.as_slice());
 
         Self {
@@ -153,7 +204,6 @@ impl Collider {
 
 #[derive(Debug, Clone)]
 pub struct CollisionEvent(Contact);
-
 impl CollisionEvent {
     pub fn _contact_points(&self) -> (Vec3, Vec3) {
         let contact = &self.0;
@@ -175,7 +225,6 @@ impl CollisionEvent {
         Vec3::new(self.0.normal2.x, self.0.normal2.y, self.0.normal2.z)
     }
 }
-
 impl From<Contact> for CollisionEvent {
     fn from(contact: Contact) -> Self {
         Self(contact)

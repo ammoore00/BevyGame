@@ -2,20 +2,14 @@
 
 mod input;
 
-use crate::game::character::animation::{
-    CharacterAnimationTracker,
-};
 use crate::game::character::{character, CharacterBuilderContext, Facing};
 use bevy::prelude::*;
-use std::any::TypeId;
 use std::str::FromStr;
 use tracing::warn;
 //use crate::game::object::Shadow;
-use crate::game::character::state::action_states::Idle;
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
-use crate::game::physics::components::Collider;
 use crate::game::physics::movement::MovementController;
 use crate::asset_tracking::LoadResource;
 use crate::data::ResourceLocation;
@@ -40,19 +34,8 @@ pub fn player(
     scale: f32,
     context: &CharacterBuilderContext,
 ) -> impl Bundle {
-    let player_data_location = ResourceLocation::<CharacterResource>::from_str("player").unwrap();
-    let player_data = context.character_registry().get_asset(&player_data_location)
-        .expect("Failed to find player character data");
-
-    let player_animations = player_data.resolve_animation_handles(context.animation_registry().resolved_registry());
-    let idle_animation = player_animations.get(&TypeId::of::<Idle>()).cloned()
-        .expect("Failed to find idle animation for player character");
-
-    let animation_assets = context.animation_registry().resolved_assets();
-    let animation_tracker =
-        CharacterAnimationTracker::new(idle_animation, animation_assets);
-
-    let sprite = animation_tracker.default_sprite(animation_assets);
+    let player_data_location =
+        ResourceLocation::<CharacterResource>::from_str("player").unwrap();
 
     let movement_controller = MovementController {
         max_speed,
@@ -62,9 +45,6 @@ pub fn player(
     let character_data = character(
         player_data_location,
         position,
-        sprite,
-        animation_tracker,
-        Collider::vertical_capsule(1.25, 0.25, position),
         scale,
         context,
     );

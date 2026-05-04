@@ -4,7 +4,7 @@ pub mod character;
 pub mod level;
 mod object;
 mod particle;
-mod physics;
+pub mod physics;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((

@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use crate::game::character::player::{PlayerAssets, player};
 use crate::game::object::{ObjectAssets, ObjectType, object};
 use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
-use crate::game::character::CharacterBuilderContext;
+use crate::game::character::{character, CharacterBuilderContext};
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
 
@@ -49,9 +49,15 @@ pub fn spawn_level(
 ) {
     let player = player(
         Vec3::new(3.0, 1.0, 3.0),
-        //Vec3::new(0.0, 1.0, 0.0),
         4.5,
         &player_assets,
+        scale.0,
+        &character_context,
+    );
+
+    let test_npc = character(
+        "test".parse().unwrap(),
+        Vec3::new(5.0, 1.0, 3.0),
         scale.0,
         &character_context,
     );
@@ -59,7 +65,7 @@ pub fn spawn_level(
     let _rock = object(
         ObjectType::Rock,
         &object_assets,
-        Vec3::new(7.0, 5.0, 6.0),
+        Vec3::new(6.0, 5.0, 6.0),
         scale.0,
         0.5,
         0.5,
@@ -73,6 +79,7 @@ pub fn spawn_level(
             DespawnOnExit(Screen::Gameplay),
             children![
                 player,
+                test_npc,
                 (
                     Name::new("Gameplay Music"),
                     music(level_assets.music.clone())

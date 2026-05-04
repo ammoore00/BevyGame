@@ -1,0 +1,18 @@
+(
+    format: 1,
+    allowed_states: Default,
+    animations: {
+        Running: "base:test/running",
+        Idle: "base:test/idle",
+        Sprinting: "base:test/sprinting",
+        Walking: "base:test/walking",
+    },
+    attack_set: "base:test/basic_attack",
+    collider: (
+        format: 1,
+        collider: (
+            height: 1.25,
+            radius: 0.25,
+        ),
+    ),
+)

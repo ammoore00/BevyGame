@@ -35,10 +35,10 @@ pub(in crate::game) fn slope(
         .map(|point| facing.rotate_point(Vec3::from(*point) - Vec3::splat(0.5)))
         .collect::<Vec<_>>();
 
-        Collider::convex_hull(points, *pos)
+        Collider::convex_hull(&points, *pos)
     }
 }
 
 pub(in crate::game) fn convex_hull(points: &[Vec3]) -> impl Fn(WorldCoords) -> Collider {
-    move |pos| Collider::convex_hull(Vec::from(points), pos)
+    move |pos| Collider::convex_hull(&Vec::from(points), pos)
 }
