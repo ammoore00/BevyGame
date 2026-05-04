@@ -315,11 +315,15 @@ pub enum RonLoaderError {
 /// Wrapper around Option<T> to be used as an optional value within a codec
 /// Used instead of Option to avoid Option enum values being included in
 /// output files
-#[derive(Default)]
 pub struct Maybe<T: Serialize>(pub Option<T>);
 impl<T: Serialize> Maybe<T> {
     pub fn into_inner(self) -> Option<T> {
         self.0
+    }
+}
+impl<T: Serialize> Default for Maybe<T> {
+    fn default() -> Self {
+        Self(None)
     }
 }
 

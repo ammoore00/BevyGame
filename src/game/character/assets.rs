@@ -6,9 +6,10 @@ use serde::{Deserialize, Serialize};
 use maybe_fields_macro::maybe_fields;
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
 use crate::data::{ResourceFileType, ResourceLocation};
-use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry};
+use crate::data::registry::{ResolvedResourceRegistry};
 use crate::datagen_api::animation::{AnimationResource, ResolvedAnimationData};
-use crate::game::character::attack::{AttackDefinition, AttackResource};
+use crate::datagen_api::attack::{AttackContext, AttackSetResource};
+use crate::game::character::attack::{AttackDefinition};
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 
@@ -22,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 pub struct CharacterData {
     state_capabilities: ActionStateCapabilities,
     animations: HashMap<TypeId, ResourceLocation<AnimationResource>>,
-    _attacks: Vec<ResourceLocation<AttackResource>>
+    _attack_set: Option<ResourceLocation<AttackSetResource>>,
 }
 impl CharacterData {
     pub fn state_capabilities(&self) -> &ActionStateCapabilities {
@@ -30,26 +31,39 @@ impl CharacterData {
     }
     
     pub fn resolve_animation_handles(&self, animation_registry: &ResolvedResourceRegistry<AnimationResource>) -> HashMap<TypeId, Handle<ResolvedAnimationData>> {
-        self.animations.iter()
-            .map(|(type_id, animation_location)| {
-                let animation = animation_registry.get(animation_location)
-                    .cloned()
-                    // TODO: Replace with non-panic error handling
-                    .expect("Failed to retrieve animation handle from registry!");
-                (*type_id, animation)
-            })
-            .collect()
+        let mut animation_handles = HashMap::new();
+
+        for (state_id, animation_loc) in self.animations.iter() {
+            let Some(animation) = animation_registry.get(animation_loc) else {
+                error!("Failed to retrieve animation: {}", animation_loc);
+                continue;
+            };
+            animation_handles.insert(*state_id, animation.clone());
+        }
+        animation_handles
     }
     
-    pub fn _resolve_attack_handles(&self, attack_registry: &Res<ResourceRegistry<AttackResource>>) -> Vec<Handle<AttackDefinition>> {
-        self._attacks.iter()
-            .map(|attack_location| {
-                attack_registry.get(attack_location)
-                    .cloned()
-                    // TODO: Replace with non-panic error handling
-                    .expect("Failed to retrieve attack handle from registry!")
-            })
-            .collect()
+    pub fn _resolve_attack_handles(&self, context: &AttackContext) -> Vec<Handle<AttackDefinition>> {
+        match &self._attack_set {
+            None => Vec::new(),
+            Some(attack_set_loc) => {
+                let mut attacks = Vec::new();
+
+                let Some(attack_set) = context.attack_set_registry.get_asset(attack_set_loc) else {
+                    error!("Failed to retrieve attack_set: {}", attack_set_loc);
+                    return attacks;
+                };
+
+                for attack_loc in attack_set.iter() {
+                    let Some(attack) = context.attack_registry.get_handle(attack_loc) else {
+                        error!("Failed to retrieve attack definition: {}", attack_loc);
+                        continue;
+                    };
+                    attacks.push(attack.clone());
+                }
+                attacks
+            }
+        }
     }
 }
 impl From<CharacterCodec> for CharacterData {
@@ -67,12 +81,12 @@ impl From<CharacterCodec> for CharacterData {
             .unwrap_or_else(|| DEFAULT_STATES.clone());
         let state_capabilities = ActionStateCapabilities::new(states);
 
-        let _attacks = codec.attacks.into_inner().unwrap_or_default();
+        let _attack_set = codec.attack_set.into_inner();
 
         CharacterData {
             state_capabilities,
             animations,
-            _attacks,
+            _attack_set,
         }
     }
 }
@@ -83,7 +97,7 @@ pub struct CharacterCodec {
     pub format: u8,
     pub allowed_states: Maybe<AllowedStatesCodec>,
     pub animations: HashMap<ActionStateEnum, ResourceLocation<AnimationResource>>,
-    pub attacks: Maybe<Vec<ResourceLocation<AttackResource>>>,
+    pub attack_set: Maybe<ResourceLocation<AttackSetResource>>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]

@@ -15,6 +15,18 @@ pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AttackDefinition>();
     app.init_asset_loader::<RonAssetLoader<AttackCodec, AttackDefinition>>();
     app.add_registry_with_discovery::<AttackResource>();
+
+    app.init_asset::<AttackSet>();
+    app.init_asset_loader::<RonAssetLoader<AttackSetCodec, AttackSet>>();
+    app.add_registry_with_discovery::<AttackSetResource>();
+}
+
+#[derive(SystemParam)]
+pub struct AttackContext<'w> {
+    pub attack_registry: SystemRegistry<'w, AttackResource>,
+    pub attack_set_registry: SystemRegistry<'w, AttackSetResource>,
+    pub animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
+    pub character_sprite_registry: SystemRegistry<'w, CharacterSpriteResource>,
 }
 
 #[derive(Debug, Clone, Asset, TypePath, Getters, CopyGetters)]
@@ -48,11 +60,29 @@ pub struct AttackCodec {
     pub particle_sprite: ResourceLocation<CharacterSpriteResource>,
 }
 
-define_data_resource!(Attack, "characters/attacks", AttackDefinition, ResourceFileType::Data);
-
-#[derive(SystemParam)]
-pub struct AttackContext<'w> {
-    pub attack_registry: SystemRegistry<'w, AttackResource>,
-    pub animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
-    pub character_sprite_registry: SystemRegistry<'w, CharacterSpriteResource>,
+#[derive(Debug, Clone, Asset, TypePath, Getters)]
+pub struct AttackSet {
+    #[getset(get = "pub")]
+    attacks: Vec<ResourceLocation<AttackResource>>,
 }
+impl AttackSet {
+    pub fn iter(&self) -> impl Iterator<Item = &ResourceLocation<AttackResource>> {
+        self.attacks.iter()
+    }
+}
+impl From<AttackSetCodec> for AttackSet {
+    fn from(value: AttackSetCodec) -> Self {
+        AttackSet {
+            attacks: value.attacks,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+pub struct AttackSetCodec {
+    pub format: u8,
+    pub attacks: Vec<ResourceLocation<AttackResource>>,
+}
+
+define_data_resource!(Attack, "characters/attacks", AttackDefinition, ResourceFileType::Data);
+define_data_resource!(AttackSet, "characters/attack_sets", AttackSet, ResourceFileType::Data);
