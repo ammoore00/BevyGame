@@ -9,15 +9,16 @@ use bevy::{
 use crate::screens::Screen;
 
 pub(super) fn plugin(app: &mut App) {
-    // Log `Screen` state transitions.
-    app.add_systems(Update, log_transitions::<Screen>);
-
     app.init_resource::<DebugMenu>();
+    app.init_state::<LoggingScreenStates>();
 
     // Toggle the debug menu.
     app.add_systems(
         Update,
-        toggle_debug_menu.run_if(input_just_pressed(TOGGLE_KEY)),
+        (
+            log_transitions::<Screen>.run_if(in_state(LoggingScreenStates(true))),
+            toggle_debug_menu.run_if(input_just_pressed(TOGGLE_KEY))
+        ),
     );
 
     app.add_systems(
@@ -30,6 +31,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 
     app.add_observer(on_ui_debug);
+    app.add_observer(on_log_screen_state);
 }
 
 const TOGGLE_KEY: KeyCode = KeyCode::Backquote;
@@ -54,6 +56,13 @@ struct DebugCheckbox {
 
 trait DebugSetting: Component {}
 
+#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+struct LoggingScreenStates(pub bool);
+
+#[derive(Component, Debug, Clone)]
+struct LogScreenStateTransitions;
+impl DebugSetting for LogScreenStateTransitions {}
+
 #[derive(Component, Debug, Clone)]
 struct DebugUi;
 impl DebugSetting for DebugUi {}
@@ -67,6 +76,7 @@ fn spawn_debug_menu(
     mut commands: Commands,
     debug_menu: Res<DebugMenu>,
     menu_query: Query<Entity, With<DebugMenuRoot>>,
+    log_screen_states: Res<State<LoggingScreenStates>>,
     ui_debug_options: Res<UiDebugOptions>,
 ) {
     if !debug_menu.is_changed() {
@@ -91,7 +101,7 @@ fn spawn_debug_menu(
                     ..default()
                 },
                 BackgroundColor(Color::srgba(0.02, 0.02, 0.02, 0.82)),
-                ZIndex(1000),
+                GlobalZIndex(100),
             ))
             .with_children(|parent| {
                 parent.spawn((
@@ -105,7 +115,14 @@ fn spawn_debug_menu(
 
                 spawn_checkbox_row(
                     parent,
-                    "UI debug overlay",
+                    "Log Screen State Transitions",
+                    log_screen_states.0,
+                    LogScreenStateTransitions,
+                );
+
+                spawn_checkbox_row(
+                    parent,
+                    "UI Debug Overlay",
                     ui_debug_options.enabled,
                     DebugUi,
                 );
@@ -242,5 +259,17 @@ debug_menu_event!(
     ) {
         ui_debug_options.toggle();
         info!("UI Debug toggled: {}", ui_debug_options.enabled);
+    }
+);
+
+debug_menu_event!(
+    LogScreenStateTransitions,
+    fn on_log_screen_state(
+        event: On<DebugMenuEvent>,
+        log_state: ResMut<State<LoggingScreenStates>>,
+        mut next_state: ResMut<NextState<LoggingScreenStates>>,
+    ) {
+        next_state.set(LoggingScreenStates(!log_state.0));
+        info!("Logging for screen state transitions toggled: {}", log_state.0);
     }
 );
