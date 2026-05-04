@@ -1,5 +1,5 @@
 use crate::game::character::player::Player;
-use crate::game::level::grid::coords::{SCREEN_Z_SCALE, TileCoords, TilePosition, WorldPosition};
+use crate::game::level::grid::coords::{TileCoords, TilePosition, WorldPosition, SCREEN_Z_SCALE};
 use crate::game::object::Shadow;
 use bevy::prelude::*;
 use std::collections::BTreeMap;
@@ -7,9 +7,14 @@ use std::sync::{Arc, RwLock};
 
 pub mod coords;
 pub mod tile;
+pub mod nav;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((coords::plugin, tile::plugin));
+    app.add_plugins((
+        coords::plugin,
+        nav::plugin,
+        tile::plugin
+    ));
 
     app.add_systems(
         PreUpdate,

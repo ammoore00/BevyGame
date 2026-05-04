@@ -58,6 +58,9 @@ impl Plugin for AppPlugin {
             dev_tools::plugin,
         ));
 
+        #[cfg(feature = "dev")]
+        info!("Dev tools enabled");
+
         app.insert_resource(Scale(6.0));
 
         // Main game loop systems
