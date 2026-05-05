@@ -2,55 +2,80 @@ use crate::dev_tools::debug_menu::{spawn_checkbox_row, spawn_debug_category, Deb
 use crate::screens::Screen;
 use bevy::dev_tools::states::log_transitions;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use getset::CopyGetters;
+use paste::paste;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_state::<LoggingScreenStates>();
+    app.init_state::<LoggingScreenStateTransitionsState>();
+
+    app.init_state::<RenderNavMapNodesState>();
+    app.init_state::<RenderNavMapEdgesState>();
+
     app.init_state::<RenderPhysicsEntitiesState>();
     app.init_state::<RenderPhysicsTilesState>();
 
     app.add_systems(
         Update,
         (
-            log_transitions::<Screen>.run_if(in_state(LoggingScreenStates(true))),
+            log_transitions::<Screen>.run_if(in_state(LoggingScreenStateTransitionsState(true))),
         )
     );
 
+    app.add_observer(on_ui_debug);
+
+    app.add_observer(on_log_screen_state);
+
+    app.add_observer(on_render_nav_map_nodes);
+    app.add_observer(on_render_nav_map_edges);
+
     app.add_observer(on_physics_render_entities);
     app.add_observer(on_physics_render_tiles);
-    app.add_observer(on_ui_debug);
-    app.add_observer(on_log_screen_state);
 }
 
 pub(super) fn spawn_debug(
     parent: &mut RelatedSpawnerCommands<ChildOf>,
-    physics_entity_state: Res<State<RenderPhysicsEntitiesState>>,
-    physics_tile_state: Res<State<RenderPhysicsTilesState>>,
-    log_screen_states: Res<State<LoggingScreenStates>>,
-    ui_debug_options: Res<UiDebugOptions>,
+    state: DebugOptionState,
 ) {
+    let physics_initial_state = [
+        state.render_physics_entity.0,
+        state.render_physics_tile.0,
+    ].as_slice().into();
+    let spawn_physics_category: Box<dyn FnOnce(&mut RelatedSpawnerCommands<ChildOf>)> = Box::new(|parent_inner| spawn_debug_category(
+        parent_inner,
+        "Physics",
+        physics_initial_state,
+        true,
+        |parent| {
+            spawn_physics_render_entities_checkbox(parent, state.render_physics_entity.0);
+            spawn_physics_render_tiles_checkbox(parent, state.render_physics_tile.0);
+        },
+    ));
+
+
+    let nav_initial_state = [
+        state.render_nav_map_nodes.0,
+        state.render_nav_map_edges.0,
+    ].as_slice().into();
+    let spawn_nav_category: Box<dyn FnOnce(&mut RelatedSpawnerCommands<ChildOf>)> = Box::new(|parent_inner| spawn_debug_category(
+        parent_inner,
+        "Navigation",
+        nav_initial_state,
+        true,
+        |parent| {
+            spawn_render_nav_map_nodes_checkbox(parent, state.render_nav_map_nodes.0);
+            spawn_render_nav_map_edges_checkbox(parent, state.render_nav_map_edges.0);
+        },
+    ));
+
     spawn_debug_category(
         parent,
-        "Physics",
-        [
-            physics_entity_state.0,
-            physics_tile_state.0,
-        ].as_slice().into(),
-        false,
-        |parent| {
-            spawn_checkbox_row(
-                parent,
-                "Collision Visualizer - Entities",
-                physics_entity_state.0,
-                RenderPhysicsEntities,
-            );
-            spawn_checkbox_row(
-                parent,
-                "Collision Visualizer - Tiles",
-                physics_tile_state.0,
-                RenderPhysicsTiles,
-            );
+        "Level Renderers",
+        physics_initial_state.merge(nav_initial_state),
+        true,
+        |parent_inner| {
+            spawn_physics_category(parent_inner);
+            spawn_nav_category(parent_inner);
         },
     );
 
@@ -58,14 +83,14 @@ pub(super) fn spawn_debug(
         parent,
         "UI",
         [
-            ui_debug_options.enabled,
+            state.render_ui_debug.enabled,
         ].as_slice().into(),
-        false,
+        true,
         |parent| {
             spawn_checkbox_row(
                 parent,
                 "UI Debug Overlay",
-                ui_debug_options.enabled,
+                state.render_ui_debug.enabled,
                 DebugUi,
             );
         },
@@ -75,16 +100,11 @@ pub(super) fn spawn_debug(
         parent,
         "States",
         [
-            log_screen_states.0,
+            state.log_screen_transitions.0,
         ].as_slice().into(),
-        false,
+        true,
         |parent| {
-            spawn_checkbox_row(
-                parent,
-                "Log Screen State Transitions",
-                log_screen_states.0,
-                LogScreenStateTransitions,
-            );
+            spawn_log_screen_state_checkbox(parent, state.log_screen_transitions.0);
         },
     );
 }
@@ -117,6 +137,51 @@ macro_rules! debug_menu_event {
     };
 }
 
+macro_rules! debug_setting {
+    ($setting:ident, $event_fn:ident, $label:literal, $desc:literal) => {
+        paste! {
+            #[derive(Component, Debug, Clone)]
+            struct $setting;
+            impl DebugSetting for $setting {}
+
+            #[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+            pub(super) struct [<$setting State>](pub bool);
+
+            debug_menu_event!(
+                $setting,
+                fn [<on_ $event_fn>] (
+                    event: On<DebugMenuEvent>,
+                    prev_state: Res<State<[<$setting State>]>>,
+                    mut next_state: ResMut<NextState<[<$setting State>]>>,
+                ) {
+                    next_state.set([<$setting State>](!prev_state.0));
+                    info!("{} toggled: {}", $desc, !prev_state.0);
+                }
+            );
+
+            fn [<spawn_ $event_fn _checkbox>](
+                parent: &mut ChildSpawnerCommands,
+                initial_state: bool,
+            ) {
+                spawn_checkbox_row(
+                    parent,
+                    $label,
+                    initial_state,
+                    $setting,
+                );
+            }
+        }
+    };
+}
+
+debug_setting!(LoggingScreenStateTransitions, log_screen_state, "Log Screen State Transitions", "Logging for screen state transitions");
+
+debug_setting!(RenderNavMapNodes, render_nav_map_nodes, "Render Nodes", "Nav map nodes");
+debug_setting!(RenderNavMapEdges, render_nav_map_edges, "Render Edges", "Nav map edges");
+
+debug_setting!(RenderPhysicsEntities, physics_render_entities, "Render Entity Collision", "Entity physics renderer");
+debug_setting!(RenderPhysicsTiles, physics_render_tiles, "Render Tile Collision", "Tile physics renderer transitions");
+
 #[derive(Component, Debug, Clone)]
 struct DebugUi;
 impl DebugSetting for DebugUi {}
@@ -132,56 +197,15 @@ debug_menu_event!(
     }
 );
 
-#[derive(Component, Debug, Clone)]
-struct LogScreenStateTransitions;
-impl DebugSetting for LogScreenStateTransitions {}
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-pub(super) struct LoggingScreenStates(pub bool);
+#[derive(SystemParam)]
+pub(crate) struct DebugOptionState<'w> {
+    render_ui_debug: Res<'w, UiDebugOptions>,
 
-debug_menu_event!(
-    LogScreenStateTransitions,
-    fn on_log_screen_state(
-        event: On<DebugMenuEvent>,
-        prev_state: Res<State<LoggingScreenStates>>,
-        mut next_state: ResMut<NextState<LoggingScreenStates>>,
-    ) {
-        next_state.set(LoggingScreenStates(!prev_state.0));
-        info!("Logging for screen state transitions toggled: {}", !prev_state.0);
-    }
-);
+    log_screen_transitions: Res<'w, State<LoggingScreenStateTransitionsState>>,
 
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default, CopyGetters)]
-pub(super) struct RenderPhysicsEntitiesState(pub bool);
-#[derive(Component, Debug, Clone)]
-struct RenderPhysicsEntities;
-impl DebugSetting for RenderPhysicsEntities {}
+    render_nav_map_nodes: Res<'w, State<RenderNavMapNodesState>>,
+    render_nav_map_edges: Res<'w, State<RenderNavMapEdgesState>>,
 
-debug_menu_event!(
-    RenderPhysicsEntities,
-    fn on_physics_render_entities(
-        event: On<DebugMenuEvent>,
-        prev_state: Res<State<RenderPhysicsEntitiesState>>,
-        mut next_state: ResMut<NextState<RenderPhysicsEntitiesState>>,
-    ) {
-        next_state.set(RenderPhysicsEntitiesState(!prev_state.0));
-        info!("Entity physics renderer toggled: {}", !prev_state.0);
-    }
-);
-
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default, CopyGetters)]
-pub(super) struct RenderPhysicsTilesState(pub bool);
-#[derive(Component, Debug, Clone)]
-struct RenderPhysicsTiles;
-impl DebugSetting for RenderPhysicsTiles {}
-
-debug_menu_event!(
-    RenderPhysicsTiles,
-    fn on_physics_render_tiles(
-        event: On<DebugMenuEvent>,
-        prev_state: Res<State<RenderPhysicsTilesState>>,
-        mut next_state: ResMut<NextState<RenderPhysicsTilesState>>,
-    ) {
-        next_state.set(RenderPhysicsTilesState(!prev_state.0));
-        info!("Tile physics renderer toggled: {}", !prev_state.0);
-    }
-);
+    render_physics_entity: Res<'w, State<RenderPhysicsEntitiesState>>,
+    render_physics_tile: Res<'w, State<RenderPhysicsTilesState>>,
+}

@@ -1,4 +1,4 @@
-use crate::dev_tools::debug_options::{spawn_debug, LoggingScreenStates, RenderPhysicsEntitiesState, RenderPhysicsTilesState};
+use crate::dev_tools::debug_options::{spawn_debug, DebugOptionState, LoggingScreenStateTransitionsState, RenderPhysicsEntitiesState, RenderPhysicsTilesState};
 use bevy::app::Update;
 use bevy::color::Color;
 use bevy::ecs::relationship::Relationship;
@@ -64,13 +64,20 @@ pub(super) enum DebugCategoryCheckState {
     Partial,
     Checked,
 }
-
 impl DebugCategoryCheckState {
     fn icon(self) -> &'static str {
         match self {
             DebugCategoryCheckState::Empty => UNCHECKED,
             DebugCategoryCheckState::Partial => PARTIALLY_CHECKED,
             DebugCategoryCheckState::Checked => CHECKED,
+        }
+    }
+
+    pub fn merge(self, other: Self) -> Self {
+        match (self, other) {
+            (DebugCategoryCheckState::Checked, DebugCategoryCheckState::Checked) => DebugCategoryCheckState::Checked,
+            (DebugCategoryCheckState::Empty, DebugCategoryCheckState::Empty) => DebugCategoryCheckState::Empty,
+            _ => DebugCategoryCheckState::Partial,
         }
     }
 }
@@ -84,7 +91,6 @@ impl From<bool> for DebugCategoryCheckState {
         }
     }
 }
-
 impl From<&[bool]> for DebugCategoryCheckState {
     fn from(values: &[bool]) -> Self {
         if values.iter().all(|&v| v) {
@@ -96,7 +102,6 @@ impl From<&[bool]> for DebugCategoryCheckState {
         }
     }
 }
-
 impl From<DebugCategoryCheckState> for bool {
     fn from(value: DebugCategoryCheckState) -> Self {
         matches!(value, DebugCategoryCheckState::Checked)
@@ -139,10 +144,7 @@ fn spawn_debug_menu(
     mut commands: Commands,
     debug_menu: Res<DebugMenu>,
     menu_query: Query<Entity, With<DebugMenuRoot>>,
-    physics_entity_state: Res<State<RenderPhysicsEntitiesState>>,
-    physics_tile_state: Res<State<RenderPhysicsTilesState>>,
-    log_screen_states: Res<State<LoggingScreenStates>>,
-    ui_debug_options: Res<UiDebugOptions>,
+    state: DebugOptionState,
 ) {
     if !debug_menu.is_changed() {
         return;
@@ -178,13 +180,7 @@ fn spawn_debug_menu(
                     TextColor(Color::WHITE),
                 ));
 
-                spawn_debug(
-                    parent,
-                    physics_entity_state,
-                    physics_tile_state,
-                    log_screen_states,
-                    ui_debug_options
-                );
+                spawn_debug(parent, state);
             });
     } else if !debug_menu.open && menu_exists {
         for entity in &menu_query {
@@ -271,7 +267,7 @@ pub(super) fn spawn_debug_category(
                 .spawn((
                     Node {
                         width: Val::Percent(100.0),
-                        margin: UiRect::left(Val::Px(30.0)),
+                        margin: UiRect::left(Val::Px(40.0)),
                         flex_direction: FlexDirection::Column,
                         display: if expanded {
                             Display::Flex
