@@ -40,8 +40,8 @@ pub enum ColliderType {
     Capsule(Capsule),
     ConvexHull {
         shape: ConvexPolyhedron,
-        vertices: Vec<Vec3>,
-        indices: Vec<[u32; 3]>,
+        vertices: Box<Vec<Vec3>>,
+        indices: Box<Vec<[u32; 3]>>,
     },
 }
 impl ColliderType {
@@ -179,8 +179,8 @@ impl Collider {
         Self {
             collider_type: ColliderType::ConvexHull {
                 shape: convex_polyhedron.expect("Failed to create convex hull"),
-                vertices,
-                indices: convex_hull.1,
+                vertices: Box::new(vertices),
+                indices: Box::new(convex_hull.1),
             },
             position: Pose::translation(position.x, position.y, position.z),
         }
@@ -214,6 +214,54 @@ impl Collider {
     pub fn set_position(&mut self, position: impl Into<WorldCoords>) {
         let position = position.into();
         self.position = Pose::translation(position.x, position.y, position.z);
+    }
+
+    /// Get the minimum and maximum world coordinates of the collider.
+    /// Returns (min, max)
+    pub fn bounds(&self) -> (Vec3, Vec3) {
+        let (local_min, local_max) = match &self.collider_type {
+            ColliderType::Cuboid(cuboid) => {
+                let half_extents = cuboid.half_extents;
+
+                (-half_extents, half_extents)
+            }
+            ColliderType::Capsule(capsule) => {
+                let a = capsule.segment.a;
+                let b = capsule.segment.b;
+                let r = Vec3::splat(capsule.radius);
+
+                (a.min(b) - r, a.max(b) + r)
+            }
+            ColliderType::ConvexHull { vertices, .. } => {
+                let Some(first_vertex) = vertices.first() else {
+                    return (Vec3::ZERO, Vec3::ZERO);
+                };
+
+                let mut min = *first_vertex;
+                let mut max = *first_vertex;
+
+                for &vertex in vertices.iter().skip(1) {
+                    min = min.min(vertex);
+                    max = max.max(vertex);
+                }
+
+                (min, max)
+            }
+        };
+
+        let translation = Vec3::new(
+            self.position.translation.x,
+            self.position.translation.y,
+            self.position.translation.z,
+        );
+
+        (local_min + translation, local_max + translation)
+    }
+
+    /// Get the size of the collider's world-space bounds.
+    pub fn size(&self) -> Vec3 {
+        let (min, max) = self.bounds();
+        max - min
     }
 }
 

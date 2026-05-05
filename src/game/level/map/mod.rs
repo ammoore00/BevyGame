@@ -75,7 +75,7 @@ impl MapDefinition {
             merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))
                 .expect("Failed to merge tile map");
         }
-
+        
         let grid_entity = room_builder_context.commands
             .spawn(grid_bundle(grid.clone(), room_builder_context.scale.0))
             .id();
@@ -97,6 +97,7 @@ impl MapDefinition {
 #[derive(Component, Debug)]
 pub struct MapState {
     grid: Entity,
+    //nav: Entity,
 }
 
 impl MapState {
