@@ -10,7 +10,9 @@ use crate::game::level::map::room::RoomBuilderContext;
 use crate::game::object::{object, ObjectAssets, ObjectType};
 use crate::{asset_tracking::LoadResource, audio::music, screens::Screen, Scale};
 use bevy::prelude::*;
-use crate::game::level::map::{build_map_grid, Map};
+use crate::game::level::grid::{Grid, TileMap};
+use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
+use crate::game::level::map::{build_map_grid, map_bundle, Map};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((grid::plugin, map::plugin));
@@ -121,6 +123,8 @@ fn bake_tiles(
 
     let map = &palette.main_map_pool().0[0];
     let rng = rand::rng();
+    
+    // TODO: Move this responsibility into map module
     let grid_entity = build_map_grid(
         map,
         rng,
@@ -129,11 +133,7 @@ fn bake_tiles(
     );
 
     let map_entity = commands
-        .spawn((
-            Map,
-            Transform::default(),
-            Visibility::default(),
-        ))
+        .spawn(map_bundle())
         .add_child(grid_entity)
         .id();
     commands.entity(level).add_child(map_entity);
@@ -141,9 +141,39 @@ fn bake_tiles(
     next_state.set(LevelSpawnState::BakeTiles.next());
 }
 fn bake_nav(
+    nav_query: TileNavQuery,
+    map: Query<(Entity, &Children), With<Map>>,
+    grid: Query<&Grid>,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
+    mut commands: Commands,
 ) {
     info!("Level construction - baking nav map");
+
+    let (map_entity, children) = match map.single() {
+        Ok(level) => level,
+        Err(err) => {
+            error!("Error getting level entity: {:?}", err);
+            return
+        },
+    };
+
+    let mut tile_map = None;
+    for child in children {
+        if let Ok(grid) = grid.get(*child) {
+            tile_map = Some(grid.tile_map().clone());
+            break;
+        }
+    }
+    let Some(tile_map) = tile_map else {
+        error!("No grid child found for level map");
+        return;
+    };
+
+    // TODO: Move this responsibility into map module
+    let tile_nav_map = TileNavMap::from_map(tile_map, nav_query);
+    let nav_entity = commands.spawn(tile_nav_map).id();
+    commands.entity(map_entity).add_child(nav_entity);
+
     next_state.set(LevelSpawnState::BakeNav.next());
 }
 fn add_objects(

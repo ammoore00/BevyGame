@@ -55,22 +55,19 @@ impl TileNavMap {
         tile_map: TileMap,
         tile_nav_query: TileNavQuery,
     ) -> Self {
+        // Cache tile info
         let mut _self = Self {
             // TileMap is an Alias for Arc, so cloning is trivial
             tile_map_cache: tile_map.clone(),
             ..Default::default()
         };
-        
-        // Cache tile info
+
         let tile_info = tile_nav_query.into_iter()
             .map(TileNavInfo::from)
             .map(|info| (info.entity, info))
             .collect::<BTreeMap<Entity, TileNavInfo>>();
 
         let tile_map = tile_map.read().unwrap();
-
-        info!("Tile map: {:?}", tile_map.iter());
-        info!("Tile info: {:?}", tile_info.iter());
 
         let tile_info_cache = tile_map.iter()
             .map(|(coords, tile_entity)| (coords.clone(), tile_info[tile_entity]))

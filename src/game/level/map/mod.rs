@@ -50,6 +50,14 @@ pub struct MapDefinition {
     map_size: usize,
 }
 
+pub fn map_bundle() -> impl Bundle {
+    (
+        Map,
+        Transform::default(),
+        Visibility::default(),
+    )
+}
+
 pub fn build_map_grid(
     map_definition: &MapDefinition,
     mut rand: impl Rng,
