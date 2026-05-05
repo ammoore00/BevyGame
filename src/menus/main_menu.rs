@@ -1,11 +1,11 @@
 //! The main menu (seen on the title screen).
 
+use crate::menus::font::FontBuilder;
 use crate::{asset_tracking::ResourceHandles, menus::Menu, screens::Screen, theme::widget};
-use bevy::input_focus::InputFocus;
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
+use bevy::input_focus::InputFocus;
 use bevy::math::CompassOctant;
 use bevy::prelude::*;
-use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Main), spawn_main_menu);

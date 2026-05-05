@@ -2,17 +2,17 @@ pub mod registry;
 pub mod loader;
 pub mod sprite;
 
+use crate::data::registry::ResourceRegistry;
+use bevy::prelude::*;
+use getset::Getters;
+use regex::Regex;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Display;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-use regex::Regex;
 use std::str::FromStr;
 use std::sync::LazyLock;
-use bevy::prelude::*;
-use getset::Getters;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use crate::data::registry::ResourceRegistry;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((loader::plugin,));

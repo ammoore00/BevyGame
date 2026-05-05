@@ -1,8 +1,8 @@
+use crate::data::loader::LoaderJobManager;
+use crate::data::ResourceFileType;
+use crate::define_resource;
 use crate::{data, define_data_resource};
 use bevy::prelude::*;
-use crate::data::ResourceFileType;
-use crate::data::loader::LoaderJobManager;
-use crate::define_resource;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<AudioResource>();

@@ -1,19 +1,19 @@
-use std::any::TypeId;
-use bevy::prelude::*;
-use crate::{AppSystems, PausableSystems};
 use crate::data::ResourceLocation;
 use crate::datagen_api::attack::{AttackDefinition, AttackRegistry, AttackResource};
-use crate::game::character::{state, Character, Facing};
 use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::game::character::stamina::Stamina;
-use crate::game::character::state::{is_in_movement_state, ActionState, ActionStateTracker, CharacterStateEvent};
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
+use crate::game::character::state::{is_in_movement_state, ActionState, ActionStateTracker, CharacterStateEvent};
+use crate::game::character::{state, Character, Facing};
 use crate::game::level::grid::coords::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, WorldPosition};
 use crate::game::physics::components::PhysicsData;
 use crate::game::physics::movement::MovementController;
 use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
+use crate::{AppSystems, PausableSystems};
+use bevy::prelude::*;
+use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

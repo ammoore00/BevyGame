@@ -1,10 +1,10 @@
-use crate::Scale;
 use crate::game::level::grid::tile::{TILE_HEIGHT, TILE_WIDTH};
+use crate::Scale;
 use bevy::prelude::*;
 use parry3d::math::Pose;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::ops::Deref;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub(in crate::game) const SCREEN_Z_SCALE: f32 = 2.0;
 

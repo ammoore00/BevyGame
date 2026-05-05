@@ -2,14 +2,14 @@
 
 mod debug_options;
 
-use std::fmt::Debug;
-use std::ops::Not;
+use crate::dev_tools::debug_options::spawn_debug;
+use bevy::ecs::relationship::Relationship;
 use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use bevy::ecs::relationship::Relationship;
-use crate::dev_tools::debug_options::spawn_debug;
+use std::fmt::Debug;
+use std::ops::Not;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(debug_options::plugin);

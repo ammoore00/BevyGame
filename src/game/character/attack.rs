@@ -1,15 +1,15 @@
-use std::time::Duration;
-use bevy::ecs::system::SystemParam;
-use crate::{data, define_data_resource};
-use bevy::prelude::*;
-use getset::{CopyGetters, Getters};
-use serde::{Deserialize, Serialize};
-use crate::data::{ResourceFileType, ResourceLocation};
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
+use crate::data::{ResourceFileType, ResourceLocation};
 use crate::datagen_api::animation::AnimationResource;
 use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::define_resource;
+use crate::{data, define_data_resource};
+use bevy::ecs::system::SystemParam;
+use bevy::prelude::*;
+use getset::{CopyGetters, Getters};
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AttackDefinition>();

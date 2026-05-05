@@ -1,23 +1,23 @@
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
+use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistry, ResolvedSystemRegistryMut, SystemRegistry};
+use crate::data::sprite::TextureAtlasCodec;
+use crate::data::{ResourceFileType, ResourceLocation};
+use crate::datagen_api::assets::CharacterSpriteResource;
+use crate::datagen_api::attack::AttackResource;
 use crate::define_resource;
-use crate::{data, define_resolvable_resource, define_data_resource, AssetLoadState};
+use crate::game::character::state::action_states::Attacking;
+use crate::game::character::state::ActionStateTracker;
 use crate::game::character::Facing;
 use crate::screens::Screen;
-use crate::{AppSystems, PausableSystems, AssetSystems};
+use crate::{data, define_data_resource, define_resolvable_resource, AssetLoadState};
+use crate::{AppSystems, AssetSystems, PausableSystems};
 use bevy::prelude::*;
+use getset::{CloneGetters, CopyGetters, Getters};
+use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
-use getset::{CloneGetters, CopyGetters, Getters};
-use serde::{Deserialize, Serialize};
-use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistry, ResolvedSystemRegistryMut, SystemRegistry};
-use crate::data::{ResourceFileType, ResourceLocation};
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
-use crate::data::sprite::TextureAtlasCodec;
-use crate::datagen_api::assets::CharacterSpriteResource;
-use crate::datagen_api::attack::AttackResource;
-use crate::game::character::state::action_states::Attacking;
-use crate::game::character::state::ActionStateTracker;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<PartialAnimationData>();

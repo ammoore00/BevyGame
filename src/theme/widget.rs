@@ -3,12 +3,12 @@
 use std::borrow::Cow;
 
 use crate::asset_tracking::LoadResource;
+use crate::menus::font::FontBuilder;
 use crate::theme::{interaction::InteractionPalette, palette::*};
 use bevy::{
     ecs::{spawn::SpawnWith, system::IntoObserverSystem},
     prelude::*,
 };
-use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<ButtonAssets>();

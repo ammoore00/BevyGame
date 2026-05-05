@@ -1,10 +1,10 @@
-use crate::AppSystems;
 use crate::asset_tracking::LoadResource;
 use crate::game::character::health::Health;
 use crate::game::character::player::Player;
 use crate::game::character::stamina::Stamina;
 use crate::screens::Screen;
 use crate::theme::prelude::*;
+use crate::AppSystems;
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {

@@ -1,11 +1,11 @@
 //! The credits menu.
 
 use crate::gamepad::gamepad_just_pressed;
+use crate::menus::font::FontBuilder;
 use crate::theme::widget::ButtonAssets;
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
 use bevy::input_focus::InputFocus;
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
-use crate::menus::font::FontBuilder;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu);

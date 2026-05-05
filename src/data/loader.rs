@@ -1,18 +1,18 @@
+use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
+use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
+use crate::{AssetLoadState, AssetSystems};
+use bevy::asset::io::Reader;
+use bevy::asset::{AssetLoader, LoadContext};
+use bevy::prelude::*;
+use bevy::reflect::erased_serde::__private::serde::Deserializer;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
-use bevy::asset::{AssetLoader, LoadContext};
-use bevy::asset::io::Reader;
-use bevy::prelude::*;
-use bevy::reflect::erased_serde::__private::serde::Deserializer;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
-use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
-use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
-use crate::{AssetLoadState, AssetSystems};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

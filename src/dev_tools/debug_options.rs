@@ -1,8 +1,8 @@
+use crate::dev_tools::{spawn_checkbox_row, spawn_debug_category, DebugMenuEvent, DebugSetting, LoggingScreenStates};
+use crate::screens::Screen;
 use bevy::dev_tools::states::log_transitions;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::*;
-use crate::dev_tools::{spawn_checkbox_row, spawn_debug_category, DebugMenuEvent, DebugSetting, LoggingScreenStates};
-use crate::screens::Screen;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_state::<LoggingScreenStates>();

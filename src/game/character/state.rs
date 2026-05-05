@@ -1,11 +1,11 @@
+use crate::game::character::Character;
+use crate::AppSystems;
+use bevy::ecs::world::DeferredWorld;
+use bevy::prelude::*;
+use state_transitions::{ActionStateCapabilities, StateTransitionError};
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
-use bevy::prelude::*;
 use tracing::warn;
-use bevy::ecs::world::DeferredWorld;
-use state_transitions::{ActionStateCapabilities, StateTransitionError};
-use crate::AppSystems;
-use crate::game::character::Character;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
@@ -60,10 +60,10 @@ pub trait TimedActionState: ActionState {
 }
 
 pub mod state_transitions {
+    use crate::game::character::state::action_states::{DEFAULT_STATES, DEFAULT_TRANSITIONS};
+    use crate::game::character::state::ActionState;
     use crate::game::character::*;
     use std::collections::HashMap;
-    use crate::game::character::state::ActionState;
-    use crate::game::character::state::action_states::{DEFAULT_STATES, DEFAULT_TRANSITIONS};
 
     #[derive(Component, Debug, Clone)]
     pub struct ActionStateCapabilities {
@@ -297,16 +297,16 @@ pub mod state_transitions {
 }
 
 pub mod action_states {
-    use crate::game::character::*;
+    use super::*;
+    use crate::datagen_api::attack::AttackResource;
     use crate::game::character::state::state_transitions::{
         StateMatcher, StateTransitionChecker, StateTransitionRule,
     };
-    use super::*;
+    use crate::game::character::state::{ActionState, ActionStateMarker, MovementActionState, TimedActionState};
+    use crate::game::character::*;
+    use getset::{Getters, Setters};
     use std::cell::LazyCell;
     use std::time::Duration;
-    use getset::{Getters, Setters};
-    use crate::datagen_api::attack::AttackResource;
-    use crate::game::character::state::{ActionState, ActionStateMarker, MovementActionState, TimedActionState};
 
     pub(in crate::game::character) fn register_states(app: &mut App) {
         app.register_type::<Idle>();

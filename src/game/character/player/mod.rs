@@ -1,21 +1,21 @@
 //! Player-specific behavior.
 
-mod input;
-
-use crate::game::character::{character, CharacterBuilderContext, Facing};
-use bevy::prelude::*;
-use std::str::FromStr;
-use tracing::warn;
-//use crate::game::object::Shadow;
-use crate::game::character::health::Health;
-use crate::game::character::stamina::{Stamina, StaminaEvent};
-use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
-use crate::game::physics::movement::MovementController;
 use crate::asset_tracking::LoadResource;
 use crate::data::ResourceLocation;
 use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::datagen_api::attack::{AttackContext, AttackResource};
 use crate::game::character::assets::CharacterResource;
+//use crate::game::object::Shadow;
+use crate::game::character::health::Health;
+use crate::game::character::stamina::{Stamina, StaminaEvent};
+use crate::game::character::{character, CharacterBuilderContext, Facing};
+use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
+use crate::game::physics::movement::MovementController;
+use bevy::prelude::*;
+use std::str::FromStr;
+use tracing::warn;
+
+mod input;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(input::plugin);

@@ -1,15 +1,15 @@
+use crate::data::ResourceLocation;
+use crate::datagen_api::tile::assets::TileSpriteRegistry;
 use crate::game::level::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use crate::game::level::grid::tile::assets::TileLayout;
 use crate::game::physics::components::{Collider, PhysicsData};
+use assets::{TileAsset, TileRegistry, TileResource};
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign};
-use serde::{Deserialize, Serialize};
-use assets::{TileAsset, TileRegistry, TileResource};
-use crate::data::ResourceLocation;
-use crate::datagen_api::tile::assets::TileSpriteRegistry;
 
 pub mod assets;
 mod collision;

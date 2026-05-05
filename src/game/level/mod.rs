@@ -3,13 +3,13 @@
 pub mod grid;
 pub mod map;
 
-use bevy::prelude::*;
-use crate::game::character::player::{PlayerAssets, player};
-use crate::game::object::{ObjectAssets, ObjectType, object};
-use crate::{Scale, asset_tracking::LoadResource, audio::music, screens::Screen};
+use crate::game::character::player::{player, PlayerAssets};
 use crate::game::character::{character, CharacterBuilderContext};
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
+use crate::game::object::{object, ObjectAssets, ObjectType};
+use crate::{asset_tracking::LoadResource, audio::music, screens::Screen, Scale};
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<LevelAssets>();

@@ -1,8 +1,8 @@
+use crate::data::loader::LoaderJobManager;
+use crate::data::registry::ResourceRegistry;
+use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use crate::data::loader::LoaderJobManager;
-use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
-use crate::data::registry::ResourceRegistry;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<FontResource>();

@@ -1,6 +1,6 @@
+use crate::data::loader::Maybe;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::data::loader::Maybe;
 
 #[macro_export]
 macro_rules! define_sprite_resource {

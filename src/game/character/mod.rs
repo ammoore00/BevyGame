@@ -1,19 +1,19 @@
-use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
-use crate::game::level::grid::coords::WorldPosition;
-use crate::game::physics::components::PhysicsData;
-use bevy::prelude::*;
-use std::any::TypeId;
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::sync::{Arc, RwLock};
-use bevy::ecs::system::SystemParam;
 use crate::data::loader::LoaderJobManager;
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
 use crate::data::ResourceLocation;
 use crate::datagen_api::animation::AnimationResource;
 use crate::datagen_api::assets::CharacterSpriteResource;
+use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::assets::{CharacterData, CharacterResource};
 use crate::game::character::state::action_states::Idle;
+use crate::game::level::grid::coords::WorldPosition;
+use crate::game::physics::components::PhysicsData;
+use bevy::ecs::system::SystemParam;
+use bevy::prelude::*;
+use std::any::TypeId;
+use std::fmt::Debug;
+use std::fmt::Display;
+use std::sync::{Arc, RwLock};
 
 pub mod animation;
 pub mod health;

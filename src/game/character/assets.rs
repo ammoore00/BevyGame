@@ -1,19 +1,19 @@
-use std::any::TypeId;
-use std::collections::HashMap;
-use crate::{data, define_data_resource, define_resource, define_sprite_resource};
-use bevy::prelude::*;
-use getset::Getters;
-use serde::{Deserialize, Serialize};
-use maybe_fields_macro::maybe_fields;
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
+use crate::data::registry::ResolvedResourceRegistry;
 use crate::data::{ResourceFileType, ResourceLocation};
-use crate::data::registry::{ResolvedResourceRegistry};
 use crate::datagen_api::animation::{AnimationResource, ResolvedAnimationData};
 use crate::datagen_api::attack::{AttackContext, AttackSetResource};
-use crate::game::character::attack::{AttackDefinition};
+use crate::game::character::attack::AttackDefinition;
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 use crate::game::physics::components::ColliderCodec;
+use crate::{data, define_data_resource, define_resource, define_sprite_resource};
+use bevy::prelude::*;
+use getset::Getters;
+use maybe_fields_macro::maybe_fields;
+use serde::{Deserialize, Serialize};
+use std::any::TypeId;
+use std::collections::HashMap;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterSpriteResource>();

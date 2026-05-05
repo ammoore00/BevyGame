@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
+use std::collections::{HashMap, HashSet};
 
 /// Maps resource locations to bevy asset handles
 #[derive(Debug, Resource)]
