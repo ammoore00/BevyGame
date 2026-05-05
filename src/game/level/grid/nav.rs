@@ -9,10 +9,6 @@ use std::collections::BTreeMap;
 pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 }
 
-/// High-level map between rooms
-#[derive(Component, Debug, Clone)]
-pub struct _LevelNavMap {}
-
 // Type aliasing done here to allow for conversion without requiring explicit deconstruction,
 // nor requiring the caller to care about internal query type information
 pub type TileNavQueryParam<'s> = (Entity, &'s Collider);
@@ -36,7 +32,6 @@ const MAX_CLEARANCE: u32 = 5;
 const MAX_STEP_UP: f32 = 0.2;
 const MAX_STEP_DOWN: f32 = 0.5;
 
-/// Low-level map for tiles within a room
 #[derive(Component, Default)]
 pub struct TileNavMap {
     /// Cached version of the tile map, for change detection if necessary
@@ -214,5 +209,43 @@ impl NavEdgeKind {
             NavEdgeKind::_Jump => 30,
             NavEdgeKind::_Drop => 8,
         }
+    }
+}
+
+#[cfg(feature = "dev")]
+mod debug_helpers {
+    use super::*;
+
+    impl TileNavMap {
+        pub(crate) fn debug_node_positions(&self) -> impl Iterator<Item = Vec3> + '_ {
+            self.nodes
+                .iter()
+                .map(|(coords, node)| nav_node_debug_position(coords, node))
+        }
+
+        pub(crate) fn debug_edge_segments(&self) -> impl Iterator<Item = (Vec3, Vec3)> + '_ {
+            self.edges
+                .keys()
+                .filter_map(|key| {
+                    let start = self.nodes.get(&key.start)?;
+                    let end = self.nodes.get(&key.end)?;
+
+                    Some((
+                        nav_node_debug_position(&key.start, start),
+                        nav_node_debug_position(&key.end, end),
+                    ))
+                })
+        }
+    }
+
+    fn nav_node_debug_position(coords: &TileCoords, node: &NavNode) -> Vec3 {
+        let (min, max) = node.bounds;
+        let local_center = Vec3::new(
+            (min.x + max.x) / 2.0,
+            max.y,
+            (min.z + max.z) / 2.0,
+        );
+
+        coords.0.as_vec3() + local_center
     }
 }

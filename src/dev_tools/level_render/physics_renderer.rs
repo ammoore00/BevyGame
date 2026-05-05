@@ -5,9 +5,21 @@ use crate::Scale;
 use bevy::prelude::*;
 use crate::dev_tools::level_render::{draw_capsule, draw_convex_hull, draw_cuboid};
 
-const STATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 0.8, 1.0);
-const KINEMATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 1.0, 0.3);
-const CONVEX_HULL_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
+const KINEMATIC_COLLIDER_COLOR: Color = Color::srgb(
+    0.90,
+    0.75,
+    0.35,
+);
+const STATIC_COLLIDER_COLOR: Color = Color::srgb(
+    0.90,
+    0.35,
+    0.35,
+);
+const CONVEX_HULL_COLOR: Color = Color::srgb(
+    0.95,
+    0.55,
+    0.30,
+);
 
 const COLLIDER_LINE_THICKNESS: f32 = 2.0;
 

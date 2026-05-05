@@ -4,9 +4,11 @@ use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
 use crate::gamepad::gamepad_just_pressed;
 use crate::{game::level::spawn_level, menus::Menu, screens::Screen, Pause};
+use crate::game::level::reset_level_state;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Gameplay), spawn_level);
+    app.add_systems(OnExit(Screen::Gameplay), reset_level_state);
 
     // Toggle pause on key press.
     app.add_systems(

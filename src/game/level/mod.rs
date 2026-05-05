@@ -51,14 +51,10 @@ impl LevelSpawnState {
             LevelSpawnState::AddObjects => LevelSpawnState::Cleanup,
             LevelSpawnState::Cleanup => LevelSpawnState::Finished,
             LevelSpawnState::Finished => {
-                warn!("Attempting to transition from Finished state using next(). Use reset() instead if this is intended.");
+                warn!("Attempting to transition from Finished state using next().");
                 LevelSpawnState::Finished
             },
         }
-    }
-
-    fn _reset(self) -> Self {
-        LevelSpawnState::Uninitialized
     }
 }
 
@@ -73,6 +69,10 @@ pub fn spawn_level(
 
     info!("Beginning level construction!");
     next_state.set(LevelSpawnState::Uninitialized.next());
+}
+
+pub fn reset_level_state(mut next_state: ResMut<NextState<LevelSpawnState>>) {
+    next_state.set(LevelSpawnState::Uninitialized);
 }
 
 fn construct_level(
@@ -123,7 +123,7 @@ fn bake_tiles(
 
     let map = &palette.main_map_pool().0[0];
     let rng = rand::rng();
-    
+
     // TODO: Move this responsibility into map module
     let grid_entity = build_map_grid(
         map,
@@ -203,7 +203,7 @@ fn add_objects(
         &character_context,
     );
 
-    let test_npc = character(
+    let _test_npc = character(
         "test".parse().unwrap(),
         Vec3::new(5.0, 1.0, 3.0),
         scale.0,
@@ -221,7 +221,7 @@ fn add_objects(
 
     let children = &[
         commands.spawn(player).id(),
-        commands.spawn(test_npc).id(),
+        //commands.spawn(_test_npc).id(),
         //commands.spawn(_rock).id(),
     ];
     commands.entity(level).add_children(children);
