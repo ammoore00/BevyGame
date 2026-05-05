@@ -50,54 +50,52 @@ pub struct MapDefinition {
     map_size: usize,
 }
 
-impl MapDefinition {
-    /// Creates a usable map state from the definition and provided RNG
-    pub fn bake(
-        &self,
-        mut rand: impl Rng,
-        palette: &Palette,
-        room_builder_context: &mut RoomBuilderContext,
-    ) -> MapState {
-        let transition_pool = palette.transition_pool();
-        
-        let mut grid = Grid::new(grid::tile_map());
-        
-        for _ in 0..self.map_size {
-            let index = rand.random_range(0..transition_pool.0.len());
-            let room = transition_pool.0[index].room();
+pub fn build_map_grid(
+    map_definition: &MapDefinition,
+    mut rand: impl Rng,
+    palette: &Palette,
+    context: &mut RoomBuilderContext,
+) -> Entity {
+    let transition_pool = palette.transition_pool();
 
-            let room = room_builder_context.room_registry.get(room).unwrap();
-            let room = room_builder_context.room_assets.get(room).cloned().unwrap();
+    let mut grid = Grid::new(grid::tile_map());
 
-            let room_tile_map = room.build(room_builder_context);
+    for _ in 0..map_definition.map_size {
+        let index = rand.random_range(0..transition_pool.0.len());
+        let room = transition_pool.0[index].room();
 
-            let grid_size = grid.size();
-            merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))
-                .expect("Failed to merge tile map");
-        }
-        
-        let grid_entity = room_builder_context.commands
-            .spawn(grid_bundle(grid.clone(), room_builder_context.scale.0))
-            .id();
+        let room = context.room_registry.get(room).unwrap();
+        let room = context.room_assets.get(room).cloned().unwrap();
 
-        for (tile_coords, tile) in &*grid.tile_map().read().unwrap() {
-            room_builder_context.commands.entity(grid_entity).add_child(*tile);
+        let room_tile_map = room.build(context);
 
-            let tile = TileEntity(room_builder_context.commands.entity(*tile).id());
-            set_tile_location(tile, tile_coords.clone(), &mut room_builder_context.commands);
-        }
-
-        MapState {
-            grid: grid_entity,
-        }
+        let grid_size = grid.size();
+        merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))
+            .expect("Failed to merge tile map");
     }
+
+    let grid_entity = context.commands
+        .spawn(grid_bundle(grid.clone(), context.scale.0))
+        .id();
+
+    for (tile_coords, tile) in &*grid.tile_map().read().unwrap() {
+        context.commands.entity(grid_entity).add_child(*tile);
+
+        let tile = TileEntity(context.commands.entity(*tile).id());
+        set_tile_location(tile, tile_coords.clone(), &mut context.commands);
+    }
+
+    grid_entity
 }
+
+#[derive(Component, Debug, Clone)]
+pub struct Map;
 
 /// Stores the current state of the generated map
 #[derive(Component, Debug)]
 pub struct MapState {
     grid: Entity,
-    //nav: Entity,
+    nav: Entity,
 }
 
 impl MapState {

@@ -142,7 +142,7 @@ debug_menu_event!(
     LogScreenStateTransitions,
     fn on_log_screen_state(
         event: On<DebugMenuEvent>,
-        prev_state: ResMut<State<LoggingScreenStates>>,
+        prev_state: Res<State<LoggingScreenStates>>,
         mut next_state: ResMut<NextState<LoggingScreenStates>>,
     ) {
         next_state.set(LoggingScreenStates(!prev_state.0));
@@ -160,8 +160,8 @@ debug_menu_event!(
     RenderPhysicsEntities,
     fn on_physics_render_entities(
         event: On<DebugMenuEvent>,
-        prev_state: ResMut<State<RenderPhysicsEntitiesState >>,
-        mut next_state: ResMut<NextState<RenderPhysicsEntitiesState >>,
+        prev_state: Res<State<RenderPhysicsEntitiesState>>,
+        mut next_state: ResMut<NextState<RenderPhysicsEntitiesState>>,
     ) {
         next_state.set(RenderPhysicsEntitiesState(!prev_state.0));
         info!("Entity physics renderer toggled: {}", !prev_state.0);
@@ -178,8 +178,8 @@ debug_menu_event!(
     RenderPhysicsTiles,
     fn on_physics_render_tiles(
         event: On<DebugMenuEvent>,
-        prev_state: ResMut<State<RenderPhysicsTilesState >>,
-        mut next_state: ResMut<NextState<RenderPhysicsTilesState >>,
+        prev_state: Res<State<RenderPhysicsTilesState>>,
+        mut next_state: ResMut<NextState<RenderPhysicsTilesState>>,
     ) {
         next_state.set(RenderPhysicsTilesState(!prev_state.0));
         info!("Tile physics renderer toggled: {}", !prev_state.0);

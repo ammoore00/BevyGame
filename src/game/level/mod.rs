@@ -10,43 +10,161 @@ use crate::game::level::map::room::RoomBuilderContext;
 use crate::game::object::{object, ObjectAssets, ObjectType};
 use crate::{asset_tracking::LoadResource, audio::music, screens::Screen, Scale};
 use bevy::prelude::*;
+use crate::game::level::map::{build_map_grid, Map};
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((grid::plugin, map::plugin));
+
     app.load_resource::<LevelAssets>();
 
-    app.add_plugins((grid::plugin, map::plugin));
+    app.init_state::<LevelSpawnState>();
+    app.add_systems(OnEnter(LevelSpawnState::ConstructLevel), construct_level);
+    app.add_systems(OnEnter(LevelSpawnState::BakeTiles), bake_tiles);
+    app.add_systems(OnEnter(LevelSpawnState::BakeNav), bake_nav);
+    app.add_systems(OnEnter(LevelSpawnState::AddObjects), add_objects);
+    app.add_systems(OnEnter(LevelSpawnState::Cleanup), finish_level_spawn);
 }
 
-#[derive(Resource, Asset, Clone, Reflect)]
-#[reflect(Resource)]
-pub struct LevelAssets {
-    #[dependency]
-    music: Handle<AudioSource>,
-}
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+struct Level;
 
-impl FromWorld for LevelAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-        Self {
-            music: assets.load("base/audio/music/8 Bit Open World.ogg"),
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum LevelSpawnState {
+    #[default]
+    Uninitialized,
+    ConstructLevel,
+    BakeTiles,
+    BakeNav,
+    AddObjects,
+    Cleanup,
+    Finished,
+}
+impl LevelSpawnState {
+    fn next(self) -> Self {
+        match self {
+            LevelSpawnState::Uninitialized => LevelSpawnState::ConstructLevel,
+            LevelSpawnState::ConstructLevel => LevelSpawnState::BakeTiles,
+            LevelSpawnState::BakeTiles => LevelSpawnState::BakeNav,
+            LevelSpawnState::BakeNav => LevelSpawnState::AddObjects,
+            LevelSpawnState::AddObjects => LevelSpawnState::Cleanup,
+            LevelSpawnState::Cleanup => LevelSpawnState::Finished,
+            LevelSpawnState::Finished => {
+                warn!("Attempting to transition from Finished state using next(). Use reset() instead if this is intended.");
+                LevelSpawnState::Finished
+            },
         }
+    }
+
+    fn _reset(self) -> Self {
+        LevelSpawnState::Uninitialized
     }
 }
 
-/// A system that spawns the main level.
 pub fn spawn_level(
-    scale: Res<Scale>,
+    prev_state: Res<State<LevelSpawnState>>,
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+) {
+    if **prev_state != LevelSpawnState::Uninitialized {
+        error!("Attempting to spawn level while level construction is in progress or finished!");
+        return;
+    }
 
+    info!("Beginning level construction!");
+    next_state.set(LevelSpawnState::Uninitialized.next());
+}
+
+fn construct_level(
     level_assets: Res<LevelAssets>,
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+    mut commands: Commands,
+) {
+    info!("Level construction - init");
+
+    commands
+        .spawn((
+            Name::new("Level"),
+            Level,
+            Transform::default(),
+            Visibility::default(),
+            DespawnOnExit(Screen::Gameplay),
+            children![
+                (
+                    Name::new("Gameplay Music"),
+                    music(level_assets.music.clone())
+                ),
+                //rock,
+            ],
+        ));
+
+    next_state.set(LevelSpawnState::ConstructLevel.next());
+}
+fn bake_tiles(
+    level: Query<Entity, With<Level>>,
     level_palettes: Res<Palettes>,
     palette_assets: Res<Assets<Palette>>,
-
     mut builder_context: RoomBuilderContext,
-    character_context: CharacterBuilderContext,
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+    mut commands: Commands,
+) {
+    info!("Level construction - baking tiles");
 
+    let level = match level.single() {
+        Ok(level) => level,
+        Err(err) => {
+            error!("Error getting level entity: {:?}", err);
+            return
+        },
+    };
+
+    let palettes = level_palettes.into_inner();
+    let palette = palette_assets.get(palettes.standard.id()).unwrap();
+
+    let map = &palette.main_map_pool().0[0];
+    let rng = rand::rng();
+    let grid_entity = build_map_grid(
+        map,
+        rng,
+        palette,
+        &mut builder_context,
+    );
+
+    let map_entity = commands
+        .spawn((
+            Map,
+            Transform::default(),
+            Visibility::default(),
+        ))
+        .add_child(grid_entity)
+        .id();
+    commands.entity(level).add_child(map_entity);
+
+    next_state.set(LevelSpawnState::BakeTiles.next());
+}
+fn bake_nav(
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+) {
+    info!("Level construction - baking nav map");
+    next_state.set(LevelSpawnState::BakeNav.next());
+}
+fn add_objects(
+    level: Query<Entity, With<Level>>,
+    scale: Res<Scale>,
     player_assets: Res<PlayerAssets>,
     object_assets: Res<ObjectAssets>,
+    character_context: CharacterBuilderContext,
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+    mut commands: Commands,
 ) {
+    info!("Level construction - adding objects");
+
+    let level = match level.single() {
+        Ok(level) => level,
+        Err(err) => {
+            error!("Error getting level entity: {:?}", err);
+            return
+        },
+    };
+
     let player = player(
         Vec3::new(3.0, 1.0, 3.0),
         4.5,
@@ -71,33 +189,35 @@ pub fn spawn_level(
         0.5,
     );
 
-    let level = builder_context.commands
-        .spawn((
-            Name::new("Level"),
-            Transform::default(),
-            Visibility::default(),
-            DespawnOnExit(Screen::Gameplay),
-            children![
-                player,
-                test_npc,
-                (
-                    Name::new("Gameplay Music"),
-                    music(level_assets.music.clone())
-                ),
-                //rock,
-            ],
-        ))
-        .id();
+    let children = &[
+        commands.spawn(player).id(),
+        commands.spawn(test_npc).id(),
+        //commands.spawn(_rock).id(),
+    ];
+    commands.entity(level).add_children(children);
 
-    let palettes = level_palettes.into_inner();
-    let palette = palette_assets.get(palettes.standard.id()).unwrap();
-    
-    let map = &palette.main_map_pool().0[0];
-    let rng = rand::rng();
-    let map_state = map.bake(
-        rng,
-        palette,
-        &mut builder_context,
-    );
-    builder_context.commands.entity(level).add_child(map_state.grid());
+    next_state.set(LevelSpawnState::AddObjects.next());
+}
+fn finish_level_spawn(
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+) {
+    info!("Level construction - cleanup");
+    next_state.set(LevelSpawnState::Cleanup.next());
+    info!("Finished constructing level");
+}
+
+#[derive(Resource, Asset, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct LevelAssets {
+    #[dependency]
+    music: Handle<AudioSource>,
+}
+
+impl FromWorld for LevelAssets {
+    fn from_world(world: &mut World) -> Self {
+        let assets = world.resource::<AssetServer>();
+        Self {
+            music: assets.load("base/audio/music/8 Bit Open World.ogg"),
+        }
+    }
 }

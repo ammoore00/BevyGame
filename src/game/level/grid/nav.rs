@@ -1,5 +1,5 @@
 use crate::datagen_api::components::Collider;
-use crate::datagen_api::tile::TileFacing;
+use crate::datagen_api::tile::{Tile, TileFacing};
 use crate::game::level::grid::coords::TileCoords;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
@@ -18,7 +18,7 @@ pub struct LevelNavMap {
 // Type aliasing done here to allow for conversion without requiring explicit deconstruction,
 // nor requiring the caller to care about internal query type information
 pub type TileNavQueryParam<'s> = (Entity, &'s Collider);
-pub type TileNavQuery<'w, 's> = Query<'w, 's, TileNavQueryParam<'s>>;
+pub type TileNavQuery<'w, 's> = Query<'w, 's, TileNavQueryParam<'static>, With<Tile>>;
 
 #[derive(Debug, Clone, Copy)]
 struct TileNavInfo<'a> {
@@ -68,6 +68,10 @@ impl TileNavMap {
             .collect::<BTreeMap<Entity, TileNavInfo>>();
 
         let tile_map = tile_map.read().unwrap();
+
+        info!("Tile map: {:?}", tile_map.iter());
+        info!("Tile info: {:?}", tile_info.iter());
+
         let tile_info_cache = tile_map.iter()
             .map(|(coords, tile_entity)| (coords.clone(), tile_info[tile_entity]))
             .collect::<BTreeMap<TileCoords, TileNavInfo>>();
