@@ -63,6 +63,9 @@ trait DebugSetting: Component {}
 #[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 struct LoggingScreenStates(pub bool);
 
+#[derive(Component, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+struct DebugButton;
+
 #[derive(Component, Debug, Clone)]
 struct LogScreenStateTransitions;
 impl DebugSetting for LogScreenStateTransitions {}
@@ -283,6 +286,7 @@ fn spawn_debug_category(
                             },
                             BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
                             DebugCategoryCollapseButton,
+                            DebugButton,
                         ))
                         .with_children(|parent| {
                             let icon = if expanded { EXPANDED } else { COLLAPSED };
@@ -303,6 +307,7 @@ fn spawn_debug_category(
                             },
                             BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
                             DebugCategoryCheckbox,
+                            DebugButton,
                         ))
                         .with_children(|parent| {
                             parent.spawn(text_bundle(checked.icon()));
@@ -363,6 +368,7 @@ fn spawn_checkbox_row(
                 enabled: checked,
             },
             marker,
+            DebugButton,
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -544,7 +550,7 @@ fn handle_debug_menu_buttons(
     mut checkbox_queries: ParamSet<(
         Query<
             (Entity, &Interaction, &mut BackgroundColor, Option<&mut DebugCheckbox>),
-            (Changed<Interaction>, With<Button>),
+            (Changed<Interaction>, With<DebugButton>),
         >,
         Query<&mut DebugCheckbox>,
     )>,
