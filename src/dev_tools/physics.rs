@@ -81,14 +81,12 @@ fn draw_collider(
         ColliderType::Capsule(capsule) => {
             draw_capsule(commands, position, capsule, color, scale);
         }
-        ColliderType::ConvexHull(_) => {
-            draw_projected_camera_facing_circle(
-                commands,
-                position,
-                0.25,
-                CONVEX_HULL_COLOR,
-                scale,
-            );
+        ColliderType::ConvexHull {
+            vertices,
+            indices,
+            ..
+        } => {
+            draw_convex_hull(commands, position, vertices, indices, CONVEX_HULL_COLOR, scale);
         }
     }
 }
@@ -259,5 +257,112 @@ fn draw_capsule(
     // Additional side lines to fill out capsule
     for offset in offsets {
         draw_projected_line(commands, a + offset, b + offset, color, scale);
+    }
+}
+
+fn draw_convex_hull(
+    commands: &mut Commands,
+    position: Vec3,
+    vertices: &[Vec3],
+    indices: &[[u32; 3]],
+    color: Color,
+    scale: f32,
+) {
+    let world_vertices = vertices
+        .iter()
+        .map(|&vertex| position + vertex)
+        .collect::<Vec<_>>();
+
+    let view_direction = Vec3::new(1.0, 1.0, 1.0).normalize();
+    let mut drawn_edges = Vec::<(usize, usize)>::new();
+
+    for &[a, b, c] in indices {
+        let a_index = a as usize;
+        let b_index = b as usize;
+        let c_index = c as usize;
+
+        let Some(&a) = world_vertices.get(a_index) else {
+            continue;
+        };
+        let Some(&b) = world_vertices.get(b_index) else {
+            continue;
+        };
+        let Some(&c) = world_vertices.get(c_index) else {
+            continue;
+        };
+
+        let normal = (b - a).cross(c - a).normalize_or_zero();
+
+        if normal == Vec3::ZERO {
+            continue;
+        }
+
+        if normal.dot(view_direction) >= 0.0 {
+            continue;
+        }
+
+        draw_convex_hull_edge(
+            commands,
+            &world_vertices,
+            &mut drawn_edges,
+            a_index,
+            b_index,
+            color,
+            scale,
+        );
+
+        draw_convex_hull_edge(
+            commands,
+            &world_vertices,
+            &mut drawn_edges,
+            b_index,
+            c_index,
+            color,
+            scale,
+        );
+
+        draw_convex_hull_edge(
+            commands,
+            &world_vertices,
+            &mut drawn_edges,
+            c_index,
+            a_index,
+            color,
+            scale,
+        );
+    }
+}
+
+fn draw_convex_hull_edge(
+    commands: &mut Commands,
+    vertices: &[Vec3],
+    drawn_edges: &mut Vec<(usize, usize)>,
+    a_index: usize,
+    b_index: usize,
+    color: Color,
+    scale: f32,
+) {
+    let edge = normalized_edge(a_index, b_index);
+
+    if drawn_edges.contains(&edge) {
+        return;
+    }
+
+    let Some(&a) = vertices.get(a_index) else {
+        return;
+    };
+    let Some(&b) = vertices.get(b_index) else {
+        return;
+    };
+
+    drawn_edges.push(edge);
+    draw_projected_line(commands, a, b, color, scale);
+}
+
+fn normalized_edge(a: usize, b: usize) -> (usize, usize) {
+    if a < b {
+        (a, b)
+    } else {
+        (b, a)
     }
 }

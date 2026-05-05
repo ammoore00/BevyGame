@@ -38,14 +38,18 @@ impl PhysicsData {
 pub enum ColliderType {
     Cuboid(Cuboid),
     Capsule(Capsule),
-    ConvexHull(ConvexPolyhedron),
+    ConvexHull {
+        shape: ConvexPolyhedron,
+        vertices: Vec<Vec3>,
+        indices: Vec<[u32; 3]>,
+    },
 }
 impl ColliderType {
     fn get_shape(&self) -> &dyn Shape {
         match &self {
             ColliderType::Cuboid(cuboid) => cuboid,
             ColliderType::Capsule(capsule) => capsule,
-            ColliderType::ConvexHull(convex_hull) => convex_hull,
+            ColliderType::ConvexHull { shape, .. } => shape,
         }
     }
 }
@@ -56,7 +60,10 @@ impl PartialEq for ColliderType {
             (ColliderType::Capsule(a), ColliderType::Capsule(b)) => {
                 a.radius == b.radius && a.segment == b.segment
             }
-            (ColliderType::ConvexHull(a), ColliderType::ConvexHull(b)) => a == b,
+            (
+                ColliderType::ConvexHull { shape: a_shape, .. },
+                ColliderType::ConvexHull { shape: b_shape, .. }
+            ) => a_shape == b_shape,
             _ => false,
         }
     }
@@ -163,10 +170,18 @@ impl Collider {
         let convex_hull = convex_hull(vertices);
         let convex_polyhedron = ConvexPolyhedron::from_convex_hull(convex_hull.0.as_slice());
 
+        let vertices = convex_hull
+            .0
+            .iter()
+            .map(|point| Vec3::new(point.x, point.y, point.z))
+            .collect();
+
         Self {
-            collider_type: ColliderType::ConvexHull(
-                convex_polyhedron.expect("Failed to create convex hull"),
-            ),
+            collider_type: ColliderType::ConvexHull {
+                shape: convex_polyhedron.expect("Failed to create convex hull"),
+                vertices,
+                indices: convex_hull.1,
+            },
             position: Pose::translation(position.x, position.y, position.z),
         }
     }
