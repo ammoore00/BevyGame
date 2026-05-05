@@ -2,20 +2,19 @@ use bevy::prelude::*;
 use crate::datagen_api::components::{Collider, ColliderType, PhysicsData};
 use crate::dev_tools::debug_options::RenderPhysicsState;
 use crate::game::level::grid::coords::{ScreenCoords, TilePosition, WorldCoords, WorldPosition};
-use crate::screens::Screen;
 use crate::Scale;
 
 const STATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 0.8, 1.0);
 const KINEMATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 1.0, 0.3);
 const CONVEX_HULL_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 
+const COLLIDER_Z_OFFSET: f32 = 0.25;
+const COLLIDER_LINE_THICKNESS: f32 = 2.0;
+
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            draw_tile_physics_colliders.run_if(|state: Res<State<RenderPhysicsState>>| state.tiles()),
-            draw_entity_physics_colliders.run_if(|state: Res<State<RenderPhysicsState>>| state.entities()),
-        ).run_if(in_state(Screen::Gameplay))
+        render_physics_colliders
     );
 
     app.init_gizmo_group::<PhysicsRendererGizmoGroup>();
@@ -24,85 +23,71 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct PhysicsRendererGizmoGroup {}
 
-fn project_physics_point(point: Vec3, scale: f32) -> Vec2 {
-    let screen_coords = ScreenCoords::from(WorldCoords::from(point));
+#[derive(Component)]
+struct PhysicsColliderDebugVisual;
 
-    Vec2::new(
-        screen_coords.x * scale,
-        screen_coords.y * scale,
-    )
-}
-
-fn draw_projected_line(
-    gizmos: &mut Gizmos<PhysicsRendererGizmoGroup>,
-    a: Vec3,
-    b: Vec3,
-    color: Color,
-    scale: f32,
-) {
-    gizmos.line_2d(
-        project_physics_point(a, scale),
-        project_physics_point(b, scale),
-        color,
-    );
-}
-
-fn draw_tile_physics_colliders(
-    mut gizmos: Gizmos<PhysicsRendererGizmoGroup>,
+fn render_physics_colliders(
+    mut commands: Commands,
     scale: Res<Scale>,
+    state: Res<State<RenderPhysicsState>>,
+    debug_visual_query: Query<Entity, With<PhysicsColliderDebugVisual>>,
     tile_query: Query<(&Collider, &TilePosition, Option<&PhysicsData>)>,
-) {
-    for (collider, tile_position, physics_data) in &tile_query {
-        let position = tile_position.0.as_vec3();
-
-        draw_collider(
-            &mut gizmos,
-            collider,
-            position,
-            physics_data,
-            scale.0,
-        );
-    }
-}
-
-fn draw_entity_physics_colliders(
-    mut gizmos: Gizmos<PhysicsRendererGizmoGroup>,
-    scale: Res<Scale>,
     entity_query: Query<(&Collider, &WorldPosition, Option<&PhysicsData>)>,
 ) {
-    for (collider, world_position, physics_data) in &entity_query {
-        draw_collider(
-            &mut gizmos,
-            collider,
-            world_position.as_vec3(),
-            physics_data,
-            scale.0,
-        );
+    for entity in &debug_visual_query {
+        commands.entity(entity).despawn();
+    }
+
+    if state.tiles() {
+        for (collider, tile_position, physics_data) in &tile_query {
+            let position = tile_position.0.as_vec3();
+
+            draw_collider(
+                &mut commands,
+                collider,
+                position,
+                physics_data,
+                scale.0,
+            );
+        }
+    }
+
+    if state.entities() {
+        for (collider, world_position, physics_data) in &entity_query {
+            draw_collider(
+                &mut commands,
+                collider,
+                world_position.as_vec3(),
+                physics_data,
+                scale.0,
+            );
+        }
     }
 }
 
 fn draw_collider(
-    gizmos: &mut Gizmos<PhysicsRendererGizmoGroup>,
+    commands: &mut Commands,
     collider: &Collider,
     position: Vec3,
     physics_data: Option<&PhysicsData>,
     scale: f32,
 ) {
-    let projected_position = project_physics_point(position, scale);
     let color = physics_color(physics_data);
 
     match collider.collider_type() {
         ColliderType::Cuboid(cuboid) => {
-            draw_cuboid(gizmos, position, cuboid.half_extents, color, scale);
+            draw_cuboid(commands, position, cuboid.half_extents, color, scale);
         }
         ColliderType::Capsule(capsule) => {
-            draw_capsule(gizmos, position, capsule, color, scale);
+            draw_capsule(commands, position, capsule, color, scale);
         }
         ColliderType::ConvexHull(_) => {
-            gizmos.circle_2d(
-                projected_position,
-                4.0 * scale,
+            draw_projected_camera_facing_circle(
+                commands,
+                position,
+                0.25,
                 CONVEX_HULL_COLOR,
+                scale,
             );
         }
     }
@@ -117,8 +102,89 @@ fn physics_color(physics_data: Option<&PhysicsData>) -> Color {
     }
 }
 
+fn project_physics_point(point: Vec3, scale: f32) -> Vec3 {
+    let screen_coords = ScreenCoords::from(WorldCoords::from(point));
+
+    Vec3::new(
+        screen_coords.x * scale,
+        screen_coords.y * scale,
+        screen_coords.z + COLLIDER_Z_OFFSET,
+    )
+}
+
+fn draw_screen_line(
+    commands: &mut Commands,
+    a: Vec3,
+    b: Vec3,
+    color: Color,
+) {
+    let delta = b - a;
+    let length = delta.xy().length();
+
+    if length <= f32::EPSILON {
+        return;
+    }
+
+    let midpoint = (a + b) / 2.0;
+    let angle = delta.y.atan2(delta.x);
+
+    commands.spawn((
+        PhysicsColliderDebugVisual,
+        Sprite {
+            color,
+            custom_size: Some(Vec2::new(length, COLLIDER_LINE_THICKNESS)),
+            ..default()
+        },
+        Transform {
+            translation: midpoint,
+            rotation: Quat::from_rotation_z(angle),
+            ..default()
+        },
+    ));
+}
+
+fn draw_projected_line(
+    commands: &mut Commands,
+    a: Vec3,
+    b: Vec3,
+    color: Color,
+    scale: f32,
+) {
+    let a = project_physics_point(a, scale);
+    let b = project_physics_point(b, scale);
+
+    draw_screen_line(commands, a, b, color);
+}
+
+fn draw_projected_camera_facing_circle(
+    commands: &mut Commands,
+    center: Vec3,
+    radius: f32,
+    color: Color,
+    scale: f32,
+) {
+    let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
+    let vertical = Vec3::Y;
+    let segments = 24;
+
+    for index in 0..segments {
+        let start_angle = index as f32 / segments as f32 * std::f32::consts::TAU;
+        let end_angle = (index + 1) as f32 / segments as f32 * std::f32::consts::TAU;
+
+        let start = center
+            + horizontal * start_angle.cos() * radius
+            + vertical * start_angle.sin() * radius;
+
+        let end = center
+            + horizontal * end_angle.cos() * radius
+            + vertical * end_angle.sin() * radius;
+
+        draw_projected_line(commands, start, end, color, scale);
+    }
+}
+
 fn draw_cuboid(
-    gizmos: &mut Gizmos<PhysicsRendererGizmoGroup>,
+    commands: &mut Commands,
     center: Vec3,
     half_extents: Vec3,
     color: Color,
@@ -139,30 +205,21 @@ fn draw_cuboid(
     ];
 
     let edges = [
-        // Bottom face
-        (0, 1),
-        (1, 2),
-        (2, 3),
-        (3, 0),
-        // Top face
-        (4, 5),
-        (5, 6),
-        (6, 7),
-        (7, 4),
-        // Vertical edges
-        (0, 4),
-        (1, 5),
-        (2, 6),
-        (3, 7),
+        // +x face (right)
+        (1, 2), (2, 6), (6, 5), (5, 1),
+        // +y face (top)
+        (4, 5), (5, 6), (6, 7), (7, 4),
+        // +z face (front)
+        (2, 3), (3, 7), (7, 6), (6, 2),
     ];
 
     for (a, b) in edges {
-        draw_projected_line(gizmos, corners[a], corners[b], color, scale);
+        draw_projected_line(commands, corners[a], corners[b], color, scale);
     }
 }
 
 fn draw_capsule(
-    gizmos: &mut Gizmos<PhysicsRendererGizmoGroup>,
+    commands: &mut Commands,
     position: Vec3,
     capsule: &parry3d::shape::Capsule,
     color: Color,
@@ -183,23 +240,24 @@ fn draw_capsule(
     let radius = capsule.radius;
 
     // Main capsule axis.
-    draw_projected_line(gizmos, a, b, color, scale);
+    draw_projected_line(commands, a, b, color, scale);
 
-    // Approximate endpoint spheres as projected 2D circles.
-    gizmos.circle_2d(project_physics_point(a, scale), radius * 16.0 * scale, color);
-    gizmos.circle_2d(project_physics_point(b, scale), radius * 16.0 * scale, color);
+    // Cross-sections perpendicular to the vertical capsule axis.
+    draw_projected_camera_facing_circle(commands, a, radius, color, scale);
+    draw_projected_camera_facing_circle(commands, b, radius, color, scale);
 
-    // A few side lines make the capsule silhouette clearer.
+    let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
+    let vertical = Vec3::Y;
+
     let offsets = [
-        Vec3::X * radius,
-        -Vec3::X * radius,
-        Vec3::Y * radius,
-        -Vec3::Y * radius,
-        Vec3::Z * radius,
-        -Vec3::Z * radius,
+        horizontal * radius,
+        -horizontal * radius,
+        vertical * radius,
+        -vertical * radius,
     ];
 
+    // Additional side lines to fill out capsule
     for offset in offsets {
-        draw_projected_line(gizmos, a + offset, b + offset, color, scale);
+        draw_projected_line(commands, a + offset, b + offset, color, scale);
     }
 }
