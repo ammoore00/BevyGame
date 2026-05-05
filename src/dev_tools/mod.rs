@@ -1,26 +1,25 @@
 //! Development tools for the game. This plugin is only enabled in dev builds.
 
+mod debug_options;
+
 use std::fmt::Debug;
 use std::ops::Not;
 use bevy::{
-    dev_tools::states::log_transitions,
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
 use bevy::ecs::relationship::Relationship;
-use crate::screens::Screen;
+use crate::dev_tools::debug_options::spawn_debug;
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins(debug_options::plugin);
+
     app.init_resource::<DebugMenu>();
-    app.init_state::<LoggingScreenStates>();
 
     // Toggle the debug menu.
     app.add_systems(
         Update,
-        (
-            log_transitions::<Screen>.run_if(in_state(LoggingScreenStates(true))),
-            toggle_debug_menu.run_if(input_just_pressed(TOGGLE_KEY))
-        ),
+        toggle_debug_menu.run_if(input_just_pressed(TOGGLE_KEY))
     );
 
     app.add_systems(
@@ -31,9 +30,6 @@ pub(super) fn plugin(app: &mut App) {
             handle_debug_menu_buttons,
         ),
     );
-
-    app.add_observer(on_ui_debug);
-    app.add_observer(on_log_screen_state);
 }
 
 const TOGGLE_KEY: KeyCode = KeyCode::Backquote;
@@ -65,14 +61,6 @@ struct LoggingScreenStates(pub bool);
 
 #[derive(Component, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 struct DebugButton;
-
-#[derive(Component, Debug, Clone)]
-struct LogScreenStateTransitions;
-impl DebugSetting for LogScreenStateTransitions {}
-
-#[derive(Component, Debug, Clone)]
-struct DebugUi;
-impl DebugSetting for DebugUi {}
 
 //------ Debug Categories ------//
 
@@ -201,38 +189,9 @@ fn spawn_debug_menu(
                     TextColor(Color::WHITE),
                 ));
 
-                spawn_debug_category(
-                    parent,
-                    "Logging",
-                    [
-                        log_screen_states.0,
-                    ].as_slice().into(),
-                    true,
-                    |parent| {
-                        spawn_checkbox_row(
-                            parent,
-                            "Log Screen State Transitions",
-                            log_screen_states.0,
-                            LogScreenStateTransitions,
-                        );
-                    },
-                );
-
-                spawn_debug_category(
-                    parent,
-                    "UI",
-                    [
-                        ui_debug_options.enabled,
-                    ].as_slice().into(),
-                    true,
-                    |parent| {
-                        spawn_checkbox_row(
-                            parent,
-                            "UI Debug Overlay",
-                            ui_debug_options.enabled,
-                            DebugUi,
-                        );
-                    },
+                spawn_debug(parent,
+                    log_screen_states,
+                    ui_debug_options
                 );
             });
     } else if !debug_menu.open && menu_exists {
@@ -670,54 +629,3 @@ fn toggle_debug_checkboxes_recursively(
         }
     }
 }
-
-macro_rules! debug_menu_event {
-    (
-        $marker:ty,
-        fn $fn_name:ident(
-            $event:ident: $event_ty:ty,
-            $($args:tt)*
-        ) $content:block
-    ) => {
-        fn $fn_name(
-            $event: $event_ty,
-            __entity_query: Query<Entity, With<$marker>>,
-            $($args)*
-        ) {
-            let $event: On<DebugMenuEvent> = $event;
-            match __entity_query.single() {
-                Ok(entity) => {
-                    if $event.entity == entity {
-                        $content
-                    }
-                }
-                Err(err) => {
-                    error!("Failed to obtain entity: {}", err);
-                }
-            }
-        }
-    };
-}
-
-debug_menu_event!(
-    DebugUi,
-    fn on_ui_debug(
-        event: On<DebugMenuEvent>,
-        mut ui_debug_options: ResMut<UiDebugOptions>,
-    ) {
-        ui_debug_options.toggle();
-        info!("UI Debug toggled: {}", ui_debug_options.enabled);
-    }
-);
-
-debug_menu_event!(
-    LogScreenStateTransitions,
-    fn on_log_screen_state(
-        event: On<DebugMenuEvent>,
-        log_state: ResMut<State<LoggingScreenStates>>,
-        mut next_state: ResMut<NextState<LoggingScreenStates>>,
-    ) {
-        next_state.set(LoggingScreenStates(!log_state.0));
-        info!("Logging for screen state transitions toggled: {}", log_state.0);
-    }
-);
