@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::datagen_api::components::{Collider, ColliderType, PhysicsData};
 use crate::dev_tools::debug_options::RenderPhysicsState;
-use crate::game::level::grid::coords::{ScreenCoords, WorldCoords, WorldPosition};
+use crate::game::level::grid::coords::{ScreenCoords, TilePosition, WorldCoords, WorldPosition};
 use crate::screens::Screen;
 use crate::Scale;
 
@@ -20,30 +20,10 @@ pub(super) fn plugin(app: &mut App) {
     );
 
     app.init_gizmo_group::<PhysicsRendererGizmoGroup>();
-    app.add_systems(Startup, configure_debug_gizmos);
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct PhysicsRendererGizmoGroup {}
-fn configure_debug_gizmos(mut gizmo_config: ResMut<GizmoConfigStore>) {
-    let (config, _) = gizmo_config.config_mut::<PhysicsRendererGizmoGroup>();
-
-    config.enabled = true;
-    config.line.width = 8.0;
-}
-
-
-fn spawn_debug_marker(mut commands: Commands) {
-    commands.spawn((
-        Name::new("Debug Marker Sprite"),
-        Sprite {
-            color: Color::srgb(1.0, 0.0, 1.0),
-            custom_size: Some(Vec2::new(128.0, 128.0)),
-            ..default()
-        },
-        Transform::from_translation(Vec3::new(0.0, -288.0, 100_000.0)),
-    ));
-}
 
 fn project_physics_point(point: Vec3, scale: f32) -> Vec2 {
     let screen_coords = ScreenCoords::from(WorldCoords::from(point));
@@ -71,9 +51,21 @@ fn draw_projected_line(
 fn draw_physics_colliders(
     mut gizmos: Gizmos<PhysicsRendererGizmoGroup>,
     scale: Res<Scale>,
-    query: Query<(&Collider, &WorldPosition, Option<&PhysicsData>)>,
+    tile_query: Query<(&Collider, &TilePosition, Option<&PhysicsData>)>,
+    entity_query: Query<(&Collider, &WorldPosition, Option<&PhysicsData>)>,
 ) {
-    for (collider, world_position, physics_data) in &query {
+    let tiles = tile_query.iter().map(|(collider, tile_pos, physics_data)| {
+        (collider, WorldPosition(WorldCoords::from(&tile_pos.0)), physics_data)
+    }).collect::<Vec<_>>();
+
+    let colliders = entity_query.iter().chain(
+        tiles.iter()
+            .map(|(collider, world_position, physics_data)| {
+                (*collider, world_position, *physics_data)
+            })
+    );
+
+    for (collider, world_position, physics_data) in colliders {
         let position = world_position.as_vec3();
         let projected_position = project_physics_point(position, scale.0);
 
