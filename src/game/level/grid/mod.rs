@@ -4,7 +4,6 @@ use crate::game::object::Shadow;
 use bevy::prelude::*;
 use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
-use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
 
 pub mod coords;
 pub mod tile;
@@ -234,10 +233,6 @@ impl Grid {
         }
 
         (min, max)
-    }
-    
-    pub fn build_nav_map(&self, tile_nav_query: TileNavQuery) -> TileNavMap {
-        TileNavMap::from_map(self.tile_map().clone(), tile_nav_query)
     }
 }
 

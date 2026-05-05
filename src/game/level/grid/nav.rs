@@ -1,5 +1,5 @@
 use crate::datagen_api::components::Collider;
-use crate::datagen_api::tile::{Tile, TileFacing};
+use crate::datagen_api::tile::Tile;
 use crate::game::level::grid::coords::TileCoords;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
@@ -11,9 +11,7 @@ pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 
 /// High-level map between rooms
 #[derive(Component, Debug, Clone)]
-pub struct LevelNavMap {
-
-}
+pub struct _LevelNavMap {}
 
 // Type aliasing done here to allow for conversion without requiring explicit deconstruction,
 // nor requiring the caller to care about internal query type information
@@ -42,7 +40,7 @@ const MAX_STEP_DOWN: f32 = 0.5;
 #[derive(Component, Default)]
 pub struct TileNavMap {
     /// Cached version of the tile map, for change detection if necessary
-    tile_map_cache: TileMap,
+    _tile_map_cache: TileMap,
     /// Nodes used for pathfinding
     nodes: BTreeMap<TileCoords, NavNode>,
     /// Directed graph of node connections
@@ -58,7 +56,7 @@ impl TileNavMap {
         // Cache tile info
         let mut _self = Self {
             // TileMap is an Alias for Arc, so cloning is trivial
-            tile_map_cache: tile_map.clone(),
+            _tile_map_cache: tile_map.clone(),
             ..Default::default()
         };
 
@@ -202,19 +200,19 @@ impl NavEdge {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum NavEdgeKind {
     Walk,
-    SlopeUp,
-    SlopeDown,
-    Jump,
-    Drop,
+    _SlopeUp,
+    _SlopeDown,
+    _Jump,
+    _Drop,
 }
 impl NavEdgeKind {
     fn base_cost(&self) -> u32 {
         match self {
             NavEdgeKind::Walk => 10,
-            NavEdgeKind::SlopeUp => 15,
-            NavEdgeKind::SlopeDown => 10,
-            NavEdgeKind::Jump => 30,
-            NavEdgeKind::Drop => 8,
+            NavEdgeKind::_SlopeUp => 15,
+            NavEdgeKind::_SlopeDown => 10,
+            NavEdgeKind::_Jump => 30,
+            NavEdgeKind::_Drop => 8,
         }
     }
 }

@@ -4,6 +4,7 @@ use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
 use crate::game::level::map::palette::Palette;
 use crate::game::level::map::room::RoomBuilderContext;
 use bevy::prelude::*;
+use getset::CopyGetters;
 use rand::{Rng, RngExt};
 
 pub mod palette;
@@ -100,16 +101,12 @@ pub fn build_map_grid(
 pub struct Map;
 
 /// Stores the current state of the generated map
-#[derive(Component, Debug)]
-pub struct MapState {
+#[derive(Component, Debug, CopyGetters)]
+pub struct _MapState {
+    #[getset(get_copy = "pub")]
     grid: Entity,
+    #[getset(get_copy = "pub")]
     nav: Entity,
-}
-
-impl MapState {
-    pub fn grid(&self) -> Entity {
-        self.grid
-    }
 }
 
 /// Data required to save the generation criteria and state changes to persistent storage

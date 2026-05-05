@@ -1,17 +1,15 @@
-//! Development tools for the game. This plugin is only enabled in dev builds.
+use bevy::prelude::*;
 
 mod debug_options;
-mod physics;
 mod debug_menu;
-
-use bevy::prelude::*;
+mod level_render;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(
         (
             debug_options::plugin,
             debug_menu::plugin,
-            physics::plugin,
+            level_render::plugin,
         )
     );
 }

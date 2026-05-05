@@ -10,7 +10,7 @@ use crate::game::level::map::room::RoomBuilderContext;
 use crate::game::object::{object, ObjectAssets, ObjectType};
 use crate::{asset_tracking::LoadResource, audio::music, screens::Screen, Scale};
 use bevy::prelude::*;
-use crate::game::level::grid::{Grid, TileMap};
+use crate::game::level::grid::Grid;
 use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
 use crate::game::level::map::{build_map_grid, map_bundle, Map};
 

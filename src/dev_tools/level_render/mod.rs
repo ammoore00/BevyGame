@@ -1,107 +1,17 @@
-use crate::datagen_api::components::{Collider, ColliderType, PhysicsData};
-use crate::dev_tools::debug_options::{RenderPhysicsEntitiesState, RenderPhysicsTilesState};
-use crate::game::level::grid::coords::{ScreenCoords, TilePosition, WorldCoords, WorldPosition};
-use crate::Scale;
 use bevy::prelude::*;
+use crate::game::level::grid::coords::{ScreenCoords, WorldCoords};
 
-const STATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 0.8, 1.0);
-const KINEMATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 1.0, 0.3);
-const CONVEX_HULL_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
+pub mod physics_renderer;
+pub mod nav_renderer;
 
 const COLLIDER_Z_OFFSET: f32 = 0.25;
-const COLLIDER_LINE_THICKNESS: f32 = 2.0;
+
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        render_physics_colliders
-    );
-
-    app.init_gizmo_group::<PhysicsRendererGizmoGroup>();
+    app.add_plugins((physics_renderer::plugin, nav_renderer::plugin));
 }
 
-#[derive(Default, Reflect, GizmoConfigGroup)]
-struct PhysicsRendererGizmoGroup {}
-
-#[derive(Component)]
-struct PhysicsColliderDebugVisual;
-
-fn render_physics_colliders(
-    mut commands: Commands,
-    scale: Res<Scale>,
-    entity_state: Res<State<RenderPhysicsEntitiesState>>,
-    physics_state: Res<State<RenderPhysicsTilesState>>,
-    debug_visual_query: Query<Entity, With<PhysicsColliderDebugVisual>>,
-    tile_query: Query<(&Collider, &TilePosition, Option<&PhysicsData>)>,
-    entity_query: Query<(&Collider, &WorldPosition, Option<&PhysicsData>)>,
-) {
-    for entity in &debug_visual_query {
-        commands.entity(entity).despawn();
-    }
-
-    if physics_state.0 {
-        for (collider, tile_position, physics_data) in &tile_query {
-            let position = tile_position.0.as_vec3();
-
-            draw_collider(
-                &mut commands,
-                collider,
-                position,
-                physics_data,
-                scale.0,
-            );
-        }
-    }
-
-    if entity_state.0 {
-        for (collider, world_position, physics_data) in &entity_query {
-            draw_collider(
-                &mut commands,
-                collider,
-                world_position.as_vec3(),
-                physics_data,
-                scale.0,
-            );
-        }
-    }
-}
-
-fn draw_collider(
-    commands: &mut Commands,
-    collider: &Collider,
-    position: Vec3,
-    physics_data: Option<&PhysicsData>,
-    scale: f32,
-) {
-    let color = physics_color(physics_data);
-
-    match collider.collider_type() {
-        ColliderType::Cuboid(cuboid) => {
-            draw_cuboid(commands, position, cuboid.half_extents, color, scale);
-        }
-        ColliderType::Capsule(capsule) => {
-            draw_capsule(commands, position, capsule, color, scale);
-        }
-        ColliderType::ConvexHull {
-            vertices,
-            indices,
-            ..
-        } => {
-            draw_convex_hull(commands, position, vertices, indices, CONVEX_HULL_COLOR, scale);
-        }
-    }
-}
-
-fn physics_color(physics_data: Option<&PhysicsData>) -> Color {
-    match physics_data {
-        Some(PhysicsData::Static) => STATIC_COLLIDER_COLOR,
-        Some(PhysicsData::Kinematic { grounded: true, .. }) => KINEMATIC_COLLIDER_COLOR,
-        Some(PhysicsData::Kinematic { grounded: false, .. }) => KINEMATIC_COLLIDER_COLOR,
-        None => Color::WHITE,
-    }
-}
-
-fn project_physics_point(point: Vec3, scale: f32) -> Vec3 {
+fn project_point(point: Vec3, scale: f32) -> Vec3 {
     let screen_coords = ScreenCoords::from(WorldCoords::from(point));
 
     Vec3::new(
@@ -116,6 +26,8 @@ fn draw_screen_line(
     a: Vec3,
     b: Vec3,
     color: Color,
+    thickness: f32,
+    marker: impl Component + Copy,
 ) {
     let delta = b - a;
     let length = delta.xy().length();
@@ -128,10 +40,10 @@ fn draw_screen_line(
     let angle = delta.y.atan2(delta.x);
 
     commands.spawn((
-        PhysicsColliderDebugVisual,
+        marker,
         Sprite {
             color,
-            custom_size: Some(Vec2::new(length, COLLIDER_LINE_THICKNESS)),
+            custom_size: Some(Vec2::new(length, thickness)),
             ..default()
         },
         Transform {
@@ -148,11 +60,13 @@ fn draw_projected_line(
     b: Vec3,
     color: Color,
     scale: f32,
+    thickness: f32,
+    marker: impl Component + Copy,
 ) {
-    let a = project_physics_point(a, scale);
-    let b = project_physics_point(b, scale);
+    let a = project_point(a, scale);
+    let b = project_point(b, scale);
 
-    draw_screen_line(commands, a, b, color);
+    draw_screen_line(commands, a, b, color, thickness, marker);
 }
 
 fn draw_projected_camera_facing_circle(
@@ -161,6 +75,8 @@ fn draw_projected_camera_facing_circle(
     radius: f32,
     color: Color,
     scale: f32,
+    thickness: f32,
+    marker: impl Component + Copy,
 ) {
     let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
     let vertical = Vec3::Y;
@@ -178,7 +94,7 @@ fn draw_projected_camera_facing_circle(
             + horizontal * end_angle.cos() * radius
             + vertical * end_angle.sin() * radius;
 
-        draw_projected_line(commands, start, end, color, scale);
+        draw_projected_line(commands, start, end, color, scale, thickness, marker);
     }
 }
 
@@ -188,6 +104,8 @@ fn draw_cuboid(
     half_extents: Vec3,
     color: Color,
     scale: f32,
+    thickness: f32,
+    marker: impl Component + Copy,
 ) {
     let min = center - half_extents;
     let max = center + half_extents;
@@ -213,7 +131,7 @@ fn draw_cuboid(
     ];
 
     for (a, b) in edges {
-        draw_projected_line(commands, corners[a], corners[b], color, scale);
+        draw_projected_line(commands, corners[a], corners[b], color, scale, thickness, marker);
     }
 }
 
@@ -223,6 +141,8 @@ fn draw_capsule(
     capsule: &parry3d::shape::Capsule,
     color: Color,
     scale: f32,
+    thickness: f32,
+    marker: impl Component + Copy,
 ) {
     let a = position + Vec3::new(
         capsule.segment.a.x,
@@ -239,11 +159,11 @@ fn draw_capsule(
     let radius = capsule.radius;
 
     // Main capsule axis.
-    draw_projected_line(commands, a, b, color, scale);
+    draw_projected_line(commands, a, b, color, scale, thickness, marker);
 
     // Cross-sections perpendicular to the vertical capsule axis.
-    draw_projected_camera_facing_circle(commands, a, radius, color, scale);
-    draw_projected_camera_facing_circle(commands, b, radius, color, scale);
+    draw_projected_camera_facing_circle(commands, a, radius, color, scale, thickness, marker);
+    draw_projected_camera_facing_circle(commands, b, radius, color, scale, thickness, marker);
 
     let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
     let vertical = Vec3::Y;
@@ -257,7 +177,7 @@ fn draw_capsule(
 
     // Additional side lines to fill out capsule
     for offset in offsets {
-        draw_projected_line(commands, a + offset, b + offset, color, scale);
+        draw_projected_line(commands, a + offset, b + offset, color, scale, thickness, marker);
     }
 }
 
@@ -268,6 +188,8 @@ fn draw_convex_hull(
     indices: &[[u32; 3]],
     color: Color,
     scale: f32,
+    thickness: f32,
+    marker: impl Component + Copy,
 ) {
     let world_vertices = vertices
         .iter()
@@ -310,6 +232,8 @@ fn draw_convex_hull(
             b_index,
             color,
             scale,
+            thickness,
+            marker,
         );
 
         draw_convex_hull_edge(
@@ -320,6 +244,8 @@ fn draw_convex_hull(
             c_index,
             color,
             scale,
+            thickness,
+            marker,
         );
 
         draw_convex_hull_edge(
@@ -330,6 +256,8 @@ fn draw_convex_hull(
             a_index,
             color,
             scale,
+            thickness,
+            marker,
         );
     }
 }
@@ -342,6 +270,8 @@ fn draw_convex_hull_edge(
     b_index: usize,
     color: Color,
     scale: f32,
+    thickness: f32,
+    marker: impl Component + Copy,
 ) {
     let edge = normalized_edge(a_index, b_index);
 
@@ -357,7 +287,7 @@ fn draw_convex_hull_edge(
     };
 
     drawn_edges.push(edge);
-    draw_projected_line(commands, a, b, color, scale);
+    draw_projected_line(commands, a, b, color, scale, thickness, marker);
 }
 
 fn normalized_edge(a: usize, b: usize) -> (usize, usize) {
