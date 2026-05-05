@@ -15,32 +15,29 @@ resolver = "2"
 [dependencies]
 bevy = { version = "0.18.1", default-features = false, features = [
     "2d",
-    "bevy_asset",
-    "bevy_audio",
-    "bevy_core_pipeline",
-    "bevy_gilrs",
     "bevy_gizmos",
-    "bevy_input_focus",
     "bevy_log",
-    "bevy_picking",
-    "bevy_render",
-    "bevy_sprite",
     "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_ui_render",
-    "bevy_winit",
-    "bevy_window",
     "debug",
     "multi_threaded",
-    "png",
     "reflect_auto_register",
     "serialize",
-    "sprite_picking",
     "std",
     "sysinfo_plugin",
-    "ui_picking",
+
+    # Gamepad functionality
+    "bevy_gilrs",
+    "bevy_input_focus",
+
+    # File formats
+    "png",
     "vorbis",
+
+    # Picking (aka clicking on world objects)
+    "ui_picking",
+    "sprite_picking",
+
+    # Linux rendering
     "wayland",
     "x11",
 ] }
