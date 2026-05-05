@@ -3,6 +3,7 @@ use crate::screens::Screen;
 use bevy::dev_tools::states::log_transitions;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::*;
+use getset::CopyGetters;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_state::<LoggingScreenStates>();
@@ -15,7 +16,8 @@ pub(super) fn plugin(app: &mut App) {
         )
     );
 
-    app.add_observer(on_physics_render);
+    app.add_observer(on_physics_render_entities);
+    app.add_observer(on_physics_render_tiles);
     app.add_observer(on_ui_debug);
     app.add_observer(on_log_screen_state);
 }
@@ -30,15 +32,22 @@ pub(super) fn spawn_debug(
         parent,
         "Physics",
         [
-            physics_states.0,
+            physics_states.entities,
+            physics_states.tiles,
         ].as_slice().into(),
         false,
         |parent| {
             spawn_checkbox_row(
                 parent,
-                "Physics Renderer",
-                physics_states.0,
-                RenderPhysics,
+                "Collision Visualizer - Entities",
+                physics_states.entities,
+                RenderPhysicsEntities,
+            );
+            spawn_checkbox_row(
+                parent,
+                "Collision Visualizer - Tiles",
+                physics_states.tiles,
+                RenderPhysicsTiles,
             );
         },
     );
@@ -78,22 +87,6 @@ pub(super) fn spawn_debug(
     );
 }
 
-#[derive(Component, Debug, Clone)]
-struct LogScreenStateTransitions;
-impl DebugSetting for LogScreenStateTransitions {}
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-pub(super) struct LoggingScreenStates(pub bool);
-
-#[derive(Component, Debug, Clone)]
-struct RenderPhysics;
-impl DebugSetting for RenderPhysics {}
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-pub(super) struct RenderPhysicsState(pub bool);
-
-#[derive(Component, Debug, Clone)]
-struct DebugUi;
-impl DebugSetting for DebugUi {}
-
 macro_rules! debug_menu_event {
     (
         $marker:ty,
@@ -122,6 +115,10 @@ macro_rules! debug_menu_event {
     };
 }
 
+#[derive(Component, Debug, Clone)]
+struct DebugUi;
+impl DebugSetting for DebugUi {}
+
 debug_menu_event!(
     DebugUi,
     fn on_ui_debug(
@@ -132,6 +129,12 @@ debug_menu_event!(
         info!("UI Debug toggled: {}", ui_debug_options.enabled);
     }
 );
+
+#[derive(Component, Debug, Clone)]
+struct LogScreenStateTransitions;
+impl DebugSetting for LogScreenStateTransitions {}
+#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+pub(super) struct LoggingScreenStates(pub bool);
 
 debug_menu_event!(
     LogScreenStateTransitions,
@@ -145,14 +148,48 @@ debug_menu_event!(
     }
 );
 
+#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default, CopyGetters)]
+pub(super) struct RenderPhysicsState {
+    #[getset(get_copy = "pub")]
+    entities: bool,
+    #[getset(get_copy = "pub")]
+    tiles: bool,
+}
+
+#[derive(Component, Debug, Clone)]
+struct RenderPhysicsEntities;
+impl DebugSetting for RenderPhysicsEntities {}
+
 debug_menu_event!(
-    RenderPhysics,
-    fn on_physics_render(
+    RenderPhysicsEntities,
+    fn on_physics_render_entities(
         event: On<DebugMenuEvent>,
         phys_state: ResMut<State<RenderPhysicsState>>,
         mut next_state: ResMut<NextState<RenderPhysicsState>>,
     ) {
-        next_state.set(RenderPhysicsState(!phys_state.0));
-        info!("Physics renderer toggled: {}", !phys_state.0);
+        next_state.set(RenderPhysicsState {
+            entities: !phys_state.entities,
+            ..**phys_state
+        });
+        info!("Physics renderer toggled: {}", !phys_state.entities);
+    }
+);
+
+#[derive(Component, Debug, Clone)]
+struct RenderPhysicsTiles;
+impl DebugSetting for RenderPhysicsTiles {}
+
+debug_menu_event!(
+    RenderPhysicsTiles,
+    fn on_physics_render_tiles(
+        event: On<DebugMenuEvent>,
+        phys_state: ResMut<State<RenderPhysicsState>>,
+        mut next_state: ResMut<NextState<RenderPhysicsState>>,
+    ) {
+        next_state.set(RenderPhysicsState {
+            tiles: !phys_state.tiles,
+            ..**phys_state
+        });
+        info!("Physics renderer toggled: {}", !phys_state.tiles);
     }
 );

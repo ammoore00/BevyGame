@@ -12,11 +12,10 @@ const CONVEX_HULL_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        draw_physics_colliders
-            .run_if(
-                in_state(RenderPhysicsState(true))
-                    .and(in_state(Screen::Gameplay))
-            )
+        (
+            draw_tile_physics_colliders.run_if(|state: Res<State<RenderPhysicsState>>| state.tiles()),
+            draw_entity_physics_colliders.run_if(|state: Res<State<RenderPhysicsState>>| state.entities()),
+        ).run_if(in_state(Screen::Gameplay))
     );
 
     app.init_gizmo_group::<PhysicsRendererGizmoGroup>();
@@ -48,49 +47,73 @@ fn draw_projected_line(
     );
 }
 
-fn draw_physics_colliders(
+fn draw_tile_physics_colliders(
     mut gizmos: Gizmos<PhysicsRendererGizmoGroup>,
     scale: Res<Scale>,
     tile_query: Query<(&Collider, &TilePosition, Option<&PhysicsData>)>,
+) {
+    for (collider, tile_position, physics_data) in &tile_query {
+        let position = tile_position.0.as_vec3();
+
+        draw_collider(
+            &mut gizmos,
+            collider,
+            position,
+            physics_data,
+            scale.0,
+        );
+    }
+}
+
+fn draw_entity_physics_colliders(
+    mut gizmos: Gizmos<PhysicsRendererGizmoGroup>,
+    scale: Res<Scale>,
     entity_query: Query<(&Collider, &WorldPosition, Option<&PhysicsData>)>,
 ) {
-    let tiles = tile_query.iter().map(|(collider, tile_pos, physics_data)| {
-        (collider, WorldPosition(WorldCoords::from(&tile_pos.0)), physics_data)
-    }).collect::<Vec<_>>();
+    for (collider, world_position, physics_data) in &entity_query {
+        draw_collider(
+            &mut gizmos,
+            collider,
+            world_position.as_vec3(),
+            physics_data,
+            scale.0,
+        );
+    }
+}
 
-    let colliders = entity_query.iter().chain(
-        tiles.iter()
-            .map(|(collider, world_position, physics_data)| {
-                (*collider, world_position, *physics_data)
-            })
-    );
+fn draw_collider(
+    gizmos: &mut Gizmos<PhysicsRendererGizmoGroup>,
+    collider: &Collider,
+    position: Vec3,
+    physics_data: Option<&PhysicsData>,
+    scale: f32,
+) {
+    let projected_position = project_physics_point(position, scale);
+    let color = physics_color(physics_data);
 
-    for (collider, world_position, physics_data) in colliders {
-        let position = world_position.as_vec3();
-        let projected_position = project_physics_point(position, scale.0);
-
-        let color = match physics_data {
-            Some(PhysicsData::Static) => STATIC_COLLIDER_COLOR,
-            Some(PhysicsData::Kinematic { grounded: true, .. }) => KINEMATIC_COLLIDER_COLOR,
-            Some(PhysicsData::Kinematic { grounded: false, .. }) => KINEMATIC_COLLIDER_COLOR,
-            None => Color::WHITE,
-        };
-
-        match collider.collider_type() {
-            ColliderType::Cuboid(cuboid) => {
-                draw_cuboid(&mut gizmos, position, cuboid.half_extents, color, scale.0);
-            }
-            ColliderType::Capsule(capsule) => {
-                draw_capsule(&mut gizmos, position, capsule, color, scale.0);
-            }
-            ColliderType::ConvexHull(_) => {
-                gizmos.circle_2d(
-                    projected_position,
-                    4.0 * scale.0,
-                    CONVEX_HULL_COLOR,
-                );
-            }
+    match collider.collider_type() {
+        ColliderType::Cuboid(cuboid) => {
+            draw_cuboid(gizmos, position, cuboid.half_extents, color, scale);
         }
+        ColliderType::Capsule(capsule) => {
+            draw_capsule(gizmos, position, capsule, color, scale);
+        }
+        ColliderType::ConvexHull(_) => {
+            gizmos.circle_2d(
+                projected_position,
+                4.0 * scale,
+                CONVEX_HULL_COLOR,
+            );
+        }
+    }
+}
+
+fn physics_color(physics_data: Option<&PhysicsData>) -> Color {
+    match physics_data {
+        Some(PhysicsData::Static) => STATIC_COLLIDER_COLOR,
+        Some(PhysicsData::Kinematic { grounded: true, .. }) => KINEMATIC_COLLIDER_COLOR,
+        Some(PhysicsData::Kinematic { grounded: false, .. }) => KINEMATIC_COLLIDER_COLOR,
+        None => Color::WHITE,
     }
 }
 
