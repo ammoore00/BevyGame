@@ -1,4 +1,4 @@
-use crate::dev_tools::{spawn_checkbox_row, spawn_debug_category, DebugMenuEvent, DebugSetting, LoggingScreenStates};
+use crate::dev_tools::debug_menu::{spawn_checkbox_row, spawn_debug_category, DebugMenuEvent, DebugSetting, LoggingScreenStates};
 use crate::screens::Screen;
 use bevy::dev_tools::states::log_transitions;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
@@ -82,7 +82,7 @@ macro_rules! debug_menu_event {
             let $event: On<DebugMenuEvent> = $event;
             match __entity_query.single() {
                 Ok(entity) => {
-                    if $event.entity == entity {
+                    if $event.entity() == entity {
                         $content
                     }
                 }
