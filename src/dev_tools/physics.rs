@@ -1,8 +1,8 @@
-use bevy::prelude::*;
 use crate::datagen_api::components::{Collider, ColliderType, PhysicsData};
-use crate::dev_tools::debug_options::RenderPhysicsState;
+use crate::dev_tools::debug_options::{RenderPhysicsEntitiesState, RenderPhysicsTilesState};
 use crate::game::level::grid::coords::{ScreenCoords, TilePosition, WorldCoords, WorldPosition};
 use crate::Scale;
+use bevy::prelude::*;
 
 const STATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 0.8, 1.0);
 const KINEMATIC_COLLIDER_COLOR: Color = Color::srgb(0.2, 1.0, 0.3);
@@ -29,7 +29,8 @@ struct PhysicsColliderDebugVisual;
 fn render_physics_colliders(
     mut commands: Commands,
     scale: Res<Scale>,
-    state: Res<State<RenderPhysicsState>>,
+    entity_state: Res<State<RenderPhysicsEntitiesState>>,
+    physics_state: Res<State<RenderPhysicsTilesState>>,
     debug_visual_query: Query<Entity, With<PhysicsColliderDebugVisual>>,
     tile_query: Query<(&Collider, &TilePosition, Option<&PhysicsData>)>,
     entity_query: Query<(&Collider, &WorldPosition, Option<&PhysicsData>)>,
@@ -38,7 +39,7 @@ fn render_physics_colliders(
         commands.entity(entity).despawn();
     }
 
-    if state.tiles() {
+    if physics_state.0 {
         for (collider, tile_position, physics_data) in &tile_query {
             let position = tile_position.0.as_vec3();
 
@@ -52,7 +53,7 @@ fn render_physics_colliders(
         }
     }
 
-    if state.entities() {
+    if entity_state.0 {
         for (collider, world_position, physics_data) in &entity_query {
             draw_collider(
                 &mut commands,

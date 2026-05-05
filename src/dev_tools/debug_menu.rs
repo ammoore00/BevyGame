@@ -1,4 +1,4 @@
-use crate::dev_tools::debug_options::{spawn_debug, LoggingScreenStates, RenderPhysicsState};
+use crate::dev_tools::debug_options::{spawn_debug, LoggingScreenStates, RenderPhysicsEntitiesState, RenderPhysicsTilesState};
 use bevy::app::Update;
 use bevy::color::Color;
 use bevy::ecs::relationship::Relationship;
@@ -139,7 +139,8 @@ fn spawn_debug_menu(
     mut commands: Commands,
     debug_menu: Res<DebugMenu>,
     menu_query: Query<Entity, With<DebugMenuRoot>>,
-    physics_states: Res<State<RenderPhysicsState>>,
+    physics_entity_state: Res<State<RenderPhysicsEntitiesState>>,
+    physics_tile_state: Res<State<RenderPhysicsTilesState>>,
     log_screen_states: Res<State<LoggingScreenStates>>,
     ui_debug_options: Res<UiDebugOptions>,
 ) {
@@ -179,7 +180,8 @@ fn spawn_debug_menu(
 
                 spawn_debug(
                     parent,
-                    physics_states,
+                    physics_entity_state,
+                    physics_tile_state,
                     log_screen_states,
                     ui_debug_options
                 );

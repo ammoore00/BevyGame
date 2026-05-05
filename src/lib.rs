@@ -16,7 +16,6 @@ pub mod datagen_api;
 pub mod data;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
-use bevy::gizmos::GizmoPlugin;
 
 pub struct AppPlugin;
 
