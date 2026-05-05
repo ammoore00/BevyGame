@@ -1,4 +1,4 @@
-use crate::dev_tools::debug_menu::{spawn_checkbox_row, spawn_debug_category, DebugMenuEvent, DebugSetting, LoggingScreenStates};
+use crate::dev_tools::debug_menu::{spawn_checkbox_row, spawn_debug_category, DebugMenuEvent, DebugSetting};
 use crate::screens::Screen;
 use bevy::dev_tools::states::log_transitions;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
@@ -6,6 +6,7 @@ use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_state::<LoggingScreenStates>();
+    app.init_state::<RenderPhysicsState>();
 
     app.add_systems(
         Update,
@@ -14,15 +15,34 @@ pub(super) fn plugin(app: &mut App) {
         )
     );
 
+    app.add_observer(on_physics_render);
     app.add_observer(on_ui_debug);
     app.add_observer(on_log_screen_state);
 }
 
 pub(super) fn spawn_debug(
     parent: &mut RelatedSpawnerCommands<ChildOf>,
+    physics_states: Res<State<RenderPhysicsState>>,
     log_screen_states: Res<State<LoggingScreenStates>>,
     ui_debug_options: Res<UiDebugOptions>,
 ) {
+    spawn_debug_category(
+        parent,
+        "Physics",
+        [
+            physics_states.0,
+        ].as_slice().into(),
+        false,
+        |parent| {
+            spawn_checkbox_row(
+                parent,
+                "Physics Renderer",
+                physics_states.0,
+                RenderPhysics,
+            );
+        },
+    );
+
     spawn_debug_category(
         parent,
         "UI",
@@ -61,6 +81,14 @@ pub(super) fn spawn_debug(
 #[derive(Component, Debug, Clone)]
 struct LogScreenStateTransitions;
 impl DebugSetting for LogScreenStateTransitions {}
+#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+pub(super) struct LoggingScreenStates(pub bool);
+
+#[derive(Component, Debug, Clone)]
+struct RenderPhysics;
+impl DebugSetting for RenderPhysics {}
+#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+pub(super) struct RenderPhysicsState(pub bool);
 
 #[derive(Component, Debug, Clone)]
 struct DebugUi;
@@ -113,6 +141,18 @@ debug_menu_event!(
         mut next_state: ResMut<NextState<LoggingScreenStates>>,
     ) {
         next_state.set(LoggingScreenStates(!log_state.0));
-        info!("Logging for screen state transitions toggled: {}", log_state.0);
+        info!("Logging for screen state transitions toggled: {}", !log_state.0);
+    }
+);
+
+debug_menu_event!(
+    RenderPhysics,
+    fn on_physics_render(
+        event: On<DebugMenuEvent>,
+        phys_state: ResMut<State<RenderPhysicsState>>,
+        mut next_state: ResMut<NextState<RenderPhysicsState>>,
+    ) {
+        next_state.set(RenderPhysicsState(!phys_state.0));
+        info!("Physics renderer toggled: {}", !phys_state.0);
     }
 );

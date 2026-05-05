@@ -356,5 +356,5 @@ fn camera_follow_player(
     };
 
     // Update camera position to match player position
-    camera_transform.translation = player_transform.translation;
+    camera_transform.translation = player_transform.translation * Vec3::new(1.0, 1.0, 0.0);
 }

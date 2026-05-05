@@ -1,4 +1,4 @@
-use crate::dev_tools::debug_options::spawn_debug;
+use crate::dev_tools::debug_options::{spawn_debug, LoggingScreenStates, RenderPhysicsState};
 use bevy::app::Update;
 use bevy::color::Color;
 use bevy::ecs::relationship::Relationship;
@@ -48,9 +48,6 @@ struct DebugCheckbox {
 }
 
 pub trait DebugSetting: Component {}
-
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-pub struct LoggingScreenStates(pub bool);
 
 #[derive(Component, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 struct DebugButton;
@@ -138,10 +135,11 @@ pub fn toggle_debug_menu(mut debug_menu: ResMut<DebugMenu>) {
     info!("Debug menu open: {}", debug_menu.open);
 }
 
-pub fn spawn_debug_menu(
+fn spawn_debug_menu(
     mut commands: Commands,
     debug_menu: Res<DebugMenu>,
     menu_query: Query<Entity, With<DebugMenuRoot>>,
+    physics_states: Res<State<RenderPhysicsState>>,
     log_screen_states: Res<State<LoggingScreenStates>>,
     ui_debug_options: Res<UiDebugOptions>,
 ) {
@@ -179,7 +177,9 @@ pub fn spawn_debug_menu(
                     TextColor(Color::WHITE),
                 ));
 
-                spawn_debug(parent,
+                spawn_debug(
+                    parent,
+                    physics_states,
                     log_screen_states,
                     ui_debug_options
                 );
@@ -191,7 +191,7 @@ pub fn spawn_debug_menu(
     }
 }
 
-pub fn spawn_debug_category(
+pub(super) fn spawn_debug_category(
     parent: &mut ChildSpawnerCommands,
     label: impl Into<String>,
     checked: DebugCategoryCheckState,
@@ -295,7 +295,7 @@ fn text_bundle(icon: &str) -> impl Bundle {
     )
 }
 
-pub fn spawn_checkbox_row(
+pub(super) fn spawn_checkbox_row(
     parent: &mut ChildSpawnerCommands,
     label: impl Into<String>,
     checked: bool,
@@ -340,7 +340,7 @@ pub fn spawn_checkbox_row(
         });
 }
 
-pub fn update_debug_menu(
+fn update_debug_menu(
     checkbox_query: Query<
         (&DebugCheckbox, &Children),
         Changed<DebugCheckbox>,
@@ -495,7 +495,7 @@ fn update_debug_category_child_recursively(
     }
 }
 
-pub fn handle_debug_menu_buttons(
+fn handle_debug_menu_buttons(
     mut checkbox_queries: ParamSet<(
         Query<
             (Entity, &Interaction, &mut BackgroundColor, Option<&mut DebugCheckbox>),
