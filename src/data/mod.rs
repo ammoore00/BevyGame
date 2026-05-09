@@ -196,18 +196,18 @@ macro_rules! define_resource {
 
 #[macro_export]
 macro_rules! define_data_resource {
-    ($name:ident, $path:expr, $asset_type:ty, $file_type:expr) => {
+    ($name:ident, $path:literal, $asset_type:ty) => {
         paste::paste! {
-            define_resource!($name, const_format::concatcp!("data/", $path), $asset_type, $file_type);
+            define_resource!($name, const_format::concatcp!("data/", $path), $asset_type, ResourceFileType::Data);
         }
     }
 }
 
 #[macro_export]
 macro_rules! define_resolvable_resource {
-    ($name:ident, $path:expr, $asset_type:ty, $resolved_asset_type:ty, $file_type:expr) => {
+    ($name:ident, $path:literal, $asset_type:ty, $resolved_asset_type:ty) => {
         paste::paste! {
-            define_data_resource!($name, $path, $asset_type, $file_type);
+            define_data_resource!($name, $path, $asset_type);
 
             pub type [<Resolved $name Registry>] = data::registry::ResolvedResourceRegistry<[<$name Resource>]>;
 

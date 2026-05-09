@@ -22,6 +22,7 @@ pub mod stamina;
 pub mod assets;
 mod state;
 pub mod attack;
+pub mod npc;
 
 pub fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterResource>();
@@ -31,13 +32,14 @@ pub fn plugin(app: &mut App) {
         assets::plugin,
         attack::plugin,
         health::plugin,
+        npc::plugin,
         player::plugin,
         stamina::plugin,
         state::plugin,
     ));
 }
 
-pub fn character(
+pub fn character_bundle(
     data_loc: ResourceLocation<CharacterResource>,
     position: Vec3,
     scale: f32,

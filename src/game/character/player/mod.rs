@@ -8,7 +8,7 @@ use crate::game::character::assets::CharacterResource;
 //use crate::game::object::Shadow;
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
-use crate::game::character::{character, CharacterBuilderContext, Facing};
+use crate::game::character::{character_bundle, CharacterBuilderContext, Facing};
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use crate::game::physics::movement::MovementController;
 use bevy::prelude::*;
@@ -27,7 +27,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 /// The player character.
-pub fn player(
+pub fn player_bundle(
     position: Vec3,
     max_speed: f32,
     player_assets: &PlayerAssets,
@@ -42,7 +42,7 @@ pub fn player(
         ..default()
     };
 
-    let character_data = character(
+    let character_data = character_bundle(
         player_data_location,
         position,
         scale,

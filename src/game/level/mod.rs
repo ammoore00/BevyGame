@@ -3,13 +3,14 @@
 pub mod grid;
 pub mod map;
 
-use crate::game::character::player::{player, PlayerAssets};
-use crate::game::character::{character, CharacterBuilderContext};
+use crate::game::character::player::{player_bundle, PlayerAssets};
+use crate::game::character::{character_bundle, CharacterBuilderContext};
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
-use crate::game::object::{object, ObjectAssets, ObjectType};
+use crate::game::object::{object_bundle, ObjectAssets, ObjectType};
 use crate::{asset_tracking::LoadResource, audio::music, screens::Screen, Scale};
 use bevy::prelude::*;
+use crate::game::character::npc::npc_bundle;
 use crate::game::level::grid::Grid;
 use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
 use crate::game::level::map::{build_map_grid, map_bundle, Map};
@@ -195,7 +196,7 @@ fn add_objects(
         },
     };
 
-    let player = player(
+    let player = player_bundle(
         Vec3::new(3.0, 1.0, 3.0),
         4.5,
         &player_assets,
@@ -203,14 +204,14 @@ fn add_objects(
         &character_context,
     );
 
-    let _test_npc = character(
+    let _test_npc = npc_bundle(
         "test".parse().unwrap(),
         Vec3::new(5.0, 1.0, 3.0),
         scale.0,
         &character_context,
     );
 
-    let _rock = object(
+    let _rock = object_bundle(
         ObjectType::Rock,
         &object_assets,
         Vec3::new(6.0, 5.0, 6.0),

@@ -82,5 +82,5 @@ impl From<TileCodec> for TileAsset {
 }
 
 
-define_data_resource!(Tile, "tiles", TileAsset, ResourceFileType::Data);
+define_data_resource!(Tile, "tiles", TileAsset);
 define_sprite_resource!(Tile, "tiles");

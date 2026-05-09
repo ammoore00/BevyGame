@@ -1,3 +1,4 @@
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
@@ -51,8 +52,19 @@ where
             .map_err(|err| WriteError::io(&loc, err))?;
     }
 
-    let file = std::fs::File::create(ROOT_GENERATED.join(loc.as_path()))
-        .map_err(|err| WriteError::io(&loc, err))?;
+    let file = match OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+    {
+        Ok(file) => file,
+        Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+            info!("Skipping existing file: {}", path.display());
+            return Ok(());
+        }
+        Err(err) => return Err(WriteError::io(&loc, err)),
+    };
+    
     let mut writer = std::io::BufWriter::new(file);
     writer.write_all(serialized.as_bytes())
         .map_err(|err| WriteError::io(&loc, err))?;

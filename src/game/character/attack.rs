@@ -84,5 +84,5 @@ pub struct AttackSetCodec {
     pub attacks: Vec<ResourceLocation<AttackResource>>,
 }
 
-define_data_resource!(Attack, "characters/attacks", AttackDefinition, ResourceFileType::Data);
-define_data_resource!(AttackSet, "characters/attack_sets", AttackSet, ResourceFileType::Data);
+define_data_resource!(Attack, "characters/attacks", AttackDefinition);
+define_data_resource!(AttackSet, "characters/attack_sets", AttackSet);

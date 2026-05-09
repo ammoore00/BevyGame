@@ -339,4 +339,4 @@ impl From<AnimationCodec> for PartialAnimationData {
     }
 }
 
-define_resolvable_resource!(Animation, "characters/animations", PartialAnimationData, ResolvedAnimationData, ResourceFileType::Data);
+define_resolvable_resource!(Animation, "characters/animations", PartialAnimationData, ResolvedAnimationData);

@@ -124,7 +124,7 @@ impl AllowedStatesCodec {
     }
 }
 
-define_data_resource!(Character, "characters/characters", CharacterData, ResourceFileType::Data);
+define_data_resource!(Character, "characters/characters", CharacterData);
 
 /// Enum used for referencing action states in data context
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

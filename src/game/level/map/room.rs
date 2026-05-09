@@ -253,4 +253,4 @@ pub struct RoomBuilderContext<'w, 's> {
     pub room_assets: Res<'w, Assets<RoomDefinition>>,
 }
 
-define_data_resource!(Room, "rooms", RoomDefinition, ResourceFileType::Data);
+define_data_resource!(Room, "rooms", RoomDefinition);

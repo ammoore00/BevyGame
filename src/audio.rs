@@ -49,4 +49,4 @@ fn apply_global_volume(
     }
 }
 
-define_data_resource!(Audio, "audio", AudioSource, ResourceFileType::Audio);
+define_resource!(Audio, "audio", AudioSource, ResourceFileType::Audio);
