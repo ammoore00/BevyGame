@@ -23,7 +23,7 @@ pub fn action_state(state: impl ActionState + Component) -> impl Bundle {
     )
 }
 
-#[derive(Component, Debug, Clone, Reflect)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 #[reflect(Component)]
 pub struct ActionStateTracker {
     pub(crate) type_id: TypeId,

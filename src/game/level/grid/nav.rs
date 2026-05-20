@@ -3,8 +3,9 @@ use crate::datagen_api::tile::Tile;
 use crate::game::level::grid::coords::TileCoords;
 use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
-use getset::CopyGetters;
+use getset::{CopyGetters, Getters};
 use std::collections::BTreeMap;
+use rand::Rng;
 
 pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 }
@@ -141,6 +142,25 @@ impl TileNavMap {
         self.edges.insert(key.clone(), edge);
         self.edges_from.entry(key.start.clone()).or_default().push(key);
     }
+
+    pub fn has_node(&self, coords: TileCoords) -> bool {
+        self.nodes.contains_key(&coords)
+    }
+
+    pub fn get_edges_from_tile(&self, coords: TileCoords) -> Option<Vec<(&NavEdgeKey, &NavEdge)>> {
+        let edges =
+            self.edges_from
+                .get(&coords)?
+                .iter()
+                .map(|key| (key, &self.edges[key]))
+                .collect();
+        Some(edges)
+    }
+
+    pub fn get_edge(&self, start: TileCoords, end: TileCoords) -> Option<&NavEdge> {
+        let key = NavEdgeKey { start, end };
+        self.edges.get(&key)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -157,9 +177,11 @@ enum NavNodeKind {
 }
 
 /// Directional edge between two tiles
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct NavEdgeKey {
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
+pub struct NavEdgeKey {
+    #[getset(get = "pub")]
     start: TileCoords,
+    #[getset(get = "pub")]
     end: TileCoords,
 }
 impl From<(TileCoords, TileCoords)> for NavEdgeKey {
@@ -174,7 +196,7 @@ impl From<NavEdgeKey> for (TileCoords, TileCoords) {
 }
 
 #[derive(Debug, Clone, PartialEq, CopyGetters)]
-struct NavEdge {
+pub struct NavEdge {
     #[getset(get_copy = "pub")]
     kind: NavEdgeKind,
     #[getset(get_copy = "pub")]
@@ -193,7 +215,7 @@ impl NavEdge {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum NavEdgeKind {
+pub enum NavEdgeKind {
     Walk,
     _SlopeUp,
     _SlopeDown,

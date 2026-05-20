@@ -204,7 +204,7 @@ fn add_objects(
         &character_context,
     );
 
-    let _test_npc = npc_bundle(
+    let test_npc = npc_bundle(
         "test".parse().unwrap(),
         Vec3::new(5.0, 1.0, 3.0),
         scale.0,
@@ -222,7 +222,7 @@ fn add_objects(
 
     let children = &[
         commands.spawn(player).id(),
-        //commands.spawn(_test_npc).id(),
+        commands.spawn(test_npc).id(),
         //commands.spawn(_rock).id(),
     ];
     commands.entity(level).add_children(children);
