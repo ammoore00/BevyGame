@@ -2,7 +2,7 @@ use std::time::Duration;
 use bevy::prelude::*;
 use rand::{Rng, RngExt};
 use crate::{AppSystems, PausableSystems};
-use crate::game::character::state::{get_state, ActionState, ActionStateTracker, CharacterStateEvent};
+use crate::game::character::state::{get_state, try_set_state, ActionState, ActionStateTracker, ActionStateEvent};
 use crate::game::character::state::action_states::{Idle, Running, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords, WorldPosition};
@@ -26,10 +26,15 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 pub(super) fn pathfinder_bundle() -> impl Bundle {
+    let controller = MovementController{
+        max_speed: 2.0,
+        ..Default::default()
+    };
+
     (
         Pathfinder::default(),
         DefaultWander::default(),
-        MovementController::default(),
+        controller,
     )
 }
 
@@ -61,7 +66,7 @@ impl TargetLocation {
 }
 
 const DEFAULT_WANDER_RANGE: u32 = 5;
-const DEFAULT_MAX_IDLE_TIME: u64 = 3;
+const DEFAULT_MAX_IDLE_TIME: u64 = 1;
 const DEFAULT_MAX_MOVEMENT_TIME: u64 = 10;
 
 #[derive(Component, Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -175,11 +180,6 @@ fn update_movement_state(
     let npc_query: Vec<_> = npc_query.iter(world).collect();
 
     for entity in npc_query {
-        let state_tracker = *world.get::<ActionStateTracker>(entity).unwrap();
-        let prev_state = get_state(entity, &state_tracker, world).unwrap();
-
-        let state_capabilities = world.get::<ActionStateCapabilities>(entity).cloned().unwrap();
-
         let controller = world.get::<MovementController>(entity).unwrap();
 
         let new_state: Box<dyn ActionState> = if controller.intent.length() > 0.7 {
@@ -189,11 +189,10 @@ fn update_movement_state(
         } else {
             Box::new(Idle)
         };
-
-        if let Ok(event) =
-            CharacterStateEvent::try_new(entity, &state_capabilities, new_state, prev_state)
-        {
-            world.trigger(event);
+        
+        if let Err(err) = try_set_state(entity, new_state, world) {
+            error!("Failed to set movement state for NPC: {}", err);
+            continue;
         }
     }
 }

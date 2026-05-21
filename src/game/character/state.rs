@@ -6,6 +6,8 @@ use state_transitions::{ActionStateCapabilities, StateTransitionError};
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
 use tracing::warn;
+use crate::game::character::state::action_states::{Idle, Running, Walking};
+use crate::game::physics::movement::MovementController;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
@@ -454,14 +456,56 @@ pub fn is_in_movement_state(
     }
 }
 
+/// Attempts to set the state of the provided entity to the new state, triggering a state event if successful.
+/// 
+/// Entity must have the following components:
+/// - `ActionStateTracker`
+/// - `ActionStateCapabilities`
+/// - Some variant of `ActionState`
+/// 
+/// Returns an error if any required component is missing or if the state transition is invalid.
+pub fn try_set_state(
+    entity: Entity,
+    new_state: Box<dyn ActionState>,
+    world: &mut World
+) -> Result<(), SetStateError> {
+    let state_tracker = *world.get::<ActionStateTracker>(entity)
+        .ok_or(SetStateError::StateTracker)?;
+    
+    let prev_state = get_state(entity, &state_tracker, world)
+        .ok_or(SetStateError::PrevState)?;
+
+    let state_capabilities = world.get::<ActionStateCapabilities>(entity)
+        .cloned()
+        .ok_or(SetStateError::Capabilities)?;
+
+    let state_event = ActionStateEvent::try_new(entity, &state_capabilities, new_state, prev_state)
+        .map_err(SetStateError::from)?;
+    
+    world.trigger(state_event);
+    Ok(())
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum SetStateError {
+    #[error(transparent)]
+    Transition(#[from] StateTransitionError),
+    #[error("Failed to retrieve state tracker component")]
+    StateTracker,
+    #[error("Failed to retrieve previous state component")]
+    PrevState,
+    #[error("Failed to retrieve state capabilities component")]
+    Capabilities,
+}
+
 #[derive(EntityEvent, Debug)]
-pub struct CharacterStateEvent {
+pub struct ActionStateEvent {
     entity: Entity,
     new_state: Box<dyn ActionState>,
     prev_state: Box<dyn ActionState>,
 }
 
-impl CharacterStateEvent {
+impl ActionStateEvent {
     pub fn try_new(
         entity: Entity,
         transitions: &ActionStateCapabilities,
@@ -478,7 +522,7 @@ impl CharacterStateEvent {
     }
 }
 
-fn on_state_change(event: On<CharacterStateEvent>, mut world: DeferredWorld) {
+fn on_state_change(event: On<ActionStateEvent>, mut world: DeferredWorld) {
     let entity = event.entity;
 
     // We clone these to move them into the command closure
@@ -560,7 +604,7 @@ fn update_timed_state(
 
                 let prev_data = timed_state.box_clone();
 
-                match CharacterStateEvent::try_new(
+                match ActionStateEvent::try_new(
                     entity,
                     &state_capabilities,
                     Box::new(action_states::Idle),

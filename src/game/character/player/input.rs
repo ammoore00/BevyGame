@@ -4,7 +4,7 @@ use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAt
 use crate::game::character::stamina::Stamina;
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
-use crate::game::character::state::{is_in_movement_state, ActionState, ActionStateTracker, CharacterStateEvent};
+use crate::game::character::state::{is_in_movement_state, ActionState, ActionStateTracker, ActionStateEvent};
 use crate::game::character::{state, Character, Facing};
 use crate::game::level::grid::coords::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, WorldPosition};
 use crate::game::physics::components::PhysicsData;
@@ -204,7 +204,7 @@ fn record_player_movement_input(world: &mut World) {
             // Attempt to create a state transition event
             let should_sprint = (*new_state).type_id() == TypeId::of::<Sprinting>();
             if let Ok(event) =
-                CharacterStateEvent::try_new(entity, &state_capabilities, new_state, prev_state)
+                ActionStateEvent::try_new(entity, &state_capabilities, new_state, prev_state)
             {
                 world.trigger(event);
                 sprinting = should_sprint;
@@ -329,7 +329,7 @@ fn record_action_input(world: &mut World) {
             return;
         };
 
-        match CharacterStateEvent::try_new(
+        match ActionStateEvent::try_new(
             player,
             &state_capabilities,
             Box::new(Attacking::new(&attack_loc, *attack.duration())),
