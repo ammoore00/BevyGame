@@ -134,8 +134,12 @@ impl<'de> Deserialize<'de> for TileCoords {
     }
 }
 
-
-#[derive(Debug, PartialEq, Clone, Reflect)]
+/// Represents a continuous coordinate in the game world
+/// 
+/// ### Ordering
+/// 
+/// Ordering is performed Y first, then X, then Z, using `f32::total_cmp`
+#[derive(Debug, Clone, Reflect)]
 pub struct WorldCoords(pub Vec3);
 impl From<TileCoords> for WorldCoords {
     fn from(value: TileCoords) -> Self {
@@ -161,6 +165,24 @@ impl Deref for WorldCoords {
     type Target = Vec3;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+impl Eq for WorldCoords {}
+impl PartialEq for WorldCoords {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+impl Ord for WorldCoords {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.y.total_cmp(&other.y)
+            .then_with(|| self.x.total_cmp(&other.x))
+            .then_with(|| self.z.total_cmp(&other.z))
+    }
+}
+impl PartialOrd for WorldCoords {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
