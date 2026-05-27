@@ -4,7 +4,7 @@ pub mod grid;
 pub mod map;
 
 use crate::game::character::player::{player_bundle, PlayerAssets};
-use crate::game::character::{character_bundle, CharacterBuilderContext};
+use crate::game::character::CharacterBuilderContext;
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
 use crate::game::object::{object_bundle, ObjectAssets, ObjectType};

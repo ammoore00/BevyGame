@@ -59,17 +59,17 @@ pub struct AiStateCodec {
 }
 
 #[derive(Debug, Clone)]
-struct AiNode {
+struct _AiNode {
     state: ResourceLocation<AiStateResource>,
-    kind: AiNodeKind,
+    kind: _AiNodeKind,
 }
 
 #[derive(Debug, Clone)]
-enum AiNodeKind {
+enum _AiNodeKind {
     Selector {
-        children: Vec<AiNodeKind>,
+        children: Vec<_AiNodeKind>,
     },
     Sequence {
-        sequence: Vec<AiNodeKind>,
+        sequence: Vec<_AiNodeKind>,
     },
 }

@@ -5,7 +5,6 @@ use crate::game::level::grid::TileMap;
 use bevy::prelude::*;
 use getset::{CopyGetters, Getters};
 use std::collections::BTreeMap;
-use rand::Rng;
 
 pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 }
@@ -157,7 +156,7 @@ impl TileNavMap {
         Some(edges)
     }
 
-    pub fn get_edge(&self, start: TileCoords, end: TileCoords) -> Option<&NavEdge> {
+    pub fn _get_edge(&self, start: TileCoords, end: TileCoords) -> Option<&NavEdge> {
         let key = NavEdgeKey { start, end };
         self.edges.get(&key)
     }

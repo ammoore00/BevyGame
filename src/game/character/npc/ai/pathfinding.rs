@@ -1,12 +1,10 @@
-use std::any::Any;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
-use std::sync::Arc;
 use std::time::Duration;
 use bevy::prelude::*;
 use rand::{Rng, RngExt};
 use crate::{AppSystems, PausableSystems};
-use crate::game::character::state::{try_set_state, ActionState, ActionStateTracker, ActionStateEvent};
+use crate::game::character::state::{try_set_state, ActionState, ActionStateTracker};
 use crate::game::character::state::action_states::{Idle, Running, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords, WorldPosition};
@@ -58,20 +56,20 @@ enum PathfinderState {
 #[derive(Debug, Clone)]
 enum TargetLocation {
     Wander(TilePath),
-    Target(TilePath),
+    _Target(TilePath),
 }
 impl TargetLocation {
     fn get(&self) -> &TilePath {
         match self {
             TargetLocation::Wander(path)
-            | TargetLocation::Target(path) => path
+            | TargetLocation::_Target(path) => path
         }
     }
 
     fn get_mut(&mut self) -> &mut TilePath {
         match self {
             TargetLocation::Wander(path)
-            | TargetLocation::Target(path) => path
+            | TargetLocation::_Target(path) => path
         }
     }
 }
