@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use getset::Getters;
 use rand::{Rng, RngExt};
 use crate::{AppSystems, PausableSystems};
+use crate::datagen_api::components::Collider;
 use crate::game::character::state::{try_set_state, ActionState, ActionStateTracker};
 use crate::game::character::state::action_states::{Idle, Running, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
@@ -99,7 +100,7 @@ impl TilePath {
         self.next_index += 1;
         self.next_position = self.path.get(self.next_index).cloned();
     }
-    
+
     pub fn get_remaining_path(&self) -> &[WorldCoords] {
         &self.path[self.next_index..]
     }
@@ -131,7 +132,7 @@ const TARGET_REACHED_THRESHOLD: f32 = 0.2;
 
 fn update_pathfinder_wander_state(
     time: Res<Time>,
-    pathfinder_query: Query<(&mut Pathfinder, &mut RandomWander, &WorldPosition)>,
+    pathfinder_query: Query<(&mut Pathfinder, &mut RandomWander, &WorldPosition, &Collider)>,
     nav_map_query: Query<&TileNavMap>,
 ) {
     let nav_map = nav_map_query.single();
@@ -143,7 +144,8 @@ fn update_pathfinder_wander_state(
     for (
         mut pathfinder,
         mut wander,
-        pos
+        pos,
+        collider,
     ) in pathfinder_query {
         wander.current_time_in_state += time.delta();
 
@@ -166,10 +168,14 @@ fn update_pathfinder_wander_state(
                     rand::rng()
                 );
 
+                let collider_size = collider.size();
+                let clearance = collider_size.x.max(collider_size.z) / 2.0;
+
                 if let Some(tile_path) = find_path(
                     nav_map,
                     &tile_coords.into(),
                     &target.into(),
+                    clearance,
                 ) {
                     wander.current_time_in_state = Duration::ZERO;
                     let tile_path = PathType::Wander(tile_path);
@@ -315,6 +321,7 @@ fn find_path(
     nav_map: &TileNavMap,
     start: &WorldCoords,
     target: &WorldCoords,
+    clearance: f32,
 ) -> Option<TilePath> {
     // TODO: account for clearance and movement capabilities, add search timeout
     // TODO: Make this actually use Theta*, as right now this is just basic A*
@@ -334,12 +341,13 @@ fn find_path(
     let mut heap = BinaryHeap::new();
     heap.push(PathfindCoordState {
         cost: 0,
+        heuristic_cost: start.distance(**target) as u32,
         position: start.clone(),
     });
 
     // Explore frontier using min heap to explore lower cost nodes first
     while let Some(node) = heap.pop() {
-        let PathfindCoordState { cost, position } = &node;
+        let PathfindCoordState { cost, heuristic_cost, position } = &node;
         if position == target {
             let mut position = position;
             let mut path = Vec::new();
@@ -374,9 +382,10 @@ fn find_path(
         for edge in edges {
             let next_cost = cost + edge.1.cost();
             let next_pos: WorldCoords = edge.0.end().into();
+            let next_heuristic_cost = next_pos.distance(**target) as u32;
 
             // If the position isn't tracked yet, default to true.
-            // If it is tracked, evaluate if our new cost is cheaper.
+            // If it is tracked, evaluate if our new cost is cheaper
             let is_cheaper = costs.get(&next_pos)
                 .is_none_or(|&prev_cost| next_cost < prev_cost);
 
@@ -386,6 +395,7 @@ fn find_path(
 
                 heap.push(PathfindCoordState {
                     cost: next_cost,
+                    heuristic_cost: next_heuristic_cost,
                     position: next_pos,
                 });
             }
@@ -399,6 +409,7 @@ fn find_path(
 #[derive(Clone, PartialEq, Eq)]
 struct PathfindCoordState {
     cost: u32,
+    heuristic_cost: u32,
     position: WorldCoords,
 }
 impl Ord for PathfindCoordState {
@@ -406,7 +417,8 @@ impl Ord for PathfindCoordState {
         // Note flipped ordering on costs to allow for min heap
         // In case of tie, we compare positions lexicographically
         // This keeps implementations of Ord and Eq consistent
-        other.cost.cmp(&self.cost)
+        (other.cost + other.heuristic_cost)
+            .cmp(&(self.cost + self.heuristic_cost))
             .then_with(|| self.position.cmp(&other.position))
     }
 }
