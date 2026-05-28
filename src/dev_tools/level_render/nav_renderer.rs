@@ -2,7 +2,7 @@ use crate::dev_tools::debug_options::{RenderNPCPathsState, RenderNavMapEdgesStat
 use bevy::prelude::*;
 use crate::datagen_api::ai::pathfinding::{Pathfinder, PathfinderState};
 use crate::dev_tools::level_render::{draw_projected_camera_facing_circle, draw_screen_line, project_point};
-use crate::game::level::grid::coords::{WorldCoords, WorldPosition};
+use crate::game::level::grid::coords::WorldPosition;
 use crate::game::level::grid::nav::TileNavMap;
 use crate::Scale;
 

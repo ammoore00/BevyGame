@@ -10,7 +10,7 @@ use crate::game::character::state::{try_set_state, ActionState, ActionStateTrack
 use crate::game::character::state::action_states::{Idle, Running, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords, WorldPosition};
-use crate::game::level::grid::nav::TileNavMap;
+use crate::game::level::grid::nav::{NavEdgeKind, TileNavMap};
 use crate::game::physics::movement::MovementController;
 use crate::screens::Screen;
 
@@ -169,13 +169,15 @@ fn update_pathfinder_wander_state(
                 );
 
                 let collider_size = collider.size();
-                let clearance = collider_size.x.max(collider_size.z) / 2.0;
+                let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
+                let clearance_height = collider_size.y;
 
                 if let Some(tile_path) = find_path(
                     nav_map,
                     &tile_coords.into(),
                     &target.into(),
-                    clearance,
+                    clearance_half_width,
+                    clearance_height,
                 ) {
                     wander.current_time_in_state = Duration::ZERO;
                     let tile_path = PathType::Wander(tile_path);
@@ -279,7 +281,7 @@ fn select_random_wander_target(
     distance: u32,
     mut rand: impl Rng,
 ) -> TileCoords {
-    if !nav_map.has_node(start.clone()) {
+    if !nav_map.has_node(start) {
         error!("Invalid start position for wander target selection: {:?}", start);
         return start.clone();
     }
@@ -289,7 +291,7 @@ fn select_random_wander_target(
 
     let mut target = start;
     for _ in 0..distance {
-        let Some(edges) = nav_map.get_edges_from_tile(target.clone()) else {
+        let Some(edges) = nav_map.get_edges_from_tile(target) else {
             error!("No valid edges found for wander target selection from {:?}", target);
             continue;
         };
@@ -321,10 +323,10 @@ fn find_path(
     nav_map: &TileNavMap,
     start: &WorldCoords,
     target: &WorldCoords,
-    clearance: f32,
+    clearance_half_width: f32,
+    clearance_height: f32,
 ) -> Option<TilePath> {
-    // TODO: account for clearance and movement capabilities, add search timeout
-    // TODO: Make this actually use Theta*, as right now this is just basic A*
+    // TODO: account movement capabilities, add search timeout
 
     // Sanity check
     // The code would return the correct result anyway,
@@ -347,7 +349,7 @@ fn find_path(
 
     // Explore frontier using min heap to explore lower cost nodes first
     while let Some(node) = heap.pop() {
-        let PathfindCoordState { cost, heuristic_cost, position } = &node;
+        let PathfindCoordState { cost, position, .. } = &node;
         if position == target {
             let mut position = position;
             let mut path = Vec::new();
@@ -369,19 +371,53 @@ fn find_path(
 
         // If we already found a better path here, skip this node
         if let Some(prev_cost) = costs.get(position)
-            && cost > prev_cost
+            && cost != prev_cost
         {
             continue;
         }
 
         // Get all outgoing connections from the current frontier node
-        let Some(edges) = nav_map.get_edges_from_tile(position.into()) else {
+        let Some(edges) = nav_map.get_edges_from_tile(&position.into()) else {
             continue;
         };
 
         for edge in edges {
-            let next_cost = cost + edge.1.cost();
-            let next_pos: WorldCoords = edge.0.end().into();
+            // Try to shortcut to the grandparent based on line-of-sight
+            let (
+                next_cost,
+                next_pos,
+                next_parent
+            ) = if let Some(grandparent) = parents.get(position)
+                && edge.1.kind() == NavEdgeKind::Walk
+                && nav_map.has_line_of_sight(
+                    &TileCoords::from(grandparent),
+                    edge.0.end(),
+                    clearance_half_width,
+                    clearance_height,
+                )
+            {
+                let next_pos = WorldCoords::from(edge.0.end());
+
+                // Look up how much it actually cost to get to the grandparent
+                let grandparent_cost = costs.get(grandparent).copied().unwrap_or(0);
+
+                // Calculate true distance from grandparent to the neighbor tile
+                let walk_cost = edge.1.cost(); // We know this is a walk edge, so just check the cost here to avoid magic numbers
+                let distance_cost = (next_pos.distance(**grandparent) * walk_cost as f32) as u32;
+
+                (
+                    grandparent_cost + distance_cost,
+                    next_pos,
+                    grandparent,
+                )
+            } else {
+                (
+                    cost + edge.1.cost(),
+                    WorldCoords::from(edge.0.end()),
+                    position,
+                )
+            };
+
             let next_heuristic_cost = next_pos.distance(**target) as u32;
 
             // If the position isn't tracked yet, default to true.
@@ -390,7 +426,7 @@ fn find_path(
                 .is_none_or(|&prev_cost| next_cost < prev_cost);
 
             if is_cheaper {
-                parents.insert(next_pos.clone(), position.clone());
+                parents.insert(next_pos.clone(), next_parent.clone());
                 costs.insert(next_pos.clone(), next_cost);
 
                 heap.push(PathfindCoordState {
