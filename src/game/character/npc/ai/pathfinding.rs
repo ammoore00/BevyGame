@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
 use std::time::Duration;
 use bevy::prelude::*;
+use getset::Getters;
 use rand::{Rng, RngExt};
 use crate::{AppSystems, PausableSystems};
 use crate::game::character::state::{try_set_state, ActionState, ActionStateTracker};
@@ -40,42 +41,43 @@ pub(super) fn pathfinder_bundle() -> impl Bundle {
     )
 }
 
-#[derive(Component, Debug, Clone, Default)]
-struct Pathfinder {
+#[derive(Component, Debug, Clone, Default, Getters)]
+pub struct Pathfinder {
+    #[getset(get = "pub")]
     state: PathfinderState,
 }
 
 #[derive(Debug, Clone, Default)]
-enum PathfinderState {
+pub enum PathfinderState {
     #[default]
     Idle,
     Searching,
-    Moving(TargetLocation),
+    Moving(PathType),
 }
 
 #[derive(Debug, Clone)]
-enum TargetLocation {
+pub enum PathType {
     Wander(TilePath),
     _Target(TilePath),
 }
-impl TargetLocation {
-    fn get(&self) -> &TilePath {
+impl PathType {
+    pub fn get(&self) -> &TilePath {
         match self {
-            TargetLocation::Wander(path)
-            | TargetLocation::_Target(path) => path
+            PathType::Wander(path)
+            | PathType::_Target(path) => path
         }
     }
 
     fn get_mut(&mut self) -> &mut TilePath {
         match self {
-            TargetLocation::Wander(path)
-            | TargetLocation::_Target(path) => path
+            PathType::Wander(path)
+            | PathType::_Target(path) => path
         }
     }
 }
 
-#[derive(Debug, Clone)]
-struct TilePath {
+#[derive(Debug, Clone, Getters)]
+pub struct TilePath {
     path: Vec<WorldCoords>,
     target: WorldCoords,
     next_position: Option<WorldCoords>,
@@ -96,6 +98,10 @@ impl TilePath {
     fn increment_position(&mut self) {
         self.next_index += 1;
         self.next_position = self.path.get(self.next_index).cloned();
+    }
+    
+    pub fn get_remaining_path(&self) -> &[WorldCoords] {
+        &self.path[self.next_index..]
     }
 }
 
@@ -166,7 +172,7 @@ fn update_pathfinder_wander_state(
                     &target.into(),
                 ) {
                     wander.current_time_in_state = Duration::ZERO;
-                    let tile_path = TargetLocation::Wander(tile_path);
+                    let tile_path = PathType::Wander(tile_path);
 
                     info!("NPC found target: {:?}, starting movement", tile_path.get().next_position.clone());
                     pathfinder.state = PathfinderState::Moving(tile_path);

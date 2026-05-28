@@ -1,6 +1,8 @@
-use crate::dev_tools::debug_options::{RenderNavMapEdgesState, RenderNavMapNodesState};
+use crate::dev_tools::debug_options::{RenderNPCPathsState, RenderNavMapEdgesState, RenderNavMapNodesState};
 use bevy::prelude::*;
+use crate::datagen_api::ai::pathfinding::{Pathfinder, PathfinderState};
 use crate::dev_tools::level_render::{draw_projected_camera_facing_circle, draw_screen_line, project_point};
+use crate::game::level::grid::coords::{WorldCoords, WorldPosition};
 use crate::game::level::grid::nav::TileNavMap;
 use crate::Scale;
 
@@ -20,13 +22,21 @@ const NAV_EDGE_REVERSE_COLOR: Color = Color::srgb(
     0.80,
 );
 
+const PATH_COLOR: Color = Color::srgb(
+    0.95,
+    0.85,
+    0.30,
+);
+
 const NAV_NODE_RADIUS: f32 = 0.5;
 const NAV_NODE_LINE_THICKNESS: f32 = 3.0;
+
 const NAV_EDGE_LINE_THICKNESS: f32 = 4.0;
 const NAV_EDGE_SCREEN_OFFSET: f32 = 8.0;
 const NAV_EDGE_END_PADDING: f32 = 12.0;
 const NAV_EDGE_ARROW_LENGTH: f32 = 10.0;
 const NAV_EDGE_ARROW_WIDTH: f32 = 6.0;
+
 const NAV_DEBUG_Y_OFFSET: f32 = -0.45;
 
 pub(super) fn plugin(app: &mut App) {
@@ -35,8 +45,70 @@ pub(super) fn plugin(app: &mut App) {
         (
             render_nav_nodes,
             render_nav_edges,
+            render_npc_paths,
         ),
     );
+}
+
+#[derive(Component, Clone, Copy)]
+struct NPCPathDebugVisual;
+
+fn render_npc_paths(
+    mut commands: Commands,
+    scale: Res<Scale>,
+    state: Res<State<RenderNPCPathsState>>,
+    debug_visual_query: Query<Entity, With<NPCPathDebugVisual>>,
+    path_query: Query<(&Pathfinder, &WorldPosition)>,
+) {
+    for entity in &debug_visual_query {
+        commands.entity(entity).despawn();
+    }
+
+    if !state.0 {
+        return;
+    }
+
+    for (pathfinder, pos) in path_query {
+        if let PathfinderState::Moving(target) = pathfinder.state() {
+            let tile_path = target.get();
+            let remaining_path = tile_path.get_remaining_path();
+
+            for i in 0..remaining_path.len() {
+                let current = &remaining_path[i];
+
+                draw_projected_camera_facing_circle(
+                    &mut commands,
+                    **current + Vec3::Y * (1. + NAV_DEBUG_Y_OFFSET),
+                    NAV_NODE_RADIUS / 3.,
+                    PATH_COLOR,
+                    scale.0,
+                    NAV_NODE_LINE_THICKNESS,
+                    NavNodeDebugVisual,
+                );
+
+                if i == 0 {
+                    draw_directed_nav_edge(
+                        &mut commands,
+                        *pos.0 + Vec3::Y * (NAV_DEBUG_Y_OFFSET),
+                        **current + Vec3::Y * (1. + NAV_DEBUG_Y_OFFSET),
+                        scale.0,
+                        NavEdgeColor::Color(PATH_COLOR),
+                    );
+                }
+
+                if i < remaining_path.len() - 1 {
+                    let next = &remaining_path[i + 1];
+                    draw_directed_nav_edge(
+                        &mut commands,
+                        **current + Vec3::Y * (1. + NAV_DEBUG_Y_OFFSET),
+                        **next + Vec3::Y * (1. + NAV_DEBUG_Y_OFFSET),
+                        scale.0,
+                        NavEdgeColor::Color(PATH_COLOR),
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[derive(Component, Clone, Copy)]
@@ -59,7 +131,7 @@ fn render_nav_nodes(
         return;
     }
 
-    for nav_map in &nav_query {
+    for nav_map in nav_query {
         for position in nav_map.debug_node_positions() {
             draw_projected_camera_facing_circle(
                 &mut commands,
@@ -89,13 +161,14 @@ fn render_nav_edges(
         return;
     }
 
-    for nav_map in &nav_query {
+    for nav_map in nav_query {
         for (start, end) in nav_map.debug_edge_segments() {
             draw_directed_nav_edge(
                 &mut commands,
                 start + Vec3::Y * NAV_DEBUG_Y_OFFSET,
                 end + Vec3::Y * NAV_DEBUG_Y_OFFSET,
                 scale.0 / 2.0,
+                NavEdgeColor::Auto,
             );
         }
     }
@@ -106,6 +179,7 @@ fn draw_directed_nav_edge(
     start: Vec3,
     end: Vec3,
     scale: f32,
+    color: NavEdgeColor,
 ) {
     let start = project_point(start, scale);
     let end = project_point(end, scale);
@@ -117,7 +191,11 @@ fn draw_directed_nav_edge(
         return;
     }
 
-    let color = nav_edge_color(delta);
+    let color = match color {
+        NavEdgeColor::Auto => nav_edge_color(delta),
+        NavEdgeColor::Color(color) => color,
+    };
+
     let perpendicular = Vec2::new(-direction.y, direction.x);
     let offset = perpendicular * NAV_EDGE_SCREEN_OFFSET;
 
@@ -159,6 +237,11 @@ fn draw_directed_nav_edge(
         NAV_EDGE_LINE_THICKNESS,
         NavEdgeDebugVisual,
     );
+}
+
+enum NavEdgeColor {
+    Auto,
+    Color(Color),
 }
 
 fn nav_edge_color(delta: Vec3) -> Color {

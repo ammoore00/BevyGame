@@ -1,4 +1,4 @@
-mod pathfinding;
+pub mod pathfinding;
 
 use crate::data;
 use crate::data::{ResourceFileType, ResourceLocation};
