@@ -11,6 +11,7 @@ use crate::game::character::state::action_states::{Idle, Running, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords, WorldPosition};
 use crate::game::level::grid::nav::{NavEdgeKind, TileNavMap};
+use crate::game::level::LevelSpawnState;
 use crate::game::physics::movement::MovementController;
 use crate::screens::Screen;
 
@@ -23,7 +24,10 @@ pub(super) fn plugin(app: &mut App) {
             update_movement_state,
         )
             .chain()
-            .run_if(in_state(Screen::Gameplay))
+            .run_if(
+                in_state(Screen::Gameplay)
+                    .and(in_state(LevelSpawnState::Finished))
+            )
             .in_set(AppSystems::Update)
             .in_set(PausableSystems),
     );
