@@ -67,6 +67,9 @@ const_format = "0.2.36"
 
 maybe_fields_macro = { path = "maybe_fields_macro" }
 
+bevy_mod_debugdump = { version = "0.15.0", optional = true }
+graphviz-rust = { version = "0.9.8", optional = true }
+
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.4.2", features = ["wasm_js"] }
 
@@ -76,10 +79,14 @@ default = ["dev_native"]
 dev = [
     # Improve compile times for dev builds by linking Bevy as a dynamic library.
     "bevy/dynamic_linking",
-    "bevy/bevy_dev_tools",
-    "bevy/bevy_ui_debug",
     # Improve error messages coming from Bevy
     "bevy/track_location",
+
+    "bevy/bevy_dev_tools",
+    "bevy/bevy_ui_debug",
+
+    "bevy_mod_debugdump",
+    "graphviz-rust",
 ]
 dev_native = [
     "dev",

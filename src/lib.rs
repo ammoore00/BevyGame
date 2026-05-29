@@ -54,12 +54,7 @@ impl Plugin for AppPlugin {
             menus::plugin,
             screens::plugin,
             theme::plugin,
-            #[cfg(feature = "dev")]
-            dev_tools::plugin,
         ));
-
-        #[cfg(feature = "dev")]
-        info!("Dev tools enabled");
 
         app.insert_resource(Scale(6.0));
 
@@ -106,6 +101,12 @@ impl Plugin for AppPlugin {
 
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
+
+        #[cfg(feature = "dev")]
+        {
+            info!("Dev tools enabled");
+            app.add_plugins(dev_tools::plugin);
+        }
     }
 }
 
