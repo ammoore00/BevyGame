@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use bevy_game_2d::datagen_api::animation::FrameDataCodec;
 use bevy_game_2d::datagen_api::assets::ActionStateEnum;
 use bevy_game_2d::datagen_api::components::{CapsuleCodec, ColliderTypeCodec};
 use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
@@ -12,32 +13,40 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
     let idle = AnimationData::new(
         "test/idle",
         64, 64,
-        12,
-        150,
+        FrameDataCodec::FixedInterval {
+            num_frames: 12,
+            interval: 150,
+        },
     ).with_image("player/idle");
     animation_map.insert(ActionStateEnum::Idle, idle);
 
     let walking = AnimationData::new(
         "test/walking",
         64, 64,
-        8,
-        50,
+        FrameDataCodec::FixedInterval {
+            num_frames: 8,
+            interval: 50,
+        },
     ).with_image("player/walking");
     animation_map.insert(ActionStateEnum::Walking, walking);
 
     let running = AnimationData::new(
         "test/running",
         64, 64,
-        8,
-        50,
+        FrameDataCodec::FixedInterval {
+            num_frames: 8,
+            interval: 50,
+        },
     ).with_image("player/running");
     animation_map.insert(ActionStateEnum::Running, running);
 
     let sprinting = AnimationData::new(
         "test/sprinting",
         64, 64,
-        8,
-        35,
+        FrameDataCodec::FixedInterval {
+            num_frames: 8,
+            interval: 35,
+        },
     ).with_image("player/running");
     animation_map.insert(ActionStateEnum::Sprinting, sprinting);
 
@@ -54,8 +63,10 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
     let basic_attack_animation = AnimationData::new(
         "player/basic_attack",
         96, 96,
-        basic_attack_frames,
-        basic_attack_interval,
+        FrameDataCodec::FixedInterval {
+            num_frames: basic_attack_frames as usize,
+            interval: basic_attack_interval,
+        },
     );
 
     let basic_attack_stamina_cost = 20;

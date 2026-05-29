@@ -88,8 +88,10 @@ fn update_animation_state(
         animation_tracker.current_animation = animation_handle.clone();
         let animation = animation_context.get_resolved_asset_from_handle(animation_handle.clone()).unwrap();
 
+        let interval = animation.frame_data.frame_duration(0).unwrap();
+
         if animation_tracker.prev_animation != animation_tracker.current_animation {
-            animation_tracker.timer = Timer::new(animation.interval, TimerMode::Repeating);
+            animation_tracker.timer = Timer::new(interval, TimerMode::Repeating);
             animation_tracker.frame = 0;
         }
 
@@ -180,7 +182,8 @@ impl CharacterAnimationTracker {
         default: Handle<ResolvedAnimationData>,
         assets: &Assets<ResolvedAnimationData>,
     ) -> Self {
-        let interval = assets.get(default.id()).unwrap().interval;
+        let frame_data = assets.get(default.id()).unwrap().frame_data();
+        let interval = frame_data.frame_duration(0).unwrap();
 
         Self {
             current_animation: default.clone(),
@@ -207,19 +210,22 @@ impl CharacterAnimationTracker {
             return;
         }
 
-        self.frame = (self.frame + 1) % assets.get(self.current_animation.id()).unwrap().frames;
+        let animation = assets.get(self.current_animation.id()).unwrap();
+
+        self.frame = (self.frame + 1) % animation.frame_data().num_frames();
+        self.timer.set_duration(animation.frame_data().frame_duration(self.frame).unwrap());
     }
 
     fn get_image(&self, assets: &Assets<ResolvedAnimationData>) -> Handle<Image> {
-        assets.get(self.current_animation.id()).unwrap().image.clone()
+        assets.get(self.current_animation.id()).unwrap().image().clone()
     }
 
     fn get_atlas(&self, assets: &Assets<ResolvedAnimationData>) -> TextureAtlas {
-        assets.get(self.current_animation.id()).unwrap().atlas.clone()
+        assets.get(self.current_animation.id()).unwrap().atlas().clone()
     }
 
     fn get_atlas_index(&self, assets: &Assets<ResolvedAnimationData>) -> usize {
-        self.frame + self.facing as usize * assets.get(self.current_animation.id()).unwrap().frames
+        self.frame + self.facing as usize * assets.get(self.current_animation.id()).unwrap().frame_data().num_frames()
     }
 }
 
@@ -238,16 +244,14 @@ impl AnimationStateMap {
 }
 
 /// Resolved asset references for an animation, including handles to other assets
-#[derive(Debug, Clone, PartialEq, Asset, Reflect, Getters, CopyGetters, CloneGetters)]
+#[derive(Debug, Clone, PartialEq, Asset, Reflect, Getters, CloneGetters)]
 pub struct ResolvedAnimationData {
     #[getset(get_clone = "pub")]
     image: Handle<Image>,
     #[getset(get = "pub")]
     atlas: TextureAtlas,
-    #[getset(get_copy = "pub")]
-    frames: usize,
-    #[getset(get_copy = "pub")]
-    interval: Duration,
+    #[getset(get = "pub")]
+    frame_data: FrameData,
 }
 
 fn resolve_animation_data(
@@ -294,11 +298,12 @@ fn resolve_animation_data(
             index: 0,
         };
 
+        let frame_data = animation.frame_data.clone();
+
         let resolved_animation = ResolvedAnimationData {
             image,
             atlas,
-            frames: animation.frames,
-            interval: animation.interval,
+            frame_data,
         };
 
         let resolved_animation_handle = asset_server.add(resolved_animation);
@@ -309,13 +314,71 @@ fn resolve_animation_data(
     *resolved = true;
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Reflect)]
+pub enum FrameData {
+    FixedInterval {
+        frames: usize,
+        interval: Duration,
+    },
+    Distinct {
+        intervals: Vec<Duration>,
+    }
+}
+impl FrameData {
+    pub fn num_frames(&self) -> usize {
+        match self {
+            FrameData::FixedInterval { frames, .. } => *frames,
+            FrameData::Distinct { intervals } => intervals.len(),
+        }
+    }
+
+    pub fn frame_duration(&self, frame: usize) -> Option<Duration> {
+        match self {
+            FrameData::FixedInterval { interval, .. } => Some(*interval),
+            FrameData::Distinct { intervals } => intervals.get(frame).copied(),
+        }
+    }
+}
+impl From<FrameDataCodec> for FrameData {
+    fn from(value: FrameDataCodec) -> Self {
+        match value {
+            FrameDataCodec::FixedInterval { num_frames: frames, interval } => FrameData::FixedInterval {
+                frames,
+                interval: Duration::from_millis(interval),
+            },
+            FrameDataCodec::Distinct { intervals } => FrameData::Distinct {
+                intervals: intervals.into_iter().map(Duration::from_millis).collect(),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum FrameDataCodec {
+    FixedInterval {
+        num_frames: usize,
+        interval: u64,
+    },
+    Distinct {
+        intervals: Vec<u64>,
+    }
+}
+impl FrameDataCodec {
+    pub fn num_frames(&self) -> u32 {
+        match self {
+            FrameDataCodec::FixedInterval { num_frames, .. } => *num_frames as u32,
+            FrameDataCodec::Distinct { intervals } => intervals.len() as u32,
+        }
+    }
+}
+
 /// Stores the sprite and frame data for an animation
 #[derive(Debug, Clone, PartialEq, Asset, TypePath)]
 pub struct PartialAnimationData {
     image: ResourceLocation<CharacterSpriteResource>,
     atlas: TextureAtlasLayout,
-    frames: usize,
-    interval: Duration,
+    frame_data: FrameData,
     resolved_handle: Option<Handle<ResolvedAnimationData>>,
 }
 
@@ -324,16 +387,14 @@ pub struct AnimationCodec {
     pub format: u8,
     pub image: ResourceLocation<CharacterSpriteResource>,
     pub atlas: TextureAtlasCodec,
-    pub frames: usize,
-    pub interval: u64,
+    pub frame_data: FrameDataCodec,
 }
 impl From<AnimationCodec> for PartialAnimationData {
     fn from(codec: AnimationCodec) -> Self {
         PartialAnimationData {
             image: codec.image,
             atlas: codec.atlas.into(),
-            frames: codec.frames,
-            interval: Duration::from_millis(codec.interval),
+            frame_data: codec.frame_data.into(),
             resolved_handle: None,
         }
     }

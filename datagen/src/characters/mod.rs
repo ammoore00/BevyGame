@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use bevy_game_2d::data::{ResourceLocation, ResourceType};
 use bevy_game_2d::data::sprite::TextureAtlasCodec;
 use bevy_game_2d::datagen_api::ai::{AiGraphCodec, AiGraphResource, AiStateCodec, AiStateResource};
-use bevy_game_2d::datagen_api::animation::{AnimationCodec, AnimationResource};
+use bevy_game_2d::datagen_api::animation::{AnimationCodec, AnimationResource, FrameDataCodec};
 use bevy_game_2d::datagen_api::assets::{ActionStateEnum, AllowedStatesCodec, CharacterCodec, CharacterResource, CharacterSpriteResource};
 use bevy_game_2d::datagen_api::attack::{AttackCodec, AttackResource, AttackSetCodec, AttackSetResource};
 use bevy_game_2d::datagen_api::components::{CapsuleCodec, ColliderCodec, ColliderTypeCodec};
@@ -136,21 +136,19 @@ struct AnimationData {
     loc: ResourceLocation<AnimationResource>,
     image: ResourceLocation<CharacterSpriteResource>,
     atlas: TextureAtlasCodec,
-    frames: usize,
-    interval: u64,
+    frame_data: FrameDataCodec,
 }
 impl AnimationData {
     fn new(
         loc: &str,
         width: u32,
         height: u32,
-        num_frames: u32,
-        interval: u64,
+        frame_data: FrameDataCodec,
     ) -> Self {
         let atlas = TextureAtlasData::new(
             width,
             height,
-            num_frames,
+            frame_data.num_frames(),
             ANIMATION_ROWS,
         );
 
@@ -158,8 +156,7 @@ impl AnimationData {
             loc: loc.parse().unwrap(),
             image: loc.parse().unwrap(),
             atlas: atlas.into(),
-            frames: num_frames as usize,
-            interval,
+            frame_data
         }
     }
 
@@ -176,8 +173,7 @@ impl From<AnimationData> for AnimationCodec {
             format: LATEST_ANIMATION_FORMAT,
             image: value.image,
             atlas: value.atlas,
-            frames: value.frames,
-            interval: value.interval,
+            frame_data: value.frame_data,
         }
     }
 }

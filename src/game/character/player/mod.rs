@@ -162,9 +162,8 @@ fn on_player_attack(
     );
 
     let particle_animation = ParticleAnimation::new(
-        event.facing as usize * animation.frames(),
-        animation.frames(),
-        animation.interval(),
+        event.facing as usize * animation.frame_data().num_frames(),
+        animation.frame_data().clone(),
     );
 
     commands.trigger(ParticleSpawnEvent::with_parent(

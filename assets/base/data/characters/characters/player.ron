@@ -2,10 +2,10 @@
     format: 1,
     allowed_states: Default,
     animations: {
-        Sprinting: "base:player/sprinting",
         Running: "base:player/running",
         Idle: "base:player/idle",
         Walking: "base:player/walking",
+        Sprinting: "base:player/sprinting",
     },
     attack_set: "base:player/basic_attack",
     collider: (

@@ -1,7 +1,7 @@
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::time::Duration;
-
+use crate::datagen_api::animation::FrameData;
 // TODO: Convert particles to use data driven systems
 
 pub(super) fn plugin(app: &mut App) {
@@ -90,17 +90,17 @@ fn on_particle_spawn_event(event: On<ParticleSpawnEvent>, mut commands: Commands
 #[derive(Component, Clone, Debug)]
 pub struct ParticleAnimation {
     timer: Timer,
+    frame_data: FrameData,
     start_index: usize,
-    num_frames: usize,
     current_frame: usize,
 }
 
 impl ParticleAnimation {
-    pub fn new(start_index: usize, num_frames: usize, interval: Duration) -> Self {
+    pub fn new(start_index: usize, frame_data: FrameData) -> Self {
         Self {
-            timer: Timer::new(interval, TimerMode::Repeating),
+            timer: Timer::new(frame_data.frame_duration(0).unwrap(), TimerMode::Repeating),
+            frame_data,
             start_index,
-            num_frames,
             current_frame: 0,
         }
     }
@@ -113,9 +113,10 @@ impl ParticleAnimation {
         }
 
         self.current_frame += 1;
+        self.timer.set_duration(self.frame_data.frame_duration(self.current_frame).unwrap());
     }
 
     fn has_expired(&self) -> bool {
-        self.current_frame >= self.num_frames
+        self.current_frame >= self.frame_data.num_frames()
     }
 }

@@ -7,6 +7,8 @@
         columns: 8,
         rows: 8,
     ),
-    frames: 8,
-    interval: 50,
+    frame_data: (
+        num_frames: 8,
+        interval: 50,
+    ),
 )

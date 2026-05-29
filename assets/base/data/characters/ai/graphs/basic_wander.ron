@@ -1,0 +1,7 @@
+(
+    format: 1,
+    states: [
+        "base:idle",
+        "base:move_to_target_loc",
+    ],
+)
