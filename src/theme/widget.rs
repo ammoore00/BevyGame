@@ -109,11 +109,13 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
+    let font = font_builder.with_size(40.0);
+
     button_base(
         button_assets,
         texture_atlas_layouts,
         text,
-        font_builder,
+        font,
         action,
         (Node {
             width: px(380),
@@ -138,11 +140,13 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
+    let font = font_builder.with_size(24.0);
+
     button_base(
         button_assets,
         texture_atlas_layouts,
         text,
-        font_builder,
+        font,
         action,
         Node {
             width: px(30),
@@ -154,12 +158,46 @@ where
     )
 }
 
+/// A rounded button of the specified size with text and an action defined as an [`Observer`].
+pub fn sized_button<E, B, M, I>(
+    button_assets: &ButtonAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    text: impl Into<String>,
+    width: Val,
+    height: Val,
+    font_size: f32,
+    font_builder: &FontBuilder,
+    action: I,
+) -> impl Bundle
+where
+    E: EntityEvent,
+    B: Bundle,
+    I: IntoObserverSystem<E, B, M>,
+{
+    let font = font_builder.with_size(font_size);
+
+    button_base(
+        button_assets,
+        texture_atlas_layouts,
+        text,
+        font,
+        action,
+        (Node {
+            width,
+            height,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },),
+    )
+}
+
 /// A simple button with text and an action defined as an [`Observer`]. The button's layout is provided by `button_bundle`.
 fn button_base<E, B, M, I>(
     button_assets: &ButtonAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
-    font_builder: &FontBuilder,
+    font: TextFont,
     action: I,
     button_bundle: impl Bundle,
 ) -> impl Bundle
@@ -175,8 +213,6 @@ where
 
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 8, 8, None, None);
     let layout = texture_atlas_layouts.add(layout);
-
-    let font = font_builder.with_size(40.0);
     
     (
         Name::new("Button"),
@@ -203,6 +239,10 @@ where
                         Text(text),
                         font,
                         TextColor(BUTTON_TEXT),
+                        TextLayout {
+                            justify: Justify::Center,
+                            ..default()
+                        },
                         Node {
                             justify_self: JustifySelf::Center,
                             padding: UiRect::all(Val::Px(5.0)),
