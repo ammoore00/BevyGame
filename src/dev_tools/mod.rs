@@ -1,15 +1,14 @@
 use bevy::prelude::*;
+use debug_menu::{debug_options, level_render};
 
-mod debug_options;
 mod debug_menu;
-mod level_render;
+mod editor;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(
         (
-            debug_options::plugin,
             debug_menu::plugin,
-            level_render::plugin,
+            editor::plugin,
         )
     );
 }

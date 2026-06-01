@@ -39,6 +39,20 @@ fn spawn_main_menu(
             ))
             .id();
         commands.entity(ui_root).add_child(play_button);
+        
+        #[cfg(feature = "dev")]
+        {
+            let editor_button = commands
+                .spawn(widget::button(
+                    &button_assets,
+                    &mut texture_atlas_layouts,
+                    "Editor",
+                    &font_builder,
+                    enter_loading_or_editor_screen,
+                ))
+                .id();
+            commands.entity(ui_root).add_child(editor_button);
+        }
 
         let settings_button = commands
             .spawn(widget::button(
@@ -91,6 +105,20 @@ fn spawn_main_menu(
             .id();
         commands.entity(ui_root).add_child(play_button);
 
+        #[cfg(feature = "dev")]
+        {
+            let editor_button = commands
+                .spawn(widget::button(
+                    &button_assets,
+                    &mut texture_atlas_layouts,
+                    "Editor",
+                    &font_builder,
+                    crate::menus::main_menu::enter_loading_or_editor_screen,
+                ))
+                .id();
+            commands.entity(ui_root).add_child(editor_button);
+        }
+
         let settings_button = commands
             .spawn(widget::button(
                 "Settings",
@@ -126,7 +154,19 @@ fn enter_loading_or_gameplay_screen(
     if resource_handles.is_all_done() {
         next_screen.set(Screen::Gameplay);
     } else {
-        next_screen.set(Screen::Loading);
+        next_screen.set(Screen::Loading(&Screen::Gameplay));
+    }
+}
+
+fn enter_loading_or_editor_screen(
+    _: On<Pointer<Click>>,
+    resource_handles: Res<ResourceHandles>,
+    mut next_screen: ResMut<NextState<Screen>>,
+) {
+    if resource_handles.is_all_done() {
+        next_screen.set(Screen::Editor);
+    } else {
+        next_screen.set(Screen::Loading(&Screen::Editor));
     }
 }
 

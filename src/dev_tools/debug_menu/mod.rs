@@ -1,4 +1,3 @@
-use crate::dev_tools::debug_options::{spawn_debug, DebugOptionState};
 use bevy::app::Update;
 use bevy::color::Color;
 use bevy::ecs::relationship::Relationship;
@@ -7,8 +6,17 @@ use bevy::prelude::*;
 use getset::CopyGetters;
 use std::ops::Not;
 use tracing::info;
+use crate::dev_tools::debug_menu::debug_options::{spawn_debug, DebugOptionState};
+
+pub mod debug_options;
+pub mod level_render;
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((
+        debug_options::plugin,
+        level_render::plugin,
+    ));
+
     app.init_resource::<DebugMenu>();
 
     app.add_systems(

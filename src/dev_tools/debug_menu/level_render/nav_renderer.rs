@@ -1,7 +1,7 @@
-use crate::dev_tools::debug_options::{RenderNPCPathsState, RenderNavMapEdgesState, RenderNavMapNodesState};
+use crate::dev_tools::debug_menu::debug_options::{RenderNPCPathsState, RenderNavMapEdgesState, RenderNavMapNodesState};
 use bevy::prelude::*;
 use crate::datagen_api::ai::pathfinding::{Pathfinder, PathfinderState};
-use crate::dev_tools::level_render::{draw_projected_camera_facing_circle, draw_screen_line, project_point};
+use crate::dev_tools::debug_menu::level_render::{draw_projected_camera_facing_circle, draw_screen_line, project_point};
 use crate::game::level::grid::coords::WorldPosition;
 use crate::game::level::grid::nav::TileNavMap;
 use crate::Scale;
@@ -39,7 +39,7 @@ const NAV_EDGE_ARROW_WIDTH: f32 = 6.0;
 
 const NAV_DEBUG_Y_OFFSET: f32 = -0.45;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::dev_tools) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (

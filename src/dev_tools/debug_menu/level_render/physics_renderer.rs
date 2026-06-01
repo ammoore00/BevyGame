@@ -1,9 +1,9 @@
 use crate::datagen_api::components::{Collider, ColliderType, PhysicsData};
-use crate::dev_tools::debug_options::{RenderPhysicsEntitiesState, RenderPhysicsTilesState};
+use crate::dev_tools::debug_menu::debug_options::{RenderPhysicsEntitiesState, RenderPhysicsTilesState};
 use crate::game::level::grid::coords::{TilePosition, WorldPosition};
 use crate::Scale;
 use bevy::prelude::*;
-use crate::dev_tools::level_render::{draw_capsule, draw_convex_hull, draw_cuboid};
+use crate::dev_tools::debug_menu::level_render::{draw_capsule, draw_convex_hull, draw_cuboid};
 
 const KINEMATIC_COLLIDER_COLOR: Color = Color::srgb(
     0.90,
@@ -23,7 +23,7 @@ const CONVEX_HULL_COLOR: Color = Color::srgb(
 
 const COLLIDER_LINE_THICKNESS: f32 = 2.0;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::dev_tools) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         render_physics_colliders

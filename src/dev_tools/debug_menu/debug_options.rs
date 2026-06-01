@@ -71,7 +71,7 @@ macro_rules! debug_setting {
     };
 }
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::dev_tools) fn plugin(app: &mut App) {
     app.init_state::<LoggingScreenStateTransitionsState>();
 
     app.init_state::<RenderNavMapNodesState>();

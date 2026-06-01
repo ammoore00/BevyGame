@@ -24,6 +24,8 @@ pub enum Screen {
     #[default]
     Splash,
     Title,
-    Loading,
+    Loading(&'static Screen),
     Gameplay,
+    #[cfg(feature = "dev")]
+    Editor,
 }
