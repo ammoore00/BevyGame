@@ -2,7 +2,7 @@
 
 use crate::gamepad::gamepad_just_pressed;
 use crate::menus::font::FontBuilder;
-use crate::theme::widget::ButtonAssets;
+use crate::theme::widget::UiAssets;
 use crate::{menus::Menu, screens::Screen, theme::widget};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::InputFocus;
@@ -24,7 +24,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_pause_menu(
-    button_assets: Res<ButtonAssets>,
+    button_assets: Res<UiAssets>,
     font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,

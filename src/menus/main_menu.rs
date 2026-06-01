@@ -12,7 +12,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_main_menu(
-    button_assets: Res<widget::ButtonAssets>,
+    button_assets: Res<widget::UiAssets>,
     font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,

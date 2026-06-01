@@ -1,8 +1,9 @@
 use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::widget;
-use crate::theme::widget::ButtonAssets;
+use crate::theme::widget::UiAssets;
 use bevy::prelude::*;
+use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Editor), spawn_editor_window);
@@ -12,7 +13,7 @@ pub(super) fn plugin(app: &mut App) {
 struct EditorUiRoot;
 
 fn spawn_editor_window(
-    button_assets: Res<ButtonAssets>,
+    button_assets: Res<UiAssets>,
     font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands
@@ -21,7 +22,6 @@ fn spawn_editor_window(
         .spawn((
             EditorUiRoot,
             widget::ui_root("Editor"),
-            GlobalZIndex(1),
             DespawnOnExit(Screen::Editor),
         )).id();
 
@@ -32,72 +32,159 @@ fn spawn_editor_window(
     commands.entity(editor).add_child(editor_content);
 }
 
-#[derive(Component, Debug, Clone)]
-struct MenuBarRoot;
+mod menu_bar {
+    use super::*;
 
-const MENU_BAR_HEIGHT: usize = 50;
+    #[derive(Component, Debug, Clone)]
+    struct MenuBarRoot;
 
-fn spawn_menu_bar(
-    button_assets: &ButtonAssets,
-    font_builder: &FontBuilder,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
-    mut commands: Commands
-) -> Entity {
-    let menu_bar = commands.spawn((
-        MenuBarRoot,
-        Node {
-            flex_direction: FlexDirection::Row,
+    #[derive(Component, Debug, Clone)]
+    struct MenuBarButtonsRoot;
 
-            position_type: PositionType::Absolute,
-            top: px(0),
-            left: px(0),
-            right: px(0),
-            height: px(MENU_BAR_HEIGHT),
 
-            ..Default::default()
-        },
-    )).id();
+    pub(super) const MENU_BUTTON_PER_CHAR_WIDTH: usize = 15;
+    pub(super) const MENU_BUTTON_PADDING: usize = 10;
+    pub(super) const MENU_BUTTON_HEIGHT: usize = 100;
 
-    let file_button = commands.spawn(widget::sized_button(
-        button_assets,
-        texture_atlas_layouts,
-        "File",
-        px(100),
-        percent(100),
-        24.,
-        font_builder,
-        file_button_clicked,
-    )).id();
-    commands.entity(menu_bar).add_child(file_button);
+    pub(super) const MENU_PADDING_VERTICAL: usize = 14;
+    pub(super) const MENU_PADDING_HORIZONTAL: usize = 22;
 
-    let edit_button = commands.spawn(widget::sized_button(
-        button_assets,
-        texture_atlas_layouts,
-        "Edit",
-        px(100),
-        percent(100),
-        24.,
-        font_builder,
-        edit_button_clicked,
-    )).id();
-    commands.entity(menu_bar).add_child(edit_button);
+    pub(super) const MENU_BAR_BUTTON_HEIGHT: usize = 50;
+    pub(super) const MENU_BAR_TOTAL_HEIGHT: usize = MENU_BAR_BUTTON_HEIGHT + MENU_PADDING_VERTICAL * 2;
 
-    menu_bar
+    pub(super) fn spawn_menu_bar(
+        ui_assets: &UiAssets,
+        font_builder: &FontBuilder,
+        texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+        mut commands: Commands
+    ) -> Entity {
+        let menu_bar = commands.spawn((
+            MenuBarRoot,
+            widget::ui_background(ui_assets, texture_atlas_layouts),
+            Node {
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+
+                position_type: PositionType::Absolute,
+                top: px(0),
+                left: px(0),
+                right: px(0),
+                height: px(MENU_BAR_TOTAL_HEIGHT),
+
+                padding: UiRect::px(
+                    MENU_PADDING_HORIZONTAL as f32,
+                    MENU_PADDING_HORIZONTAL as f32,
+                    MENU_PADDING_VERTICAL as f32,
+                    MENU_PADDING_VERTICAL as f32,
+                ),
+
+                ..Default::default()
+            },
+        )).id();
+
+        let menu_bar_buttons = commands.spawn((
+            MenuBarButtonsRoot,
+            Node {
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+
+                width: percent(100),
+                height: percent(100),
+
+                ..Default::default()
+            },
+        )).id();
+        commands.entity(menu_bar).add_child(menu_bar_buttons);
+
+        let file_button = commands.spawn(widget::sized_button(
+            ui_assets,
+            texture_atlas_layouts,
+            "File",
+            px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
+            percent(MENU_BUTTON_HEIGHT),
+            24.,
+            font_builder,
+            file_button_clicked,
+        )).id();
+        commands.entity(menu_bar_buttons).add_child(file_button);
+
+        let edit_button = commands.spawn(widget::sized_button(
+            ui_assets,
+            texture_atlas_layouts,
+            "Edit",
+            px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
+            percent(MENU_BUTTON_HEIGHT),
+            24.,
+            font_builder,
+            edit_button_clicked,
+        )).id();
+        commands.entity(menu_bar_buttons).add_child(edit_button);
+
+        let view_button = commands.spawn(widget::sized_button(
+            ui_assets,
+            texture_atlas_layouts,
+            "View",
+            px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
+            percent(MENU_BUTTON_HEIGHT),
+            24.,
+            font_builder,
+            view_button_clicked,
+        )).id();
+        commands.entity(menu_bar_buttons).add_child(view_button);
+
+        let tools_button = commands.spawn(widget::sized_button(
+            ui_assets,
+            texture_atlas_layouts,
+            "Tools",
+            px(MENU_BUTTON_PER_CHAR_WIDTH * 5 + MENU_BUTTON_PADDING),
+            percent(MENU_BUTTON_HEIGHT),
+            24.,
+            font_builder,
+            tools_button_clicked,
+        )).id();
+        commands.entity(menu_bar_buttons).add_child(tools_button);
+
+        let window_button = commands.spawn(widget::sized_button(
+            ui_assets,
+            texture_atlas_layouts,
+            "Window",
+            px(MENU_BUTTON_PER_CHAR_WIDTH * 6 + MENU_BUTTON_PADDING),
+            percent(MENU_BUTTON_HEIGHT),
+            24.,
+            font_builder,
+            window_button_clicked,
+        )).id();
+        commands.entity(menu_bar_buttons).add_child(window_button);
+
+        menu_bar
+    }
+
+    fn file_button_clicked(
+        _: On<Pointer<Click>>,
+    ) {}
+
+    fn edit_button_clicked(
+        _: On<Pointer<Click>>,
+    ) {}
+
+    fn view_button_clicked(
+        _: On<Pointer<Click>>,
+    ) {}
+
+    fn tools_button_clicked(
+        _: On<Pointer<Click>>,
+    ) {}
+
+    fn window_button_clicked(
+        _: On<Pointer<Click>>,
+    ) {}
 }
-
-fn file_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
-
-fn edit_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
 
 #[derive(Component, Debug, Clone)]
 struct EditorContentRoot;
 
 fn spawn_editor_content(
-    button_assets: &ButtonAssets,
+    button_assets: &UiAssets,
     font_builder: &FontBuilder,
     mut texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     mut commands: Commands
@@ -106,7 +193,7 @@ fn spawn_editor_content(
         EditorContentRoot,
         Node {
             position_type: PositionType::Absolute,
-            top: px(MENU_BAR_HEIGHT),
+            top: px(MENU_BAR_TOTAL_HEIGHT),
             left: px(0),
             right: px(0),
             bottom: px(0),

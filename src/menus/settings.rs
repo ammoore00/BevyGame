@@ -5,7 +5,7 @@
 use crate::gamepad::gamepad_just_pressed;
 use crate::menus::font::FontBuilder;
 use crate::theme::widget;
-use crate::theme::widget::ButtonAssets;
+use crate::theme::widget::UiAssets;
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::InputFocus;
@@ -27,7 +27,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_settings_menu(
-    button_assets: Res<ButtonAssets>,
+    button_assets: Res<UiAssets>,
     font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     directional_nav_map: ResMut<DirectionalNavigationMap>,
@@ -68,7 +68,7 @@ fn spawn_settings_menu(
 }
 
 fn settings_grid(
-    button_assets: &ButtonAssets,
+    button_assets: &UiAssets,
     font_builder: &FontBuilder,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     directional_nav_map: ResMut<DirectionalNavigationMap>,
@@ -108,7 +108,7 @@ fn settings_grid(
 }
 
 fn global_volume_widget(
-    button_assets: &ButtonAssets,
+    button_assets: &UiAssets,
     font_builder: &FontBuilder,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     _directional_nav_map: ResMut<DirectionalNavigationMap>,

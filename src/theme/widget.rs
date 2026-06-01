@@ -11,7 +11,7 @@ use bevy::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.load_resource::<ButtonAssets>();
+    app.load_resource::<UiAssets>();
 
     Assets::insert(
         &mut app.world_mut().resource_mut(),
@@ -98,7 +98,7 @@ pub fn label(
 
 /// A large rounded button with text and an action defined as an [`Observer`].
 pub fn button<E, B, M, I>(
-    button_assets: &ButtonAssets,
+    button_assets: &UiAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
     font_builder: &FontBuilder,
@@ -129,7 +129,7 @@ where
 
 /// A small square button with text and an action defined as an [`Observer`].
 pub fn button_small<E, B, M, I>(
-    button_assets: &ButtonAssets,
+    ui_assets: &UiAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
     font_builder: &FontBuilder,
@@ -143,7 +143,7 @@ where
     let font = font_builder.with_size(24.0);
 
     button_base(
-        button_assets,
+        ui_assets,
         texture_atlas_layouts,
         text,
         font,
@@ -160,7 +160,7 @@ where
 
 /// A rounded button of the specified size with text and an action defined as an [`Observer`].
 pub fn sized_button<E, B, M, I>(
-    button_assets: &ButtonAssets,
+    ui_assets: &UiAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
     width: Val,
@@ -177,7 +177,7 @@ where
     let font = font_builder.with_size(font_size);
 
     button_base(
-        button_assets,
+        ui_assets,
         texture_atlas_layouts,
         text,
         font,
@@ -194,7 +194,7 @@ where
 
 /// A simple button with text and an action defined as an [`Observer`]. The button's layout is provided by `button_bundle`.
 fn button_base<E, B, M, I>(
-    button_assets: &ButtonAssets,
+    ui_assets: &UiAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
     font: TextFont,
@@ -207,7 +207,7 @@ where
     I: IntoObserverSystem<E, B, M>,
 {
     let text = text.into();
-    let image = button_assets.button_sprite.clone();
+    let image = ui_assets.buttons.clone();
 
     let action = IntoObserverSystem::into_system(action);
 
@@ -265,7 +265,7 @@ struct ButtonSlicer(TextureSlicer);
 impl Default for ButtonSlicer {
     fn default() -> Self {
         Self(TextureSlicer {
-            border: BorderRect::all(4.0), // Adjust based on your atlas design
+            border: BorderRect::all(4.0),
             center_scale_mode: SliceScaleMode::Stretch,
             sides_scale_mode: SliceScaleMode::Stretch,
             max_corner_scale: 16.0,
@@ -273,17 +273,56 @@ impl Default for ButtonSlicer {
     }
 }
 
-#[derive(Resource, Asset, Clone, Reflect)]
-#[reflect(Resource)]
-pub struct ButtonAssets {
-    pub button_sprite: Handle<Image>,
+pub fn ui_background(
+    ui_assets: &UiAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+) -> impl Bundle {
+    let image = ui_assets.background.clone();
+
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None);
+    let layout = texture_atlas_layouts.add(layout);
+
+    (
+        ImageNode {
+            image,
+            image_mode: NodeImageMode::Sliced(BackgroundSlicer::default().0),
+            texture_atlas: Some(TextureAtlas { layout, index: 0 }),
+            ..default()
+        },
+    )
 }
 
-impl FromWorld for ButtonAssets {
+#[derive(Component)]
+struct BackgroundSlicer(TextureSlicer);
+
+impl Default for BackgroundSlicer {
+    fn default() -> Self {
+        Self(TextureSlicer {
+            border: BorderRect::all(8.0),
+            center_scale_mode: SliceScaleMode::Tile {
+                stretch_value: 1.0,
+            },
+            sides_scale_mode: SliceScaleMode::Tile {
+                stretch_value: 1.0,
+            },
+            max_corner_scale: 16.0,
+        })
+    }
+}
+
+#[derive(Resource, Asset, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct UiAssets {
+    pub buttons: Handle<Image>,
+    pub background: Handle<Image>,
+}
+
+impl FromWorld for UiAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            button_sprite: assets.load("base/images/ui/buttons.png"),
+            buttons: assets.load("base/images/ui/buttons.png"),
+            background: assets.load("base/images/ui/background.png"),
         }
     }
 }
