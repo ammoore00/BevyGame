@@ -273,20 +273,68 @@ impl Default for ButtonSlicer {
     }
 }
 
+pub enum UiBackgroundStyle {
+    Main,
+    Panel,
+}
+impl UiBackgroundStyle {
+    fn make_slicer(&self) -> TextureSlicer {
+        match self {
+            UiBackgroundStyle::Main => TextureSlicer {
+                border: BorderRect::all(8.0),
+                center_scale_mode: SliceScaleMode::Tile {
+                    stretch_value: 1.0,
+                },
+                sides_scale_mode: SliceScaleMode::Tile {
+                    stretch_value: 1.0,
+                },
+                max_corner_scale: 2.0,
+            },
+            UiBackgroundStyle::Panel => TextureSlicer {
+                border: BorderRect::all(4.0),
+                center_scale_mode: SliceScaleMode::Tile {
+                    stretch_value: 1.0,
+                },
+                sides_scale_mode: SliceScaleMode::Tile {
+                    stretch_value: 1.0,
+                },
+                max_corner_scale: 2.0,
+            },
+        }
+    }
+
+    fn make_layout(&self) -> TextureAtlasLayout {
+        match self {
+            UiBackgroundStyle::Main => TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None),
+            UiBackgroundStyle::Panel => TextureAtlasLayout::from_grid(UVec2::splat(24), 4, 4, Some(UVec2::splat(8)), Some(UVec2::splat(4))),
+        }
+    }
+
+    fn get_index(&self) -> usize {
+        match self {
+            UiBackgroundStyle::Main => 0,
+            UiBackgroundStyle::Panel => 1,
+        }
+    }
+}
+
 pub fn ui_background(
     ui_assets: &UiAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    style: UiBackgroundStyle,
 ) -> impl Bundle {
     let image = ui_assets.background.clone();
 
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None);
+    let layout = style.make_layout();
     let layout = texture_atlas_layouts.add(layout);
+
+    let index = style.get_index();
 
     (
         ImageNode {
             image,
-            image_mode: NodeImageMode::Sliced(BackgroundSlicer::default().0),
-            texture_atlas: Some(TextureAtlas { layout, index: 0 }),
+            image_mode: NodeImageMode::Sliced(style.make_slicer()),
+            texture_atlas: Some(TextureAtlas { layout, index }),
             ..default()
         },
     )
@@ -305,7 +353,7 @@ impl Default for BackgroundSlicer {
             sides_scale_mode: SliceScaleMode::Tile {
                 stretch_value: 1.0,
             },
-            max_corner_scale: 16.0,
+            max_corner_scale: 2.0,
         })
     }
 }
