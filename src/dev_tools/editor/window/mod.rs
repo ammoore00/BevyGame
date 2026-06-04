@@ -3,9 +3,11 @@ use crate::screens::Screen;
 use crate::theme::widget;
 use crate::theme::widget::{UiAssets, UiBackgroundStyle};
 use bevy::prelude::*;
+use crate::dev_tools::editor::window::browser::spawn_file_browser;
 use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
 
 mod menu_bar;
+mod browser;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Editor), spawn_editor_window);
@@ -34,19 +36,19 @@ fn spawn_editor_window(
     commands.entity(editor).add_child(menu_bar);
 }
 
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone, Default, Copy)]
 struct EditorContentRoot;
 
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone, Default, Copy)]
 struct EditorLeftPanel;
 
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone, Default, Copy)]
 struct EditorCenterPanel;
 
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone, Default, Copy)]
 struct EditorRightPanel;
 
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone, Default, Copy)]
 struct EditorBottomPanel;
 
 const CENTER_PANEL_HEIGHT: usize = 70;
@@ -56,12 +58,17 @@ const LEFT_PANEL_WIDTH: usize = 25;
 const RIGHT_PANEL_WIDTH: usize = 25;
 const CENTER_PANEL_WIDTH: usize = 100 - LEFT_PANEL_WIDTH - RIGHT_PANEL_WIDTH;
 
+const PANEL_PADDING: usize = 14;
+
 fn spawn_editor_content(
     ui_assets: &UiAssets,
     _font_builder: &FontBuilder,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     mut commands: Commands,
 ) -> Entity {
+    
+    //------ Spawn layout ------//
+    
     let editor_content = commands.spawn((
         EditorContentRoot,
         Node {
@@ -92,55 +99,6 @@ fn spawn_editor_content(
     commands.entity(editor_content).add_child(center_columns);
 
     const BACKGROUND_BLEED: f32 = 10.0;
-
-    fn spawn_panel<C: Component + Default>(
-        width: usize,
-        parent: Entity,
-        commands: &mut Commands,
-    ) -> Entity {
-        let panel = commands
-            .spawn((
-                C::default(),
-                Node {
-                    position_type: PositionType::Relative,
-
-                    width: percent(width),
-                    height: percent(100),
-
-                    ..Default::default()
-                },
-                Pickable::IGNORE,
-            ))
-            .id();
-
-        commands.entity(parent).add_child(panel);
-        panel
-    }
-
-    fn spawn_panel_background(
-        parent: Entity,
-        ui_assets: &UiAssets,
-        texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
-        style: UiBackgroundStyle,
-        top_bleed: f32,
-        bottom_bleed: f32,
-        commands: &mut Commands,
-    ) {
-        let background = commands.spawn((
-            widget::ui_background(ui_assets, texture_atlas_layouts, style),
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(0),
-                right: px(0),
-                top: px(-top_bleed),
-                bottom: px(-bottom_bleed),
-                ..Default::default()
-            },
-            Pickable::IGNORE,
-        )).id();
-
-        commands.entity(parent).add_child(background);
-    }
 
     let left_panel = spawn_panel::<EditorLeftPanel>(
         LEFT_PANEL_WIDTH,
@@ -190,6 +148,66 @@ fn spawn_editor_content(
         Pickable::IGNORE,
     )).id();
     commands.entity(editor_content).add_child(bottom_panel);
+    
+    //------ Spawn Content ------//
+    
+    let file_browser = spawn_file_browser(
+        ui_assets,
+        texture_atlas_layouts,
+        commands.reborrow()
+    );
+    commands.entity(left_panel).add_child(file_browser);
 
     editor_content
+}
+
+fn spawn_panel<C: Component + Default>(
+    width: usize,
+    parent: Entity,
+    commands: &mut Commands,
+) -> Entity {
+    let panel = commands
+        .spawn((
+            C::default(),
+            Node {
+                position_type: PositionType::Relative,
+
+                width: percent(width),
+                height: percent(100),
+                
+                padding: UiRect::all(px(PANEL_PADDING)),
+                
+                ..Default::default()
+            },
+            Pickable::IGNORE,
+        ))
+        .id();
+
+    commands.entity(parent).add_child(panel);
+    panel
+}
+
+fn spawn_panel_background(
+    parent: Entity,
+    ui_assets: &UiAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    style: UiBackgroundStyle,
+    top_bleed: f32,
+    bottom_bleed: f32,
+    commands: &mut Commands,
+) {
+    let background = commands.spawn((
+        widget::ui_background(ui_assets, texture_atlas_layouts, style),
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(0),
+            right: px(0),
+            top: px(-top_bleed),
+            bottom: px(-bottom_bleed),
+            ..Default::default()
+        },
+        Pickable::IGNORE,
+    )).id();
+
+    commands.entity(parent).add_child(background);
 }

@@ -111,7 +111,7 @@ where
 {
     let font = font_builder.with_size(40.0);
 
-    button_base(
+    button_with_text(
         button_assets,
         texture_atlas_layouts,
         text,
@@ -124,6 +124,7 @@ where
             justify_content: JustifyContent::Center,
             ..default()
         },),
+        ButtonStyle::Default,
     )
 }
 
@@ -142,7 +143,7 @@ where
 {
     let font = font_builder.with_size(24.0);
 
-    button_base(
+    button_with_text(
         ui_assets,
         texture_atlas_layouts,
         text,
@@ -155,6 +156,7 @@ where
             justify_content: JustifyContent::Center,
             ..default()
         },
+        ButtonStyle::Default,
     )
 }
 
@@ -176,30 +178,64 @@ where
 {
     let font = font_builder.with_size(font_size);
 
-    button_base(
+    button_with_text(
         ui_assets,
         texture_atlas_layouts,
         text,
         font,
         action,
-        (Node {
-            width,
-            height,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            ..default()
-        },),
+        (
+            Node {
+                width,
+                height,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+        ),
+        ButtonStyle::Default,
     )
 }
 
-/// A simple button with text and an action defined as an [`Observer`]. The button's layout is provided by `button_bundle`.
-fn button_base<E, B, M, I>(
+pub fn styled_button<E, B, M, I>(
+    ui_assets: &UiAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    scale: usize,
+    action: I,
+    style: ButtonStyle,
+) -> impl Bundle
+where
+    E: EntityEvent,
+    B: Bundle,
+    I: IntoObserverSystem<E, B, M>,
+{
+    const BASE_SCALE: usize = 16;
+    let size = scale * BASE_SCALE;
+
+    button_base(
+        ui_assets,
+        texture_atlas_layouts,
+        action,
+        Node {
+            width: px(size),
+            height: px(size),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        (),
+        style,
+    )
+}
+
+fn button_with_text<E, B, M, I>(
     ui_assets: &UiAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
     font: TextFont,
     action: I,
     button_bundle: impl Bundle,
+    style: ButtonStyle,
 ) -> impl Bundle
 where
     E: EntityEvent,
@@ -207,13 +243,52 @@ where
     I: IntoObserverSystem<E, B, M>,
 {
     let text = text.into();
+
+    let button_children = (
+        Name::new("Button Text"),
+        Text(text),
+        font,
+        TextColor(BUTTON_TEXT),
+        TextLayout {
+            justify: Justify::Center,
+            ..default()
+        },
+    );
+
+    button_base(
+        ui_assets,
+        texture_atlas_layouts,
+        action,
+        button_bundle,
+        button_children,
+        style
+    )
+}
+
+fn button_base<E, B, M, I>(
+    ui_assets: &UiAssets,
+    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    action: I,
+    button_bundle: impl Bundle,
+    button_children: impl Bundle,
+    style: ButtonStyle,
+) -> impl Bundle
+where
+    E: EntityEvent,
+    B: Bundle,
+    I: IntoObserverSystem<E, B, M>,
+{
     let image = ui_assets.buttons.clone();
 
     let action = IntoObserverSystem::into_system(action);
 
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 8, 8, None, None);
+    let layout = style.make_layout();
     let layout = texture_atlas_layouts.add(layout);
-    
+
+    let texture_slicer = style.make_slicer();
+
+    let interaction_palette = style.make_interaction_palette();
+
     (
         Name::new("Button"),
         ButtonRoot,
@@ -225,24 +300,13 @@ where
                     Button,
                     ImageNode {
                         image,
-                        image_mode: NodeImageMode::Sliced(ButtonSlicer::default().0),
+                        image_mode: NodeImageMode::Sliced(texture_slicer),
                         texture_atlas: Some(TextureAtlas { layout, index: 0 }),
                         ..default()
                     },
-                    InteractionPalette {
-                        none: 0,
-                        hovered: 1,
-                        pressed: 2,
-                    },
+                    interaction_palette,
                     children![(
-                        Name::new("Button Text"),
-                        Text(text),
-                        font,
-                        TextColor(BUTTON_TEXT),
-                        TextLayout {
-                            justify: Justify::Center,
-                            ..default()
-                        },
+                        button_children,
                         Node {
                             justify_self: JustifySelf::Center,
                             padding: UiRect::all(Val::Px(5.0)),
@@ -259,17 +323,47 @@ where
     )
 }
 
-#[derive(Component)]
-struct ButtonSlicer(TextureSlicer);
-
-impl Default for ButtonSlicer {
-    fn default() -> Self {
-        Self(TextureSlicer {
+pub enum ButtonStyle {
+    Default,
+    ArrowRight,
+    //ArrowLeft,
+    //ArrowUp,
+    ArrowDown,
+    //Plus,
+    //Minus,
+}
+impl ButtonStyle {
+    fn make_slicer(&self) -> TextureSlicer {
+        TextureSlicer {
             border: BorderRect::all(4.0),
             center_scale_mode: SliceScaleMode::Stretch,
             sides_scale_mode: SliceScaleMode::Stretch,
             max_corner_scale: 16.0,
-        })
+        }
+    }
+
+    fn make_layout(&self) -> TextureAtlasLayout {
+        TextureAtlasLayout::from_grid(UVec2::splat(16), 8, 8, None, None)
+    }
+
+    fn make_interaction_palette(&self) -> InteractionPalette {
+        match self {
+            ButtonStyle::Default => InteractionPalette {
+                none: 0,
+                hovered: 1,
+                pressed: 2,
+            },
+            ButtonStyle::ArrowRight => InteractionPalette {
+                none: 8,
+                hovered: 9,
+                pressed: 10,
+            },
+            ButtonStyle::ArrowDown => InteractionPalette {
+                none: 32,
+                hovered: 33,
+                pressed: 34,
+            },
+        }
     }
 }
 
@@ -338,24 +432,6 @@ pub fn ui_background(
             ..default()
         },
     )
-}
-
-#[derive(Component)]
-struct BackgroundSlicer(TextureSlicer);
-
-impl Default for BackgroundSlicer {
-    fn default() -> Self {
-        Self(TextureSlicer {
-            border: BorderRect::all(8.0),
-            center_scale_mode: SliceScaleMode::Tile {
-                stretch_value: 1.0,
-            },
-            sides_scale_mode: SliceScaleMode::Tile {
-                stretch_value: 1.0,
-            },
-            max_corner_scale: 2.0,
-        })
-    }
 }
 
 #[derive(Resource, Asset, Clone, Reflect)]

@@ -3,10 +3,10 @@ use crate::menus::font::FontBuilder;
 use crate::theme::widget;
 use crate::theme::widget::{UiAssets, UiBackgroundStyle};
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Default, Copy)]
 struct MenuBarRoot;
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Default, Copy)]
 struct MenuBarButtonsRoot;
 
 
