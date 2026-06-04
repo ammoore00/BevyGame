@@ -10,6 +10,10 @@ mod menu_bar;
 mod browser;
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((
+        browser::plugin,
+    ));
+    
     app.add_systems(OnEnter(Screen::Editor), spawn_editor_window);
 }
 

@@ -17,7 +17,7 @@ pub(super) const MENU_BUTTON_HEIGHT: usize = 100;
 pub(super) const MENU_PADDING_VERTICAL: usize = 14;
 pub(super) const MENU_PADDING_HORIZONTAL: usize = 22;
 
-pub(super) const MENU_BAR_BUTTON_HEIGHT: usize = 50;
+pub(super) const MENU_BAR_BUTTON_HEIGHT: usize = 48;
 pub(super) const MENU_BAR_TOTAL_HEIGHT: usize = MENU_BAR_BUTTON_HEIGHT + MENU_PADDING_VERTICAL * 2;
 
 pub(super) fn spawn_menu_bar(
