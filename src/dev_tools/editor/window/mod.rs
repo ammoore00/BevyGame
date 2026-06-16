@@ -66,7 +66,7 @@ const PANEL_PADDING: usize = 14;
 
 fn spawn_editor_content(
     ui_assets: &UiAssets,
-    _font_builder: &FontBuilder,
+    font_builder: &FontBuilder,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     mut commands: Commands,
 ) -> Entity {
@@ -157,6 +157,7 @@ fn spawn_editor_content(
     
     let file_browser = spawn_file_browser(
         ui_assets,
+        font_builder,
         texture_atlas_layouts,
         commands.reborrow()
     );

@@ -91,6 +91,10 @@ pub fn header(
         Text(text.into()),
         font_builder.with_size(40.0),
         TextColor(HEADER_TEXT),
+        TextLayout {
+            justify: Justify::Center,
+            ..default()
+        },
     )
 }
 
@@ -104,6 +108,29 @@ pub fn label(
         Text(text.into()),
         font_builder.with_size(24.0),
         TextColor(LABEL_TEXT),
+        TextLayout {
+            justify: Justify::Center,
+            ..default()
+        },
+    )
+}
+
+/// Text with the specified font size and color
+pub fn text(
+    text: impl Into<String>,
+    font_builder: &FontBuilder,
+    font_size: f32,
+    color: Color,
+) -> impl Bundle {
+    (
+        Name::new("Label"),
+        Text(text.into()),
+        font_builder.with_size(font_size),
+        TextColor(color),
+        TextLayout {
+            justify: Justify::Center,
+            ..default()
+        },
     )
 }
 
@@ -400,7 +427,10 @@ fn update_button_style(
             &mut ImageNode,
             &mut InteractionPalette,
         ),
-        (With<ButtonInner>, Changed<ButtonStyle>),
+        (
+            With<ButtonInner>,
+            Changed<ButtonStyle>
+        ),
     >,
 ) {
     for (style, interaction, mut image_node, mut interaction_palette) in &mut button_query {

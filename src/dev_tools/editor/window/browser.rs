@@ -14,6 +14,7 @@ use crate::datagen_api::assets::CharacterResource;
 use crate::datagen_api::attack::AttackResource;
 use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
+use crate::theme::widget;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -44,6 +45,7 @@ struct FileBrowser;
 
 pub(super) fn spawn_file_browser(
     ui_assets: &UiAssets,
+    font_builder: &FontBuilder,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     mut commands: Commands,
 ) -> Entity {
@@ -64,7 +66,8 @@ pub(super) fn spawn_file_browser(
         ui_assets,
         texture_atlas_layouts,
         "Characters",
-        TextFont::from_font_size(24.),
+        font_builder,
+        24.,
         commands.reborrow(),
     );
     commands.entity(characters).insert(CharacterMenu);
@@ -74,7 +77,8 @@ pub(super) fn spawn_file_browser(
         ui_assets,
         texture_atlas_layouts,
         "Animations",
-        TextFont::from_font_size(24.),
+        font_builder,
+        24.,
         commands.reborrow(),
     );
     commands.entity(animations).insert(AnimationMenu);
@@ -84,7 +88,8 @@ pub(super) fn spawn_file_browser(
         ui_assets,
         texture_atlas_layouts,
         "Attacks",
-        TextFont::from_font_size(24.),
+        font_builder,
+        24.,
         commands.reborrow(),
     );
     commands.entity(attacks).insert(AttackMenu);
@@ -101,7 +106,8 @@ fn collapsible_menu(
     ui_assets: &UiAssets,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     text: impl Into<String>,
-    font: TextFont,
+    font_builder: &FontBuilder,
+    font_size: f32,
     mut commands: Commands,
 ) -> Entity {
     let menu = commands.spawn((
@@ -172,14 +178,11 @@ fn collapsible_menu(
     )).id();
     commands.entity(menu_inner).add_child(button);
 
-    let text = commands.spawn((
-        Text(text.into()),
-        font,
-        TextLayout {
-            justify: Justify::Center,
-            ..default()
-        },
-        TextColor(HEADER_TEXT),
+    let text = commands.spawn(widget::text(
+        text,
+        font_builder,
+        font_size,
+        HEADER_TEXT,
     )).id();
     commands.entity(menu_inner).add_child(text);
 
