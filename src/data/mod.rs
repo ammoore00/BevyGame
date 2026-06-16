@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use getset::Getters;
 use regex::Regex;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -85,11 +85,18 @@ impl<T: ResourceType> ResourceLocation<T> {
         })
     }
 
+    /// Returns the full path to the associated file on disk, relative to the base assets folder
     pub fn as_path(&self) -> PathBuf {
         Path::new(&self.namespace.0)
             .join(T::ROOT_DIR)
             .join(&self.id.0)
             .with_extension(T::FILE_TYPE.ext())
+    }
+
+    /// Returns the resource location as a path, without the root folder or file extension
+    pub fn as_local_path(&self) -> PathBuf {
+        Path::new(&self.namespace.0)
+            .join(&self.id.0)
     }
     
     pub fn get(&self, registry: &ResourceRegistry<T>) -> Option<Handle<T::AssetType>> {
@@ -145,7 +152,7 @@ impl<T: ResourceType> FromStr for ResourceLocation<T> {
     }
 }
 
-pub trait ResourceType: Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static {
+pub trait ResourceType: Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static {
     type AssetType: Asset + Clone + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
