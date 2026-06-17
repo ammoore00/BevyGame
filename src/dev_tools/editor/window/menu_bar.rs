@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use crate::dev_tools::editor::window::{MENU_BUTTON_HEIGHT, MENU_BUTTON_PADDING, MENU_BUTTON_PER_CHAR_WIDTH};
 use crate::menus::font::FontBuilder;
 use crate::theme::widget;
 use crate::theme::widget::{UiAssets, UiBackgroundStyle, MEDIUM_FONT_SIZE};
@@ -10,6 +9,9 @@ struct MenuBarRoot;
 #[derive(Component, Debug, Clone, Default, Copy)]
 struct MenuBarButtonsRoot;
 
+pub(super) const MENU_BUTTON_PER_CHAR_WIDTH: usize = 14;
+pub(super) const MENU_BUTTON_PADDING: usize = 12;
+pub(super) const MENU_BUTTON_HEIGHT: usize = 48;
 
 pub(super) const MENU_PADDING_VERTICAL: usize = 14;
 pub(super) const MENU_PADDING_HORIZONTAL: usize = 22;

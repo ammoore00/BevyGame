@@ -10,6 +10,7 @@ use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_
 mod menu_bar;
 mod browser;
 mod editor_port;
+mod details;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
@@ -19,10 +20,6 @@ pub(super) fn plugin(app: &mut App) {
     
     app.add_systems(OnEnter(Screen::Editor), spawn_editor_window);
 }
-
-pub(super) const MENU_BUTTON_PER_CHAR_WIDTH: usize = 15;
-pub(super) const MENU_BUTTON_PADDING: usize = 10;
-pub(super) const MENU_BUTTON_HEIGHT: usize = 48;
 
 #[derive(Component, Debug, Clone)]
 struct EditorUiRoot;

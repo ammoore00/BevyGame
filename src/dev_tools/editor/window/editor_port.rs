@@ -1,5 +1,5 @@
 use crate::dev_tools::editor::file_manager::{EditorFile, FileManager};
-use crate::dev_tools::editor::window::{BACKGROUND_BLEED, MENU_BUTTON_PADDING, MENU_BUTTON_PER_CHAR_WIDTH};
+use crate::dev_tools::editor::window::BACKGROUND_BLEED;
 use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::palette::BUTTON_TEXT;
@@ -57,7 +57,10 @@ pub(super) fn spawn_editor_port(
     editor_port
 }
 
-pub(super) const FILE_TABS_BUTTON_HEIGHT: f32 = 48.;
+const FILE_TABS_BUTTON_HEIGHT: usize = 40;
+
+const FILE_TABS_BUTTON_PER_CHAR_WIDTH: usize = 10;
+const FILE_TABS_BUTTON_PADDING: usize = 10;
 
 #[derive(Component, Debug, Clone, Default, Copy)]
 struct FileTabs;
@@ -70,8 +73,8 @@ pub(super) fn file_tabs(
         FileTabs,
         Node {
             position_type: PositionType::Relative,
-            width: Val::Percent(100.0),
-            height: Val::Px(FILE_TABS_BUTTON_HEIGHT),
+            width: percent(100.0),
+            height: px(FILE_TABS_BUTTON_HEIGHT),
 
             ..Default::default()
         },
@@ -155,7 +158,7 @@ fn update_file_tab_buttons(
                 &ui_assets,
                 &mut texture_atlas_layouts,
                 label,
-                px(MENU_BUTTON_PER_CHAR_WIDTH * label_len + MENU_BUTTON_PADDING),
+                px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
                 percent(100.0),
                 SMALL_FONT_SIZE,
                 &font_builder,

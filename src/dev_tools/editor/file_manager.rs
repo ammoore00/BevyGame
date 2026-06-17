@@ -33,11 +33,9 @@ impl FileManager {
             }
         } else {
             info!("Opening file {}", file.loc);
-            
-            if set_active {
+            if set_active || self.active_index.is_none() {
                 self.active_index = Some(self.open_files.len());
             }
-            
             self.open_files.push(file);
         }
     }
@@ -68,11 +66,11 @@ impl FileManager {
             self.open_files.remove(pos);
         }
     }
-    
+
     pub fn get_active_file(&self) -> Option<&EditorFile> {
         self.active_index.map(|i| &self.open_files[i])
     }
-    
+
     pub fn set_active_file(&mut self, file: &EditorFile) -> Result<(), FileManagerError> {
         if let Some(pos) = self.open_files.iter().position(|f| f == file) {
             self.active_index = Some(pos);
@@ -100,7 +98,7 @@ impl EditorFile {
     pub fn _name(&self) -> String {
         self.loc.get_file_name()
     }
-    
+
     /// Get the resource location as a typed resource location
     /// # Panics
     /// If the file kind does not match the generic type provided
