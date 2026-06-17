@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use bevy::ecs::relationship::Relationship;
 use crate::dev_tools::editor::window::{BACKGROUND_BLEED, MENU_BUTTON_PADDING, MENU_BUTTON_PER_CHAR_WIDTH};
 use crate::menus::font::FontBuilder;
 use crate::theme::widget;
@@ -148,9 +149,32 @@ fn update_file_tab_buttons(
                 percent(100.0),
                 MEDIUM_FONT_SIZE,
                 &font_builder,
-                |_: On<Pointer<Click>>| {},
+                on_file_button_clicked
             ),
         )).id();
         commands.entity(file_tabs).add_child(file_button);
     }
+}
+
+fn on_file_button_clicked(
+    event: On<Pointer<Click>>,
+    parent_query: Query<&ChildOf>,
+    file_query: Query<&FileTabButton>,
+    mut file_manager: ResMut<FileManager>,
+) {
+    let Ok(button_root) = parent_query.get(event.entity).map(ChildOf::get) else {
+        error!("Failed to get button root");
+        return;
+    };
+
+    let Ok(file_button) = file_query.get(button_root) else {
+        error!("Failed to get file button");
+        return;
+    };
+
+    file_manager.set_active_file(&file_button.0).unwrap_or_else(|err| {
+        error!("Failed to set active file: {:?}", err);
+    });
+
+    info!("Set active file to: {}", file_button.0.loc());
 }
