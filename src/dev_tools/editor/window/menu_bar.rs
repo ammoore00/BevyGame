@@ -1,7 +1,8 @@
 use bevy::prelude::*;
+use crate::dev_tools::editor::window::{MENU_BUTTON_HEIGHT, MENU_BUTTON_PADDING, MENU_BUTTON_PER_CHAR_WIDTH};
 use crate::menus::font::FontBuilder;
 use crate::theme::widget;
-use crate::theme::widget::{UiAssets, UiBackgroundStyle};
+use crate::theme::widget::{UiAssets, UiBackgroundStyle, MEDIUM_FONT_SIZE};
 
 #[derive(Component, Debug, Clone, Default, Copy)]
 struct MenuBarRoot;
@@ -10,15 +11,10 @@ struct MenuBarRoot;
 struct MenuBarButtonsRoot;
 
 
-pub(super) const MENU_BUTTON_PER_CHAR_WIDTH: usize = 15;
-pub(super) const MENU_BUTTON_PADDING: usize = 10;
-pub(super) const MENU_BUTTON_HEIGHT: usize = 100;
-
 pub(super) const MENU_PADDING_VERTICAL: usize = 14;
 pub(super) const MENU_PADDING_HORIZONTAL: usize = 22;
 
-pub(super) const MENU_BAR_BUTTON_HEIGHT: usize = 48;
-pub(super) const MENU_BAR_TOTAL_HEIGHT: usize = MENU_BAR_BUTTON_HEIGHT + MENU_PADDING_VERTICAL * 2;
+pub(super) const MENU_BAR_TOTAL_HEIGHT: usize = MENU_BUTTON_HEIGHT + MENU_PADDING_VERTICAL * 2;
 
 pub(super) fn spawn_menu_bar(
     ui_assets: &UiAssets,
@@ -69,8 +65,8 @@ pub(super) fn spawn_menu_bar(
         texture_atlas_layouts,
         "File",
         px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
-        percent(MENU_BUTTON_HEIGHT),
-        24.,
+        percent(100),
+        MEDIUM_FONT_SIZE,
         font_builder,
         file_button_clicked,
     )).id();
@@ -81,8 +77,8 @@ pub(super) fn spawn_menu_bar(
         texture_atlas_layouts,
         "Edit",
         px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
-        percent(MENU_BUTTON_HEIGHT),
-        24.,
+        percent(100),
+        MEDIUM_FONT_SIZE,
         font_builder,
         edit_button_clicked,
     )).id();
@@ -93,8 +89,8 @@ pub(super) fn spawn_menu_bar(
         texture_atlas_layouts,
         "View",
         px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
-        percent(MENU_BUTTON_HEIGHT),
-        24.,
+        percent(100),
+        MEDIUM_FONT_SIZE,
         font_builder,
         view_button_clicked,
     )).id();
@@ -105,8 +101,8 @@ pub(super) fn spawn_menu_bar(
         texture_atlas_layouts,
         "Tools",
         px(MENU_BUTTON_PER_CHAR_WIDTH * 5 + MENU_BUTTON_PADDING),
-        percent(MENU_BUTTON_HEIGHT),
-        24.,
+        percent(100),
+        MEDIUM_FONT_SIZE,
         font_builder,
         tools_button_clicked,
     )).id();
@@ -117,8 +113,8 @@ pub(super) fn spawn_menu_bar(
         texture_atlas_layouts,
         "Window",
         px(MENU_BUTTON_PER_CHAR_WIDTH * 6 + MENU_BUTTON_PADDING),
-        percent(MENU_BUTTON_HEIGHT),
-        24.,
+        percent(100),
+        MEDIUM_FONT_SIZE,
         font_builder,
         window_button_clicked,
     )).id();

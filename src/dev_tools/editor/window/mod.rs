@@ -4,18 +4,25 @@ use crate::theme::widget;
 use crate::theme::widget::{UiAssets, UiBackgroundStyle};
 use bevy::prelude::*;
 use crate::dev_tools::editor::window::browser::spawn_file_browser;
+use crate::dev_tools::editor::window::editor_port::spawn_editor_port;
 use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
 
 mod menu_bar;
 mod browser;
+mod editor_port;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         browser::plugin,
+        editor_port::plugin,
     ));
     
     app.add_systems(OnEnter(Screen::Editor), spawn_editor_window);
 }
+
+pub(super) const MENU_BUTTON_PER_CHAR_WIDTH: usize = 15;
+pub(super) const MENU_BUTTON_PADDING: usize = 10;
+pub(super) const MENU_BUTTON_HEIGHT: usize = 48;
 
 #[derive(Component, Debug, Clone)]
 struct EditorUiRoot;
@@ -67,6 +74,8 @@ const RIGHT_PANEL_MAX_WIDTH: usize = 800;
 
 const PANEL_PADDING: usize = 14;
 
+const BACKGROUND_BLEED: f32 = 10.0;
+
 fn spawn_editor_content(
     ui_assets: &UiAssets,
     font_builder: &FontBuilder,
@@ -105,14 +114,13 @@ fn spawn_editor_content(
     )).id();
     commands.entity(editor_content).add_child(center_columns);
 
-    const BACKGROUND_BLEED: f32 = 10.0;
-
     let left_panel = spawn_panel::<EditorLeftPanel>(
         center_columns,
         &mut commands,
         Some(LEFT_PANEL_WIDTH_TARGET),
         Some(LEFT_PANEL_MAX_WIDTH),
         Some(AlignSelf::FlexStart),
+        Some(UiRect::all(px(PANEL_PADDING))),
     );
     spawn_panel_background(
         left_panel,
@@ -124,9 +132,10 @@ fn spawn_editor_content(
         &mut commands,
     );
 
-    spawn_panel::<EditorCenterPanel>(
+    let center_panel = spawn_panel::<EditorCenterPanel>(
         center_columns,
         &mut commands,
+        None,
         None,
         None,
         None,
@@ -138,6 +147,7 @@ fn spawn_editor_content(
         Some(RIGHT_PANEL_WIDTH_TARGET),
         Some(RIGHT_PANEL_MAX_WIDTH),
         Some(AlignSelf::FlexEnd),
+        Some(UiRect::all(px(PANEL_PADDING))),
     );
     spawn_panel_background(
         right_panel,
@@ -172,6 +182,13 @@ fn spawn_editor_content(
     );
     commands.entity(left_panel).add_child(file_browser);
 
+    let editor_port = spawn_editor_port(
+        ui_assets,
+        texture_atlas_layouts,
+        commands.reborrow()
+    );
+    commands.entity(center_panel).add_child(editor_port);
+
     editor_content
 }
 
@@ -181,13 +198,12 @@ fn spawn_panel<C: Component + Default>(
     width: Option<usize>,
     max_width: Option<usize>,
     align_self: Option<AlignSelf>,
+    padding: Option<UiRect>,
 ) -> Entity {
     let mut node = Node {
         position_type: PositionType::Relative,
 
         height: percent(100),
-
-        padding: UiRect::all(px(PANEL_PADDING)),
 
         ..Default::default()
     };
@@ -204,6 +220,10 @@ fn spawn_panel<C: Component + Default>(
 
     if let Some(align_self) = align_self {
         node.align_self = align_self;
+    }
+
+    if let Some(padding) = padding {
+        node.padding = padding;
     }
 
     let panel = commands

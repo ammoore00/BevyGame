@@ -167,6 +167,20 @@ pub struct AnyResourceLocation {
     #[getset(get = "pub")]
     id: ResourceId,
 }
+impl AnyResourceLocation {
+    /// Get only the lowest component of the id
+    pub fn get_file_name(&self) -> String {
+        let id = self.id.to_string();
+        id.split('/').next_back().unwrap().to_string()
+    }
+
+    /// Returns the resource location as a path
+    pub fn as_path(&self) -> PathBuf {
+        Path::new(&self.namespace.0)
+            .join(&self.id.0)
+    }
+}
+
 impl ResourceLoc for AnyResourceLocation {
     fn new(namespace: Namespace, id: ResourceId) -> Self {
         Self { namespace, id }
