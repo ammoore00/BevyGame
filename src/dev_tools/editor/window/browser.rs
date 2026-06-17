@@ -1,12 +1,3 @@
-use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::path::Path;
-use bevy::ecs::query::QuerySingleError;
-use bevy::ecs::relationship::Relationship;
-use bevy::ecs::system::SystemParam;
-use crate::theme::palette::HEADER_TEXT;
-use crate::theme::widget::{styled_button, ButtonStyle, UiAssets};
-use bevy::prelude::*;
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
 use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
 use crate::datagen_api::animation::AnimationResource;
@@ -14,28 +5,44 @@ use crate::datagen_api::assets::CharacterResource;
 use crate::datagen_api::attack::AttackResource;
 use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
+use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
 use crate::theme::widget;
+use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, SMALL_FONT_SIZE};
+use bevy::ecs::query::QuerySingleError;
+use bevy::ecs::relationship::Relationship;
+use bevy::ecs::system::{IntoObserverSystem, SystemParam};
+use bevy::prelude::*;
+use std::fmt::Debug;
+use std::marker::PhantomData;
+use std::path::PathBuf;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
             (
-                spawn_collapsible_menu_contents::<CharacterMenu>,
-                update_menu_contents_from_registry::<CharacterMenu>,
-            )
-                .chain(),
-            (
-                spawn_collapsible_menu_contents::<AnimationMenu>,
-                update_menu_contents_from_resolved_registry::<AnimationMenu>,
-            )
-                .chain(),
-            (
-                spawn_collapsible_menu_contents::<AttackMenu>,
-                update_menu_contents_from_registry::<AttackMenu>,
-            )
-                .chain(),
+                (
+                    spawn_collapsible_menu_contents::<CharacterMenu>,
+                    update_menu_contents_from_registry::<CharacterMenu>,
+                )
+                    .chain(),
+                (
+                    spawn_collapsible_menu_contents::<AnimationMenu>,
+                    update_menu_contents_from_resolved_registry::<AnimationMenu>,
+                )
+                    .chain(),
+                (
+                    spawn_collapsible_menu_contents::<AttackMenu>,
+                    update_menu_contents_from_registry::<AttackMenu>,
+                )
+                    .chain(),
+            ),
+            update_menu_items,
+            finalize_menu_items,
+            render_menu_items,
+            handle_menu_browser_button_interaction,
         )
+            .chain()
             .run_if(in_state(Screen::Editor))
     );
 }
@@ -218,92 +225,28 @@ impl MenuContentsKind for AttackMenu {
 }
 
 #[derive(Component, Debug)]
+struct MenuContentsUntypedMarker;
+
+#[derive(Component, Debug)]
 struct MenuContents<T: MenuContentsKind> {
-    contents: MenuItem<T>,
+    _phantom_data: PhantomData<T>
 }
 impl<T: MenuContentsKind> MenuContents<T> {
     fn new() -> Self {
-        Self {
-            contents: MenuItem::folder("#root".to_string()),
-        }
+        Self { _phantom_data: PhantomData }
     }
 }
 
-#[derive(Debug, Clone)]
-enum MenuItem<T: MenuContentsKind> {
-    Folder {
-        name: String,
-        children: Vec<MenuItem<T>>,
-        _phantom_data: PhantomData<T>
-    },
-    Item(String),
-}
-impl<T: MenuContentsKind> MenuItem<T> {
-    fn folder(name: String) -> Self {
-        Self::Folder {
-            name,
-            children: Vec::new(),
-            _phantom_data: PhantomData,
-        }
-    }
+#[derive(Component, Debug, Default)]
+struct MenuContentsUninitialized;
+#[derive(Component, Debug, Default)]
+struct MenuContentsProcessing;
+#[derive(Component, Debug, Default)]
+struct MenuContentsFinalized;
 
-    fn create_all(&mut self, path: impl AsRef<Path>) -> Result<(), std::io::Error> {
-        let path = path.as_ref();
-        
-        match self {
-            MenuItem::Folder{ children, .. } => {
-                let mut components = path.components().peekable();
-                let Some(component) = components.next() else {
-                    return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "cannot create empty path"))
-                };
-
-                // Check if this is the last item
-                let is_last = components.peek().is_none();
-
-                let component = component.as_os_str().to_string_lossy();
-                let component = component.as_ref();
-
-                // Find if there is already a matching entry
-                let child = children.iter_mut()
-                    .find(|child| {
-                        match child {
-                            MenuItem::Folder{ name, .. } => *name == component,
-                            MenuItem::Item(name) => is_last && *name == component,
-                        }
-                    });
-
-                let remaining_path = path.strip_prefix(component).unwrap();
-                match (is_last, child) {
-                    //If we are on the actual file:
-                    // If it already exists, do nothing
-                    (true, Some(_)) => {},
-                    // Otherwise, create it and finish
-                    (true, None) => {
-                        let child = MenuItem::Item(component.to_string());
-                        children.push(child);
-                    },
-                    // If we are still in a directory:
-                    // If the child already exists, recursively create the remaining path
-                    (false, Some(child)) => child.create_all(remaining_path)?,
-                    // Otherwise, create the child, then recursively create the remaining path
-                    (false, None) => {
-                        let mut child = MenuItem::folder(component.to_string());
-                        child.create_all(remaining_path)?;
-                        children.push(child);
-                    },
-                }
-
-                Ok(())
-            },
-            MenuItem::Item(_) => {
-                Err(std::io::Error::new(std::io::ErrorKind::NotADirectory, "Cannot create sub-items on items"))
-            }
-        }
-    }
-}
-
-const CONTENT_START_PADDING: f32 = 40.;
-const CONTENT_PADDING: f32 = 4.;
+const CONTENT_START_PADDING: f32 = 30.;
+const CONTENT_INNER_PADDING: f32 = 20.;
+const CONTENT_PADDING: f32 = 2.;
 
 /// Check the collapsed state of the menu entity and spawn or despawn the content entity as needed
 fn spawn_collapsible_menu_contents<ContentKind>(
@@ -338,7 +281,9 @@ where
         Err(QuerySingleError::NoEntities(_)) => {
             if !collapsed.0 {
                 let contents = commands.spawn((
+                    MenuContentsUntypedMarker,
                     MenuContents::<ContentKind>::new(),
+                    MenuContentsUninitialized,
                     Node {
                         width: percent(100),
                         padding: UiRect::px(
@@ -350,13 +295,6 @@ where
 
                         ..Default::default()
                     },
-                    children![
-                        Text("Content".to_string()),
-                        font_builder.with_size(24.),
-                        Node {
-                            ..Default::default()
-                        },
-                    ]
                 )).id();
                 commands.entity(menu).add_child(contents);
             }
@@ -388,26 +326,47 @@ impl<'w, T: ResolvableResource> MenuRegistryAccessor<T> for ResolvedSystemRegist
 fn update_menu_contents_from_registry<
     ContentKind: MenuContentsKind,
 > (
-    contents_query: Query<&mut MenuContents<ContentKind>>,
+    contents_query: Query<
+        (
+            Entity,
+            Option<&MenuContentsUninitialized>,
+        ),
+        With<MenuContents<ContentKind>>
+    >,
     registry: SystemRegistry<ContentKind::ResourceKind>,
+    commands: Commands,
 ) {
-    update_menu_contents_inner::<ContentKind, _, _>(contents_query, registry)
+    update_menu_contents_inner::<ContentKind, _, _>(contents_query, registry, commands)
 }
 
 fn update_menu_contents_from_resolved_registry<
     ContentKind: ResolvedMenuContentsKind,
 > (
-    contents_query: Query<&mut MenuContents<ContentKind>>,
+    contents_query: Query<
+        (
+            Entity,
+            Option<&MenuContentsUninitialized>,
+        ),
+        With<MenuContents<ContentKind>>
+    >,
     registry: ResolvedSystemRegistry<ContentKind::ResolvableResourceKind>,
+    commands: Commands,
 ) {
-    update_menu_contents_inner::<ContentKind, _, _>(contents_query, registry)
+    update_menu_contents_inner::<ContentKind, _, _>(contents_query, registry, commands)
 }
 
 /// Find all resource locations to populate the given menu
 /// and adds them to the list in a hierarchical folder structure
 fn update_menu_contents_inner<ContentKind, Registry, Resource>(
-    mut contents_query: Query<&mut MenuContents<ContentKind>>,
+    contents_query: Query<
+        (
+            Entity,
+            Option<&MenuContentsUninitialized>,
+        ),
+        With<MenuContents<ContentKind>>
+    >,
     registry: Registry,
+    mut commands: Commands,
 )
 where
     ContentKind: MenuContentsKind,
@@ -416,10 +375,12 @@ where
 {
     // TODO: Figure out a way to make this work with change detection?
 
-    let single = contents_query.single_mut();
-    let mut contents = match single {
+    let single = contents_query.single();
+    let (contents, uninitialized) = match single {
         Ok(single) => single,
         Err(QuerySingleError::NoEntities(_)) => {
+            // If there isn't a matching entity, that's fine,
+            // as that just means that the menu isn't open
             return;
         }
         Err(QuerySingleError::MultipleEntities(err)) => {
@@ -428,10 +389,270 @@ where
         }
     };
 
-    for (loc, _resource) in registry.iter() {
-        let result = contents.contents.create_all(loc.as_local_path());
-        if let Err(err) = result {
-            error!("Failed to create menu contents: {}", err);
+    if uninitialized.is_some() {
+        for (loc, _) in registry.iter() {
+            let item = commands.spawn(UninitializedMenuItem(loc.as_local_path().to_path_buf())).id();
+            commands.entity(contents).add_child(item);
         }
     }
 }
+
+#[derive(Component, Debug, Clone)]
+struct UninitializedMenuItem(PathBuf);
+
+#[derive(Component, Debug, Clone)]
+enum MenuItem {
+    Folder(String),
+    File(String),
+}
+impl MenuItem {
+    fn name(&self) -> &str {
+        match self {
+            MenuItem::Folder(name) => name,
+            MenuItem::File(name) => name,
+        }
+    }
+}
+
+/// Process menu items marked as uninitialized and populate their children
+fn update_menu_items(
+    // Query for the item itself which we want to update
+    items_query: Query<(
+        Entity,
+        &UninitializedMenuItem,
+        &ChildOf,
+    )>,
+    // Query for getting the parent of the item
+    parent_query: Query<
+        (
+            Entity,
+            &Children,
+            Option<&MenuContentsUninitialized>,
+        ),
+        Or<(With<MenuItem>, With<MenuContentsUntypedMarker>)>
+    >,
+    // Query for getting the siblings of the item
+    sibling_query: Query<(
+        Entity,
+        &MenuItem,
+    )>,
+    mut commands: Commands,
+) {
+    // Only process one item per frame in order to prevent duplicate items
+    // TODO: Profile this to make sure it isn't taking too long
+    for (item_entity, item, parent) in items_query.iter().take(1) {
+        let path = item.0.clone();
+        let mut components = path.components().peekable();
+        let Some(component) = components.next() else {
+            error!("Cannot create empty path");
+            commands.entity(item_entity).despawn();
+            continue;
+        };
+
+        let component = component.as_os_str().to_string_lossy();
+        let component = component.as_ref();
+
+        let remaining_path = path.strip_prefix(component).unwrap().to_path_buf();
+
+        let Ok((parent_entity, siblings, menu_uninitialized)) = parent_query.get(parent.0) else {
+            error!("Cannot find parent for menu item");
+            commands.entity(item_entity).despawn();
+            continue;
+        };
+
+        if menu_uninitialized.is_some() {
+            commands.entity(parent_entity).remove::<MenuContentsUninitialized>();
+            commands.entity(parent_entity).insert(MenuContentsProcessing);
+        }
+
+        let mut siblings = sibling_query.iter()
+            .filter(|(sibling_entity, _)| siblings.contains(sibling_entity));
+
+        // Check if the current component is the last one, and thus we are at the final file
+        let is_last = components.peek().is_none();
+
+        // See if an item already exists for this component
+        let existing = siblings.find(|(_, sibling_item)| {
+            match (sibling_item, is_last) {
+                (MenuItem::Folder(name), false)
+                | (MenuItem::File(name), true) => component == name,
+                _ => false
+            }
+        });
+
+        match (is_last, existing) {
+            //If we are on the actual file:
+            // If it already exists, despawn the uninitialized item
+            (true, Some(_)) => {
+                commands.entity(item_entity).despawn();
+            },
+            // Otherwise, replace the uninitialized reference with an item
+            (true, None) => {
+                commands.entity(item_entity).remove::<UninitializedMenuItem>();
+                commands.entity(item_entity).insert(MenuItem::File(component.to_string()));
+            },
+            //If we are still in a directory:
+            // If the child already exists, despawn the uninitialized entity,
+            // then add a new uninitialized one under the existing match
+            (false, Some((existing, _))) => {
+                commands.entity(item_entity).despawn();
+                let child = commands.spawn(UninitializedMenuItem(remaining_path)).id();
+                commands.entity(existing).add_child(child);
+            },
+            // Otherwise, replace the uninitialized reference with a folder,
+            // then add an uninitialized child entity
+            (false, None) => {
+                commands.entity(item_entity).remove::<UninitializedMenuItem>();
+                commands.entity(item_entity).insert(MenuItem::Folder(component.to_string()));
+                let child = commands.spawn(UninitializedMenuItem(remaining_path)).id();
+                commands.entity(item_entity).add_child(child);
+            },
+        }
+    }
+}
+
+/// Once all processing is done, finalize the menu items
+fn finalize_menu_items(
+    // Find if there are any items marked as uninitialized
+    uninitialized_query: Query<(), With<UninitializedMenuItem>>,
+    // Query children of menu tree roots
+    menu_query: Query<
+        Entity,
+        With<MenuContentsProcessing>
+    >,
+    mut commands: Commands
+) {
+    // Wait until all components are initialized
+    if !uninitialized_query.is_empty() {
+        return;
+    }
+
+    for menu in menu_query {
+        commands.entity(menu).remove::<MenuContentsProcessing>();
+        commands.entity(menu).insert(MenuContentsFinalized);
+    }
+}
+
+fn render_menu_items(
+    // Only process rendering information if everything is done processing
+    processing_query: Query<(), Or<(
+        With<UninitializedMenuItem>,
+        With<MenuContentsProcessing>
+    )>>,
+    // Query menu items which do not already have a layout component
+    item_query: Query<
+        (
+            Entity,
+            &MenuItem,
+        ),
+        Without<Node>
+    >,
+    font_builder: FontBuilder,
+    mut commands: Commands
+) {
+    // Wait until all components are initialized
+    if !processing_query.is_empty() {
+        return;
+    }
+
+    for (item_entity, item) in item_query {
+        commands.entity(item_entity).insert(Node {
+            flex_direction: FlexDirection::ColumnReverse,
+
+            width: percent(100),
+            padding: UiRect::px(
+                CONTENT_INNER_PADDING,
+                CONTENT_PADDING,
+                CONTENT_PADDING,
+                CONTENT_PADDING,
+            ),
+
+            ..Default::default()
+        });
+
+        let button = match item {
+            MenuItem::Folder(_) => commands.spawn(browser_button(
+                item.name(),
+                &font_builder,
+                HEADER_TEXT,
+                folder_button_clicked,
+            )).id(),
+            MenuItem::File(_) => commands.spawn(browser_button(
+                item.name(),
+                &font_builder,
+                BUTTON_TEXT,
+                file_button_clicked,
+            )).id(),
+        };
+        commands.entity(item_entity).add_child(button);
+    }
+}
+
+#[derive(Component, Debug, Clone)]
+struct BrowserButton;
+#[derive(Component, Debug, Clone)]
+struct BrowserButtonInner;
+
+const TRANSPARENT_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.0);
+const HOVERED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.2);
+const PRESSED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.3);
+
+fn browser_button<E, B, M, I>(
+    text: impl AsRef<str>,
+    font_builder: &FontBuilder,
+    color: Color,
+    action: I,
+) -> impl Bundle
+where
+    E: EntityEvent,
+    B: Bundle,
+    I: IntoObserverSystem<E, B, M>,
+{
+    let text = text.as_ref();
+    let action = IntoObserverSystem::into_system(action);
+
+    let text_bundle = (
+        Text(text.to_string()),
+        font_builder.with_size(SMALL_FONT_SIZE),
+        TextLayout {
+            justify: Justify::Left,
+            ..Default::default()
+        },
+        TextColor(color),
+    );
+
+    (
+        BrowserButton,
+        Node::default(),
+        Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
+            parent.spawn((
+                BrowserButtonInner,
+                Button,
+                text_bundle,
+                BackgroundColor(TRANSPARENT_COLOR),
+            )).observe(action);
+        })),
+    )
+}
+fn handle_menu_browser_button_interaction(
+    button_query: Query<
+        (&Interaction, &mut BackgroundColor, &BrowserButtonInner),
+        (Changed<Interaction>, With<BrowserButtonInner>),
+    >,
+) {
+    for (interaction, mut background_color, _) in button_query {
+        match *interaction {
+            Interaction::Pressed => *background_color = BackgroundColor(PRESSED_COLOR),
+            Interaction::Hovered => *background_color = BackgroundColor(HOVERED_COLOR),
+            Interaction::None => *background_color = BackgroundColor(TRANSPARENT_COLOR),
+        }
+    }
+}
+
+fn folder_button_clicked(
+    _: On<Pointer<Click>>,
+) {}
+
+fn file_button_clicked(
+    _: On<Pointer<Click>>,
+) {}
