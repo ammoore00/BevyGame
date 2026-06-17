@@ -12,7 +12,7 @@ use crate::screens::Screen;
 use crate::{data, define_data_resource, define_resolvable_resource, AssetLoadState};
 use crate::{AppSystems, AssetSystems, PausableSystems};
 use bevy::prelude::*;
-use getset::{CloneGetters, CopyGetters, Getters};
+use getset::{CloneGetters, Getters};
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;

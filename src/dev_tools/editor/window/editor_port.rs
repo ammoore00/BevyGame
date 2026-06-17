@@ -4,7 +4,7 @@ use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widget;
-use crate::theme::widget::{UiAssets, UiBackgroundStyle, LARGE_FONT_SIZE, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widget::{UiAssets, UiBackgroundStyle, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
 use bevy::ecs::relationship::Relationship;
 use bevy::prelude::*;
 use std::collections::HashSet;

@@ -97,14 +97,14 @@ pub struct EditorFile {
     kind: FileKind,
 }
 impl EditorFile {
-    pub fn name(&self) -> String {
+    pub fn _name(&self) -> String {
         self.loc.get_file_name()
     }
     
     /// Get the resource location as a typed resource location
     /// # Panics
     /// If the file kind does not match the generic type provided
-    fn loc_typed<T: EditorResourceKind>(&self) -> ResourceLocation<T> {
+    fn _loc_typed<T: EditorResourceKind>(&self) -> ResourceLocation<T> {
         guard_kind::<T>(self.kind);
         self.loc.clone().into()
     }
