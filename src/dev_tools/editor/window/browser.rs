@@ -7,7 +7,7 @@ use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
 use crate::theme::widget;
-use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, SMALL_FONT_SIZE};
+use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::{IntoObserverSystem, SystemParam};
@@ -246,7 +246,7 @@ struct MenuContentsFinalized;
 
 const CONTENT_START_PADDING: f32 = 30.;
 const CONTENT_INNER_PADDING: f32 = 20.;
-const CONTENT_PADDING: f32 = 2.;
+const CONTENT_PADDING: f32 = 1.;
 
 /// Check the collapsed state of the menu entity and spawn or despawn the content entity as needed
 fn spawn_collapsible_menu_contents<ContentKind>(
@@ -597,6 +597,9 @@ const TRANSPARENT_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.0);
 const HOVERED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.2);
 const PRESSED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.3);
 
+const BROWSER_BUTTON_PADDING: f32 = 6.;
+const BROWSER_BUTTON_MARGIN: f32 = 12.;
+
 fn browser_button<E, B, M, I>(
     text: impl AsRef<str>,
     font_builder: &FontBuilder,
@@ -623,13 +626,22 @@ where
 
     (
         BrowserButton,
-        Node::default(),
+        Node {
+            ..Default::default()
+        },
         Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
             parent.spawn((
                 BrowserButtonInner,
                 Button,
-                text_bundle,
                 BackgroundColor(TRANSPARENT_COLOR),
+                Node {
+                    width: percent(100),
+                    margin: UiRect::right(px(BROWSER_BUTTON_MARGIN)),
+                    padding: UiRect::horizontal(px(BROWSER_BUTTON_PADDING)),
+
+                    ..Default::default()
+                },
+                children![text_bundle],
             )).observe(action);
         })),
     )
@@ -641,10 +653,10 @@ fn handle_menu_browser_button_interaction(
     >,
 ) {
     for (interaction, mut background_color, _) in button_query {
-        match *interaction {
-            Interaction::Pressed => *background_color = BackgroundColor(PRESSED_COLOR),
-            Interaction::Hovered => *background_color = BackgroundColor(HOVERED_COLOR),
-            Interaction::None => *background_color = BackgroundColor(TRANSPARENT_COLOR),
+        *background_color = match interaction {
+            Interaction::Pressed => BackgroundColor(PRESSED_COLOR),
+            Interaction::Hovered => BackgroundColor(HOVERED_COLOR),
+            Interaction::None => BackgroundColor(TRANSPARENT_COLOR),
         }
     }
 }

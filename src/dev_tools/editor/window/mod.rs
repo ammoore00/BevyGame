@@ -58,9 +58,12 @@ struct EditorBottomPanel;
 const CENTER_PANEL_HEIGHT: usize = 70;
 const LOWER_PANEL_HEIGHT: usize = 100 - CENTER_PANEL_HEIGHT;
 
-const LEFT_PANEL_WIDTH: usize = 25;
-const RIGHT_PANEL_WIDTH: usize = 25;
-const CENTER_PANEL_WIDTH: usize = 100 - LEFT_PANEL_WIDTH - RIGHT_PANEL_WIDTH;
+const LEFT_PANEL_WIDTH_TARGET: usize = 25;
+const RIGHT_PANEL_WIDTH_TARGET: usize = 25;
+const CENTER_PANEL_WIDTH: usize = 100 - LEFT_PANEL_WIDTH_TARGET - RIGHT_PANEL_WIDTH_TARGET;
+
+const LEFT_PANEL_MAX_WIDTH: usize = 500;
+const RIGHT_PANEL_MAX_WIDTH: usize = 800;
 
 const PANEL_PADDING: usize = 14;
 
@@ -105,9 +108,11 @@ fn spawn_editor_content(
     const BACKGROUND_BLEED: f32 = 10.0;
 
     let left_panel = spawn_panel::<EditorLeftPanel>(
-        LEFT_PANEL_WIDTH,
         center_columns,
-        &mut commands
+        &mut commands,
+        Some(LEFT_PANEL_WIDTH_TARGET),
+        Some(LEFT_PANEL_MAX_WIDTH),
+        Some(AlignSelf::FlexStart),
     );
     spawn_panel_background(
         left_panel,
@@ -120,15 +125,19 @@ fn spawn_editor_content(
     );
 
     spawn_panel::<EditorCenterPanel>(
-        CENTER_PANEL_WIDTH,
         center_columns,
-        &mut commands
+        &mut commands,
+        None,
+        None,
+        None,
     );
 
     let right_panel = spawn_panel::<EditorRightPanel>(
-        RIGHT_PANEL_WIDTH,
         center_columns,
-        &mut commands
+        &mut commands,
+        Some(RIGHT_PANEL_WIDTH_TARGET),
+        Some(RIGHT_PANEL_MAX_WIDTH),
+        Some(AlignSelf::FlexEnd),
     );
     spawn_panel_background(
         right_panel,
@@ -167,23 +176,40 @@ fn spawn_editor_content(
 }
 
 fn spawn_panel<C: Component + Default>(
-    width: usize,
     parent: Entity,
     commands: &mut Commands,
+    width: Option<usize>,
+    max_width: Option<usize>,
+    align_self: Option<AlignSelf>,
 ) -> Entity {
+    let mut node = Node {
+        position_type: PositionType::Relative,
+
+        height: percent(100),
+
+        padding: UiRect::all(px(PANEL_PADDING)),
+
+        ..Default::default()
+    };
+
+    if let Some(width) = width {
+        node.width = percent(width);
+    }
+
+    if let Some(max_width) = max_width {
+        node.max_width = px(max_width);
+    } else {
+        node.flex_grow = 1.0;
+    }
+
+    if let Some(align_self) = align_self {
+        node.align_self = align_self;
+    }
+
     let panel = commands
         .spawn((
             C::default(),
-            Node {
-                position_type: PositionType::Relative,
-
-                width: percent(width),
-                height: percent(100),
-                
-                padding: UiRect::all(px(PANEL_PADDING)),
-                
-                ..Default::default()
-            },
+            node,
             Pickable::IGNORE,
         ))
         .id();

@@ -81,7 +81,8 @@ pub fn scrollable_ui_root(name: impl Into<Cow<'static, str>>) -> impl Bundle {
     )
 }
 
-pub const SMALL_FONT_SIZE: f32 = 24.0;
+pub const SMALL_FONT_SIZE: f32 = 20.0;
+pub const MEDIUM_FONT_SIZE: f32 = 24.0;
 pub const LARGE_FONT_SIZE: f32 = 40.0;
 
 /// A simple header label. Bigger than [`label`].
@@ -109,7 +110,7 @@ pub fn label(
     (
         Name::new("Label"),
         Text(text.into()),
-        font_builder.with_size(SMALL_FONT_SIZE),
+        font_builder.with_size(MEDIUM_FONT_SIZE),
         TextColor(LABEL_TEXT),
         TextLayout {
             justify: Justify::Center,
@@ -182,7 +183,7 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
-    let font = font_builder.with_size(SMALL_FONT_SIZE);
+    let font = font_builder.with_size(MEDIUM_FONT_SIZE);
 
     button_with_text(
         ui_assets,
