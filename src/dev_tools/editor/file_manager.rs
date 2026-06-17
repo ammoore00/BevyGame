@@ -18,7 +18,7 @@ pub struct FileManager {
     active_index: Option<usize>,
 }
 impl FileManager {
-    pub fn open(&mut self, loc: AnyResourceLocation, kind: FileKind) {
+    pub fn open(&mut self, loc: AnyResourceLocation, kind: FileKind, set_active: bool) {
         let file = EditorFile {
             loc,
             kind,
@@ -27,17 +27,23 @@ impl FileManager {
         // If the file is already open, just set it as active
         // Otherwise, open the file, then set it as active
         if let Some(pos) = self.open_files.iter().position(|f| f == &file) {
-            info!("File {} already open, setting as active", file.loc);
-            self.active_index = Some(pos);
+            if set_active {
+                info!("File {} already open, setting as active", file.loc);
+                self.active_index = Some(pos);
+            }
         } else {
             info!("Opening file {}", file.loc);
-            self.active_index = Some(self.open_files.len());
+            
+            if set_active {
+                self.active_index = Some(self.open_files.len());
+            }
+            
             self.open_files.push(file);
         }
     }
 
-    pub fn close(&mut self, file: EditorFile) {
-        if let Some(pos) = self.open_files.iter().position(|f| f == &file) {
+    pub fn close(&mut self, file: &EditorFile) {
+        if let Some(pos) = self.open_files.iter().position(|f| f == file) {
             // If the active file is being closed
             if self.active_index == Some(pos) {
                 // If it's not the first file, move to the next file lower
@@ -87,6 +93,7 @@ pub enum FileManagerError {
 pub struct EditorFile {
     #[get = "pub"]
     loc: AnyResourceLocation,
+    #[get = "pub"]
     kind: FileKind,
 }
 impl EditorFile {

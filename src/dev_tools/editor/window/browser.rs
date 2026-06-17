@@ -696,5 +696,9 @@ fn file_button_clicked(
         return;
     };
     
-    file_manager.open(loc.clone(), *file_kind);
+    match event.button {
+        PointerButton::Primary => file_manager.open(loc.clone(), *file_kind, true),
+        PointerButton::Secondary => {}
+        PointerButton::Middle => file_manager.open(loc.clone(), *file_kind, false),
+    }
 }

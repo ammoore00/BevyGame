@@ -184,6 +184,7 @@ fn spawn_editor_content(
 
     let editor_port = spawn_editor_port(
         ui_assets,
+        font_builder,
         texture_atlas_layouts,
         commands.reborrow()
     );
