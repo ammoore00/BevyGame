@@ -6,15 +6,14 @@ use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::InputFocus;
 use bevy::math::CompassOctant;
 use bevy::prelude::*;
+use crate::theme::widget::UiResources;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Main), spawn_main_menu);
 }
 
 fn spawn_main_menu(
-    button_assets: Res<widget::UiAssets>,
-    font_builder: FontBuilder,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut ui_resources: UiResources,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
@@ -31,10 +30,8 @@ fn spawn_main_menu(
     {
         let play_button = commands
             .spawn(widget::button(
-                &button_assets,
-                &mut texture_atlas_layouts,
+                &mut ui_resources,
                 "Play",
-                &font_builder,
                 enter_loading_or_gameplay_screen,
             ))
             .id();
@@ -44,10 +41,8 @@ fn spawn_main_menu(
         {
             let editor_button = commands
                 .spawn(widget::button(
-                    &button_assets,
-                    &mut texture_atlas_layouts,
+                    &mut ui_resources,
                     "Editor",
-                    &font_builder,
                     enter_loading_or_editor_screen,
                 ))
                 .id();
@@ -56,10 +51,8 @@ fn spawn_main_menu(
 
         let settings_button = commands
             .spawn(widget::button(
-                &button_assets,
-                &mut texture_atlas_layouts,
+                &mut ui_resources,
                 "Settings",
-                &font_builder,
                 open_settings_menu,
             ))
             .id();
@@ -67,10 +60,8 @@ fn spawn_main_menu(
 
         let credits_button = commands
             .spawn(widget::button(
-                &button_assets,
-                &mut texture_atlas_layouts,
+                &mut ui_resources,
                 "Credits",
-                &font_builder,
                 open_credits_menu,
             ))
             .id();
@@ -78,10 +69,8 @@ fn spawn_main_menu(
 
         let exit_button = commands
             .spawn(widget::button(
-                &button_assets,
-                &mut texture_atlas_layouts,
+                &mut ui_resources,
                 "Exit",
-                &font_builder,
                 exit_app,
             ))
             .id();

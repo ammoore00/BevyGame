@@ -9,6 +9,7 @@ use bevy::{
     ecs::{spawn::SpawnWith, system::IntoObserverSystem},
     prelude::*,
 };
+use bevy::ecs::system::SystemParam;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<UiAssets>();
@@ -140,10 +141,8 @@ pub fn text(
 
 /// A large rounded button with text and an action defined as an [`Observer`].
 pub fn button<E, B, M, I>(
-    button_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     text: impl Into<String>,
-    font_builder: &FontBuilder,
     action: I,
 ) -> impl Bundle
 where
@@ -151,11 +150,10 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
-    let font = font_builder.with_size(LARGE_FONT_SIZE);
+    let font = ui_resources.font_builder.with_size(LARGE_FONT_SIZE);
 
     button_with_text(
-        button_assets,
-        texture_atlas_layouts,
+        ui_resources,
         text,
         font,
         action,
@@ -172,10 +170,8 @@ where
 
 /// A small square button with text and an action defined as an [`Observer`].
 pub fn button_small<E, B, M, I>(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     text: impl Into<String>,
-    font_builder: &FontBuilder,
     action: I,
 ) -> impl Bundle
 where
@@ -183,11 +179,10 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
-    let font = font_builder.with_size(MEDIUM_FONT_SIZE);
+    let font = ui_resources.font_builder.with_size(MEDIUM_FONT_SIZE);
 
     button_with_text(
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         text,
         font,
         action,
@@ -204,13 +199,11 @@ where
 
 /// A rounded button of the specified size with text and an action defined as an [`Observer`].
 pub fn sized_button<E, B, M, I>(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     text: impl Into<String>,
     width: Val,
     height: Val,
     font_size: f32,
-    font_builder: &FontBuilder,
     action: I,
 ) -> impl Bundle
 where
@@ -218,11 +211,10 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
-    let font = font_builder.with_size(font_size);
+    let font = ui_resources.font_builder.with_size(font_size);
 
     button_with_text(
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         text,
         font,
         action,
@@ -240,8 +232,7 @@ where
 }
 
 pub fn styled_button<E, B, M, I>(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     scale: usize,
     action: I,
     style: ButtonStyle,
@@ -255,8 +246,7 @@ where
     let size = scale * BASE_SCALE;
 
     button_base(
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         action,
         Node {
             width: px(size),
@@ -271,8 +261,7 @@ where
 }
 
 fn button_with_text<E, B, M, I>(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     text: impl Into<String>,
     font: TextFont,
     action: I,
@@ -298,8 +287,7 @@ where
     );
 
     button_base(
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         action,
         button_bundle,
         button_children,
@@ -308,8 +296,7 @@ where
 }
 
 fn button_base<E, B, M, I>(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     action: I,
     button_bundle: impl Bundle,
     button_children: impl Bundle,
@@ -320,12 +307,12 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
-    let image = ui_assets.buttons.clone();
+    let image = ui_resources.ui_assets.buttons.clone();
 
     let action = IntoObserverSystem::into_system(action);
 
     let layout = style.make_layout();
-    let layout = texture_atlas_layouts.add(layout);
+    let layout = ui_resources.texture_atlas_layouts.add(layout);
 
     let texture_slicer = style.make_slicer();
 
@@ -579,14 +566,13 @@ impl UiBackgroundStyle {
 }
 
 pub fn ui_background(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     style: UiBackgroundStyle,
 ) -> impl Bundle {
-    let image = ui_assets.background.clone();
+    let image = ui_resources.ui_assets.background.clone();
 
     let layout = style.make_layout();
-    let layout = texture_atlas_layouts.add(layout);
+    let layout = ui_resources.texture_atlas_layouts.add(layout);
 
     let index = style.get_index();
 
@@ -615,4 +601,11 @@ impl FromWorld for UiAssets {
             background: assets.load("base/images/ui/background.png"),
         }
     }
+}
+
+#[derive(SystemParam)]
+pub struct UiResources<'w> {
+    pub ui_assets: Res<'w, UiAssets>,
+    pub font_builder: FontBuilder<'w>,
+    pub texture_atlas_layouts: ResMut<'w, Assets<TextureAtlasLayout>>,
 }

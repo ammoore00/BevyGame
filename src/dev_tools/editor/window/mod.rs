@@ -5,7 +5,7 @@ use crate::dev_tools::editor::window::properties::spawn_details_screen;
 use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::widget;
-use crate::theme::widget::{UiAssets, UiBackgroundStyle};
+use crate::theme::widget::{UiAssets, UiBackgroundStyle, UiResources};
 use bevy::prelude::*;
 
 mod menu_bar;
@@ -27,9 +27,7 @@ pub(super) fn plugin(app: &mut App) {
 struct EditorUiRoot;
 
 fn spawn_editor_window(
-    ui_assets: Res<UiAssets>,
-    font_builder: FontBuilder,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut ui_resources: UiResources,
     mut commands: Commands
 ) {
     let editor = commands
@@ -39,10 +37,10 @@ fn spawn_editor_window(
             DespawnOnExit(Screen::Editor),
         )).id();
 
-    let editor_content = spawn_editor_content(&ui_assets, &font_builder, &mut texture_atlas_layouts, commands.reborrow());
+    let editor_content = spawn_editor_content(&mut ui_resources, commands.reborrow());
     commands.entity(editor).add_child(editor_content);
 
-    let menu_bar = spawn_menu_bar(&ui_assets, &font_builder, &mut texture_atlas_layouts, commands.reborrow());
+    let menu_bar = spawn_menu_bar(&mut ui_resources, commands.reborrow());
     commands.entity(editor).add_child(menu_bar);
 }
 
@@ -75,9 +73,7 @@ const PANEL_PADDING: usize = 14;
 const BACKGROUND_BLEED: f32 = 10.0;
 
 fn spawn_editor_content(
-    ui_assets: &UiAssets,
-    font_builder: &FontBuilder,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     mut commands: Commands,
 ) -> Entity {
     
@@ -122,8 +118,7 @@ fn spawn_editor_content(
     );
     spawn_panel_background(
         left_panel,
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         UiBackgroundStyle::Panel,
         BACKGROUND_BLEED,
         BACKGROUND_BLEED,
@@ -149,8 +144,7 @@ fn spawn_editor_content(
     );
     spawn_panel_background(
         right_panel,
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         UiBackgroundStyle::Panel,
         BACKGROUND_BLEED,
         BACKGROUND_BLEED,
@@ -159,7 +153,7 @@ fn spawn_editor_content(
 
     let bottom_panel = commands.spawn((
         EditorBottomPanel,
-        widget::ui_background(ui_assets, texture_atlas_layouts, UiBackgroundStyle::Main),
+        widget::ui_background(ui_resources, UiBackgroundStyle::Main),
         Node {
             width: percent(100),
             height: percent(LOWER_PANEL_HEIGHT),
@@ -173,17 +167,13 @@ fn spawn_editor_content(
     //------ Spawn Content ------//
     
     let file_browser = spawn_file_browser(
-        ui_assets,
-        font_builder,
-        texture_atlas_layouts,
+        ui_resources,
         commands.reborrow()
     );
     commands.entity(left_panel).add_child(file_browser);
 
     let editor_port = spawn_editor_port(
-        ui_assets,
-        font_builder,
-        texture_atlas_layouts,
+        ui_resources,
         commands.reborrow()
     );
     commands.entity(center_panel).add_child(editor_port);
@@ -244,15 +234,14 @@ fn spawn_panel<C: Component + Default>(
 
 fn spawn_panel_background(
     parent: Entity,
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     style: UiBackgroundStyle,
     top_bleed: f32,
     bottom_bleed: f32,
     commands: &mut Commands,
 ) {
     let background = commands.spawn((
-        widget::ui_background(ui_assets, texture_atlas_layouts, style),
+        widget::ui_background(ui_resources, style),
         Node {
             position_type: PositionType::Absolute,
             left: px(0),

@@ -1,10 +1,9 @@
 use crate::dev_tools::editor::file_manager::{EditorFile, FileManager};
 use crate::dev_tools::editor::window::BACKGROUND_BLEED;
-use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widget;
-use crate::theme::widget::{UiAssets, UiBackgroundStyle, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widget::{UiBackgroundStyle, UiResources, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
 use bevy::ecs::relationship::Relationship;
 use bevy::prelude::*;
 use std::collections::HashSet;
@@ -24,9 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 struct EditorPort;
 
 pub(super) fn spawn_editor_port(
-    ui_assets: &UiAssets,
-    font_builder: &FontBuilder,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     mut commands: Commands,
 ) -> Entity {
     let editor_port = commands.spawn((
@@ -42,15 +39,12 @@ pub(super) fn spawn_editor_port(
     )).id();
 
     let file_tabs = commands.spawn(file_tabs(
-        ui_assets,
-        texture_atlas_layouts
+        ui_resources,
     )).id();
     commands.entity(editor_port).add_child(file_tabs);
 
     let editor_port_content = commands.spawn(editor_port_content(
-        ui_assets,
-        font_builder,
-        texture_atlas_layouts
+        ui_resources,
     )).id();
     commands.entity(editor_port).add_child(editor_port_content);
 
@@ -66,8 +60,7 @@ const FILE_TABS_BUTTON_PADDING: usize = 10;
 struct FileTabs;
 
 pub(super) fn file_tabs(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
 ) -> impl Bundle {
     (
         FileTabs,
@@ -81,7 +74,7 @@ pub(super) fn file_tabs(
         Pickable::IGNORE,
         children![
             // TODO: Figure out why this background isn't rendering
-            widget::ui_background(ui_assets, texture_atlas_layouts, UiBackgroundStyle::Panel),
+            widget::ui_background(ui_resources, UiBackgroundStyle::Panel),
             Node {
                 position_type: PositionType::Absolute,
 
@@ -113,9 +106,7 @@ fn update_file_tab_buttons(
         &FileTabButton
     )>,
     file_manager: Res<FileManager>,
-    ui_assets: Res<UiAssets>,
-    font_builder: FontBuilder,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut ui_resources: UiResources,
     mut commands: Commands,
 ) {
     let Ok((file_tabs, children)) = file_tabs_query.single() else {
@@ -145,8 +136,6 @@ fn update_file_tab_buttons(
 
     // Spawn buttons for new open files
     for open_file in file_manager.open_files() {
-        let open_file = &*open_file.read().unwrap();
-        
         if existing_buttons.contains(open_file) {
             continue;
         }
@@ -157,13 +146,11 @@ fn update_file_tab_buttons(
         let file_button = commands.spawn((
             FileTabButton(open_file.clone()),
             widget::sized_button(
-                &ui_assets,
-                &mut texture_atlas_layouts,
+                &mut ui_resources,
                 label,
                 px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
                 percent(100.0),
                 SMALL_FONT_SIZE,
-                &font_builder,
                 on_file_button_clicked
             ),
         )).id();
@@ -204,9 +191,7 @@ fn on_file_button_clicked(
 struct EditorPortContent;
 
 pub(super) fn editor_port_content(
-    _ui_assets: &UiAssets,
-    font_builder: &FontBuilder,
-    _texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
 ) -> impl Bundle {
     (
         EditorPortContent,
@@ -218,7 +203,7 @@ pub(super) fn editor_port_content(
 
             ..Default::default()
         },
-        widget::text("Editor Content", font_builder, LARGE_FONT_SIZE, BUTTON_TEXT)
+        widget::text("Editor Content", &ui_resources.font_builder, LARGE_FONT_SIZE, BUTTON_TEXT)
     )
 }
 
@@ -235,10 +220,7 @@ fn update_editor_port_content(
     };
 
     let display = file_manager.active_file()
-        .map(|file| {
-            let file = &*file.read().unwrap();
-            format!("Active file: {}\nFile type: {:?}", file.loc(), file.kind())
-        })
+        .map(|file| format!("Active file: {}\nFile type: {:?}", file.loc(), file.kind()))
         .unwrap_or("No active file".to_string());
 
     *text = Text(display);

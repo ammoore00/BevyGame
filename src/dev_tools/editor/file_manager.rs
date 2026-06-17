@@ -28,7 +28,7 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Resource, Debug, Default, Getters)]
 pub struct FileManager {
     #[getset(get = "pub")]
-    open_files: Vec<Arc<RwLock<EditorFile>>>,
+    open_files: Vec<EditorFile>,
     #[getset(get = "pub")]
     active_index: Option<usize>,
 }
@@ -58,17 +58,15 @@ impl FileManager {
     ) where
         Codec: EditorCodec,
     {
-        let file = Arc::new(RwLock::new(file));
-
         // If the file is already open, just set it as active
         // Otherwise, open the file, then set it as active
-        if let Some(pos) = self.open_files.iter().position(|f| *f.read().unwrap() == *file.read().unwrap()) {
+        if let Some(pos) = self.open_files.iter().position(|f| f == &file) {
             if set_active {
-                info!("File {} already open, setting as active", file.read().unwrap().loc());
+                info!("File {} already open, setting as active", file.loc());
                 self.active_index = Some(pos);
             }
         } else {
-            info!("Opening file {}", file.read().unwrap().loc());
+            info!("Opening file {}", file.loc());
             if set_active || self.active_index.is_none() {
                 self.active_index = Some(self.open_files.len());
             }
@@ -77,7 +75,7 @@ impl FileManager {
 
         let task_pool = IoTaskPool::get();
         let mut path = PathBuf::from("assets/");
-        path.push(file.read().unwrap().loc().as_path());
+        path.push(file.loc().as_path());
 
         // Spawn the async task
         task_pool.spawn(async move {
@@ -93,7 +91,7 @@ impl FileManager {
     }
 
     pub fn close(&mut self, file: &EditorFile) {
-        if let Some(pos) = self.open_files.iter().position(|f| &*f.read().unwrap() == file) {
+        if let Some(pos) = self.open_files.iter().position(|f| f == file) {
             // If the active file is being closed
             if self.active_index == Some(pos) {
                 // If it's not the first file, move to the next file lower
@@ -120,15 +118,15 @@ impl FileManager {
     }
 
     pub fn is_file_open(&self, file: &EditorFile) -> bool {
-        self.open_files.iter().any(|f| &*f.read().unwrap() == file)
+        self.open_files.iter().any(|f| f == file)
     }
 
-    pub fn active_file(&self) -> Option<Arc<RwLock<EditorFile>>> {
-        self.active_index.map(|i| self.open_files[i].clone())
+    pub fn active_file(&self) -> Option<&EditorFile> {
+        self.active_index.map(|i| &self.open_files[i])
     }
 
     pub fn set_active_file(&mut self, file: &EditorFile) -> Result<(), FileManagerError> {
-        if let Some(pos) = self.open_files.iter().position(|f| &*f.read().unwrap() == file) {
+        if let Some(pos) = self.open_files.iter().position(|f| f == file) {
             self.active_index = Some(pos);
             Ok(())
         } else {
@@ -167,10 +165,26 @@ fn process_file_load_results<Codec: EditorCodec>(
 ) {
     for (entity, result) in file_query {
         match &result.0 {
+            // If the file was loaded successfully, insert the content and remove the result
             Ok(codec) => {
                 commands.entity(entity).insert(EditorFileContent(codec.clone()));
                 commands.entity(entity).remove::<EditorFileResult<Codec>>();
-            }
+            },
+            Err(FileManagerError::Io(_, err)) => {
+                match err.kind() {
+                    // If the file did not exist, insert a default content and remove the result
+                    std::io::ErrorKind::NotFound => {
+                        commands.entity(entity).insert(EditorFileContent(Codec::default()));
+                        commands.entity(entity).remove::<EditorFileResult<Codec>>();
+                    },
+                    // Otherwise, log the error and despawn the entity
+                    _ => {
+                        error!("Failed to load file: {:?}", err);
+                        commands.entity(entity).despawn()
+                    },
+                }
+            },
+            // Otherwise, log the error and despawn the entity
             Err(err) => {
                 error!("Failed to load file: {:?}", err);
                 commands.entity(entity).despawn()
@@ -180,7 +194,7 @@ fn process_file_load_results<Codec: EditorCodec>(
 }
 
 #[derive(Component, Clone)]
-pub struct EditorFileComponent(pub Arc<RwLock<EditorFile>>);
+pub struct EditorFileComponent(EditorFile);
 #[derive(Component, Debug)]
 pub struct EditorFileResult<Codec: EditorCodec>(Result<Codec, FileManagerError>);
 #[derive(Component, Debug, Clone)]

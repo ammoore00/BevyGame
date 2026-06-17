@@ -2,7 +2,7 @@
 
 use crate::gamepad::gamepad_just_pressed;
 use crate::menus::font::FontBuilder;
-use crate::theme::widget::UiAssets;
+use crate::theme::widget::{UiAssets, UiResources};
 use crate::{menus::Menu, screens::Screen, theme::widget};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::InputFocus;
@@ -24,9 +24,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_pause_menu(
-    button_assets: Res<UiAssets>,
-    font_builder: FontBuilder,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut ui_resources: UiResources,
     mut directional_nav_map: ResMut<DirectionalNavigationMap>,
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
@@ -36,16 +34,14 @@ fn spawn_pause_menu(
             widget::ui_root("Pause Menu"),
             GlobalZIndex(2),
             DespawnOnExit(Menu::Pause),
-            children![widget::header("Game paused", &font_builder)],
+            children![widget::header("Game paused", &ui_resources.font_builder)],
         ))
         .id();
 
     let continue_button = commands
         .spawn(widget::button(
-            &button_assets,
-            &mut texture_atlas_layouts,
+            &mut ui_resources,
             "Continue",
-            &font_builder,
             close_menu,
         ))
         .id();
@@ -53,10 +49,8 @@ fn spawn_pause_menu(
 
     let settings_button = commands
         .spawn(widget::button(
-            &button_assets,
-            &mut texture_atlas_layouts,
+            &mut ui_resources,
             "Settings",
-            &font_builder,
             open_settings_menu,
         ))
         .id();
@@ -64,10 +58,8 @@ fn spawn_pause_menu(
 
     let quit_button = commands
         .spawn(widget::button(
-            &button_assets,
-            &mut texture_atlas_layouts,
+            &mut ui_resources,
             "Quit to title",
-            &font_builder,
             quit_to_title,
         ))
         .id();

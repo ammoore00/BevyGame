@@ -2,7 +2,7 @@
 
 use crate::gamepad::gamepad_just_pressed;
 use crate::menus::font::FontBuilder;
-use crate::theme::widget::UiAssets;
+use crate::theme::widget::{UiAssets, UiResources};
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
 use bevy::input_focus::InputFocus;
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
@@ -21,9 +21,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_credits_menu(
-    button_assets: Res<UiAssets>,
-    font_builder: FontBuilder,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut ui_resources: UiResources,
     mut input_focus: ResMut<InputFocus>,
     mut commands: Commands,
 ) {
@@ -33,23 +31,21 @@ fn spawn_credits_menu(
             GlobalZIndex(2),
             DespawnOnExit(Menu::Credits),
             children![
-                widget::header("Created by", &font_builder),
-                created_by(&font_builder),
-                widget::header("Assets", &font_builder),
-                assets(&font_builder),
-                widget::header("License", &font_builder),
-                widget::label("This game is provided under the Mozilla Public License 2.0", &font_builder),
-                license(&font_builder),
+                widget::header("Created by", &ui_resources.font_builder),
+                created_by(&ui_resources.font_builder),
+                widget::header("Assets", &ui_resources.font_builder),
+                assets(&ui_resources.font_builder),
+                widget::header("License", &ui_resources.font_builder),
+                widget::label("This game is provided under the Mozilla Public License 2.0", &ui_resources.font_builder),
+                license(&ui_resources.font_builder),
             ],
         ))
         .id();
 
     let back_button = commands
         .spawn(widget::button(
-            &button_assets,
-            &mut texture_atlas_layouts,
+            &mut ui_resources,
             "Back",
-            &font_builder,
             go_back_on_click,
         ))
         .id();

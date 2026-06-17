@@ -4,7 +4,7 @@ use crate::datagen_api::attack::{AttackCodec, AttackResource};
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorResourceKind, FileKind, FileManager};
 use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
-use crate::theme::widget::UiAssets;
+use crate::theme::widget::{UiAssets, UiResources};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use serde::de::DeserializeOwned;
@@ -37,25 +37,24 @@ pub(super) fn spawn_details_screen(
 }
 
 fn update_properties_view(
-    properties_query: Query<
+    // Query for the current properties screen
+    properties_query: Query<(
         Entity,
-        With<PropertiesInner>
-    >,
+        &PropertiesInner
+    )>,
     file_manager: Res<FileManager>,
-    ui_assets: Res<UiAssets>,
-    font_builder: FontBuilder,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut ui_resources: UiResources,
     mut commands: Commands,
 ) {
     // Get the current properties view
-    let properties_entity = match properties_query.single() {
-        Ok(entity) => Some(entity),
+    let properties = match properties_query.single() {
+        Ok((entity, inner)) => Some((entity, inner)),
         Err(QuerySingleError::NoEntities(_)) => {
             None
         },
         Err(QuerySingleError::MultipleEntities(err)) => {
             error!("Found multiple properties entities: {err}\nDespawning all entities.");
-            for entity in properties_query.iter() {
+            for (entity, _) in properties_query.iter() {
                 commands.entity(entity).despawn();
             }
             return;
@@ -64,52 +63,61 @@ fn update_properties_view(
 
     // If there is no active file, despawn the properties entity if it exists
     let Some(active_file) = file_manager.active_file() else {
-        if let Some(properties_entity) = properties_entity {
+        if let Some((properties_entity, _)) = properties {
             commands.entity(properties_entity).despawn();
         }
         return;
     };
 
-    active_file.read().unwrap().spawn_properties_editor(
-        &ui_assets,
-        &font_builder,
-        &mut texture_atlas_layouts,
-        commands,
-    );
+    let should_spawn = if let Some((properties_entity, PropertiesInner(active_file_in_properties))) = properties {
+        // If there is an active file, and it does not match the current properties screen,
+        // despawn it and flag that we should spawn a new properties editor
+        if active_file_in_properties != active_file {
+            commands.entity(properties_entity).despawn();
+            true
+        }
+        // If the properties screen matches the active file, do not spawn a new properties editor
+        else { false }
+    }
+    // If there is an active file, but no properties screen, flag that we should spawn a new properties editor
+    else { true };
+
+    if should_spawn {
+        active_file.spawn_properties_editor(
+            &mut ui_resources,
+            commands,
+        );
+    }
 }
 
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct PropertiesInner;
+#[derive(Component, Debug, Clone)]
+struct PropertiesInner(EditorFile);
 
 impl EditorFile {
     fn spawn_properties_editor(
         &self,
-        ui_assets: &UiAssets,
-        font_builder: &FontBuilder,
-        texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+        ui_resources: &mut UiResources,
         mut commands: Commands,
     ) -> Entity {
         match self.kind() {
             FileKind::Character => commands.spawn((
-                self.properties_bundle::<CharacterCodec>(ui_assets, font_builder, texture_atlas_layouts),
-                PropertiesInner,
+                self.properties_bundle::<CharacterCodec>(ui_resources),
+                PropertiesInner(self.clone()),
             )).id(),
             FileKind::Animation => commands.spawn((
-                self.properties_bundle::<AnimationCodec>(ui_assets, font_builder, texture_atlas_layouts),
-                PropertiesInner,
+                self.properties_bundle::<AnimationCodec>(ui_resources),
+                PropertiesInner(self.clone()),
             )).id(),
             FileKind::Attack => commands.spawn((
-                self.properties_bundle::<AttackCodec>(ui_assets, font_builder, texture_atlas_layouts),
-                PropertiesInner,
+                self.properties_bundle::<AttackCodec>(ui_resources),
+                PropertiesInner(self.clone()),
             )).id(),
         }
     }
 
     fn properties_bundle<Codec>(
         &self,
-        ui_assets: &UiAssets,
-        font_builder: &FontBuilder,
-        texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+        ui_assets: &mut UiResources,
     ) -> impl Bundle
     where
         Codec: EditorCodec,

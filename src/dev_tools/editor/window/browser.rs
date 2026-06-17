@@ -7,7 +7,7 @@ use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
 use crate::theme::widget;
-use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, SMALL_FONT_SIZE};
+use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, UiResources, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::{IntoObserverSystem, SystemParam};
@@ -52,9 +52,7 @@ pub(super) fn plugin(app: &mut App) {
 struct FileBrowser;
 
 pub(super) fn spawn_file_browser(
-    ui_assets: &UiAssets,
-    font_builder: &FontBuilder,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     mut commands: Commands,
 ) -> Entity {
     let browser = commands.spawn((
@@ -71,33 +69,27 @@ pub(super) fn spawn_file_browser(
     )).id();
 
     let characters = collapsible_menu(
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         "Characters",
-        font_builder,
-        24.,
+        MEDIUM_FONT_SIZE,
         commands.reborrow(),
     );
     commands.entity(characters).insert(CharacterMenu);
     commands.entity(browser).add_child(characters);
 
     let animations = collapsible_menu(
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         "Animations",
-        font_builder,
-        24.,
+        MEDIUM_FONT_SIZE,
         commands.reborrow(),
     );
     commands.entity(animations).insert(AnimationMenu);
     commands.entity(browser).add_child(animations);
 
     let attacks = collapsible_menu(
-        ui_assets,
-        texture_atlas_layouts,
+        ui_resources,
         "Attacks",
-        font_builder,
-        24.,
+        MEDIUM_FONT_SIZE,
         commands.reborrow(),
     );
     commands.entity(attacks).insert(AttackMenu);
@@ -111,10 +103,8 @@ struct Collapsed(bool);
 impl Default for Collapsed { fn default() -> Self { Self(true) } }
 
 fn collapsible_menu(
-    ui_assets: &UiAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+    ui_resources: &mut UiResources,
     text: impl Into<String>,
-    font_builder: &FontBuilder,
     font_size: f32,
     mut commands: Commands,
 ) -> Entity {
@@ -143,8 +133,7 @@ fn collapsible_menu(
 
     let button = commands.spawn((
         styled_button(
-            ui_assets,
-            texture_atlas_layouts,
+            ui_resources,
             2,
             |
                 event: On<Pointer<Click>>,
@@ -188,7 +177,7 @@ fn collapsible_menu(
 
     let text = commands.spawn(widget::text(
         text,
-        font_builder,
+        &ui_resources.font_builder,
         font_size,
         HEADER_TEXT,
     )).id();
