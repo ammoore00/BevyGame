@@ -18,8 +18,32 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((loader::plugin,));
 }
 
+trait ResourceLoc: FromStr {
+    fn new(namespace: Namespace, id: ResourceId) -> Self;
+
+    fn from_str_impl(s: &str) -> Result<Self, ResourceLocationParseError> {
+        let mut split = s.split(':');
+        let count = split.clone().count();
+
+        match count {
+            1 => {
+                let namespace = Namespace::default();
+                let id = ResourceId::from_str(s)?;
+                Ok(Self::new(namespace, id))
+            }
+            2 => {
+                let namespace = Namespace::from_str(split.next().unwrap())?;
+                let id = ResourceId::from_str(split.next().unwrap())?;
+                Ok(Self::new(namespace, id))
+            }
+            0 => Err(ResourceLocationParseError::Empty),
+            _ => Err(ResourceLocationParseError::MultipleDividers(s.to_string())),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Getters, Reflect)]
-pub struct ResourceLocation<T: ResourceType> {
+pub struct ResourceLocation<T: ResourceKind> {
     #[getset(get = "pub")]
     namespace: Namespace,
     #[getset(get = "pub")]
@@ -27,12 +51,7 @@ pub struct ResourceLocation<T: ResourceType> {
     #[reflect(ignore)]
     phantom_data: PhantomData<T>,
 }
-
-impl<T: ResourceType> ResourceLocation<T> {
-    pub fn new(namespace: Namespace, id: ResourceId) -> Self {
-        Self { namespace, id, phantom_data: Default::default() }
-    }
-
+impl<T: ResourceKind> ResourceLocation<T> {
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self, ResourceLocationParseError> {
         let path = path.as_ref();
 
@@ -99,12 +118,17 @@ impl<T: ResourceType> ResourceLocation<T> {
             .join(&self.id.0)
     }
     
-    pub fn get(&self, registry: &ResourceRegistry<T>) -> Option<Handle<T::AssetType>> {
+    pub fn get(&self, registry: &ResourceRegistry<T>) -> Option<Handle<T::AssetKind>> {
         registry.get(self).cloned()
     }
 }
+impl<T: ResourceKind> ResourceLoc for ResourceLocation<T> {
+    fn new(namespace: Namespace, id: ResourceId) -> Self {
+        Self { namespace, id, phantom_data: Default::default() }
+    }
+}
 
-impl<T: ResourceType> Serialize for ResourceLocation<T> {
+impl<T: ResourceKind> Serialize for ResourceLocation<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -112,7 +136,7 @@ impl<T: ResourceType> Serialize for ResourceLocation<T> {
         serializer.serialize_str(&self.to_string())
     }
 }
-impl<'de, T: ResourceType> Deserialize<'de> for ResourceLocation<T> {
+impl<'de, T: ResourceKind> Deserialize<'de> for ResourceLocation<T> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -122,43 +146,65 @@ impl<'de, T: ResourceType> Deserialize<'de> for ResourceLocation<T> {
     }
 }
 
-impl<T: ResourceType> Display for ResourceLocation<T> {
+impl<T: ResourceKind> Display for ResourceLocation<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}", self.namespace, self.id)
     }
 }
 
-impl<T: ResourceType> FromStr for ResourceLocation<T> {
+impl<T: ResourceKind> FromStr for ResourceLocation<T> {
     type Err = ResourceLocationParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut split = s.split(':');
-        let count = split.clone().count();
-
-        match count {
-            1 => {
-                let namespace = Namespace::default();
-                let id = ResourceId::from_str(s)?;
-                Ok(Self::new(namespace, id))
-            }
-            2 => {
-                let namespace = Namespace::from_str(split.next().unwrap())?;
-                let id = ResourceId::from_str(split.next().unwrap())?;
-                Ok(Self::new(namespace, id))
-            }
-            0 => Err(ResourceLocationParseError::Empty),
-            _ => Err(ResourceLocationParseError::MultipleDividers(s.to_string())),
-        }
+        Self::from_str_impl(s)
     }
 }
 
-pub trait ResourceType: Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static {
-    type AssetType: Asset + Clone + Send + Sync + 'static;
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Getters, Reflect)]
+pub struct AnyResourceLocation {
+    #[getset(get = "pub")]
+    namespace: Namespace,
+    #[getset(get = "pub")]
+    id: ResourceId,
+}
+impl ResourceLoc for AnyResourceLocation {
+    fn new(namespace: Namespace, id: ResourceId) -> Self {
+        Self { namespace, id }
+    }
+}
+
+impl <T: ResourceKind> From<AnyResourceLocation> for ResourceLocation<T> {
+    fn from(value: AnyResourceLocation) -> Self {
+        Self { namespace: value.namespace, id: value.id, phantom_data: Default::default() }
+    }
+}
+impl <T: ResourceKind> From<ResourceLocation<T>> for AnyResourceLocation {
+    fn from(value: ResourceLocation<T>) -> Self {
+        Self { namespace: value.namespace, id: value.id }
+    }
+}
+
+impl Display for AnyResourceLocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.namespace, self.id)
+    }
+}
+
+impl FromStr for AnyResourceLocation {
+    type Err = ResourceLocationParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_str_impl(s)
+    }
+}
+
+pub trait ResourceKind: Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static {
+    type AssetKind: Asset + Clone + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
 }
 
-pub trait ResolvableResource: ResourceType {
+pub trait ResolvableResource: ResourceKind {
     type ResolvedAssetType: Asset + Clone + Send + Sync + 'static;
 }
 
@@ -191,8 +237,8 @@ macro_rules! define_resource {
             #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
             pub struct [<$name Resource>];
 
-            impl data::ResourceType for [<$name Resource>] {
-                type AssetType = $asset_type;
+            impl data::ResourceKind for [<$name Resource>] {
+                type AssetKind = $asset_type;
 
                 const ROOT_DIR: &'static str = $path;
                 const FILE_TYPE: ResourceFileType = $file_type;

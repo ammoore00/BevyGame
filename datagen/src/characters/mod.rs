@@ -3,7 +3,7 @@ mod test_npc;
 mod ai;
 
 use std::collections::HashMap;
-use bevy_game_2d::data::{ResourceLocation, ResourceType};
+use bevy_game_2d::data::{ResourceLocation, ResourceKind};
 use bevy_game_2d::data::sprite::TextureAtlasCodec;
 use bevy_game_2d::datagen_api::ai::{AiGraphCodec, AiGraphResource, AiStateCodec, AiStateResource};
 use bevy_game_2d::datagen_api::animation::{AnimationCodec, AnimationResource, FrameDataCodec};

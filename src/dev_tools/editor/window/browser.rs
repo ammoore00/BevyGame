@@ -1,5 +1,5 @@
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
-use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
+use crate::data::{ResolvableResource, ResourceLocation, ResourceKind, AnyResourceLocation};
 use crate::datagen_api::animation::AnimationResource;
 use crate::datagen_api::assets::CharacterResource;
 use crate::datagen_api::attack::AttackResource;
@@ -7,7 +7,7 @@ use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
 use crate::theme::widget;
-use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, SMALL_FONT_SIZE};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::{IntoObserverSystem, SystemParam};
@@ -15,6 +15,7 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
+use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -197,10 +198,10 @@ fn collapsible_menu(
 }
 
 trait MenuContentsKind: Component + Debug {
-    type ResourceKind: ResourceType;
+    type ResourceKind: EditorResourceKind;
 }
 trait ResolvedMenuContentsKind: MenuContentsKind {
-    type ResolvableResourceKind: ResolvableResource;
+    type ResolvableResourceKind: ResolvableResource + EditorResourceKind;
 }
 
 #[derive(Component, Debug, Clone, Copy, Default)]
@@ -261,7 +262,6 @@ fn spawn_collapsible_menu_contents<ContentKind>(
         Entity,
         With<MenuContents<ContentKind>>
     >,
-    font_builder: FontBuilder,
     mut commands: Commands,
 )
 where
@@ -303,13 +303,13 @@ where
     }
 }
 
-trait MenuRegistryAccessor<T: ResourceType>: SystemParam {
+trait MenuRegistryAccessor<T: ResourceKind>: SystemParam {
     type AssetKind: Asset;
     fn iter(&self) -> impl Iterator<Item = (ResourceLocation<T>, Handle<Self::AssetKind>)>;
 }
 
-impl<'w, T: ResourceType> MenuRegistryAccessor<T> for SystemRegistry<'w, T> {
-    type AssetKind = T::AssetType;
+impl<'w, T: ResourceKind> MenuRegistryAccessor<T> for SystemRegistry<'w, T> {
+    type AssetKind = T::AssetKind;
     fn iter(&self) -> impl Iterator<Item = (ResourceLocation<T>, Handle<Self::AssetKind>)> {
         self.registry().iter()
             .map(|(location, handle)| (location.clone(), handle.clone()))
@@ -371,7 +371,7 @@ fn update_menu_contents_inner<ContentKind, Registry, Resource>(
 where
     ContentKind: MenuContentsKind,
     Registry: MenuRegistryAccessor<Resource>,
-    Resource: ResourceType,
+    Resource: EditorResourceKind,
 {
     // TODO: Figure out a way to make this work with change detection?
 
@@ -388,28 +388,30 @@ where
             return;
         }
     };
-
+    
+    let file_kind = FileKind::from_resource_kind::<Resource>();
+    
     if uninitialized.is_some() {
         for (loc, _) in registry.iter() {
-            let item = commands.spawn(UninitializedMenuItem(loc.as_local_path().to_path_buf())).id();
+            let item = commands.spawn(UninitializedMenuItem(loc.as_local_path().to_path_buf(), loc.into(), file_kind)).id();
             commands.entity(contents).add_child(item);
         }
     }
 }
 
 #[derive(Component, Debug, Clone)]
-struct UninitializedMenuItem(PathBuf);
+struct UninitializedMenuItem(PathBuf, AnyResourceLocation, FileKind);
 
 #[derive(Component, Debug, Clone)]
 enum MenuItem {
     Folder(String),
-    File(String),
+    File(String, AnyResourceLocation, FileKind),
 }
 impl MenuItem {
     fn name(&self) -> &str {
         match self {
             MenuItem::Folder(name) => name,
-            MenuItem::File(name) => name,
+            MenuItem::File(name, _, _) => name,
         }
     }
 }
@@ -439,9 +441,12 @@ fn update_menu_items(
     mut commands: Commands,
 ) {
     // Only process one item per frame in order to prevent duplicate items
-    // TODO: Profile this to make sure it isn't taking too long
+    // TODO: Fix this to make it not take so long
     for (item_entity, item, parent) in items_query.iter().take(1) {
         let path = item.0.clone();
+        let loc = item.1.clone();
+        let file_kind = item.2.clone();
+        
         let mut components = path.components().peekable();
         let Some(component) = components.next() else {
             error!("Cannot create empty path");
@@ -475,7 +480,7 @@ fn update_menu_items(
         let existing = siblings.find(|(_, sibling_item)| {
             match (sibling_item, is_last) {
                 (MenuItem::Folder(name), false)
-                | (MenuItem::File(name), true) => component == name,
+                | (MenuItem::File(name, _, _), true) => component == name,
                 _ => false
             }
         });
@@ -489,14 +494,14 @@ fn update_menu_items(
             // Otherwise, replace the uninitialized reference with an item
             (true, None) => {
                 commands.entity(item_entity).remove::<UninitializedMenuItem>();
-                commands.entity(item_entity).insert(MenuItem::File(component.to_string()));
+                commands.entity(item_entity).insert(MenuItem::File(component.to_string(), loc, file_kind));
             },
             //If we are still in a directory:
             // If the child already exists, despawn the uninitialized entity,
             // then add a new uninitialized one under the existing match
             (false, Some((existing, _))) => {
                 commands.entity(item_entity).despawn();
-                let child = commands.spawn(UninitializedMenuItem(remaining_path)).id();
+                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc.into(), file_kind)).id();
                 commands.entity(existing).add_child(child);
             },
             // Otherwise, replace the uninitialized reference with a folder,
@@ -504,7 +509,7 @@ fn update_menu_items(
             (false, None) => {
                 commands.entity(item_entity).remove::<UninitializedMenuItem>();
                 commands.entity(item_entity).insert(MenuItem::Folder(component.to_string()));
-                let child = commands.spawn(UninitializedMenuItem(remaining_path)).id();
+                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc.into(), file_kind)).id();
                 commands.entity(item_entity).add_child(child);
             },
         }
@@ -577,7 +582,7 @@ fn render_menu_items(
                 HEADER_TEXT,
                 folder_button_clicked,
             )).id(),
-            MenuItem::File(_) => commands.spawn(browser_button(
+            MenuItem::File(_, _, _) => commands.spawn(browser_button(
                 item.name(),
                 &font_builder,
                 BUTTON_TEXT,
@@ -666,5 +671,30 @@ fn folder_button_clicked(
 ) {}
 
 fn file_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
+    event: On<Pointer<Click>>,
+    parent_query: Query<&ChildOf>,
+    file_query: Query<&MenuItem>,
+    mut file_manager: ResMut<FileManager>,
+) {
+    let Ok(button_root) = parent_query.get(event.entity).map(ChildOf::get) else {
+        error!("Failed to get button root");
+        return;
+    };
+
+    let Ok(menu_item) = parent_query.get(button_root).map(ChildOf::get) else {
+        error!("Failed to get menu item entity");
+        return;
+    };
+    
+    let Ok(menu_item) = file_query.get(menu_item) else {
+        error!("Failed to get menu item component from entity");
+        return;
+    };
+    
+    let MenuItem::File(_, loc, file_kind) = menu_item else {
+        error!("Menu item was not a file!");
+        return;
+    };
+    
+    file_manager.open(loc.clone(), *file_kind);
+}

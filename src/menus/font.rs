@@ -1,6 +1,6 @@
 use crate::data::loader::LoaderJobManager;
 use crate::data::registry::ResourceRegistry;
-use crate::data::{ResourceFileType, ResourceLocation, ResourceType};
+use crate::data::{ResourceFileType, ResourceLocation, ResourceKind};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 
@@ -12,8 +12,8 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]
 pub struct FontResource;
-impl ResourceType for FontResource {
-    type AssetType = Font;
+impl ResourceKind for FontResource {
+    type AssetKind = Font;
     const ROOT_DIR: &'static str = "fonts";
     const FILE_TYPE: ResourceFileType = ResourceFileType::Font;
 }

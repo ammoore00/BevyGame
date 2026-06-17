@@ -1,4 +1,4 @@
-use bevy_game_2d::data::{ResourceLocation, ResourceType};
+use bevy_game_2d::data::{ResourceLocation, ResourceKind};
 use bevy_game_2d::datagen_api::ai::{AiGraphCodec, AiGraphResource, AiStateCodec, AiStateResource};
 use crate::{create_dir, write_data, WriteError};
 

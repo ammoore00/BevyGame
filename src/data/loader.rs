@@ -1,5 +1,5 @@
 use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
-use crate::data::{ResolvableResource, ResourceLocation, ResourceType};
+use crate::data::{ResolvableResource, ResourceLocation, ResourceKind};
 use crate::{AssetLoadState, AssetSystems};
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
@@ -71,7 +71,7 @@ impl GameAssetLoader {
         }
     }
 
-    pub fn add_loader_job<T: ResourceType>(&mut self) {
+    pub fn add_loader_job<T: ResourceKind>(&mut self) {
         self.loader_jobs.push(Arc::new(LoaderJob::<T>::default()));
     }
 
@@ -87,11 +87,11 @@ impl GameAssetLoader {
 
 pub trait LoaderJobManager {
     /// Adds a job to the asset loader which will load all assets in the registry
-    fn add_resource_registry<T: ResourceType>(&mut self);
+    fn add_resource_registry<T: ResourceKind>(&mut self);
     /// Adds a job to the asset loader with a pre-filled manifest
-    fn add_registry_with_manifest<T: ResourceType>(&mut self, manifest: Vec<ResourceLocation<T>>);
+    fn add_registry_with_manifest<T: ResourceKind>(&mut self, manifest: Vec<ResourceLocation<T>>);
     /// Adds a job to the asset loader which will discover all assets in the registry automatically
-    fn add_registry_with_discovery<T: ResourceType>(&mut self);
+    fn add_registry_with_discovery<T: ResourceKind>(&mut self);
 
 
     fn add_resolved_registry<T: ResolvableResource>(&mut self);
@@ -100,7 +100,7 @@ pub trait LoaderJobManager {
 }
 
 impl LoaderJobManager for App {
-    fn add_resource_registry<T: ResourceType>(&mut self) {
+    fn add_resource_registry<T: ResourceKind>(&mut self) {
         let world = self.world_mut();
 
         if world.contains_resource::<ResourceRegistry<T>>() {
@@ -116,7 +116,7 @@ impl LoaderJobManager for App {
         asset_loader.add_loader_job::<T>();
     }
 
-    fn add_registry_with_manifest<T: ResourceType>(&mut self, manifest: Vec<ResourceLocation<T>>) {
+    fn add_registry_with_manifest<T: ResourceKind>(&mut self, manifest: Vec<ResourceLocation<T>>) {
         self.add_resource_registry::<T>();
         let world = self.world_mut();
         let mut registry = world.resource_mut::<ResourceRegistry<T>>();
@@ -125,7 +125,7 @@ impl LoaderJobManager for App {
 
     // TODO: Eventually I want to be able to load assets from multiple places (e.g. mod files)
     //       This will require a way to check all places, not just the normal assets folder
-    fn add_registry_with_discovery<T: ResourceType>(&mut self) {
+    fn add_registry_with_discovery<T: ResourceKind>(&mut self) {
         // Find all namespaces currently available
         let Ok(namespaces) = std::fs::read_dir("./assets/") else {
             return;
@@ -189,15 +189,15 @@ trait RegistryLoader: Send + Sync + 'static {
 }
 
 #[derive(Debug)]
-struct LoaderJob<T: ResourceType> {
+struct LoaderJob<T: ResourceKind> {
     phantom_data: PhantomData<T>,
 }
-impl<T: ResourceType> Default for LoaderJob<T> {
+impl<T: ResourceKind> Default for LoaderJob<T> {
     fn default() -> Self {
         Self { phantom_data: Default::default() }
     }
 }
-impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
+impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
     /// Iterate through all registered assets for the associated registry and loads them
     fn load(&self, world: &mut World) -> Result<(), LoaderError> {
         let asset_server = world.resource::<AssetServer>();
@@ -208,7 +208,7 @@ impl<T: ResourceType> RegistryLoader for LoaderJob<T> {
         let manifest = registry.manifest();
         manifest.iter().for_each(|loc| {
             let path = loc.as_path();
-            let asset = asset_server.load::<T::AssetType>(path);
+            let asset = asset_server.load::<T::AssetKind>(path);
             assets.insert(loc.clone(), asset);
         });
 
@@ -393,18 +393,18 @@ impl<T: Serialize + Copy> Copy for Maybe<T> {}
 )]
 pub enum InlineOrResourceLocation<T, Codec>
 where
-    T: ResourceType,
-    Codec: RonCodec<T::AssetType>,
+    T: ResourceKind,
+    Codec: RonCodec<T::AssetKind>,
 {
     Inline(Codec),
     ResourceLocation(ResourceLocation<T>),
 }
 impl<T, Codec> InlineOrResourceLocation<T, Codec>
 where
-    T: ResourceType,
-    Codec: RonCodec<T::AssetType>,
+    T: ResourceKind,
+    Codec: RonCodec<T::AssetKind>,
 {
-    pub fn resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetType> {
+    pub fn resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetKind> {
         match self {
             InlineOrResourceLocation::Inline(codec) => Some(codec.into()),
             InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(&location).cloned(),

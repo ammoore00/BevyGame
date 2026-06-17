@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use serde::Serialize;
 use tracing::info;
-use bevy_game_2d::data::{ResourceLocation, ResourceType};
+use bevy_game_2d::data::{ResourceLocation, ResourceKind};
 use crate::characters::generate_characters;
 use crate::room::generate_rooms;
 use crate::tiles::generate_tiles;
@@ -38,7 +38,7 @@ pub fn write_data<R, D>(
     codec: &D
 ) -> Result<(), WriteError>
 where
-    R: ResourceType,
+    R: ResourceKind,
     D: ?Sized + Serialize
 {
     let serialized = ron::ser::to_string_pretty(&codec, ron::ser::PrettyConfig::default())?;
@@ -151,7 +151,7 @@ pub enum WriteError {
     Ron(#[from] ron::Error),
 }
 impl WriteError {
-    fn io<T: ResourceType>(loc: &ResourceLocation<T>, err: std::io::Error) -> Self {
+    fn io<T: ResourceKind>(loc: &ResourceLocation<T>, err: std::io::Error) -> Self {
         Self::File {
             loc: loc.to_string(),
             path: loc.as_path()
