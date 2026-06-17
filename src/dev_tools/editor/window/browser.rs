@@ -675,6 +675,7 @@ fn file_button_clicked(
     parent_query: Query<&ChildOf>,
     file_query: Query<&MenuItem>,
     mut file_manager: ResMut<FileManager>,
+    mut commands: Commands,
 ) {
     let Ok(button_root) = parent_query.get(event.entity).map(ChildOf::get) else {
         error!("Failed to get button root");

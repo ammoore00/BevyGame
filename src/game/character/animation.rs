@@ -381,6 +381,16 @@ pub struct PartialAnimationData {
     frame_data: FrameData,
     resolved_handle: Option<Handle<ResolvedAnimationData>>,
 }
+impl From<AnimationCodec> for PartialAnimationData {
+    fn from(codec: AnimationCodec) -> Self {
+        PartialAnimationData {
+            image: codec.image,
+            atlas: codec.atlas.into(),
+            frame_data: codec.frame_data.into(),
+            resolved_handle: None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct AnimationCodec {
@@ -389,13 +399,26 @@ pub struct AnimationCodec {
     pub atlas: TextureAtlasCodec,
     pub frame_data: FrameDataCodec,
 }
-impl From<AnimationCodec> for PartialAnimationData {
-    fn from(codec: AnimationCodec) -> Self {
-        PartialAnimationData {
-            image: codec.image,
-            atlas: codec.atlas.into(),
-            frame_data: codec.frame_data.into(),
-            resolved_handle: None,
+impl AnimationCodec {
+    pub const LATEST_FORMAT: u8 = 1;
+}
+impl Default for AnimationCodec {
+    fn default() -> Self {
+        Self {
+            format: Self::LATEST_FORMAT,
+            image: "untitled".parse().unwrap(),
+            atlas: TextureAtlasCodec {
+                format: TextureAtlasCodec::LATEST_FORMAT,
+                size: UVec2::splat(64),
+                columns: 8,
+                rows: 8,
+                padding: Default::default(),
+                offset: Default::default(),
+            },
+            frame_data: FrameDataCodec::FixedInterval {
+                num_frames: 8,
+                interval: 50,
+            },
         }
     }
 }

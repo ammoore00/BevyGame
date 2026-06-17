@@ -1,20 +1,22 @@
+use crate::dev_tools::editor::window::browser::spawn_file_browser;
+use crate::dev_tools::editor::window::editor_port::spawn_editor_port;
+use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
+use crate::dev_tools::editor::window::properties::spawn_details_screen;
 use crate::menus::font::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::widget;
 use crate::theme::widget::{UiAssets, UiBackgroundStyle};
 use bevy::prelude::*;
-use crate::dev_tools::editor::window::browser::spawn_file_browser;
-use crate::dev_tools::editor::window::editor_port::spawn_editor_port;
-use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
 
 mod menu_bar;
 mod browser;
 mod editor_port;
-mod details;
+pub(super) mod properties;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         browser::plugin,
+        properties::plugin,
         editor_port::plugin,
     ));
     
@@ -25,7 +27,7 @@ pub(super) fn plugin(app: &mut App) {
 struct EditorUiRoot;
 
 fn spawn_editor_window(
-    button_assets: Res<UiAssets>,
+    ui_assets: Res<UiAssets>,
     font_builder: FontBuilder,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands
@@ -37,10 +39,10 @@ fn spawn_editor_window(
             DespawnOnExit(Screen::Editor),
         )).id();
 
-    let editor_content = spawn_editor_content(&button_assets, &font_builder, &mut texture_atlas_layouts, commands.reborrow());
+    let editor_content = spawn_editor_content(&ui_assets, &font_builder, &mut texture_atlas_layouts, commands.reborrow());
     commands.entity(editor).add_child(editor_content);
 
-    let menu_bar = spawn_menu_bar(&button_assets, &font_builder, &mut texture_atlas_layouts, commands.reborrow());
+    let menu_bar = spawn_menu_bar(&ui_assets, &font_builder, &mut texture_atlas_layouts, commands.reborrow());
     commands.entity(editor).add_child(menu_bar);
 }
 
@@ -185,6 +187,11 @@ fn spawn_editor_content(
         commands.reborrow()
     );
     commands.entity(center_panel).add_child(editor_port);
+
+    let details_screen = spawn_details_screen(
+        commands.reborrow()
+    );
+    commands.entity(right_panel).add_child(details_screen);
 
     editor_content
 }

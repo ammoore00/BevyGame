@@ -27,6 +27,10 @@ pub struct TextureAtlasCodec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offset: Maybe<UVec2>,
 }
+impl TextureAtlasCodec {
+    pub const LATEST_FORMAT: u8 = 1;
+}
+
 impl From<TextureAtlasCodec> for TextureAtlasLayout {
     fn from(codec: TextureAtlasCodec) -> Self {
         TextureAtlasLayout::from_grid(codec.size, codec.columns, codec.rows, codec.padding.into(), codec.offset.into())

@@ -59,6 +59,20 @@ pub struct AttackCodec {
     pub animation: ResourceLocation<AnimationResource>,
     pub particle_sprite: ResourceLocation<CharacterSpriteResource>,
 }
+impl AttackCodec {
+    pub const LATEST_FORMAT: u8 = 1;
+}
+impl Default for AttackCodec {
+    fn default() -> Self {
+        AttackCodec {
+            format: AttackCodec::LATEST_FORMAT,
+            duration: 150,
+            stamina_cost: 0,
+            animation: "untitled".parse().unwrap(),
+            particle_sprite: "untitled".parse().unwrap(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Asset, TypePath, Getters)]
 pub struct AttackSet {

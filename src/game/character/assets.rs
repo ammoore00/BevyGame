@@ -3,6 +3,7 @@ use crate::data::registry::ResolvedResourceRegistry;
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::datagen_api::animation::{AnimationResource, ResolvedAnimationData};
 use crate::datagen_api::attack::{AttackContext, AttackSetResource};
+use crate::datagen_api::components::{CapsuleCodec, ColliderTypeCodec};
 use crate::game::character::attack::AttackDefinition;
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
@@ -104,6 +105,28 @@ pub struct CharacterCodec {
     pub animations: HashMap<ActionStateEnum, ResourceLocation<AnimationResource>>,
     pub attack_set: Maybe<ResourceLocation<AttackSetResource>>,
     pub collider: ColliderCodec,
+}
+impl CharacterCodec {
+    pub const LATEST_FORMAT: u8 = 1;
+}
+impl Default for CharacterCodec {
+    fn default() -> Self {
+        Self {
+            format: Self::LATEST_FORMAT,
+            allowed_states: Maybe(None),
+            animations: HashMap::new(),
+            attack_set: Maybe(None),
+            collider: ColliderCodec {
+                format: ColliderCodec::LATEST_FORMAT,
+                collider: ColliderTypeCodec::Capsule(
+                    CapsuleCodec::Vertical {
+                        radius: 1.25,
+                        height: 0.25,
+                    }
+                )
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]

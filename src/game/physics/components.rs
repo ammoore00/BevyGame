@@ -75,6 +75,9 @@ pub struct ColliderCodec {
     pub collider: ColliderTypeCodec,
 }
 impl ColliderCodec {
+    pub const LATEST_FORMAT: u8 = 1;
+}
+impl ColliderCodec {
     pub fn make_collider(&self, pos: Vec3) -> Collider {
         match &self.collider {
             ColliderTypeCodec::Cuboid { x, y, z } => Collider::cuboid((*x, *y, *z).into(), pos),

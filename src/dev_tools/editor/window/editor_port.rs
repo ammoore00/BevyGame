@@ -137,7 +137,7 @@ fn update_file_tab_buttons(
     // Despawn buttons for files no longer open
     for child in children.iter() {
         if let Some((button_entity, button)) = file_button_query.get(*child).ok()
-            && !file_manager.open_files().contains(&button.0)
+            && !file_manager.is_file_open(&button.0)
         {
             commands.entity(button_entity).despawn();
         }
@@ -145,6 +145,8 @@ fn update_file_tab_buttons(
 
     // Spawn buttons for new open files
     for open_file in file_manager.open_files() {
+        let open_file = &*open_file.read().unwrap();
+        
         if existing_buttons.contains(open_file) {
             continue;
         }
@@ -232,8 +234,11 @@ fn update_editor_port_content(
         return;
     };
 
-    let display = file_manager.get_active_file()
-        .map(|file| format!("Active file: {}\nFile type: {:?}", file.loc(), file.kind()))
+    let display = file_manager.active_file()
+        .map(|file| {
+            let file = &*file.read().unwrap();
+            format!("Active file: {}\nFile type: {:?}", file.loc(), file.kind())
+        })
         .unwrap_or("No active file".to_string());
 
     *text = Text(display);
