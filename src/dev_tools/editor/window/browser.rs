@@ -15,7 +15,7 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager};
+use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -664,7 +664,7 @@ fn file_button_clicked(
     parent_query: Query<&ChildOf>,
     file_query: Query<&MenuItem>,
     mut file_manager: ResMut<FileManager>,
-    mut commands: Commands,
+    channel_set: FileTaskChannelSet,
 ) {
     let Ok(button_root) = parent_query.get(event.entity).map(ChildOf::get) else {
         error!("Failed to get button root");
@@ -687,8 +687,8 @@ fn file_button_clicked(
     };
     
     match event.button {
-        PointerButton::Primary => file_manager.open(loc.clone(), *file_kind, true),
+        PointerButton::Primary => file_manager.open(loc.clone(), *file_kind, true, &channel_set),
         PointerButton::Secondary => {}
-        PointerButton::Middle => file_manager.open(loc.clone(), *file_kind, false),
+        PointerButton::Middle => file_manager.open(loc.clone(), *file_kind, false, &channel_set),
     }
 }

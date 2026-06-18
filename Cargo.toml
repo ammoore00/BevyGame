@@ -61,6 +61,8 @@ serde = "1.0.228"
 ron = "0.12.1"
 walkdir = "2.5.0"
 
+crossbeam = "0.8.4"
+
 derive-new = "0.7.0"
 getset = "0.1.6"
 
