@@ -203,7 +203,7 @@ pub(super) fn editor_port_content(
 
             ..Default::default()
         },
-        widget::text("Editor Content", &ui_resources.font_builder, LARGE_FONT_SIZE, BUTTON_TEXT)
+        widget::text("Editor Content", ui_resources.font_builder.with_size(LARGE_FONT_SIZE), BUTTON_TEXT)
     )
 }
 

@@ -177,8 +177,7 @@ fn collapsible_menu(
 
     let text = commands.spawn(widget::text(
         text,
-        &ui_resources.font_builder,
-        font_size,
+        ui_resources.font_builder.with_size(font_size),
         HEADER_TEXT,
     )).id();
     commands.entity(menu_inner).add_child(text);

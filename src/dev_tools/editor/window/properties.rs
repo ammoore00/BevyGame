@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::sync::LazyLock;
 use crate::datagen_api::animation::{AnimationCodec, AnimationResource};
 use crate::datagen_api::assets::{CharacterCodec, CharacterResource};
 use crate::datagen_api::attack::{AttackCodec, AttackResource};
@@ -7,9 +7,10 @@ use crate::screens::Screen;
 use crate::theme::widget::{UiResources, SMALL_FONT_SIZE};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
-use bevy_ui_text_input::{TextInputMode, TextInputNode};
+use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode};
+use regex::Regex;
 use serde::de::DeserializeOwned;
-use crate::theme::palette::HEADER_TEXT;
+use crate::theme::palette::{HEADER_TEXT, TEXT_INPUT_BACKGROUND};
 use crate::theme::widget;
 
 pub(super) fn plugin(app: &mut App) {
@@ -130,6 +131,8 @@ fn update_properties_view(
 #[derive(Component, Debug, Clone)]
 struct PropertiesInner(EditorFile);
 
+const PROPERTIES_EDITOR_ITEM_SPACING: usize = 8;
+
 impl EditorFile {
     fn spawn_properties_editor(
         &self,
@@ -138,7 +141,15 @@ impl EditorFile {
         mut commands: Commands,
     ) -> Entity {
         let shared_bundle = (
-            Node::default(),
+            Node {
+                flex_direction: FlexDirection::Column,
+                row_gap: px(PROPERTIES_EDITOR_ITEM_SPACING),
+
+                width: percent(100),
+                height: percent(100),
+
+                ..default()
+            },
             PropertiesInner(self.clone()),
         );
 
@@ -193,7 +204,10 @@ impl EditorCodec for AnimationCodec {
 
     fn properties_bundle(self, ui_resources: &mut UiResources) -> impl Bundle {
         children![
-            text_input(ui_resources, UVec2::new(300, 50), "Animation")
+            text_input(ui_resources, 300, "Image Resource:", TextInputMode::SingleLine, RESOURCE_FILTER()),
+            text_input(ui_resources, 24, "Frame Height:", TextInputMode::SingleLine, TextInputFilter::PositiveInteger),
+            text_input(ui_resources, 24, "Frame Width:", TextInputMode::SingleLine, TextInputFilter::PositiveInteger),
+            text_input(ui_resources, 24, "Number of Frames:", TextInputMode::SingleLine, TextInputFilter::PositiveInteger),
         ]
     }
 }
@@ -202,31 +216,68 @@ impl EditorCodec for AttackCodec {
     type Resource = AttackResource;
     const FILE_CONTENT_FN: fn(Self) -> EditorFileContent = EditorFileContent::Attack;
     const FILE_TYPE: FileKind = FileKind::Attack;
-    
+
     fn properties_bundle(self, ui_resources: &mut UiResources) -> impl Bundle {}
 }
 
-fn text_input(
+const TEXT_INPUT_GAP: usize = 12;
+const TEXT_INPUT_PADDING: usize = 4;
+const TEXT_INPUT_HEIGHT: usize = SMALL_FONT_SIZE as usize;
+
+static RESOURCE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9:/_-]+$").unwrap());
+static RESOURCE_FILTER: LazyLock<fn() -> TextInputFilter> = LazyLock::new(|| || TextInputFilter::Custom(Box::new(|s| {
+    RESOURCE_PATTERN.clone().is_match(s)
+})));
+static ANY_FILTER: LazyLock<fn() -> TextInputFilter> = LazyLock::new(|| || TextInputFilter::Custom(Box::new(|_| true)));
+
+fn text_input<'a>(
     ui_resources: &mut UiResources,
-    size: UVec2,
+    width: usize,
     label: &str,
-) -> impl Bundle {
+    mode: TextInputMode,
+    filter: TextInputFilter,
+) -> impl Bundle + use<'a> {
+    let font = ui_resources.font_builder.with_size(SMALL_FONT_SIZE);
+    let text = widget::text(label, font.clone(), HEADER_TEXT);
+
     (
         Node {
-            ..Default::default()
+            column_gap: px(TEXT_INPUT_GAP),
+            ..default()
         },
         children![
-            widget::text(label, &ui_resources.font_builder, SMALL_FONT_SIZE, HEADER_TEXT),
             (
-                TextInputNode {
-                    mode: TextInputMode::SingleLine,
-                    ..Default::default()
-                },
+                text,
                 Node {
-                    width: px(size.x),
-                    height: px(size.y),
+                    height: px(TEXT_INPUT_HEIGHT),
+                    ..default()
+                }
+            ),
+            (
+                Node {
+                    padding: UiRect::horizontal(px(TEXT_INPUT_PADDING)),
+                    height: px(TEXT_INPUT_HEIGHT),
+                    width: px(width + TEXT_INPUT_PADDING * 2),
+
                     ..default()
                 },
+                BackgroundColor::from(TEXT_INPUT_BACKGROUND),
+                children![
+                    (
+                        TextInputNode {
+                            mode,
+                            ..default()
+                        },
+                        font,
+                        filter,
+                        Node {
+                            height: px(TEXT_INPUT_HEIGHT),
+                            width: px(width),
+
+                            ..default()
+                        },
+                    )
+                ]
             )
         ],
     )
