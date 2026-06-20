@@ -28,7 +28,7 @@ pub struct FontBuilder<'w> {
 }
 impl<'w> FontBuilder<'w> {
     /// Create text with the given size and the default font
-    pub fn with_size(&self, font_size: f32) -> TextFont {
+    pub fn with_size(&self, font_size: FontSize) -> TextFont {
         self.with_font(font_size, self.default_font.0.clone())
             .expect(
                 "Failed to load default font. This should never happen. Please report this bug.",
@@ -36,10 +36,10 @@ impl<'w> FontBuilder<'w> {
     }
 
     /// Create text with the given size and font, using a resource location
-    pub fn with_font(&self, font_size: f32, font: ResourceLocation<FontResource>) -> Option<TextFont> {
+    pub fn with_font(&self, font_size: FontSize, font: ResourceLocation<FontResource>) -> Option<TextFont> {
         font.get(self.font_registry.as_ref())
             .map(|font| TextFont {
-                font: font.clone(),
+                font: FontSource::from(font),
                 font_size,
                 ..default()
             })

@@ -16,7 +16,6 @@ pub mod datagen_api;
 pub mod data;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
-use bevy_ui_text_input::TextInputPlugin;
 
 pub struct AppPlugin;
 
@@ -42,7 +41,6 @@ impl Plugin for AppPlugin {
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
-            TextInputPlugin,
         ));
 
         // Add other plugins.

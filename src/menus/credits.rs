@@ -4,7 +4,7 @@ use crate::gamepad::gamepad_just_pressed;
 use crate::menus::font::FontBuilder;
 use crate::theme::widget::{UiAssets, UiResources};
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
-use bevy::input_focus::InputFocus;
+use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
@@ -50,7 +50,7 @@ fn spawn_credits_menu(
         ))
         .id();
     commands.entity(ui_root).add_child(back_button);
-    input_focus.0 = Some(back_button);
+    input_focus.set(back_button, FocusCause::Navigated);
 }
 
 fn created_by(font_builder: &FontBuilder) -> impl Bundle {

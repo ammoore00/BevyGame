@@ -7,6 +7,7 @@ use getset::CopyGetters;
 use std::ops::Not;
 use tracing::info;
 use crate::dev_tools::debug_menu::debug_options::{spawn_debug, DebugOptionState};
+use crate::theme::widget::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE, TINY_FONT_SIZE};
 
 pub mod debug_options;
 pub mod level_render;
@@ -182,7 +183,7 @@ fn spawn_debug_menu(
                 parent.spawn((
                     Text::new("Debug Menu"),
                     TextFont {
-                        font_size: 22.0,
+                        font_size: MEDIUM_FONT_SIZE,
                         ..default()
                     },
                     TextColor(Color::WHITE),
@@ -294,7 +295,7 @@ fn text_bundle(icon: &str) -> impl Bundle {
     (
         Text::new(icon),
         TextFont {
-            font_size: 16.0,
+            font_size: TINY_FONT_SIZE,
             ..default()
         },
         TextColor(Color::WHITE),
@@ -329,7 +330,7 @@ pub(super) fn spawn_checkbox_row(
             parent.spawn((
                 Text::new(if checked { CHECKED } else { UNCHECKED }),
                 TextFont {
-                    font_size: 16.0,
+                    font_size: TINY_FONT_SIZE,
                     ..default()
                 },
                 TextColor(Color::WHITE),
@@ -338,7 +339,7 @@ pub(super) fn spawn_checkbox_row(
             parent.spawn((
                 Text::new(label),
                 TextFont {
-                    font_size: 16.0,
+                    font_size: TINY_FONT_SIZE,
                     ..default()
                 },
                 TextColor(Color::WHITE),

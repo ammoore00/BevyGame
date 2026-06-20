@@ -8,7 +8,7 @@ use crate::theme::widget;
 use crate::theme::widget::{UiAssets, UiResources};
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
-use bevy::input_focus::InputFocus;
+use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
@@ -58,7 +58,7 @@ fn spawn_settings_menu(
         .id();
     commands.entity(ui_root).add_child(back_button);
 
-    input_focus.0 = Some(back_button);
+    input_focus.set(back_button, FocusCause::Navigated);
 }
 
 fn settings_grid(

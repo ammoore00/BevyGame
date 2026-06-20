@@ -6,6 +6,7 @@ use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
 use serde::{Deserialize, Serialize};
+use crate::game::physics::math::{ToBevy, ToParry};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);
@@ -142,7 +143,7 @@ impl Collider {
         let size: Vec3 = Vec3::new(size.x, size.y, size.z);
 
         Self {
-            collider_type: ColliderType::Cuboid(Cuboid::new(size)),
+            collider_type: ColliderType::Cuboid(Cuboid::new(size.to_parry())),
             position: Pose::translation(position.x, position.y, position.z),
         }
     }
@@ -153,7 +154,7 @@ impl Collider {
         let end = Vec3::new(end.x, end.y, end.z);
 
         Self {
-            collider_type: ColliderType::Capsule(Capsule::new(start, end, radius)),
+            collider_type: ColliderType::Capsule(Capsule::new(start.to_parry(), end.to_parry(), radius)),
             position: Pose::translation(position.x, position.y, position.z),
         }
     }
@@ -169,8 +170,10 @@ impl Collider {
 
     pub fn convex_hull(vertices: &[Vec3], position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
+        
+        let vertices = vertices.iter().map(|v| v.to_parry()).collect::<Vec<_>>();
 
-        let convex_hull = convex_hull(vertices);
+        let convex_hull = convex_hull(vertices.as_slice());
         let convex_polyhedron = ConvexPolyhedron::from_convex_hull(convex_hull.0.as_slice());
 
         let vertices = convex_hull
@@ -224,13 +227,13 @@ impl Collider {
     pub fn bounds(&self) -> (Vec3, Vec3) {
         let (local_min, local_max) = match &self.collider_type {
             ColliderType::Cuboid(cuboid) => {
-                let half_extents = cuboid.half_extents;
+                let half_extents = cuboid.half_extents.to_bevy();
 
                 (-half_extents, half_extents)
             }
             ColliderType::Capsule(capsule) => {
-                let a = capsule.segment.a;
-                let b = capsule.segment.b;
+                let a = capsule.segment.a.to_bevy();
+                let b = capsule.segment.b.to_bevy();
                 let r = Vec3::splat(capsule.radius);
 
                 (a.min(b) - r, a.max(b) + r)

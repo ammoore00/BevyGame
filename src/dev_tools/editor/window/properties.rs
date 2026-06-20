@@ -7,7 +7,6 @@ use crate::screens::Screen;
 use crate::theme::widget::{UiResources, SMALL_FONT_SIZE};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
-use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode};
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use crate::theme::palette::{HEADER_TEXT, TEXT_INPUT_BACKGROUND};
@@ -204,10 +203,10 @@ impl EditorCodec for AnimationCodec {
 
     fn properties_bundle(self, ui_resources: &mut UiResources) -> impl Bundle {
         children![
-            text_input(ui_resources, 300, "Image Resource:", TextInputMode::SingleLine, RESOURCE_FILTER()),
-            text_input(ui_resources, 24, "Frame Height:", TextInputMode::SingleLine, TextInputFilter::PositiveInteger),
-            text_input(ui_resources, 24, "Frame Width:", TextInputMode::SingleLine, TextInputFilter::PositiveInteger),
-            text_input(ui_resources, 24, "Number of Frames:", TextInputMode::SingleLine, TextInputFilter::PositiveInteger),
+            text_input(ui_resources, 300, "Image Resource:"),
+            text_input(ui_resources, 24, "Frame Height:"),
+            text_input(ui_resources, 24, "Frame Width:"),
+            text_input(ui_resources, 24, "Number of Frames:"),
         ]
     }
 }
@@ -222,20 +221,14 @@ impl EditorCodec for AttackCodec {
 
 const TEXT_INPUT_GAP: usize = 12;
 const TEXT_INPUT_PADDING: usize = 4;
-const TEXT_INPUT_HEIGHT: usize = SMALL_FONT_SIZE as usize;
+const TEXT_INPUT_HEIGHT: usize = 20;
 
 static RESOURCE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9:/_-]+$").unwrap());
-static RESOURCE_FILTER: LazyLock<fn() -> TextInputFilter> = LazyLock::new(|| || TextInputFilter::Custom(Box::new(|s| {
-    RESOURCE_PATTERN.clone().is_match(s)
-})));
-static ANY_FILTER: LazyLock<fn() -> TextInputFilter> = LazyLock::new(|| || TextInputFilter::Custom(Box::new(|_| true)));
 
 fn text_input<'a>(
     ui_resources: &mut UiResources,
     width: usize,
     label: &str,
-    mode: TextInputMode,
-    filter: TextInputFilter,
 ) -> impl Bundle + use<'a> {
     let font = ui_resources.font_builder.with_size(SMALL_FONT_SIZE);
     let text = widget::text(label, font.clone(), HEADER_TEXT);
@@ -264,12 +257,7 @@ fn text_input<'a>(
                 BackgroundColor::from(TEXT_INPUT_BACKGROUND),
                 children![
                     (
-                        TextInputNode {
-                            mode,
-                            ..default()
-                        },
                         font,
-                        filter,
                         Node {
                             height: px(TEXT_INPUT_HEIGHT),
                             width: px(width),

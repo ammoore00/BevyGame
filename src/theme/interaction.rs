@@ -68,7 +68,7 @@ fn apply_gamepad_interaction_palette(
             // Iterate through each button that has children
             button_query.iter().for_each(|(parent, children)| {
                 // If the button is the focused element
-                if input_focus.0 == Some(parent) {
+                if input_focus.get() == Some(parent) {
                     children.iter().for_each(|child| {
                         // If the entity we are currently looking at is a child of the focused button
                         if child == entity {

@@ -105,7 +105,7 @@ impl Default for Collapsed { fn default() -> Self { Self(true) } }
 fn collapsible_menu(
     ui_resources: &mut UiResources,
     text: impl Into<String>,
-    font_size: f32,
+    font_size: FontSize,
     mut commands: Commands,
 ) -> Entity {
     let menu = commands.spawn((

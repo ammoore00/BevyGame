@@ -276,7 +276,7 @@ fn resolve_animation_data(
     for (loc, animation) in animation_registry.iter() {
         info!("Resolving animation: {}", loc);
 
-        let animation = animation_assets.get_mut(&animation.clone())
+        let animation = &mut animation_assets.get_mut(&animation.clone())
             .unwrap_or_else(|| {
                 panic!(
                     "Failed to retrieve animation asset from registry! This is a bug!\n\

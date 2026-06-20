@@ -192,27 +192,6 @@ macro_rules! resolved_registry_read_only_impl {
     };
 }
 
-macro_rules! resolved_registry_read_write_impl {
-    (
-        impl<$type_param:ident : $bound:path> $system_param:ident {
-            $resolved_handle_fn:ident,
-            $resolved_asset_mut_fn:ident,
-            $resolved_asset_from_handle_mut_fn:ident,
-        }
-    ) => {
-        impl<$type_param: $bound> $system_param<'_, $type_param> {
-            pub fn $resolved_asset_mut_fn(&mut self, id: &ResourceLocation<$type_param>) -> Option<&mut $type_param::ResolvedAssetType> {
-                let handle = self.$resolved_handle_fn(id);
-                handle.and_then(|handle| self.$resolved_asset_from_handle_mut_fn(handle))
-            }
-
-            pub fn $resolved_asset_from_handle_mut_fn(&mut self, handle: Handle<$type_param::ResolvedAssetType>) -> Option<&mut $type_param::ResolvedAssetType> {
-                self.resolved_assets.get_mut(handle.id())
-            }
-        }
-    };
-}
-
 #[derive(SystemParam, getset::Getters)]
 pub struct SystemRegistry<'w, T: ResourceKind> {
     #[getset(get = "pub")]
@@ -240,13 +219,6 @@ registry_read_only_impl!(
         get_handle,
         get_asset,
         get_asset_from_handle,
-    }
-);
-registry_read_write_impl!(
-    impl<T: ResourceKind> SystemRegistryMut {
-        get_handle,
-        get_asset_mut,
-        get_asset_from_handle_mut,
     }
 );
 impl<T: ResourceKind> SystemRegistryMut<'_, T> {
@@ -315,24 +287,10 @@ registry_read_only_impl!(
         get_partial_asset_from_handle,
     }
 );
-registry_read_write_impl!(
-    impl<T: ResolvableResource> ResolvedSystemRegistryMut {
-        get_partial_handle,
-        get_partial_asset_mut,
-        get_partial_asset_from_handle_mut,
-    }
-);
 resolved_registry_read_only_impl!(
     impl<T: ResolvableResource> ResolvedSystemRegistryMut {
         get_resolved_handle,
         get_resolved_asset,
         get_resolved_asset_from_handle,
-    }
-);
-resolved_registry_read_write_impl!(
-    impl<T: ResolvableResource> ResolvedSystemRegistryMut {
-        get_resolved_handle,
-        get_resolved_asset_mut,
-        get_resolved_asset_from_handle_mut,
     }
 );

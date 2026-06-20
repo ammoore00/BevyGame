@@ -111,7 +111,8 @@ debug_setting!(RenderPhysicsTiles, physics_render_tiles, "Render Tile Collision"
 
 #[derive(SystemParam)]
 pub(crate) struct DebugOptionState<'w> {
-    render_ui_debug: Res<'w, UiDebugOptions>,
+    // TODO: Add new ui debug options from bevy 0.19
+    render_ui_debug: Res<'w, GlobalUiDebugOptions>,
 
     log_screen_transitions: Res<'w, State<LoggingScreenStateTransitionsState>>,
 
@@ -209,7 +210,7 @@ debug_menu_event!(
     DebugUi,
     fn on_ui_debug(
         event: On<DebugMenuEvent>,
-        mut ui_debug_options: ResMut<UiDebugOptions>,
+        mut ui_debug_options: ResMut<GlobalUiDebugOptions>,
     ) {
         ui_debug_options.toggle();
         info!("UI Debug toggled: {}", ui_debug_options.enabled);

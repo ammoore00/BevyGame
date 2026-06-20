@@ -5,7 +5,7 @@ use crate::menus::font::FontBuilder;
 use crate::theme::widget::{UiAssets, UiResources};
 use crate::{menus::Menu, screens::Screen, theme::widget};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
-use bevy::input_focus::InputFocus;
+use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::math::CompassOctant;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
@@ -70,7 +70,7 @@ fn spawn_pause_menu(
         CompassOctant::South,
     );
 
-    input_focus.0 = Some(continue_button);
+    input_focus.set(continue_button, FocusCause::Navigated);
 }
 
 fn open_settings_menu(_: On<Pointer<Click>>, mut next_menu: ResMut<NextState<Menu>>) {

@@ -3,7 +3,7 @@
 use crate::menus::font::FontBuilder;
 use crate::{asset_tracking::ResourceHandles, menus::Menu, screens::Screen, theme::widget};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
-use bevy::input_focus::InputFocus;
+use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::math::CompassOctant;
 use bevy::prelude::*;
 use crate::theme::widget::UiResources;
@@ -81,7 +81,7 @@ fn spawn_main_menu(
             CompassOctant::South,
         );
 
-        input_focus.0 = Some(play_button);
+        input_focus.set(play_button, FocusCause::Navigated);
     }
     #[cfg(target_family = "wasm")]
     {

@@ -17,7 +17,7 @@ use std::time::Duration;
 pub fn plugin(app: &mut App) {
     app
         // Input focus is not enabled by default, so we need to add the corresponding plugins
-        .add_plugins((/*InputDispatchPlugin,*/ DirectionalNavigationPlugin))
+        .add_plugins(DirectionalNavigationPlugin)
         // This resource is canonically used to track whether or not to render a focus indicator
         // It starts as false, but we set it to true here as we would like to see the focus indicator
         .insert_resource(InputFocusVisible(true))
@@ -179,34 +179,40 @@ fn interact_with_focused_button(
     if action_state
         .pressed_actions
         .contains(&DirectionalNavigationAction::Select)
-        && let Some(focused_entity) = input_focus.0
+        && let Some(focused_entity) = input_focus.get()
         && let Ok(children) = children.get(focused_entity)
     {
         children.iter().for_each(|child| {
-            commands.trigger(Pointer::<Click> {
-                entity: child,
-                // We're pretending that we're a mouse
-                pointer_id: PointerId::Mouse,
-                // This field isn't used, so we're just setting it to a placeholder value
-                pointer_location: Location {
-                    target: NormalizedRenderTarget::None {
-                        width: 0,
-                        height: 0,
-                    },
-                    position: Vec2::ZERO,
+            // These fields aren't used, so we're just setting them to placeholder values
+            let placeholder_location = Location {
+                target: NormalizedRenderTarget::None {
+                    width: 0,
+                    height: 0,
                 },
-                event: Click {
-                    button: PointerButton::Primary,
-                    // This field isn't used, so we're just setting it to a placeholder value
-                    hit: HitData {
-                        camera: Entity::PLACEHOLDER,
-                        depth: 0.0,
-                        position: None,
-                        normal: None,
-                    },
-                    duration: Duration::from_secs_f32(0.1),
-                },
-            });
+                position: Vec2::ZERO,
+            };
+            let placeholder_hit = HitData {
+                camera: Entity::PLACEHOLDER,
+                depth: 0.0,
+                position: None,
+                normal: None,
+                extra: None,
+            };
+
+            let event = Click {
+                button: PointerButton::Primary,
+                hit: placeholder_hit,
+                duration: Duration::from_secs_f32(0.1),
+                count: 1,
+            };
+
+            commands.trigger(
+                Pointer::<Click>::new(
+                    PointerId::Mouse,
+                    placeholder_location,
+                    event,
+                    child
+                ));
 
             if let Ok((mut image, palette)) = button_query.get_mut(child) {
                 image.texture_atlas.as_mut().unwrap().index = palette.pressed;

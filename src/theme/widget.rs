@@ -21,6 +21,7 @@ pub(super) fn plugin(app: &mut App) {
             data: include_bytes!("../../assets/base/fonts/bold_pixels.ttf")
                 .to_vec()
                 .into(),
+            alias: "bold_pixels".to_string(),
         },
     )
     .expect("Failed to load font");
@@ -82,9 +83,10 @@ pub fn scrollable_ui_root(name: impl Into<Cow<'static, str>>) -> impl Bundle {
     )
 }
 
-pub const SMALL_FONT_SIZE: f32 = 20.0;
-pub const MEDIUM_FONT_SIZE: f32 = 24.0;
-pub const LARGE_FONT_SIZE: f32 = 40.0;
+pub const TINY_FONT_SIZE: FontSize = FontSize::Px(16.0);
+pub const SMALL_FONT_SIZE: FontSize = FontSize::Px(20.0);
+pub const MEDIUM_FONT_SIZE: FontSize = FontSize::Px(24.0);
+pub const LARGE_FONT_SIZE: FontSize = FontSize::Px(40.0);
 
 /// A simple header label. Bigger than [`label`].
 pub fn header(
@@ -209,7 +211,7 @@ pub fn sized_button<E, B, M, I>(
     text: impl Into<String>,
     width: Val,
     height: Val,
-    font_size: f32,
+    font_size: FontSize,
     action: I,
 ) -> impl Bundle
 where

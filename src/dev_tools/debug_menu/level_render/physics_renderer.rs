@@ -4,6 +4,7 @@ use crate::game::level::grid::coords::{TilePosition, WorldPosition};
 use crate::Scale;
 use bevy::prelude::*;
 use crate::dev_tools::debug_menu::level_render::{draw_capsule, draw_convex_hull, draw_cuboid};
+use crate::game::physics::math::ToBevy;
 
 const KINEMATIC_COLLIDER_COLOR: Color = Color::srgb(
     0.90,
@@ -91,7 +92,7 @@ fn draw_collider(
 ) {
     match collider.collider_type() {
         ColliderType::Cuboid(cuboid) => {
-            draw_cuboid(commands, position, cuboid.half_extents, color, scale, COLLIDER_LINE_THICKNESS, PhysicsColliderDebugVisual);
+            draw_cuboid(commands, position, cuboid.half_extents.to_bevy(), color, scale, COLLIDER_LINE_THICKNESS, PhysicsColliderDebugVisual);
         }
         ColliderType::Capsule(capsule) => {
             draw_capsule(commands, position, capsule, color, scale, COLLIDER_LINE_THICKNESS, PhysicsColliderDebugVisual);
