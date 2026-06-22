@@ -3,7 +3,7 @@
 
 use bevy::prelude::*;
 
-use crate::menus::font::FontBuilder;
+use crate::theme::widgets::text::FontBuilder;
 use crate::{asset_tracking::ResourceHandles, screens::Screen, theme::prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
@@ -26,9 +26,9 @@ fn spawn_gameplay_loading_screen(
     mut commands: Commands
 ) {
     commands.spawn((
-        widget::ui_root("Loading Screen"),
+        widget_old::ui_root("Loading Screen"),
         DespawnOnExit(Screen::Loading(&Screen::Gameplay)),
-        children![widget::label("Loading...", &font_builder)],
+        children![widget_old::label_old("Loading...", &font_builder)],
     ));
 }
 
@@ -38,9 +38,9 @@ fn spawn_editor_loading_screen(
     mut commands: Commands
 ) {
     commands.spawn((
-        widget::ui_root("Loading Screen"),
+        widget_old::ui_root("Loading Screen"),
         DespawnOnExit(Screen::Loading(&Screen::Editor)),
-        children![widget::label("Loading...", &font_builder)],
+        children![widget_old::label_old("Loading...", &font_builder)],
     ));
 }
 

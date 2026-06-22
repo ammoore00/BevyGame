@@ -3,13 +3,16 @@
 use std::borrow::Cow;
 
 use crate::asset_tracking::LoadResource;
-use crate::menus::font::FontBuilder;
+use crate::theme::widgets::text::FontBuilder;
 use crate::theme::{interaction::InteractionPalette, palette::*};
 use bevy::{
     ecs::{spawn::SpawnWith, system::IntoObserverSystem},
     prelude::*,
 };
 use bevy::ecs::system::SystemParam;
+use crate::theme::widgets::button::ButtonStyle;
+use crate::theme::widgets::text::{LARGE_FONT_SIZE, MEDIUM_FONT_SIZE};
+use crate::theme::widgets::{button, UiAssets};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<UiAssets>();
@@ -25,14 +28,6 @@ pub(super) fn plugin(app: &mut App) {
         },
     )
     .expect("Failed to load font");
-
-    app.add_systems(
-        Update,
-        (
-            propagate_button_style_from_root,
-            update_button_style
-        ).chain()
-    );
 }
 
 #[derive(Component, Debug, Clone, Copy, Default)]
@@ -83,13 +78,8 @@ pub fn scrollable_ui_root(name: impl Into<Cow<'static, str>>) -> impl Bundle {
     )
 }
 
-pub const TINY_FONT_SIZE: FontSize = FontSize::Px(16.0);
-pub const SMALL_FONT_SIZE: FontSize = FontSize::Px(20.0);
-pub const MEDIUM_FONT_SIZE: FontSize = FontSize::Px(24.0);
-pub const LARGE_FONT_SIZE: FontSize = FontSize::Px(40.0);
-
-/// A simple header label. Bigger than [`label`].
-pub fn header(
+/// A simple header label. Bigger than [`label_old`].
+pub fn header_old(
     text: impl Into<String>,
     font_builder: &FontBuilder,
 ) -> impl Bundle {
@@ -106,7 +96,7 @@ pub fn header(
 }
 
 /// A simple text label.
-pub fn label(
+pub fn label_old(
     text: impl Into<String>,
     font_builder: &FontBuilder,
 ) -> impl Bundle {
@@ -123,7 +113,7 @@ pub fn label(
 }
 
 /// Text with the specified font size and color
-pub fn text(
+pub fn text_old(
     text: impl Into<String>,
     font: TextFont,
     color: Color,
@@ -315,6 +305,7 @@ where
     B: Bundle,
     I: IntoObserverSystem<E, B, M>,
 {
+    /*
     let image = ui_resources.ui_assets.buttons.clone();
 
     let action = IntoObserverSystem::into_system(action);
@@ -360,255 +351,7 @@ where
                 .observe(action);
         })),
     )
-}
-
-/// Detects button style applied to the button root
-/// and propagates that component into the inner entity
-fn propagate_button_style_from_root(
-    mut commands: Commands,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-    root_query: Query<
-        (
-            Entity,
-            &ButtonStyle,
-            &Children
-        ),
-        (
-            With<ButtonRoot>,
-            Without<ButtonInner>,
-            Changed<ButtonStyle>
-        ),
-    >,
-    mut inner_query: Query<
-        (
-            &mut ButtonStyle,
-            &Interaction,
-            &mut ImageNode,
-            &mut InteractionPalette,
-        ),
-        (
-            With<ButtonInner>,
-            Without<ButtonRoot>,
-        ),
-    >,
-) {
-    for (root_entity, style, children) in &root_query {
-        for child in children {
-            let Ok((mut inner_style, interaction, mut image_node, mut interaction_palette)) =
-                inner_query.get_mut(*child)
-            else {
-                continue;
-            };
-
-            *inner_style = *style;
-
-            apply_button_style(
-                *style,
-                *interaction,
-                &mut texture_atlas_layouts,
-                &mut image_node,
-                &mut interaction_palette,
-            );
-
-            commands.entity(root_entity).remove::<ButtonStyle>();
-            break;
-        }
-    }
-}
-
-/// Detects changes to the button style and applies the appropriate visual state.
-fn update_button_style(
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-    mut button_query: Query<
-        (
-            &ButtonStyle,
-            &Interaction,
-            &mut ImageNode,
-            &mut InteractionPalette,
-        ),
-        (
-            With<ButtonInner>,
-            Changed<ButtonStyle>
-        ),
-    >,
-) {
-    for (style, interaction, mut image_node, mut interaction_palette) in &mut button_query {
-        apply_button_style(
-            *style,
-            *interaction,
-            &mut texture_atlas_layouts,
-            &mut image_node,
-            &mut interaction_palette,
-        );
-    }
-}
-
-fn apply_button_style(
-    style: ButtonStyle,
-    interaction: Interaction,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
-    image_node: &mut ImageNode,
-    interaction_palette: &mut InteractionPalette,
-) {
-    let layout = texture_atlas_layouts.add(style.make_layout());
-    let palette = style.make_interaction_palette();
-
-    let index = match interaction {
-        Interaction::None => palette.none,
-        Interaction::Hovered => palette.hovered,
-        Interaction::Pressed => palette.pressed,
-    };
-
-    image_node.image_mode = NodeImageMode::Sliced(style.make_slicer());
-    image_node.texture_atlas = Some(TextureAtlas {
-        layout,
-        index,
-    });
-
-    *interaction_palette = palette;
-}
-
-#[derive(Component, Debug, Clone, Copy, Default)]
-pub enum ButtonStyle {
-    #[default]
-    Default,
-    ArrowRight,
-    //ArrowLeft,
-    //ArrowUp,
-    ArrowDown,
-    //Plus,
-    //Minus,
-    Back,
-}
-impl ButtonStyle {
-    const ROWS: u32 = 8;
-    const COLS: u32 = 8;
-
-    fn make_slicer(&self) -> TextureSlicer {
-        TextureSlicer {
-            border: BorderRect::all(4.0),
-            center_scale_mode: SliceScaleMode::Stretch,
-            sides_scale_mode: SliceScaleMode::Stretch,
-            max_corner_scale: 16.0,
-        }
-    }
-
-    // TODO: Cache these layouts
-    fn make_layout(&self) -> TextureAtlasLayout {
-        TextureAtlasLayout::from_grid(UVec2::splat(16), Self::COLS, Self::ROWS, None, None)
-    }
-
-    fn make_interaction_palette(&self) -> InteractionPalette {
-        match self {
-            ButtonStyle::Default => InteractionPalette {
-                none: Self::idx(0, 0),
-                hovered: Self::idx(0, 1),
-                pressed: Self::idx(0, 2),
-            },
-            ButtonStyle::ArrowRight => InteractionPalette {
-                none: Self::idx(1, 0),
-                hovered: Self::idx(1, 1),
-                pressed: Self::idx(1, 2),
-            },
-            ButtonStyle::ArrowDown => InteractionPalette {
-                none: Self::idx(4, 0),
-                hovered: Self::idx(4, 1),
-                pressed: Self::idx(4, 2),
-            },
-            ButtonStyle::Back => InteractionPalette {
-                none: Self::idx(7, 0),
-                hovered: Self::idx(7, 1),
-                pressed: Self::idx(7, 2),
-            },
-        }
-    }
-
-    fn idx(row: u32, col: u32) -> usize {
-        (row * Self::COLS + col) as usize
-    }
-}
-
-pub enum UiBackgroundStyle {
-    Main,
-    Panel,
-}
-impl UiBackgroundStyle {
-    fn make_slicer(&self) -> TextureSlicer {
-        match self {
-            UiBackgroundStyle::Main => TextureSlicer {
-                border: BorderRect::all(8.0),
-                center_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
-                sides_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
-                max_corner_scale: 2.0,
-            },
-            UiBackgroundStyle::Panel => TextureSlicer {
-                border: BorderRect::all(4.0),
-                center_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
-                sides_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
-                max_corner_scale: 2.0,
-            },
-        }
-    }
-
-    fn make_layout(&self) -> TextureAtlasLayout {
-        match self {
-            UiBackgroundStyle::Main => TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None),
-            UiBackgroundStyle::Panel => TextureAtlasLayout::from_grid(UVec2::splat(24), 4, 4, Some(UVec2::splat(8)), Some(UVec2::splat(4))),
-        }
-    }
-
-    fn get_index(&self) -> usize {
-        match self {
-            UiBackgroundStyle::Main => 0,
-            UiBackgroundStyle::Panel => 1,
-        }
-    }
-}
-
-pub fn ui_background(
-    ui_resources: &mut UiResources,
-    style: UiBackgroundStyle,
-) -> impl Bundle {
-    let image = ui_resources.ui_assets.background.clone();
-
-    let layout = style.make_layout();
-    let layout = ui_resources.texture_atlas_layouts.add(layout);
-
-    let index = style.get_index();
-
-    (
-        ImageNode {
-            image,
-            image_mode: NodeImageMode::Sliced(style.make_slicer()),
-            texture_atlas: Some(TextureAtlas { layout, index }),
-            ..default()
-        },
-    )
-}
-
-#[derive(Resource, Asset, Clone, Reflect)]
-#[reflect(Resource)]
-pub struct UiAssets {
-    pub buttons: Handle<Image>,
-    pub background: Handle<Image>,
-}
-
-impl FromWorld for UiAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-        Self {
-            buttons: assets.load("base/images/ui/buttons.png"),
-            background: assets.load("base/images/ui/background.png"),
-        }
-    }
+     */
 }
 
 #[derive(SystemParam)]

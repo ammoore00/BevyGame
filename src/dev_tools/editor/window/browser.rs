@@ -1,13 +1,13 @@
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
-use crate::data::{ResolvableResource, ResourceLocation, ResourceKind, AnyResourceLocation};
+use crate::data::{AnyResourceLocation, ResolvableResource, ResourceKind, ResourceLocation};
 use crate::datagen_api::animation::AnimationResource;
 use crate::datagen_api::assets::CharacterResource;
 use crate::datagen_api::attack::AttackResource;
-use crate::menus::font::FontBuilder;
+use crate::theme::widgets::text::FontBuilder;
 use crate::screens::Screen;
 use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
-use crate::theme::widget;
-use crate::theme::widget::{styled_button, ButtonStyle, UiAssets, UiResources, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widget_old;
+use crate::theme::widget_old::{styled_button, UiResources};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::{IntoObserverSystem, SystemParam};
@@ -16,6 +16,9 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
+use crate::theme::widgets::button::ButtonStyle;
+use crate::theme::widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widgets::UiAssets;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -51,7 +54,11 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Debug, Clone, Default, Copy)]
 struct FileBrowser;
 
-pub(super) fn spawn_file_browser(
+pub(super) fn spawn_file_browser() -> impl Scene {
+
+}
+
+pub(super) fn spawn_file_browser_old(
     ui_resources: &mut UiResources,
     mut commands: Commands,
 ) -> Entity {
@@ -175,7 +182,7 @@ fn collapsible_menu(
     )).id();
     commands.entity(menu_inner).add_child(button);
 
-    let text = commands.spawn(widget::text(
+    let text = commands.spawn(widget_old::text_old(
         text,
         ui_resources.font_builder.with_size(font_size),
         HEADER_TEXT,

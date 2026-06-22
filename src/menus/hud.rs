@@ -29,7 +29,7 @@ fn spawn_hud(
     commands
         .spawn((
             HudRoot,
-            widget::ui_root("HUD"),
+            widget_old::ui_root("HUD"),
             GlobalZIndex(1),
             DespawnOnExit(Screen::Gameplay),
         ))

@@ -1,14 +1,12 @@
 //! The pause menu.
 
 use crate::gamepad::gamepad_just_pressed;
-use crate::menus::font::FontBuilder;
-use crate::theme::widget::{UiAssets, UiResources};
-use crate::{menus::Menu, screens::Screen, theme::widget};
+use crate::theme::widget_old::UiResources;
+use crate::{menus::Menu, screens::Screen, theme::widget_old};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::math::CompassOctant;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
-
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Pause), spawn_pause_menu);
     app.add_systems(
@@ -31,15 +29,15 @@ fn spawn_pause_menu(
 ) {
     let ui_root = commands
         .spawn((
-            widget::ui_root("Pause Menu"),
+            widget_old::ui_root("Pause Menu"),
             GlobalZIndex(2),
             DespawnOnExit(Menu::Pause),
-            children![widget::header("Game paused", &ui_resources.font_builder)],
+            children![widget_old::header_old("Game paused", &ui_resources.font_builder)],
         ))
         .id();
 
     let continue_button = commands
-        .spawn(widget::button(
+        .spawn(widget_old::button(
             &mut ui_resources,
             "Continue",
             close_menu,
@@ -48,7 +46,7 @@ fn spawn_pause_menu(
     commands.entity(ui_root).add_child(continue_button);
 
     let settings_button = commands
-        .spawn(widget::button(
+        .spawn(widget_old::button(
             &mut ui_resources,
             "Settings",
             open_settings_menu,
@@ -57,7 +55,7 @@ fn spawn_pause_menu(
     commands.entity(ui_root).add_child(settings_button);
 
     let quit_button = commands
-        .spawn(widget::button(
+        .spawn(widget_old::button(
             &mut ui_resources,
             "Quit to title",
             quit_to_title,

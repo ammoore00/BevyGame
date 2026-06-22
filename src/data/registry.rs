@@ -3,6 +3,9 @@ use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet};
 
+// TODO: Change registry to dynamically register loaded assets instead of loading them all at once
+//       to support new BSN inline asset definitions
+
 /// Maps resource locations to bevy asset handles
 #[derive(Debug, Resource)]
 pub struct ResourceRegistry<T: ResourceKind> {

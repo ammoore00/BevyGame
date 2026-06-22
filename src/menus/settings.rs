@@ -3,13 +3,14 @@
 //! Additional settings and accessibility options should go here.
 
 use crate::gamepad::gamepad_just_pressed;
-use crate::menus::font::FontBuilder;
-use crate::theme::widget;
-use crate::theme::widget::{UiAssets, UiResources};
+use crate::theme::widgets::text::FontBuilder;
+use crate::theme::widget_old;
+use crate::theme::widget_old::UiResources;
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
+use crate::theme::widgets::UiAssets;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu);
@@ -40,17 +41,17 @@ fn spawn_settings_menu(
 
     let ui_root = commands
         .spawn((
-            widget::ui_root("Settings Menu"),
+            widget_old::ui_root("Settings Menu"),
             GlobalZIndex(2),
             DespawnOnExit(Menu::Settings),
-            children![widget::header("Settings", &ui_resources.font_builder),],
+            children![widget_old::header_old("Settings", &ui_resources.font_builder),],
         ))
         .id();
 
     commands.entity(ui_root).add_child(grid);
 
     let back_button = commands
-        .spawn(widget::button(
+        .spawn(widget_old::button(
             &mut ui_resources,
             "Back",
             go_back_on_click,
@@ -83,7 +84,7 @@ fn settings_grid(
                 ..default()
             },
             children![(
-                widget::label("Master Volume", &ui_resources.font_builder),
+                widget_old::label_old("Master Volume", &ui_resources.font_builder),
                 Node {
                     justify_self: JustifySelf::End,
                     ..default()
@@ -113,7 +114,7 @@ fn global_volume_widget(
         .id();
 
     let minus_button = commands
-        .spawn(widget::button_small(
+        .spawn(widget_old::button_small(
             ui_resources,
             "-",
             lower_global_volume,
@@ -129,13 +130,13 @@ fn global_volume_widget(
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            children![(widget::label("", &ui_resources.font_builder), GlobalVolumeLabel)],
+            children![(widget_old::label_old("", &ui_resources.font_builder), GlobalVolumeLabel)],
         ))
         .id();
     commands.entity(ui_root).add_child(current_volume_display);
 
     let plus_button = commands
-        .spawn(widget::button_small(
+        .spawn(widget_old::button_small(
             ui_resources,
             "+",
             raise_global_volume,

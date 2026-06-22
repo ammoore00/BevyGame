@@ -1,7 +1,7 @@
 use crate::audio::sound_effect;
 use crate::theme::interaction::InteractionAssets;
 use crate::theme::prelude::InteractionPalette;
-use crate::theme::widget::ButtonRoot;
+use crate::theme::widget_old::ButtonRoot;
 use bevy::camera::NormalizedRenderTarget;
 use bevy::input_focus::directional_navigation::{
     DirectionalNavigation, DirectionalNavigationPlugin,

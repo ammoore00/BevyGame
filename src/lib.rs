@@ -171,3 +171,11 @@ fn spawn_camera(mut commands: Commands) {
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq)]
 pub struct Scale(pub f32);
+
+#[macro_export]
+macro_rules! marker {
+    ($marker:ident) => {
+        #[derive(Component, Debug, Clone, Copy, Eq, PartialEq, Default)]
+        struct $marker;
+    };
+}

@@ -1,11 +1,12 @@
 //! The credits menu.
 
 use crate::gamepad::gamepad_just_pressed;
-use crate::menus::font::FontBuilder;
-use crate::theme::widget::{UiAssets, UiResources};
+use crate::theme::widgets::text::FontBuilder;
+use crate::theme::widget_old::UiResources;
 use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
 use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
+use crate::theme::widgets::UiAssets;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu);
@@ -27,23 +28,23 @@ fn spawn_credits_menu(
 ) {
     let ui_root = commands
         .spawn((
-            widget::scrollable_ui_root("Credits Menu"),
+            widget_old::scrollable_ui_root("Credits Menu"),
             GlobalZIndex(2),
             DespawnOnExit(Menu::Credits),
             children![
-                widget::header("Created by", &ui_resources.font_builder),
+                widget_old::header_old("Created by", &ui_resources.font_builder),
                 created_by(&ui_resources.font_builder),
-                widget::header("Assets", &ui_resources.font_builder),
+                widget_old::header_old("Assets", &ui_resources.font_builder),
                 assets(&ui_resources.font_builder),
-                widget::header("License", &ui_resources.font_builder),
-                widget::label("This game is provided under the Mozilla Public License 2.0", &ui_resources.font_builder),
+                widget_old::header_old("License", &ui_resources.font_builder),
+                widget_old::label_old("This game is provided under the Mozilla Public License 2.0", &ui_resources.font_builder),
                 license(&ui_resources.font_builder),
             ],
         ))
         .id();
 
     let back_button = commands
-        .spawn(widget::button(
+        .spawn(widget_old::button(
             &mut ui_resources,
             "Back",
             go_back_on_click,
@@ -90,8 +91,8 @@ fn license(font_builder: &FontBuilder) -> impl Bundle {
 fn grid(content: Vec<[&'static str; 2]>, font_builder: &FontBuilder) -> impl Bundle {
     let content = content.into_iter().map(|row| {
         [
-            widget::label(row[0], &font_builder),
-            widget::label(row[1], &font_builder)
+            widget_old::label_old(row[0], &font_builder),
+            widget_old::label_old(row[1], &font_builder)
         ]
     })
         .collect::<Vec<_>>();

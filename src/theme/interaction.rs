@@ -1,7 +1,7 @@
 use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::prelude::*;
 
-use crate::theme::widget::ButtonRoot;
+use crate::theme::widget_old::ButtonRoot;
 use crate::{asset_tracking::LoadResource, audio::sound_effect};
 
 pub(super) fn plugin(app: &mut App) {
@@ -18,7 +18,7 @@ pub(super) fn plugin(app: &mut App) {
 /// Palette for widget interactions. Add this to an entity that supports
 /// [`Interaction`]s, such as a button, to change its [`BackgroundColor`] based
 /// on the current interaction state.
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Debug, Reflect, FromTemplate)]
 #[reflect(Component)]
 pub struct InteractionPalette {
     pub none: usize,

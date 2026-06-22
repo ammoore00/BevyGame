@@ -2,11 +2,14 @@ use crate::dev_tools::editor::file_manager::{EditorFile, FileManager};
 use crate::dev_tools::editor::window::BACKGROUND_BLEED;
 use crate::screens::Screen;
 use crate::theme::palette::BUTTON_TEXT;
-use crate::theme::widget;
-use crate::theme::widget::{UiBackgroundStyle, UiResources, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::{widget_old, widgets};
+use crate::theme::widget_old::UiResources;
 use bevy::ecs::relationship::Relationship;
 use bevy::prelude::*;
 use std::collections::HashSet;
+use crate::marker;
+use crate::theme::widgets::text::{LARGE_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widgets::UiBackgroundStyle;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -19,10 +22,13 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct EditorPort;
+marker!(EditorPort);
 
-pub(super) fn spawn_editor_port(
+pub(super) fn spawn_editor_port() -> impl Scene {
+
+}
+
+pub(super) fn spawn_editor_port_old(
     ui_resources: &mut UiResources,
     mut commands: Commands,
 ) -> Entity {
@@ -74,7 +80,7 @@ pub(super) fn file_tabs(
         Pickable::IGNORE,
         children![
             // TODO: Figure out why this background isn't rendering
-            widget::ui_background(ui_resources, UiBackgroundStyle::Panel),
+            widgets::ui_background_old(ui_resources, UiBackgroundStyle::Panel),
             Node {
                 position_type: PositionType::Absolute,
 
@@ -145,7 +151,7 @@ fn update_file_tab_buttons(
 
         let file_button = commands.spawn((
             FileTabButton(open_file.clone()),
-            widget::sized_button(
+            widget_old::sized_button(
                 &mut ui_resources,
                 label,
                 px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
@@ -203,7 +209,7 @@ pub(super) fn editor_port_content(
 
             ..Default::default()
         },
-        widget::text("Editor Content", ui_resources.font_builder.with_size(LARGE_FONT_SIZE), BUTTON_TEXT)
+        widget_old::text_old("Editor Content", ui_resources.font_builder.with_size(LARGE_FONT_SIZE), BUTTON_TEXT)
     )
 }
 

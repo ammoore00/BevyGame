@@ -13,6 +13,8 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
+use bevy::asset::AssetPath;
+use bevy::ecs::template::TemplateContext;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((loader::plugin,));
@@ -125,6 +127,12 @@ impl<T: ResourceKind> ResourceLocation<T> {
 impl<T: ResourceKind> ResourceLoc for ResourceLocation<T> {
     fn new(namespace: Namespace, id: ResourceId) -> Self {
         Self { namespace, id, phantom_data: Default::default() }
+    }
+}
+
+impl<T: ResourceKind> From<ResourceLocation<T>> for AssetPath<'_> {
+    fn from(value: ResourceLocation<T>) -> Self {
+        AssetPath::from_path_buf(value.as_path())
     }
 }
 
@@ -366,4 +374,8 @@ pub enum ResourceLocationParseError {
     MultipleDividers(String),
     #[error("Resource locations must contain at least one component")]
     Empty,
+}
+
+pub fn loc<T: ResourceKind>(s: &str) -> Result<ResourceLocation<T>, ResourceLocationParseError> {
+    ResourceLocation::<T>::from_str(s)
 }

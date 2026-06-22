@@ -2,10 +2,10 @@ use crate::dev_tools::editor::window::browser::spawn_file_browser;
 use crate::dev_tools::editor::window::editor_port::spawn_editor_port;
 use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
 use crate::dev_tools::editor::window::properties::spawn_details_screen;
-use crate::menus::font::FontBuilder;
+use crate::marker;
 use crate::screens::Screen;
-use crate::theme::widget;
-use crate::theme::widget::{UiAssets, UiBackgroundStyle, UiResources};
+use crate::theme::widgets::UiBackgroundStyle;
+use crate::theme::widgets;
 use bevy::prelude::*;
 
 mod menu_bar;
@@ -19,45 +19,17 @@ pub(super) fn plugin(app: &mut App) {
         properties::plugin,
         editor_port::plugin,
     ));
-    
-    app.add_systems(OnEnter(Screen::Editor), spawn_editor_window);
+
+    app.add_systems(OnEnter(Screen::Editor), spawn_editor.spawn());
 }
 
-#[derive(Component, Debug, Clone)]
-struct EditorUiRoot;
 
-fn spawn_editor_window(
-    mut ui_resources: UiResources,
-    mut commands: Commands
-) {
-    let editor = commands
-        .spawn((
-            EditorUiRoot,
-            widget::ui_root("Editor"),
-            DespawnOnExit(Screen::Editor),
-        )).id();
-
-    let editor_content = spawn_editor_content(&mut ui_resources, commands.reborrow());
-    commands.entity(editor).add_child(editor_content);
-
-    let menu_bar = spawn_menu_bar(&mut ui_resources, commands.reborrow());
-    commands.entity(editor).add_child(menu_bar);
-}
-
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct EditorContentRoot;
-
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct EditorLeftPanel;
-
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct EditorCenterPanel;
-
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct EditorRightPanel;
-
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct EditorBottomPanel;
+marker!(EditorUiRoot);
+marker!(EditorContentRoot);
+marker!(EditorLeftPanel);
+marker!(EditorCenterPanel);
+marker!(EditorRightPanel);
+marker!(EditorBottomPanel);
 
 const CENTER_PANEL_HEIGHT: usize = 70;
 const LOWER_PANEL_HEIGHT: usize = 100 - CENTER_PANEL_HEIGHT;
@@ -72,186 +44,128 @@ const PANEL_PADDING: usize = 14;
 
 const BACKGROUND_BLEED: f32 = 10.0;
 
-fn spawn_editor_content(
-    ui_resources: &mut UiResources,
-    mut commands: Commands,
-) -> Entity {
-    
-    //------ Spawn layout ------//
-    
-    let editor_content = commands.spawn((
-        EditorContentRoot,
+fn spawn_editor() -> impl Scene {
+    bsn! {
+        #EditorUiRoot
+        EditorUiRoot
         Node {
             flex_direction: FlexDirection::Column,
-
             position_type: PositionType::Absolute,
+
             top: px(MENU_BAR_TOTAL_HEIGHT),
             left: px(0),
             right: px(0),
             bottom: px(0),
+        }
+        Children [
+            (
+                #EditorContentRoot
+                EditorContentRoot
+                Node {
+                    flex_direction: FlexDirection::Column,
 
-            ..Default::default()
-        },
-        Pickable::IGNORE,
-    )).id();
-
-    let center_columns = commands.spawn((
-        Node {
-            width: percent(100),
-            height: percent(CENTER_PANEL_HEIGHT),
-
-            padding: UiRect::horizontal(px(2)),
-
-            ..Default::default()
-        },
-        Pickable::IGNORE,
-    )).id();
-    commands.entity(editor_content).add_child(center_columns);
-
-    let left_panel = spawn_panel::<EditorLeftPanel>(
-        center_columns,
-        &mut commands,
-        Some(LEFT_PANEL_WIDTH_TARGET),
-        Some(LEFT_PANEL_MAX_WIDTH),
-        Some(AlignSelf::FlexStart),
-        Some(UiRect::all(px(PANEL_PADDING))),
-    );
-    spawn_panel_background(
-        left_panel,
-        ui_resources,
-        UiBackgroundStyle::Panel,
-        BACKGROUND_BLEED,
-        BACKGROUND_BLEED,
-        &mut commands,
-    );
-
-    let center_panel = spawn_panel::<EditorCenterPanel>(
-        center_columns,
-        &mut commands,
-        None,
-        None,
-        None,
-        None,
-    );
-
-    let right_panel = spawn_panel::<EditorRightPanel>(
-        center_columns,
-        &mut commands,
-        Some(RIGHT_PANEL_WIDTH_TARGET),
-        Some(RIGHT_PANEL_MAX_WIDTH),
-        Some(AlignSelf::FlexEnd),
-        Some(UiRect::all(px(PANEL_PADDING))),
-    );
-    spawn_panel_background(
-        right_panel,
-        ui_resources,
-        UiBackgroundStyle::Panel,
-        BACKGROUND_BLEED,
-        BACKGROUND_BLEED,
-        &mut commands,
-    );
-
-    let bottom_panel = commands.spawn((
-        EditorBottomPanel,
-        widget::ui_background(ui_resources, UiBackgroundStyle::Main),
-        Node {
-            width: percent(100),
-            height: percent(LOWER_PANEL_HEIGHT),
-
-            ..Default::default()
-        },
-        Pickable::IGNORE,
-    )).id();
-    commands.entity(editor_content).add_child(bottom_panel);
-    
-    //------ Spawn Content ------//
-    
-    let file_browser = spawn_file_browser(
-        ui_resources,
-        commands.reborrow()
-    );
-    commands.entity(left_panel).add_child(file_browser);
-
-    let editor_port = spawn_editor_port(
-        ui_resources,
-        commands.reborrow()
-    );
-    commands.entity(center_panel).add_child(editor_port);
-
-    let details_screen = spawn_details_screen(
-        commands.reborrow()
-    );
-    commands.entity(right_panel).add_child(details_screen);
-
-    editor_content
-}
-
-fn spawn_panel<C: Component + Default>(
-    parent: Entity,
-    commands: &mut Commands,
-    width: Option<usize>,
-    max_width: Option<usize>,
-    align_self: Option<AlignSelf>,
-    padding: Option<UiRect>,
-) -> Entity {
-    let mut node = Node {
-        position_type: PositionType::Relative,
-
-        height: percent(100),
-
-        ..Default::default()
-    };
-
-    if let Some(width) = width {
-        node.width = percent(width);
+                    position_type: PositionType::Absolute,
+                    top: px({MENU_BAR_TOTAL_HEIGHT}),
+                    left: px(0),
+                    right: px(0),
+                    bottom: px(0),
+                }
+                Pickable::IGNORE
+                Children [
+                    (
+                        #CenterPanelsRoot
+                        Node {
+                            width: percent(100),
+                            height: percent(CENTER_PANEL_HEIGHT),
+                            padding: UiRect::horizontal(px(2)),
+                        }
+                        Pickable::IGNORE
+                        Children [
+                            (
+                                #LeftPanel
+                                EditorLeftPanel
+                                Node {
+                                    position_type: PositionType::Relative,
+                                    height: percent(100),
+                                    width: percent(LEFT_PANEL_WIDTH_TARGET),
+                                    max_width: px(LEFT_PANEL_MAX_WIDTH),
+                                    padding: px(PANEL_PADDING),
+                                }
+                                Pickable::IGNORE
+                                Children [
+                                    (
+                                        #LeftPanelBackground
+                                        widgets::ui_background(UiBackgroundStyle::Panel)
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            left: px(0),
+                                            right: px(0),
+                                            top: px(-BACKGROUND_BLEED),
+                                            bottom: px(-BACKGROUND_BLEED),
+                                        }
+                                        Pickable::IGNORE
+                                    ),
+                                    spawn_file_browser(),
+                                ]
+                            ),
+                            (
+                                #CenterPanel
+                                EditorCenterPanel
+                                Node {
+                                    position_type: PositionType::Relative,
+                                    height: percent(100),
+                                    flex_grow: 1.0,
+                                }
+                                Pickable::IGNORE
+                                Children [
+                                    spawn_editor_port(),
+                                ]
+                            ),
+                            (
+                                #RightPanel
+                                EditorRightPanel
+                                Node {
+                                    position_type: PositionType::Relative,
+                                    height: percent(100),
+                                    width: percent(RIGHT_PANEL_WIDTH_TARGET),
+                                    max_width: px(RIGHT_PANEL_MAX_WIDTH),
+                                    padding: px(PANEL_PADDING),
+                                }
+                                Pickable::IGNORE
+                                Children [
+                                    (
+                                        #RightPanelBackground
+                                        widgets::ui_background(UiBackgroundStyle::Panel)
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            left: px(0),
+                                            right: px(0),
+                                            top: px(-BACKGROUND_BLEED),
+                                            bottom: px(-BACKGROUND_BLEED),
+                                        }
+                                        Pickable::IGNORE
+                                    ),
+                                    spawn_details_screen()
+                                ]
+                            ),
+                        ]
+                    ),
+                    (
+                        #BottomPanel
+                        EditorBottomPanel
+                        widgets::ui_background(UiBackgroundStyle::Main)
+                        Node {
+                            width: percent(100),
+                            height: percent(LOWER_PANEL_HEIGHT),
+                        }
+                        Pickable::IGNORE
+                    ),
+                ]
+            ),
+            // Menu Bar
+            (
+                spawn_menu_bar()
+            ),
+        ]
     }
-
-    if let Some(max_width) = max_width {
-        node.max_width = px(max_width);
-    } else {
-        node.flex_grow = 1.0;
-    }
-
-    if let Some(align_self) = align_self {
-        node.align_self = align_self;
-    }
-
-    if let Some(padding) = padding {
-        node.padding = padding;
-    }
-
-    let panel = commands
-        .spawn((
-            C::default(),
-            node,
-            Pickable::IGNORE,
-        ))
-        .id();
-
-    commands.entity(parent).add_child(panel);
-    panel
-}
-
-fn spawn_panel_background(
-    parent: Entity,
-    ui_resources: &mut UiResources,
-    style: UiBackgroundStyle,
-    top_bleed: f32,
-    bottom_bleed: f32,
-    commands: &mut Commands,
-) {
-    let background = commands.spawn((
-        widget::ui_background(ui_resources, style),
-        Node {
-            position_type: PositionType::Absolute,
-            left: px(0),
-            right: px(0),
-            top: px(-top_bleed),
-            bottom: px(-bottom_bleed),
-            ..Default::default()
-        },
-        Pickable::IGNORE,
-    )).id();
-
-    commands.entity(parent).add_child(background);
 }

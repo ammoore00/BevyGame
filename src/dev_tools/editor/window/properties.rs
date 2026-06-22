@@ -4,13 +4,15 @@ use crate::datagen_api::assets::{CharacterCodec, CharacterResource};
 use crate::datagen_api::attack::{AttackCodec, AttackResource};
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
 use crate::screens::Screen;
-use crate::theme::widget::{UiResources, SMALL_FONT_SIZE};
+use crate::theme::widget_old::UiResources;
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use regex::Regex;
 use serde::de::DeserializeOwned;
+use crate::marker;
 use crate::theme::palette::{HEADER_TEXT, TEXT_INPUT_BACKGROUND};
-use crate::theme::widget;
+use crate::theme::widget_old;
+use crate::theme::widgets::text::SMALL_FONT_SIZE;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -22,10 +24,13 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct PropertiesScreen;
+marker!(PropertiesScreen);
 
-pub(super) fn spawn_details_screen(
+pub(super) fn spawn_details_screen() -> impl Scene {
+    
+}
+
+pub(super) fn spawn_details_screen_old(
     mut commands: Commands,
 ) -> Entity {
     commands.spawn((
@@ -231,7 +236,7 @@ fn text_input<'a>(
     label: &str,
 ) -> impl Bundle + use<'a> {
     let font = ui_resources.font_builder.with_size(SMALL_FONT_SIZE);
-    let text = widget::text(label, font.clone(), HEADER_TEXT);
+    let text = widget_old::text_old(label, font.clone(), HEADER_TEXT);
 
     (
         Node {
