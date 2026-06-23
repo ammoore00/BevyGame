@@ -9,6 +9,7 @@ use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::prelude::*;
 use getset::CopyGetters;
 use rand::{Rng, RngExt};
+use crate::game::level::grid::nav::{NavContext, TileNavMap};
 
 pub mod palette;
 pub mod room;
@@ -187,6 +188,31 @@ pub fn spawn_map_grid(
     }
 
     grid_entity
+}
+
+pub fn bake_nav(
+    context: NavContext,
+    mut commands: Commands,
+) -> Result<(), BevyError> {
+    let (map_entity, children) = context.map.single()
+        .map_err(|err| {
+            BevyError::error(format!("Error getting level entity: {:?}", err))
+        })?;
+
+    let mut tile_map = None;
+    for child in children {
+        if let Ok(grid) = context.grid.get(*child) {
+            tile_map = Some(grid.tile_map().clone());
+            break;
+        }
+    }
+    let tile_map = tile_map.ok_or(BevyError::error("No grid child found for level map"))?;
+
+    let tile_nav_map = TileNavMap::from_map(tile_map, context.nav_query);
+    let nav_entity = commands.spawn(tile_nav_map).id();
+    commands.entity(map_entity).add_child(nav_entity);
+    
+    Ok(())
 }
 
 /// Stores the current state of the generated map

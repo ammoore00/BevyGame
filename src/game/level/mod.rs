@@ -7,10 +7,9 @@ use crate::audio::AudioResource;
 use crate::data::loc;
 use crate::game::character::npc::npc_bundle;
 use crate::game::character::player::player;
-use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
-use crate::game::level::grid::Grid;
+use crate::game::level::grid::nav::NavContext;
 use crate::game::level::map::palette::{Palette, Palettes};
-use crate::game::level::map::{map_scene, Map};
+use crate::game::level::map::map_scene;
 use crate::{audio::music, marker, screens::Screen};
 use bevy::prelude::*;
 
@@ -103,8 +102,8 @@ fn bake_tiles(
     let level = match level.single() {
         Ok(level) => level,
         Err(err) => {
-            error!("Error getting level entity: {:?}", err);
-            return
+            // TODO: figure out how to recover from this error
+            panic!("Error getting level entity: {:?}", err);
         },
     };
 
@@ -119,38 +118,16 @@ fn bake_tiles(
     next_state.set(LevelSpawnState::BakeTiles.next());
 }
 fn bake_nav(
-    nav_query: TileNavQuery,
-    map: Query<(Entity, &Children), With<Map>>,
-    grid: Query<&Grid>,
+    nav_context: NavContext,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
-    mut commands: Commands,
+    commands: Commands,
 ) {
     info!("Level construction - baking nav map");
 
-    let (map_entity, children) = match map.single() {
-        Ok(level) => level,
-        Err(err) => {
-            error!("Error getting level entity: {:?}", err);
-            return
-        },
+    if let Err(err) = map::bake_nav(nav_context, commands) {
+        // TODO: figure out how to recover from this error
+        panic!("Error baking nav map: {:?}", err);
     };
-
-    let mut tile_map = None;
-    for child in children {
-        if let Ok(grid) = grid.get(*child) {
-            tile_map = Some(grid.tile_map().clone());
-            break;
-        }
-    }
-    let Some(tile_map) = tile_map else {
-        error!("No grid child found for level map");
-        return;
-    };
-
-    // TODO: Move this responsibility into map module
-    let tile_nav_map = TileNavMap::from_map(tile_map, nav_query);
-    let nav_entity = commands.spawn(tile_nav_map).id();
-    commands.entity(map_entity).add_child(nav_entity);
 
     next_state.set(LevelSpawnState::BakeNav.next());
 }
@@ -164,8 +141,8 @@ fn add_objects(
     let level = match level.single() {
         Ok(level) => level,
         Err(err) => {
-            error!("Error getting level entity: {:?}", err);
-            return
+            // TODO: figure out how to recover from this error
+            panic!("Error getting level entity: {:?}", err);
         },
     };
 

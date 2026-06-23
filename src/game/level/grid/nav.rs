@@ -1,10 +1,12 @@
 use crate::datagen_api::components::Collider;
 use crate::datagen_api::tile::Tile;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
-use crate::game::level::grid::TileMap;
+use crate::game::level::grid::{Grid, TileMap};
 use bevy::prelude::*;
 use getset::{CopyGetters, Getters};
 use std::collections::BTreeMap;
+use bevy::ecs::system::SystemParam;
+use crate::game::level::map::Map;
 
 pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 }
@@ -13,6 +15,13 @@ pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 // nor requiring the caller to care about internal query type information
 pub type TileNavQueryParam<'s> = (Entity, &'s Collider);
 pub type TileNavQuery<'w, 's> = Query<'w, 's, TileNavQueryParam<'static>, With<Tile>>;
+
+#[derive(SystemParam)]
+pub struct NavContext<'w, 's> {
+    pub map: Query<'w, 's, (Entity, &'static Children), With<Map>>,
+    pub nav_query: TileNavQuery<'w, 's>,
+    pub grid: Query<'w, 's, &'static Grid>,
+}
 
 #[derive(Debug, Clone, Copy)]
 struct TileNavInfo<'a> {
