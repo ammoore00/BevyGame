@@ -6,6 +6,7 @@ use state_transitions::{ActionStateCapabilities, StateTransitionError};
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
 use tracing::warn;
+use crate::game::character::state::action_states::Idle;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
@@ -14,19 +15,29 @@ pub(super) fn plugin(app: &mut App) {
     action_states::register_states(app);
 }
 
-pub fn action_state(state: impl ActionState + Component) -> impl Bundle {
-    (
-        ActionStateTracker {
-            type_id: state.type_id(),
-        },
-        state,
-    )
+#[macro_export]
+macro_rules! action_state_scene {
+    ($state:ty) => {
+        bsn! [
+            ActionStateTracker {
+                type_id: {TypeId::of::<$state>()},
+            }
+            $state
+        ]
+    };
 }
 
 #[derive(Component, Debug, Clone, Copy, Reflect)]
 #[reflect(Component)]
 pub struct ActionStateTracker {
     pub(crate) type_id: TypeId,
+}
+impl Default for ActionStateTracker {
+    fn default() -> Self {
+        Self {
+            type_id: TypeId::of::<Idle>(),
+        }
+    }
 }
 
 pub trait ActionStateMarker: Reflect + Send + Sync + Debug + 'static {}

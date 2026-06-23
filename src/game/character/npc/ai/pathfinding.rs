@@ -33,17 +33,11 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-pub(super) fn pathfinder_bundle() -> impl Bundle {
-    let controller = MovementController{
-        max_speed: 2.0,
-        ..Default::default()
-    };
-
-    (
-        Pathfinder::default(),
-        RandomWander::default(),
-        controller,
-    )
+pub(super) fn pathfinder_scene() -> impl Scene {
+    bsn! [
+        Pathfinder
+        RandomWander
+    ]
 }
 
 #[derive(Component, Debug, Clone, Default, Getters)]

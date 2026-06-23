@@ -35,10 +35,12 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
+pub const DEFAULT_MAX_SPEED: f32 = 3.5;
+
 /// These are the movement parameters for our character controller.
 /// For now, this is only used for a single player, but it could power NPCs or
 /// other players as well.
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct MovementController {
     /// The direction the character wants to move in.
@@ -55,7 +57,7 @@ impl Default for MovementController {
         Self {
             intent: Vec3::ZERO,
             sprinting: false,
-            max_speed: 3.5,
+            max_speed: DEFAULT_MAX_SPEED,
         }
     }
 }

@@ -24,7 +24,6 @@ pub struct Stamina {
     pub regen_timer: Timer,
     pub regen_delay_timer: Option<Timer>,
 }
-
 impl Stamina {
     pub fn new(max: usize, regen_per_second: usize, regen_delay: f32) -> Self {
         let regen_interval = 0.05;
@@ -38,6 +37,11 @@ impl Stamina {
             regen_timer: Timer::from_seconds(regen_interval, TimerMode::Repeating),
             regen_delay_timer: None,
         }
+    }
+}
+impl Default for Stamina {
+    fn default() -> Self {
+        Self::new(200, 200, 1.0)
     }
 }
 

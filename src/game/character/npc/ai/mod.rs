@@ -4,7 +4,7 @@ use crate::data;
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::define_data_resource;
 use crate::define_resource;
-use crate::game::character::npc::ai::pathfinding::pathfinder_bundle;
+use crate::game::character::npc::ai::pathfinding::pathfinder_scene;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use crate::data::loader::RonAssetLoader;
@@ -19,10 +19,10 @@ pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<AiGraphCodec, AiGraph>>();
 }
 
-pub(super) fn ai_bundle() -> impl Bundle {
-    (
-        pathfinder_bundle(),
-    )
+pub(super) fn ai_scene() -> impl Scene {
+    bsn! [
+        pathfinder_scene()
+    ]
 }
 
 define_data_resource!(AiGraph, "characters/ai/graphs", AiGraph);

@@ -18,7 +18,7 @@ pub(in crate::game) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Debug, Clone, Reflect)]
+#[derive(Component, Debug, Default, Clone, Reflect)]
 pub struct WorldPosition(pub WorldCoords);
 
 impl WorldPosition {
@@ -139,7 +139,7 @@ impl<'de> Deserialize<'de> for TileCoords {
 /// ### Ordering
 /// 
 /// Ordering is performed Y first, then X, then Z, using `f32::total_cmp`
-#[derive(Debug, Clone, Reflect)]
+#[derive(Debug, Clone, Default, Reflect)]
 pub struct WorldCoords(pub Vec3);
 impl From<TileCoords> for WorldCoords {
     fn from(value: TileCoords) -> Self {

@@ -8,6 +8,18 @@ use crate::theme::palette::{HEADER_TEXT, LABEL_TEXT};
 pub(crate) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<FontResource>();
 
+    Assets::insert(
+        &mut app.world_mut().resource_mut(),
+        AssetId::default(),
+        Font {
+            data: include_bytes!("../../../assets/base/fonts/bold_pixels.ttf")
+                .to_vec()
+                .into(),
+            alias: "bold_pixels".to_string(),
+        },
+    )
+        .expect("Failed to load font");
+
     app.insert_resource(DefaultFont("bold_pixels".parse().expect("Failed to parse default font")));
 }
 

@@ -9,7 +9,6 @@ pub struct Health {
     pub max: usize,
     pub current: usize,
 }
-
 impl Health {
     pub fn new(max: usize) -> Self {
         Self { max, current: max }
@@ -18,6 +17,11 @@ impl Health {
     pub fn _with_current(max: usize, current: usize) -> Self {
         let current = current.clamp(0, max);
         Self { max, current }
+    }
+}
+impl Default for Health {
+    fn default() -> Self {
+        Self::new(100)
     }
 }
 

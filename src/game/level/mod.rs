@@ -3,22 +3,20 @@
 pub mod grid;
 pub mod map;
 
-use crate::game::character::player::{player_bundle, PlayerAssets};
-use crate::game::character::CharacterBuilderContext;
+use crate::audio::AudioResource;
+use crate::data::loc;
+use crate::game::character::npc::npc_bundle;
+use crate::game::character::player::player;
+use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
+use crate::game::level::grid::Grid;
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
-use crate::game::object::{object_bundle, ObjectAssets, ObjectType};
-use crate::{asset_tracking::LoadResource, audio::music, screens::Screen, Scale};
-use bevy::prelude::*;
-use crate::game::character::npc::npc_bundle;
-use crate::game::level::grid::Grid;
-use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
 use crate::game::level::map::{build_map_grid, map_bundle, Map};
+use crate::{audio::music, marker, screens::Screen};
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((grid::plugin, map::plugin));
-
-    app.load_resource::<LevelAssets>();
 
     app.init_state::<LevelSpawnState>();
     app.add_systems(OnEnter(LevelSpawnState::ConstructLevel), construct_level);
@@ -28,8 +26,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(LevelSpawnState::Cleanup), finish_level_spawn);
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-struct Level;
+marker!(Level);
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum LevelSpawnState {
@@ -77,28 +74,22 @@ pub fn reset_level_state(mut next_state: ResMut<NextState<LevelSpawnState>>) {
 }
 
 fn construct_level(
-    level_assets: Res<LevelAssets>,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
     mut commands: Commands,
 ) {
     info!("Level construction - init");
 
-    commands
-        .spawn((
-            Name::new("Level"),
-            Level,
-            Transform::default(),
-            Visibility::default(),
-            DespawnOnExit(Screen::Gameplay),
-            children![
-                (
-                    Name::new("Gameplay Music"),
-                    music(level_assets.music.clone())
-                ),
-                //rock,
-            ],
-        ));
-
+    let level = bsn![
+        #Level
+        Level
+        Transform
+        Visibility
+        DespawnOnExit<Screen>(Screen::Gameplay)
+        Children [
+            music(loc::<AudioResource>("music/8_bit_open_world").unwrap())
+        ]
+    ];
+    commands.spawn_scene(level);
     next_state.set(LevelSpawnState::ConstructLevel.next());
 }
 fn bake_tiles(
@@ -179,10 +170,6 @@ fn bake_nav(
 }
 fn add_objects(
     level: Query<Entity, With<Level>>,
-    scale: Res<Scale>,
-    player_assets: Res<PlayerAssets>,
-    object_assets: Res<ObjectAssets>,
-    character_context: CharacterBuilderContext,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
     mut commands: Commands,
 ) {
@@ -196,34 +183,16 @@ fn add_objects(
         },
     };
 
-    let player = player_bundle(
-        Vec3::new(3.0, 1.0, 3.0),
-        4.5,
-        &player_assets,
-        scale.0,
-        &character_context,
-    );
+    let player = player(Vec3::new(3.0, 1.0, 3.0));
 
     let test_npc = npc_bundle(
         "test".parse().unwrap(),
-        Vec3::new(5.0, 1.0, 3.0),
-        scale.0,
-        &character_context,
-    );
-
-    let _rock = object_bundle(
-        ObjectType::Rock,
-        &object_assets,
-        Vec3::new(6.0, 5.0, 6.0),
-        scale.0,
-        0.5,
-        0.5,
+        Vec3::new(5.0, 1.0, 3.0)
     );
 
     let children = &[
-        commands.spawn(player).id(),
-        commands.spawn(test_npc).id(),
-        //commands.spawn(_rock).id(),
+        commands.spawn_scene(player).id(),
+        commands.spawn_scene(test_npc).id(),
     ];
     commands.entity(level).add_children(children);
 
@@ -235,20 +204,4 @@ fn finish_level_spawn(
     info!("Level construction - cleanup");
     next_state.set(LevelSpawnState::Cleanup.next());
     info!("Finished constructing level");
-}
-
-#[derive(Resource, Asset, Clone, Reflect)]
-#[reflect(Resource)]
-pub struct LevelAssets {
-    #[dependency]
-    music: Handle<AudioSource>,
-}
-
-impl FromWorld for LevelAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-        Self {
-            music: assets.load("base/audio/music/8 Bit Open World.ogg"),
-        }
-    }
 }

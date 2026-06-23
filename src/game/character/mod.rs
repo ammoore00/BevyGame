@@ -1,13 +1,16 @@
 use crate::data::loader::LoaderJobManager;
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
-use crate::data::ResourceLocation;
+use crate::data::{loc, ResourceLocation};
 use crate::datagen_api::animation::AnimationResource;
-use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::assets::{CharacterData, CharacterResource};
 use crate::game::character::state::action_states::Idle;
+use crate::game::character::state::ActionStateTracker;
 use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::PhysicsData;
+use crate::game::physics::movement::{MovementController, DEFAULT_MAX_SPEED};
+use crate::screens::Screen;
+use crate::{action_state_scene, marker, Scale};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::any::TypeId;
@@ -37,51 +40,144 @@ pub fn plugin(app: &mut App) {
         stamina::plugin,
         state::plugin,
     ));
+
+    app.add_systems(Update, (
+            guard_improper_character_construction,
+            initialize_characters
+        )
+            .run_if(in_state(Screen::Gameplay))
+    );
 }
 
-pub fn character_bundle(
-    data_loc: ResourceLocation<CharacterResource>,
+/// Marker for a fully initialized character. Presence of this Component
+/// guarantees inclusion of all other necessary Components
+///
+/// # Panics
+/// This should never be constructed directly and will panic at runtime if done so
+///
+/// Use the SceneComponent `CharacterPrototype` instead for constructing characters
+#[derive(Component, Debug, Clone, Copy, Eq, PartialEq)]
+struct Character;
+impl Default for Character {
+    fn default() -> Self {
+        panic!("Character should not be constructed directly! Use CharacterPrototype instead")
+    }
+}
+// Internal marker to guard against improper construction
+marker!(CompletedCharacter);
+
+fn guard_improper_character_construction(
+    query: Query<Entity, (With<Character>, Without<CompletedCharacter>)>
+) {
+    if !query.is_empty() {
+        panic!("Character should not be constructed directly! Use CharacterPrototype instead")
+    }
+}
+
+/// SceneComponent used to construct a character
+///
+/// See `CharacterProps` for parameters
+#[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[scene(CharacterProps)]
+pub struct CharacterPrototype;
+impl CharacterPrototype {
+    fn scene(props: CharacterProps) -> impl Scene {
+        let state = action_state_scene!(Idle);
+        bsn! [
+            CharacterPrototype
+            MovementController {
+                // TODO: Move this into Character Data
+                max_speed: {props.max_speed},
+            }
+            WorldPosition({props.position})
+            CharacterDataLocation({props.data_loc})
+            PhysicsData::kinematic(Vec3::ZERO)
+            Facing
+            state
+        ]
+    }
+}
+
+/// Used to temporarily store the location from which to load the character's data
+/// when the entity is constructed from its template
+///
+/// This component should be removed once the character's data has been loaded
+#[derive(Component, Clone)]
+struct CharacterDataLocation(ResourceLocation<CharacterResource>);
+impl Default for CharacterDataLocation {
+    fn default() -> Self {
+        //panic!("CharacterDataLocation should not be default-constructed")
+        Self(loc::<CharacterResource>("placeholder").unwrap())
+    }
+}
+
+pub struct CharacterProps {
     position: Vec3,
-    scale: f32,
-    context: &CharacterBuilderContext,
-) -> impl Bundle {
-    // TODO: Proper error handling
-    let data = context.get_character_data(&data_loc)
-        .unwrap_or_else(|| panic!("Failed to find character data for {}", data_loc));
+    max_speed: f32,
+    data_loc: ResourceLocation<CharacterResource>,
+}
+impl Default for CharacterProps {
+    fn default() -> Self {
+        Self {
+            position: Vec3::ZERO,
+            max_speed: DEFAULT_MAX_SPEED,
+            data_loc: loc::<CharacterResource>("placeholder").unwrap(),
+        }
+    }
+}
 
-    let animation_registry = context.animation_registry().resolved_registry();
-    let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_registry));
+/// Find all character prototypes, load their data, then spawn in relevant components
+fn initialize_characters(
+    character_prototype_query: Query<
+        (
+            Entity,
+            &CharacterDataLocation,
+            &WorldPosition,
+        ),
+        With<CharacterPrototype>,
+    >,
+    context: CharacterBuilderContext,
+    scale: Res<Scale>,
+    mut commands: Commands,
+) {
+    for (entity, data_loc, position) in character_prototype_query {
+        let Some(data) = context.get_character_data(&data_loc.0) else {
+            error!("Failed to find character data for {}", data_loc.0);
+            commands.entity(entity).despawn();
+            continue;
+        };
 
-    let state_capabilities = data.state_capabilities().clone();
+        let animation_registry = context.animation_registry().resolved_registry();
+        let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_registry));
 
-    let animations =
-        data.resolve_animation_handles(context.animation_registry().resolved_registry());
-    let idle_animation =
-        animations.get(&TypeId::of::<Idle>()).cloned()
-            .expect("Failed to find idle animation for player character");
+        let state_capabilities = data.state_capabilities().clone();
 
-    let animation_assets = context.animation_registry().resolved_assets();
-    let animation_tracker =
-        CharacterAnimationTracker::new(idle_animation, animation_assets);
-    let sprite = animation_tracker.default_sprite(animation_assets);
+        let animations =
+            data.resolve_animation_handles(context.animation_registry().resolved_registry());
+        let idle_animation =
+            animations.get(&TypeId::of::<Idle>()).cloned()
+                .expect("Failed to find idle animation for player character");
 
-    let collider = data.collider().make_collider(position);
+        let animation_assets = context.animation_registry().resolved_assets();
+        let animation_tracker =
+            CharacterAnimationTracker::new(idle_animation, animation_assets);
+        let sprite = animation_tracker.default_sprite(animation_assets);
 
-    (
-        Character,
-        state::action_state(Idle),
-        state_capabilities,
-        Facing::default(),
-        // Physics
-        WorldPosition(position.into()),
-        PhysicsData::kinematic(Vec3::ZERO),
-        collider,
-        // Rendering
-        Transform::from_scale(Vec3::splat(scale)),
-        sprite,
-        animation_tracker,
-        animation_map,
-    )
+        let collider = data.collider().make_collider(position.as_vec3());
+
+        commands.entity(entity).insert((
+            animation_tracker,
+            animation_map,
+            state_capabilities,
+            sprite,
+            collider,
+            Transform::from_scale(Vec3::splat(scale.0)),
+        ));
+
+        // Mark character as finalized
+        commands.entity(entity).remove::<(CharacterDataLocation, CharacterPrototype)>();
+        commands.entity(entity).insert((CompletedCharacter, Character));
+    }
 }
 
 #[derive(SystemParam, getset::Getters)]
@@ -90,17 +186,12 @@ pub struct CharacterBuilderContext<'w> {
     character_registry: SystemRegistry<'w, CharacterResource>,
     #[getset(get = "pub")]
     animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
-    #[getset(get = "pub")]
-    sprite_registry: SystemRegistry<'w, CharacterSpriteResource>,
 }
 impl CharacterBuilderContext<'_> {
     pub fn get_character_data(&self, loc: &ResourceLocation<CharacterResource>) -> Option<&CharacterData> {
         self.character_registry.get_asset(loc)
     }
 }
-
-#[derive(Component, Asset, Clone, Copy, Reflect)]
-pub struct Character;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
 pub enum Facing {

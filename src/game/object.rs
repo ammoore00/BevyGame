@@ -37,7 +37,7 @@ impl FromWorld for ObjectAssets {
     }
 }
 
-pub fn object_bundle(
+pub fn _object_bundle(
     object_type: ObjectType,
     assets: &ObjectAssets,
     position: Vec3,

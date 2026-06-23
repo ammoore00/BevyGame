@@ -12,8 +12,9 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);
 }
 
-#[derive(Component, Debug, Clone, Reflect)]
+#[derive(Component, Debug, Clone, Default)]
 pub enum PhysicsData {
+    #[default]
     Static,
     Kinematic {
         displacement: Vec3,
