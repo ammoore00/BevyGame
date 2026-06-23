@@ -4,15 +4,10 @@ use crate::datagen_api::attack::{AttackCodec, AttackResource};
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
 use crate::marker;
 use crate::screens::Screen;
-use crate::theme::palette::{HEADER_TEXT, TEXT_INPUT_BACKGROUND};
-use crate::theme::widgets::text::SMALL_FONT_SIZE;
 use crate::theme::widgets;
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
-use regex::Regex;
 use serde::de::DeserializeOwned;
-use std::sync::LazyLock;
-use crate::theme::widgets::text;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -36,20 +31,6 @@ pub(super) fn spawn_details_screen() -> impl Scene {
             justify_content: JustifyContent::FlexStart,
         }
     ]
-}
-
-pub(super) fn spawn_details_screen_old(
-    mut commands: Commands,
-) -> Entity {
-    commands.spawn((
-        PropertiesScreen,
-        Node {
-            width: percent(100),
-            height: percent(100),
-
-            ..Default::default()
-        }
-    )).id()
 }
 
 fn update_properties_view(
@@ -226,16 +207,4 @@ impl EditorCodec for AttackCodec {
     const FILE_TYPE: FileKind = FileKind::Attack;
 
     fn properties_bundle(self) -> impl Bundle {}
-}
-
-const TEXT_INPUT_GAP: usize = 12;
-const TEXT_INPUT_PADDING: usize = 4;
-const TEXT_INPUT_HEIGHT: usize = 20;
-
-static RESOURCE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9:/_-]+$").unwrap());
-
-fn text_input<'a>(
-    width: usize,
-    label: &str,
-) -> impl Bundle + use<'a> {
 }

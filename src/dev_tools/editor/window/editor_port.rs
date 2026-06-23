@@ -3,9 +3,9 @@ use crate::dev_tools::editor::window::BACKGROUND_BLEED;
 use crate::marker;
 use crate::screens::Screen;
 use crate::theme::palette::BUTTON_TEXT;
-use crate::theme::widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
-use crate::theme::widgets::{button, text, UiBackgroundStyle};
 use crate::theme::widgets;
+use crate::theme::widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widgets::{button, UiBackgroundStyle};
 use bevy::prelude::*;
 use std::collections::HashSet;
 
@@ -148,7 +148,7 @@ fn update_file_tab_buttons(
                     on_file_button_clicked
                 )
             ])
-            .insert(FileTabButton({open_file.clone()}))
+            .insert(FileTabButton(open_file.clone()))
             .id();
         commands.entity(file_tabs).add_child(file_button);
     }

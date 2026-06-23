@@ -6,19 +6,19 @@ use crate::datagen_api::attack::AttackResource;
 use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
 use crate::marker;
 use crate::screens::Screen;
+use crate::theme::interaction::BackgroundInteractionPalette;
 use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
 use crate::theme::widgets;
 use crate::theme::widgets::button::ButtonStyle;
-use crate::theme::widgets::text::{FontBuilder, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
 use crate::theme::widgets::{button, text};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
-use bevy::ecs::system::{IntoObserverSystem, SystemParam};
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use crate::theme::interaction::BackgroundInteractionPalette;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

@@ -6,7 +6,6 @@ use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widgets::{button, text};
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
-use bevy::input_focus::InputFocus;
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
 use crate::theme::widgets;
 

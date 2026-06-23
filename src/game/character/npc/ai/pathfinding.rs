@@ -26,7 +26,7 @@ pub(super) fn plugin(app: &mut App) {
             .chain()
             .run_if(
                 in_state(Screen::Gameplay)
-                    .and(in_state(LevelSpawnState::Finished))
+                    .and_then(in_state(LevelSpawnState::Finished))
             )
             .in_set(AppSystems::Update)
             .in_set(PausableSystems),

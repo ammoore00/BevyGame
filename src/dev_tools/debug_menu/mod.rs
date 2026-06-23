@@ -1,3 +1,5 @@
+use crate::dev_tools::debug_menu::debug_options::{spawn_debug, DebugOptionState};
+use crate::theme::widgets::text::{MEDIUM_FONT_SIZE, TINY_FONT_SIZE};
 use bevy::app::Update;
 use bevy::color::Color;
 use bevy::ecs::relationship::Relationship;
@@ -6,8 +8,6 @@ use bevy::prelude::*;
 use getset::CopyGetters;
 use std::ops::Not;
 use tracing::info;
-use crate::dev_tools::debug_menu::debug_options::{spawn_debug, DebugOptionState};
-use crate::theme::widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE, TINY_FONT_SIZE};
 
 pub mod debug_options;
 pub mod level_render;

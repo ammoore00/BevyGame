@@ -5,6 +5,7 @@ use crate::define_resource;
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
+    app.init_resource::<AudioRegistry>();
     app.add_registry_with_discovery::<AudioResource>();
 
     app.add_systems(

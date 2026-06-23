@@ -149,27 +149,6 @@ macro_rules! registry_read_only_impl {
     };
 }
 
-macro_rules! registry_read_write_impl {
-    (
-        impl<$type_param:ident : $bound:path> $system_param:ident {
-            $handle_fn:ident,
-            $asset_mut_fn:ident,
-            $asset_from_handle_mut_fn:ident,
-        }
-    ) => {
-        impl<$type_param: $bound> $system_param<'_, $type_param> {
-            pub fn $asset_mut_fn(&mut self, id: &ResourceLocation<$type_param>) -> Option<&mut $type_param::AssetKind> {
-                let handle = self.$handle_fn(id);
-                handle.and_then(|handle| self.$asset_from_handle_mut_fn(handle))
-            }
-
-            pub fn $asset_from_handle_mut_fn(&mut self, handle: Handle<$type_param::AssetKind>) -> Option<&mut $type_param::AssetKind> {
-                self.assets.get_mut(handle.id())
-            }
-        }
-    };
-}
-
 macro_rules! resolved_registry_read_only_impl {
     (
         impl<$type_param:ident : $bound:path> $system_param:ident {

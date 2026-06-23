@@ -60,7 +60,7 @@ fn spawn_editor() -> impl Scene {
                     flex_direction: FlexDirection::Column,
 
                     position_type: PositionType::Absolute,
-                    top: px({MENU_BAR_TOTAL_HEIGHT}),
+                    top: px(MENU_BAR_TOTAL_HEIGHT),
                     left: px(0),
                     right: px(0),
                     bottom: px(0),

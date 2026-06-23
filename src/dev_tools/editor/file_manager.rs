@@ -1,17 +1,17 @@
-use std::any::TypeId;
-use crate::data::{AnyResourceLocation, ResourceKind, ResourceLocation};
+use crate::data::{AnyResourceLocation, ResourceKind};
 use crate::datagen_api::animation::{AnimationCodec, AnimationResource};
 use crate::datagen_api::assets::{CharacterCodec, CharacterResource};
 use crate::datagen_api::attack::{AttackCodec, AttackResource};
 use crate::dev_tools::editor::window::properties::EditorCodec;
 use crate::screens::Screen;
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::tasks::IoTaskPool;
+use crossbeam::channel::{Receiver, Sender};
 use getset::Getters;
+use std::any::TypeId;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use bevy::ecs::system::SystemParam;
-use crossbeam::channel::{Receiver, Sender};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<FileManager>();
@@ -309,34 +309,6 @@ pub struct EditorFile {
     loc: AnyResourceLocation,
     #[get = "pub"]
     kind: FileKind,
-}
-impl EditorFile {
-    pub fn _name(&self) -> String {
-        self.loc.get_file_name()
-    }
-
-    /// Get the resource location as a typed resource location
-    /// # Panics
-    /// If the file kind does not match the generic type provided
-    pub fn loc_typed<T: EditorResourceKind>(&self) -> ResourceLocation<T> {
-        Self::guard_kind::<T>(self.kind);
-        self.loc.clone().into()
-    }
-
-    /// Guard that checks if the file kind matches the ResourceKind type.
-    ///
-    /// # Panics
-    /// This function will panic if the file kind does not match the ResourceKind type.
-    /// This is intended as a guard against compile time bugs.
-    fn guard_kind<T: EditorResourceKind>(kind: FileKind) {
-        if kind != T::FILE_KIND {
-            panic!(
-                "File kind mismatch! Expected {:?}, but got {:?}. This is a compile-time bug!",
-                T::FILE_KIND,
-                kind
-            );
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

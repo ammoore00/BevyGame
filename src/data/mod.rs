@@ -3,6 +3,7 @@ pub mod loader;
 pub mod sprite;
 
 use crate::data::registry::ResourceRegistry;
+use bevy::asset::AssetPath;
 use bevy::prelude::*;
 use getset::Getters;
 use regex::Regex;
@@ -13,8 +14,6 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
-use bevy::asset::AssetPath;
-use bevy::ecs::template::TemplateContext;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((loader::plugin,));
