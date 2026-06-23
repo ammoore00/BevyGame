@@ -1,6 +1,7 @@
 pub mod registry;
 pub mod loader;
 pub mod sprite;
+pub mod prototyping;
 
 use crate::data::registry::ResourceRegistry;
 use bevy::asset::AssetPath;

@@ -11,7 +11,7 @@ use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
 use crate::game::level::grid::Grid;
 use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::room::RoomBuilderContext;
-use crate::game::level::map::{build_map_grid, map_bundle, Map};
+use crate::game::level::map::{build_map_grid, map_scene, Map};
 use crate::{audio::music, marker, screens::Screen};
 use bevy::prelude::*;
 
@@ -124,8 +124,7 @@ fn bake_tiles(
         &mut builder_context,
     );
 
-    let map_entity = commands
-        .spawn(map_bundle())
+    let map_entity = commands.spawn_scene(map_scene(map))
         .add_child(grid_entity)
         .id();
     commands.entity(level).add_child(map_entity);

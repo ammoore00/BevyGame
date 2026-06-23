@@ -1,11 +1,18 @@
+use crate::data::prototyping::{MarkerToken, Prototype, PrototypeBuilder, PrototypeFinalizedMarker};
+use crate::data::{ResourceFileType, ResourceLocation};
+use crate::define_data_resource;
+use crate::define_resource;
 use crate::game::level::grid;
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
 use crate::game::level::map::palette::Palette;
 use crate::game::level::map::room::RoomBuilderContext;
+use crate::{data, register_prototype_system};
+use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::prelude::*;
 use getset::CopyGetters;
 use rand::{Rng, RngExt};
+use std::convert::Infallible;
 
 pub mod palette;
 pub mod room;
@@ -19,11 +26,19 @@ pub(super) fn plugin(app: &mut App) {
         room::plugin,
         palette::plugin, // Order matters here - palette must be after room
     ));
+
+    app.add_systems(
+        Update,
+        initialize_maps
+    );
 }
+
+define_data_resource!(Map, "level/maps", MapDefinition);
+register_prototype_system!(initialize_maps, MapBuilder);
 
 /// Pool of all registered map definitions
 /// This contains every map def that the game knows about
-#[derive(Debug, Reflect)]
+#[derive(Debug)]
 pub struct MapPool(pub(crate) Vec<MapDefinition>);
 
 /// The type for this map. This affects where in the world it will be used
@@ -31,11 +46,11 @@ pub struct MapPool(pub(crate) Vec<MapDefinition>);
 /// Main - used as a main map for a world
 /// Boss - boss dungeon, which may or may not be optional, depending on where it gets used
 /// Side - optional side dungeon without a boss
-#[derive(Debug, Reflect)]
+#[derive(Debug, Clone, Copy)]
 pub enum MapType {
     Main,
-    Boss,
-    Side,
+    _Boss,
+    _Side,
 }
 
 /// Contains all the information needed to generate a map
@@ -43,20 +58,88 @@ pub enum MapType {
 /// This contains both information about map selection and information about building the map
 /// - Selection information includes things such as map type and palette
 /// - Build information includes things like set pieces, injectables, and connections
-#[derive(Asset, Debug, Reflect)]
+#[derive(Asset, Debug, Clone, TypePath)]
 pub struct MapDefinition {
     map_type: MapType,
 
     // Temporary
     map_size: usize,
 }
+impl MapDefinition {
+    const PLACEHOLDER: Self = Self {
+        map_type: MapType::Main,
+        map_size: 1,
+    };
+}
 
-pub fn map_bundle() -> impl Bundle {
-    (
-        Map,
-        Transform::default(),
-        Visibility::default(),
-    )
+// TODO: Replace this with actually loading map definitions from data files
+#[derive(Component, Default, Clone)]
+pub struct MapDataLocation(Option<MapDefinition>);
+impl From<MapDataLocation> for ResourceLocation<MapResource> {
+    fn from(_value: MapDataLocation) -> Self {
+        todo!()
+    }
+}
+
+#[derive(Clone)]
+pub struct MapProps {
+    definition: MapDefinition,
+}
+impl Default for MapProps {
+    fn default() -> Self {
+        Self { definition: MapDefinition::PLACEHOLDER }
+    }
+}
+
+#[derive(Component, Default, Clone)]
+pub struct Map(());
+impl PrototypeFinalizedMarker for Map {
+    fn new(_: MarkerToken) -> Self { Self(()) }
+}
+
+#[derive(SceneComponent, Default, Clone)]
+#[scene(MapProps)]
+pub struct MapPrototype;
+impl MapPrototype {
+    pub fn scene(props: MapProps) -> impl Scene {
+        bsn! [
+            Map
+            Transform
+            Visibility
+            MapDataLocation({Some(props.definition)})
+        ]
+    }
+}
+impl Prototype for MapPrototype {
+    type Marker = Map;
+    type Resource = MapResource;
+    type DataLocation = MapDataLocation;
+}
+
+struct MapBuilder;
+impl PrototypeBuilder for MapBuilder {
+    type Proto = MapPrototype;
+    type Context<'w, 's> = RoomBuilderContext<'w, 's>;
+    type QueryData = ();
+    type Err = Infallible;
+
+    fn build(
+        _entity: Entity,
+        _loc: &<Self::Proto as Prototype>::DataLocation,
+        _: &QueryItem<'_, '_, <Self::QueryData as QueryData>::ReadOnly>,
+        _context: &Self::Context<'_, '_>,
+        _commands: Commands
+    ) -> Result<(), Self::Err> {
+        Ok(())
+    }
+}
+
+pub fn map_scene(definition: &MapDefinition) -> impl Scene {
+    bsn! [
+        @MapPrototype {
+            @definition: {definition.clone()}
+        }
+    ]
 }
 
 pub fn build_map_grid(
@@ -96,9 +179,6 @@ pub fn build_map_grid(
 
     grid_entity
 }
-
-#[derive(Component, Debug, Clone)]
-pub struct Map;
 
 /// Stores the current state of the generated map
 #[derive(Component, Debug, CopyGetters)]
