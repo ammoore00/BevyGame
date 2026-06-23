@@ -10,7 +10,7 @@ use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::PhysicsData;
 use crate::game::physics::movement::{MovementController, DEFAULT_MAX_SPEED};
 use crate::screens::Screen;
-use crate::{action_state_scene, marker, Scale};
+use crate::{action_state_scene, Scale};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::any::TypeId;
@@ -41,12 +41,7 @@ pub fn plugin(app: &mut App) {
         state::plugin,
     ));
 
-    app.add_systems(Update, (
-            guard_improper_character_construction,
-            initialize_characters
-        )
-            .run_if(in_state(Screen::Gameplay))
-    );
+    app.add_systems(Update, initialize_characters.run_if(in_state(Screen::Gameplay)));
 }
 
 /// Marker for a fully initialized character. Presence of this Component
@@ -57,56 +52,26 @@ pub fn plugin(app: &mut App) {
 ///
 /// Use the SceneComponent `CharacterPrototype` instead for constructing characters
 #[derive(Component, Debug, Clone, Copy, Eq, PartialEq)]
-struct Character;
-impl Default for Character {
-    fn default() -> Self {
-        panic!("Character should not be constructed directly! Use CharacterPrototype instead")
-    }
-}
-// Internal marker to guard against improper construction
-marker!(CompletedCharacter);
-
-fn guard_improper_character_construction(
-    query: Query<Entity, (With<Character>, Without<CompletedCharacter>)>
-) {
-    if !query.is_empty() {
-        panic!("Character should not be constructed directly! Use CharacterPrototype instead")
-    }
-}
-
-/// SceneComponent used to construct a character
-///
-/// See `CharacterProps` for parameters
-#[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[scene(CharacterProps)]
-pub struct CharacterPrototype;
-impl CharacterPrototype {
-    fn scene(props: CharacterProps) -> impl Scene {
-        let state = action_state_scene!(Idle);
-        bsn! [
-            CharacterPrototype
-            MovementController {
-                // TODO: Move this into Character Data
-                max_speed: {props.max_speed},
-            }
-            WorldPosition({props.position})
-            CharacterDataLocation({props.data_loc})
-            PhysicsData::kinematic(Vec3::ZERO)
-            Facing
-            state
-        ]
-    }
+pub struct Character(()); // Private unit field to prevent improper construction
+impl Character {
+    pub fn new() -> Self { Self(()) }
 }
 
 /// Used to temporarily store the location from which to load the character's data
 /// when the entity is constructed from its template
 ///
 /// This component should be removed once the character's data has been loaded
+///
+/// # Errors
+/// This component must have a Default implementation to be loaded through BSN,
+/// but any attempt to use the default value will result in an error when the
+/// character data is loaded
+///
+/// This will not panic, but it will result in an error, and the character will not be spawned
 #[derive(Component, Clone)]
 struct CharacterDataLocation(ResourceLocation<CharacterResource>);
 impl Default for CharacterDataLocation {
     fn default() -> Self {
-        //panic!("CharacterDataLocation should not be default-constructed")
         Self(loc::<CharacterResource>("placeholder").unwrap())
     }
 }
@@ -123,6 +88,32 @@ impl Default for CharacterProps {
             max_speed: DEFAULT_MAX_SPEED,
             data_loc: loc::<CharacterResource>("placeholder").unwrap(),
         }
+    }
+}
+
+/// SceneComponent used to construct a character
+///
+/// See `CharacterProps` for parameters
+#[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[scene(CharacterProps)]
+pub struct CharacterPrototype;
+impl CharacterPrototype {
+    /// Initializes character components which do not need top be loaded from data
+    /// Remaining components are loaded from data after spawning (see `initialize_characters`)
+    fn scene(props: CharacterProps) -> impl Scene {
+        let state = action_state_scene!(Idle);
+        bsn! [
+            CharacterPrototype
+            MovementController {
+                // TODO: Move this into Character Data
+                max_speed: {props.max_speed},
+            }
+            WorldPosition({props.position})
+            CharacterDataLocation({props.data_loc})
+            PhysicsData::kinematic(Vec3::ZERO)
+            Facing
+            state
+        ]
     }
 }
 
@@ -176,7 +167,7 @@ fn initialize_characters(
 
         // Mark character as finalized
         commands.entity(entity).remove::<(CharacterDataLocation, CharacterPrototype)>();
-        commands.entity(entity).insert((CompletedCharacter, Character));
+        commands.entity(entity).insert(Character::new());
     }
 }
 
