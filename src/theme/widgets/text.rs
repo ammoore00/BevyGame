@@ -3,6 +3,7 @@ use bevy::ecs::system::SystemParam;
 use crate::data::registry::ResourceRegistry;
 use crate::data::{ResourceFileType, ResourceKind, ResourceLocation};
 use crate::data::loader::LoaderJobManager;
+use crate::theme::palette::{HEADER_TEXT, LABEL_TEXT};
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<FontResource>();
@@ -31,6 +32,14 @@ pub fn text(
             font_size: size
         }
     ]
+}
+
+pub fn label(text_str: impl Into<String>) -> impl Scene {
+    text(text_str, MEDIUM_FONT_SIZE, LABEL_TEXT)
+}
+
+pub fn header(text_str: impl Into<String>) -> impl Scene {
+    text(text_str, LARGE_FONT_SIZE, HEADER_TEXT)
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Reflect)]

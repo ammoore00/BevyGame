@@ -1,13 +1,15 @@
+use crate::theme::widgets::button::ButtonImpl;
+use crate::{asset_tracking::LoadResource, audio::sound_effect};
 use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::prelude::*;
-
-use crate::theme::widget_old::ButtonRoot;
-use crate::{asset_tracking::LoadResource, audio::sound_effect};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (apply_gamepad_interaction_palette, apply_interaction_palette).chain(),
+        (
+            (apply_gamepad_sprite_interaction_palette, apply_sprite_interaction_palette).chain(),
+            (apply_gamepad_background_interaction_palette, apply_background_interaction_palette).chain(),
+        ),
     );
 
     app.load_resource::<InteractionAssets>();
@@ -20,15 +22,15 @@ pub(super) fn plugin(app: &mut App) {
 /// on the current interaction state.
 #[derive(Component, Debug, Reflect, FromTemplate)]
 #[reflect(Component)]
-pub struct InteractionPalette {
+pub struct SpriteInteractionPalette {
     pub none: usize,
     pub hovered: usize,
     pub pressed: usize,
 }
 
-fn apply_interaction_palette(
+fn apply_sprite_interaction_palette(
     mut palette_query: Query<
-        (&Interaction, &InteractionPalette, &mut ImageNode),
+        (&Interaction, &SpriteInteractionPalette, &mut ImageNode),
         Changed<Interaction>,
     >,
     input_focus_visible: Res<InputFocusVisible>,
@@ -55,11 +57,11 @@ fn apply_interaction_palette(
     }
 }
 
-fn apply_gamepad_interaction_palette(
+fn apply_gamepad_sprite_interaction_palette(
     input_focus: Res<InputFocus>,
     input_focus_visible: Res<InputFocusVisible>,
-    mut palette_query: Query<(Entity, &Interaction, &InteractionPalette, &mut ImageNode)>,
-    button_query: Query<(Entity, &Children), With<ButtonRoot>>,
+    mut palette_query: Query<(Entity, &Interaction, &SpriteInteractionPalette, &mut ImageNode)>,
+    button_query: Query<(Entity, &Children), With<ButtonImpl>>,
 ) {
     // For everything with a background color palette
     for (entity, interaction, palette, mut image) in palette_query.iter_mut() {
@@ -83,6 +85,75 @@ fn apply_gamepad_interaction_palette(
         } else if input_focus_visible.is_changed() && matches!(interaction, Interaction::None) {
             // If the input is false, and has changed since the last frame, disable highlighting
             image.texture_atlas.as_mut().unwrap().index = palette.none;
+        }
+    }
+}
+
+#[derive(Component, Debug, Reflect, FromTemplate)]
+#[reflect(Component)]
+pub struct BackgroundInteractionPalette {
+    pub none: Color,
+    pub hovered: Color,
+    pub pressed: Color,
+}
+
+fn apply_background_interaction_palette(
+    mut palette_query: Query<
+        (&Interaction, &BackgroundInteractionPalette, &mut BackgroundColor),
+        Changed<Interaction>,
+    >,
+    input_focus_visible: Res<InputFocusVisible>,
+    mut commands: Commands,
+) {
+    // If there are any mouse interactions, disable the focus indicator
+    let mut reset_focus = || {
+        if input_focus_visible.0 {
+            commands.insert_resource(InputFocusVisible(false));
+        }
+    };
+
+    for (interaction, palette, mut color) in &mut palette_query {
+        let new_color = match interaction {
+            Interaction::None => palette.none,
+            Interaction::Hovered => {
+                reset_focus();
+                palette.hovered
+            }
+            Interaction::Pressed => palette.pressed,
+        };
+
+        *color = BackgroundColor(new_color);
+    }
+}
+
+fn apply_gamepad_background_interaction_palette(
+    input_focus: Res<InputFocus>,
+    input_focus_visible: Res<InputFocusVisible>,
+    mut palette_query: Query<(Entity, &Interaction, &BackgroundInteractionPalette, &mut BackgroundColor)>,
+    button_query: Query<(Entity, &Children), With<ButtonImpl>>,
+) {
+    // For everything with a background color palette
+    for (entity, interaction, palette, mut color) in palette_query.iter_mut() {
+        // If we are rendering the current focused element
+        if input_focus_visible.0 {
+            // Iterate through each button that has children
+            button_query.iter().for_each(|(parent, children)| {
+                // If the button is the focused element
+                if input_focus.get() == Some(parent) {
+                    children.iter().for_each(|child| {
+                        // If the entity we are currently looking at is a child of the focused button
+                        if child == entity {
+                            // Then update the color
+                            *color = BackgroundColor(palette.hovered);
+                        } else {
+                            *color = BackgroundColor(palette.none);
+                        }
+                    })
+                }
+            });
+        } else if input_focus_visible.is_changed() && matches!(interaction, Interaction::None) {
+            // If the input is false, and has changed since the last frame, disable highlighting
+            *color = BackgroundColor(palette.none);
         }
     }
 }

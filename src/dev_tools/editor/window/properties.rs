@@ -1,18 +1,18 @@
-use std::sync::LazyLock;
 use crate::datagen_api::animation::{AnimationCodec, AnimationResource};
 use crate::datagen_api::assets::{CharacterCodec, CharacterResource};
 use crate::datagen_api::attack::{AttackCodec, AttackResource};
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
+use crate::marker;
 use crate::screens::Screen;
-use crate::theme::widget_old::UiResources;
+use crate::theme::palette::{HEADER_TEXT, TEXT_INPUT_BACKGROUND};
+use crate::theme::widgets::text::SMALL_FONT_SIZE;
+use crate::theme::widgets;
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use crate::marker;
-use crate::theme::palette::{HEADER_TEXT, TEXT_INPUT_BACKGROUND};
-use crate::theme::widget_old;
-use crate::theme::widgets::text::SMALL_FONT_SIZE;
+use std::sync::LazyLock;
+use crate::theme::widgets::text;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -27,7 +27,15 @@ pub(super) fn plugin(app: &mut App) {
 marker!(PropertiesScreen);
 
 pub(super) fn spawn_details_screen() -> impl Scene {
-    
+    bsn! [
+        #PropertiesScreen
+        PropertiesScreen
+        widgets::ui_root()
+        Node {
+            position_type: PositionType::Relative,
+            justify_content: JustifyContent::FlexStart,
+        }
+    ]
 }
 
 pub(super) fn spawn_details_screen_old(
@@ -59,7 +67,6 @@ fn update_properties_view(
         &EditorFileContent,
     )>,
     file_manager: Res<FileManager>,
-    mut ui_resources: UiResources,
     mut commands: Commands,
 ) {
     // Get the current properties view
@@ -123,7 +130,6 @@ fn update_properties_view(
             info!("Spawning new properties editor for file: {}", active_file.loc());
             let properties = active_file.spawn_properties_editor(
                 content,
-                &mut ui_resources,
                 commands.reborrow(),
             );
 
@@ -141,7 +147,6 @@ impl EditorFile {
     fn spawn_properties_editor(
         &self,
         content: &EditorFileContent,
-        ui_resources: &mut UiResources,
         mut commands: Commands,
     ) -> Entity {
         let shared_bundle = (
@@ -159,15 +164,15 @@ impl EditorFile {
 
         match self.kind() {
             FileKind::Character => commands.spawn((
-                self.properties_bundle::<CharacterCodec>(content.get_character_codec(), ui_resources),
+                self.properties_bundle::<CharacterCodec>(content.get_character_codec()),
                 shared_bundle,
             )).id(),
             FileKind::Animation => commands.spawn((
-                self.properties_bundle::<AnimationCodec>(content.get_animation_codec(), ui_resources),
+                self.properties_bundle::<AnimationCodec>(content.get_animation_codec()),
                 shared_bundle,
             )).id(),
             FileKind::Attack => commands.spawn((
-                self.properties_bundle::<AttackCodec>(content.get_attack_codec(), ui_resources),
+                self.properties_bundle::<AttackCodec>(content.get_attack_codec()),
                 shared_bundle,
             )).id(),
         }
@@ -176,9 +181,8 @@ impl EditorFile {
     fn properties_bundle<Codec: EditorCodec>(
         &self,
         content: Codec,
-        ui_resources: &mut UiResources,
     ) -> impl Bundle {
-        content.properties_bundle(ui_resources)
+        content.properties_bundle()
     }
 }
 
@@ -190,7 +194,7 @@ pub trait EditorCodec: DeserializeOwned + Default + Clone + Send + Sync + 'stati
     const FILE_TYPE: FileKind;
 
     // Method must consume self to satisfy lifetimes for opaque return type
-    fn properties_bundle(self, ui_resources: &mut UiResources) -> impl Bundle;
+    fn properties_bundle(self) -> impl Bundle;
 }
 
 impl EditorCodec for CharacterCodec {
@@ -198,7 +202,7 @@ impl EditorCodec for CharacterCodec {
     const FILE_CONTENT_FN: fn(Self) -> EditorFileContent = EditorFileContent::Character;
     const FILE_TYPE: FileKind = FileKind::Character;
 
-    fn properties_bundle(self, ui_resources: &mut UiResources) -> impl Bundle {}
+    fn properties_bundle(self) -> impl Bundle {}
 }
 
 impl EditorCodec for AnimationCodec {
@@ -206,12 +210,12 @@ impl EditorCodec for AnimationCodec {
     const FILE_CONTENT_FN: fn(Self) -> EditorFileContent = EditorFileContent::Animation;
     const FILE_TYPE: FileKind = FileKind::Animation;
 
-    fn properties_bundle(self, ui_resources: &mut UiResources) -> impl Bundle {
+    fn properties_bundle(self) -> impl Bundle {
         children![
-            text_input(ui_resources, 300, "Image Resource:"),
-            text_input(ui_resources, 24, "Frame Height:"),
-            text_input(ui_resources, 24, "Frame Width:"),
-            text_input(ui_resources, 24, "Number of Frames:"),
+            //text_input(ui_resources, 300, "Image Resource:"),
+            //text_input(ui_resources, 24, "Frame Height:"),
+            //text_input(ui_resources, 24, "Frame Width:"),
+            //text_input(ui_resources, 24, "Number of Frames:"),
         ]
     }
 }
@@ -221,7 +225,7 @@ impl EditorCodec for AttackCodec {
     const FILE_CONTENT_FN: fn(Self) -> EditorFileContent = EditorFileContent::Attack;
     const FILE_TYPE: FileKind = FileKind::Attack;
 
-    fn properties_bundle(self, ui_resources: &mut UiResources) -> impl Bundle {}
+    fn properties_bundle(self) -> impl Bundle {}
 }
 
 const TEXT_INPUT_GAP: usize = 12;
@@ -231,47 +235,7 @@ const TEXT_INPUT_HEIGHT: usize = 20;
 static RESOURCE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9:/_-]+$").unwrap());
 
 fn text_input<'a>(
-    ui_resources: &mut UiResources,
     width: usize,
     label: &str,
 ) -> impl Bundle + use<'a> {
-    let font = ui_resources.font_builder.with_size(SMALL_FONT_SIZE);
-    let text = widget_old::text_old(label, font.clone(), HEADER_TEXT);
-
-    (
-        Node {
-            column_gap: px(TEXT_INPUT_GAP),
-            ..default()
-        },
-        children![
-            (
-                text,
-                Node {
-                    height: px(TEXT_INPUT_HEIGHT),
-                    ..default()
-                }
-            ),
-            (
-                Node {
-                    padding: UiRect::horizontal(px(TEXT_INPUT_PADDING)),
-                    height: px(TEXT_INPUT_HEIGHT),
-                    width: px(width + TEXT_INPUT_PADDING * 2),
-
-                    ..default()
-                },
-                BackgroundColor::from(TEXT_INPUT_BACKGROUND),
-                children![
-                    (
-                        font,
-                        Node {
-                            height: px(TEXT_INPUT_HEIGHT),
-                            width: px(width),
-
-                            ..default()
-                        },
-                    )
-                ]
-            )
-        ],
-    )
 }

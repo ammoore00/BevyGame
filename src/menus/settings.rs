@@ -3,21 +3,20 @@
 //! Additional settings and accessibility options should go here.
 
 use crate::gamepad::gamepad_just_pressed;
-use crate::theme::widgets::text::FontBuilder;
-use crate::theme::widget_old;
-use crate::theme::widget_old::UiResources;
+use crate::theme::widgets::{button, text};
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
-use bevy::input_focus::{FocusCause, InputFocus};
+use bevy::input_focus::InputFocus;
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
-use crate::theme::widgets::UiAssets;
+use crate::theme::widgets;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu);
+    app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu.spawn());
     app.add_systems(
         Update,
-        go_back.run_if(in_state(Menu::Settings).and(
-            input_just_pressed(KeyCode::Escape).or(gamepad_just_pressed(GamepadButton::East)),
+        go_back.run_if(in_state(Menu::Settings).and_then(
+            input_just_pressed(KeyCode::Escape)
+                .or_else(gamepad_just_pressed(GamepadButton::East)),
         )),
     );
 
@@ -27,48 +26,25 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn spawn_settings_menu(
-    mut ui_resources: UiResources,
-    directional_nav_map: ResMut<DirectionalNavigationMap>,
-    mut input_focus: ResMut<InputFocus>,
-    mut commands: Commands,
-) {
-    let grid = settings_grid(
-        &mut ui_resources,
-        directional_nav_map,
-        &mut commands,
-    );
-
-    let ui_root = commands
-        .spawn((
-            widget_old::ui_root("Settings Menu"),
-            GlobalZIndex(2),
-            DespawnOnExit(Menu::Settings),
-            children![widget_old::header_old("Settings", &ui_resources.font_builder),],
-        ))
-        .id();
-
-    commands.entity(ui_root).add_child(grid);
-
-    let back_button = commands
-        .spawn(widget_old::button(
-            &mut ui_resources,
-            "Back",
-            go_back_on_click,
-        ))
-        .id();
-    commands.entity(ui_root).add_child(back_button);
-
-    input_focus.set(back_button, FocusCause::Navigated);
+fn spawn_settings_menu() -> impl Scene {
+    bsn! [
+        #Settings
+        widgets::ui_root()
+        GlobalZIndex(2)
+        DespawnOnExit<Menu>(Menu::Settings)
+        Children [
+            text::header("Settings"),
+            button::with_text("Back", go_back_on_click)
+            // TODO: Add settings grid
+        ]
+    ]
 }
 
-fn settings_grid(
-    ui_resources: &mut UiResources,
+fn _settings_grid(
     directional_nav_map: ResMut<DirectionalNavigationMap>,
     commands: &mut Commands,
 ) -> Entity {
-    let volume_widget = global_volume_widget(
-        ui_resources,
+    let volume_widget = _global_volume_widget(
         directional_nav_map,
         commands,
     );
@@ -84,7 +60,7 @@ fn settings_grid(
                 ..default()
             },
             children![(
-                widget_old::label_old("Master Volume", &ui_resources.font_builder),
+                //widget_old::label_old("Master Volume", &ui_resources.font_builder),
                 Node {
                     justify_self: JustifySelf::End,
                     ..default()
@@ -98,8 +74,7 @@ fn settings_grid(
     ui_root
 }
 
-fn global_volume_widget(
-    ui_resources: &mut UiResources,
+fn _global_volume_widget(
     _directional_nav_map: ResMut<DirectionalNavigationMap>,
     commands: &mut Commands,
 ) -> Entity {
@@ -114,11 +89,7 @@ fn global_volume_widget(
         .id();
 
     let minus_button = commands
-        .spawn(widget_old::button_small(
-            ui_resources,
-            "-",
-            lower_global_volume,
-        ))
+        .spawn(())//widget_old::button_small(ui_resources, "-", _lower_global_volume))
         .id();
     commands.entity(ui_root).add_child(minus_button);
 
@@ -130,17 +101,13 @@ fn global_volume_widget(
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            children![(widget_old::label_old("", &ui_resources.font_builder), GlobalVolumeLabel)],
+            //children![(widget_old::label_old("", &ui_resources.font_builder), GlobalVolumeLabel)],
         ))
         .id();
     commands.entity(ui_root).add_child(current_volume_display);
 
     let plus_button = commands
-        .spawn(widget_old::button_small(
-            ui_resources,
-            "+",
-            raise_global_volume,
-        ))
+        .spawn(())//widget_old::button_small(ui_resources, "+", _raise_global_volume))
         .id();
     commands.entity(ui_root).add_child(plus_button);
 
@@ -149,16 +116,16 @@ fn global_volume_widget(
     ui_root
 }
 
-const MIN_VOLUME: f32 = 0.0;
-const MAX_VOLUME: f32 = 3.0;
+const _MIN_VOLUME: f32 = 0.0;
+const _MAX_VOLUME: f32 = 3.0;
 
-fn lower_global_volume(_: On<Pointer<Click>>, mut global_volume: ResMut<GlobalVolume>) {
-    let linear = (global_volume.volume.to_linear() - 0.1).max(MIN_VOLUME);
+fn _lower_global_volume(_: On<Pointer<Click>>, mut global_volume: ResMut<GlobalVolume>) {
+    let linear = (global_volume.volume.to_linear() - 0.1).max(_MIN_VOLUME);
     global_volume.volume = Volume::Linear(linear);
 }
 
-fn raise_global_volume(_: On<Pointer<Click>>, mut global_volume: ResMut<GlobalVolume>) {
-    let linear = (global_volume.volume.to_linear() + 0.1).min(MAX_VOLUME);
+fn _raise_global_volume(_: On<Pointer<Click>>, mut global_volume: ResMut<GlobalVolume>) {
+    let linear = (global_volume.volume.to_linear() + 0.1).min(_MAX_VOLUME);
     global_volume.volume = Volume::Linear(linear);
 }
 

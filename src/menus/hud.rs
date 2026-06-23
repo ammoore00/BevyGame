@@ -3,14 +3,14 @@ use crate::game::character::health::Health;
 use crate::game::character::player::Player;
 use crate::game::character::stamina::Stamina;
 use crate::screens::Screen;
-use crate::theme::prelude::*;
-use crate::AppSystems;
+use crate::theme::widgets;
+use crate::{marker, AppSystems};
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<StatBarAssets>();
 
-    app.add_systems(OnEnter(Screen::Gameplay), spawn_hud);
+    app.add_systems(OnEnter(Screen::Gameplay), spawn_hud.spawn());
     app.add_systems(
         Update,
         (update_health_bar, update_stamina_bar)
@@ -19,32 +19,24 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Debug, Clone)]
-struct HudRoot;
+marker!(HudRoot);
 
-fn spawn_hud(
-    mut commands: Commands,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    commands
-        .spawn((
-            HudRoot,
-            widget_old::ui_root("HUD"),
-            GlobalZIndex(1),
-            DespawnOnExit(Screen::Gameplay),
-        ))
-        .with_children(|parent| {
-            // Add your HUD elements here
-            parent.spawn(stat_bars(&mut texture_atlas_layouts));
-        });
+fn spawn_hud() -> impl Scene {
+    bsn! [
+        #Hud
+        HudRoot
+        widgets::ui_root()
+        GlobalZIndex(1)
+        DespawnOnExit<Screen>(Screen::Gameplay)
+        Children [
+            stat_bars()
+        ]
+    ]
 }
 
-fn stat_bars(texture_atlas_layouts: &mut Assets<TextureAtlasLayout>) -> impl Bundle {
-    let layout = TextureAtlasLayout::from_grid(UVec2::new(4, 8), 8, 8, None, None);
-    let layout = texture_atlas_layouts.add(layout);
-
-    (
-        StatBarLayout(layout),
+fn stat_bars() -> impl Scene {
+    bsn! [
+        #StatBars
         Node {
             position_type: PositionType::Absolute,
             flex_direction: FlexDirection::Column,
@@ -54,40 +46,37 @@ fn stat_bars(texture_atlas_layouts: &mut Assets<TextureAtlasLayout>) -> impl Bun
 
             top: percent(5),
             height: percent(10),
-
-            ..default()
-        },
-        Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            parent.spawn((HealthBar, Node::default()));
-            parent.spawn((StaminaBar, Node::default()));
-        })),
-    )
+        }
+        Children [
+            (HealthBar Node),
+            (StaminaBar Node)
+        ]
+    ]
 }
 
-#[derive(Component, Debug, Clone)]
-struct StatBarLayout(Handle<TextureAtlasLayout>);
-
-#[derive(Component, Debug, Clone, Copy)]
-struct HealthBar;
-#[derive(Component, Debug, Clone, Copy)]
-struct HealthBarSegment;
-
-#[derive(Component, Debug, Clone, Copy)]
-struct StaminaBar;
-#[derive(Component, Debug, Clone, Copy)]
-struct StaminaBarSegment;
+marker!(HealthBar);
+marker!(HealthBarSegment);
+marker!(StaminaBar);
+marker!(StaminaBarSegment);
 
 #[derive(Resource, Asset, Clone, Reflect)]
 pub struct StatBarAssets {
     #[dependency]
     stat_bars: Handle<Image>,
+    stat_bar_layout: Handle<TextureAtlasLayout>,
 }
 
 impl FromWorld for StatBarAssets {
     fn from_world(world: &mut World) -> Self {
+        let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
+        let stat_bar_layout = TextureAtlasLayout::from_grid(UVec2::new(4, 8), 8, 8, None, None);
+        let stat_bar_layout = texture_atlas_layouts.add(stat_bar_layout);
+
         let assets = world.resource::<AssetServer>();
+
         Self {
             stat_bars: assets.load("base/images/ui/bars.png"),
+            stat_bar_layout,
         }
     }
 }
@@ -95,18 +84,19 @@ impl FromWorld for StatBarAssets {
 const HEALTH_BAR_PIXEL_VALUE: usize = 10;
 
 fn update_health_bar(
-    player_query: Query<&Health, With<Player>>,
-    stat_bar_layout_query: Query<&StatBarLayout>,
+    player_query: Query<
+        &Health,
+        (
+            With<Player>,
+            Changed<Health>,
+        )
+    >,
     health_bar_query: Query<Entity, With<HealthBar>>,
     segment_query: Query<Entity, With<HealthBarSegment>>,
     stat_bar_assets: Res<StatBarAssets>,
     mut commands: Commands,
 ) {
     let Ok(health) = player_query.single() else {
-        return;
-    };
-
-    let Ok(bar_layout) = stat_bar_layout_query.single() else {
         return;
     };
 
@@ -118,7 +108,7 @@ fn update_health_bar(
         .iter()
         .for_each(|segment| commands.entity(segment).despawn());
 
-    let texture_atlas_layout = bar_layout.0.clone();
+    let texture_atlas_layout = stat_bar_assets.stat_bar_layout.clone();
 
     spawn_stat_bar(
         health.max,
@@ -136,18 +126,19 @@ fn update_health_bar(
 const STAMINA_BAR_PIXEL_VALUE: usize = 10;
 
 fn update_stamina_bar(
-    player_query: Query<&Stamina, With<Player>>,
-    stat_bar_layout_query: Query<&StatBarLayout>,
+    player_query: Query<
+        &Stamina,
+        (
+            With<Player>,
+            Changed<Stamina>,
+        )
+    >,
     health_bar_query: Query<Entity, With<StaminaBar>>,
     segment_query: Query<Entity, With<StaminaBarSegment>>,
     stat_bar_assets: Res<StatBarAssets>,
     mut commands: Commands,
 ) {
     let Ok(stamina) = player_query.single() else {
-        return;
-    };
-
-    let Ok(bar_layout) = stat_bar_layout_query.single() else {
         return;
     };
 
@@ -159,7 +150,7 @@ fn update_stamina_bar(
         .iter()
         .for_each(|segment| commands.entity(segment).despawn());
 
-    let texture_atlas_layout = bar_layout.0.clone();
+    let texture_atlas_layout = stat_bar_assets.stat_bar_layout.clone();
 
     spawn_stat_bar(
         stamina.max,

@@ -7,11 +7,14 @@ use bevy::{
 };
 
 use crate::{screens::Screen, theme::prelude::*, AppSystems};
+use crate::data::loc;
+use crate::theme::widgets;
+use crate::theme::widgets::UiSpriteResource;
 
 pub(super) fn plugin(app: &mut App) {
     // Spawn splash screen.
     app.insert_resource(ClearColor(SPLASH_BACKGROUND_COLOR));
-    app.add_systems(OnEnter(Screen::Splash), spawn_splash_screen);
+    app.add_systems(OnEnter(Screen::Splash), spawn_splash_screen.spawn());
 
     // Animate splash screen.
     app.add_systems(
@@ -39,7 +42,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         enter_title_screen
-            .run_if(input_just_pressed(KeyCode::Escape).and(in_state(Screen::Splash))),
+            .run_if(input_just_pressed(KeyCode::Escape).and_then(in_state(Screen::Splash))),
     );
 }
 
@@ -47,9 +50,33 @@ const SPLASH_BACKGROUND_COLOR: Color = Color::srgb(0.157, 0.157, 0.157);
 const SPLASH_DURATION_SECS: f32 = 1.8;
 const SPLASH_FADE_DURATION_SECS: f32 = 0.6;
 
-fn spawn_splash_screen(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn spawn_splash_screen() -> impl Scene {
+    bsn! [
+        #SplashScreen
+        widgets::ui_root()
+        BackgroundColor(SPLASH_BACKGROUND_COLOR)
+        DespawnOnExit<Screen>(Screen::Splash)
+        Children [
+            Name::new("Splash image")
+            Node {
+                margin: UiRect::all(Val::Auto),
+                width: percent(70),
+            }
+            ImageNode {
+                image: {loc::<UiSpriteResource>("splash").unwrap()}
+            }
+            ImageNodeFadeInOut {
+                total_duration: SPLASH_DURATION_SECS,
+                fade_duration: SPLASH_FADE_DURATION_SECS,
+                t: 0.0,
+            },
+        ]
+    ]
+}
+
+fn spawn_splash_screen_old(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
-        widget_old::ui_root("Splash Screen"),
+        //widget_old::ui_root("Splash Screen"),
         BackgroundColor(SPLASH_BACKGROUND_COLOR),
         DespawnOnExit(Screen::Splash),
         children![(
@@ -78,7 +105,7 @@ fn spawn_splash_screen(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default, Clone)]
 #[reflect(Component)]
 struct ImageNodeFadeInOut {
     /// Total duration in seconds.

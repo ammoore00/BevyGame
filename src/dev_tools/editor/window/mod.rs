@@ -48,14 +48,9 @@ fn spawn_editor() -> impl Scene {
     bsn! {
         #EditorUiRoot
         EditorUiRoot
+        widgets::ui_root()
         Node {
-            flex_direction: FlexDirection::Column,
-            position_type: PositionType::Absolute,
-
-            top: px(MENU_BAR_TOTAL_HEIGHT),
-            left: px(0),
-            right: px(0),
-            bottom: px(0),
+            row_gap: px(0),
         }
         Children [
             (
@@ -84,9 +79,9 @@ fn spawn_editor() -> impl Scene {
                             (
                                 #LeftPanel
                                 EditorLeftPanel
+                                widgets::scrollable_ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
-                                    height: percent(100),
                                     width: percent(LEFT_PANEL_WIDTH_TARGET),
                                     max_width: px(LEFT_PANEL_MAX_WIDTH),
                                     padding: px(PANEL_PADDING),
@@ -95,15 +90,7 @@ fn spawn_editor() -> impl Scene {
                                 Children [
                                     (
                                         #LeftPanelBackground
-                                        widgets::ui_background(UiBackgroundStyle::Panel)
-                                        Node {
-                                            position_type: PositionType::Absolute,
-                                            left: px(0),
-                                            right: px(0),
-                                            top: px(-BACKGROUND_BLEED),
-                                            bottom: px(-BACKGROUND_BLEED),
-                                        }
-                                        Pickable::IGNORE
+                                        background()
                                     ),
                                     spawn_file_browser(),
                                 ]
@@ -111,9 +98,9 @@ fn spawn_editor() -> impl Scene {
                             (
                                 #CenterPanel
                                 EditorCenterPanel
+                                widgets::ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
-                                    height: percent(100),
                                     flex_grow: 1.0,
                                 }
                                 Pickable::IGNORE
@@ -124,9 +111,9 @@ fn spawn_editor() -> impl Scene {
                             (
                                 #RightPanel
                                 EditorRightPanel
+                                widgets::scrollable_ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
-                                    height: percent(100),
                                     width: percent(RIGHT_PANEL_WIDTH_TARGET),
                                     max_width: px(RIGHT_PANEL_MAX_WIDTH),
                                     padding: px(PANEL_PADDING),
@@ -135,15 +122,7 @@ fn spawn_editor() -> impl Scene {
                                 Children [
                                     (
                                         #RightPanelBackground
-                                        widgets::ui_background(UiBackgroundStyle::Panel)
-                                        Node {
-                                            position_type: PositionType::Absolute,
-                                            left: px(0),
-                                            right: px(0),
-                                            top: px(-BACKGROUND_BLEED),
-                                            bottom: px(-BACKGROUND_BLEED),
-                                        }
-                                        Pickable::IGNORE
+                                        background()
                                     ),
                                     spawn_details_screen()
                                 ]
@@ -168,4 +147,18 @@ fn spawn_editor() -> impl Scene {
             ),
         ]
     }
+}
+
+fn background() -> impl Scene {
+    bsn! [
+        widgets::ui_background(UiBackgroundStyle::Panel)
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(0),
+            right: px(0),
+            top: px(-BACKGROUND_BLEED),
+            bottom: px(-BACKGROUND_BLEED),
+        }
+        Pickable::IGNORE
+    ]
 }

@@ -3,13 +3,14 @@
 
 use bevy::prelude::*;
 
-use crate::theme::widgets::text::FontBuilder;
-use crate::{asset_tracking::ResourceHandles, screens::Screen, theme::prelude::*};
+use crate::{asset_tracking::ResourceHandles, screens::Screen};
+use crate::theme::widgets;
+use crate::theme::widgets::text;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Screen::Loading(&Screen::Gameplay)), spawn_gameplay_loading_screen);
+    app.add_systems(OnEnter(Screen::Loading(&Screen::Gameplay)), spawn_gameplay_loading_screen.spawn());
     #[cfg(feature = "dev")]
-    app.add_systems(OnEnter(Screen::Loading(&Screen::Editor)), spawn_editor_loading_screen);
+    app.add_systems(OnEnter(Screen::Loading(&Screen::Editor)), spawn_editor_loading_screen.spawn());
 
     app.add_systems(
         Update,
@@ -21,27 +22,23 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn spawn_gameplay_loading_screen(
-    font_builder: FontBuilder,
-    mut commands: Commands
-) {
-    commands.spawn((
-        widget_old::ui_root("Loading Screen"),
-        DespawnOnExit(Screen::Loading(&Screen::Gameplay)),
-        children![widget_old::label_old("Loading...", &font_builder)],
-    ));
+fn spawn_gameplay_loading_screen() -> impl Scene {
+    bsn! [
+        #LoadingScreen
+        widgets::ui_root()
+        DespawnOnExit<Screen>(Screen::Loading({&Screen::Editor}))
+        Children [text::label("Loading...")]
+    ]
 }
 
 #[cfg(feature = "dev")]
-fn spawn_editor_loading_screen(
-    font_builder: FontBuilder,
-    mut commands: Commands
-) {
-    commands.spawn((
-        widget_old::ui_root("Loading Screen"),
-        DespawnOnExit(Screen::Loading(&Screen::Editor)),
-        children![widget_old::label_old("Loading...", &font_builder)],
-    ));
+fn spawn_editor_loading_screen() -> impl Scene {
+    bsn! [
+        #LoadingScreen
+        widgets::ui_root()
+        DespawnOnExit<Screen>(Screen::Loading({&Screen::Editor}))
+        Children [text::label("Loading...")]
+    ]
 }
 
 fn enter_gameplay_screen(mut next_screen: ResMut<NextState<Screen>>) {

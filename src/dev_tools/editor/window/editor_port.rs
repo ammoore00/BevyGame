@@ -1,15 +1,13 @@
 use crate::dev_tools::editor::file_manager::{EditorFile, FileManager};
 use crate::dev_tools::editor::window::BACKGROUND_BLEED;
+use crate::marker;
 use crate::screens::Screen;
 use crate::theme::palette::BUTTON_TEXT;
-use crate::theme::{widget_old, widgets};
-use crate::theme::widget_old::UiResources;
-use bevy::ecs::relationship::Relationship;
+use crate::theme::widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widgets::{button, text, UiBackgroundStyle};
+use crate::theme::widgets;
 use bevy::prelude::*;
 use std::collections::HashSet;
-use crate::marker;
-use crate::theme::widgets::text::{LARGE_FONT_SIZE, SMALL_FONT_SIZE};
-use crate::theme::widgets::UiBackgroundStyle;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -23,64 +21,39 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 marker!(EditorPort);
+marker!(FileTabs);
+marker!(EditorPortContent);
 
 pub(super) fn spawn_editor_port() -> impl Scene {
-
-}
-
-pub(super) fn spawn_editor_port_old(
-    ui_resources: &mut UiResources,
-    mut commands: Commands,
-) -> Entity {
-    let editor_port = commands.spawn((
-        EditorPort,
-        Node {
-            flex_direction: FlexDirection::Column,
-
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-
-            ..Default::default()
-        }
-    )).id();
-
-    let file_tabs = commands.spawn(file_tabs(
-        ui_resources,
-    )).id();
-    commands.entity(editor_port).add_child(file_tabs);
-
-    let editor_port_content = commands.spawn(editor_port_content(
-        ui_resources,
-    )).id();
-    commands.entity(editor_port).add_child(editor_port_content);
-
-    editor_port
-}
-
-const FILE_TABS_BUTTON_HEIGHT: usize = 40;
-
-const FILE_TABS_BUTTON_PER_CHAR_WIDTH: usize = 10;
-const FILE_TABS_BUTTON_PADDING: usize = 10;
-
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct FileTabs;
-
-pub(super) fn file_tabs(
-    ui_resources: &mut UiResources,
-) -> impl Bundle {
-    (
-        FileTabs,
+    bsn! [
+        #EditorPort
+        EditorPort
+        widgets::ui_root()
         Node {
             position_type: PositionType::Relative,
-            width: percent(100.0),
-            height: px(FILE_TABS_BUTTON_HEIGHT),
+            justify_content: JustifyContent::FlexStart,
+        }
+        Children [
+            file_tabs(),
+            editor_port_content(),
+        ]
+    ]
+}
 
-            ..Default::default()
-        },
-        Pickable::IGNORE,
-        children![
-            // TODO: Figure out why this background isn't rendering
-            widgets::ui_background_old(ui_resources, UiBackgroundStyle::Panel),
+fn file_tabs() -> impl Scene {
+    bsn! [
+        #FileTabs
+        FileTabs
+        widgets::ui_root()
+        Node {
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::FlexStart,
+            position_type: PositionType::Relative,
+            height: px(FILE_TABS_BUTTON_HEIGHT),
+        }
+        Children [
+            #FileTabsBackground
+            widgets::ui_background(UiBackgroundStyle::Panel)
             Node {
                 position_type: PositionType::Absolute,
 
@@ -88,13 +61,30 @@ pub(super) fn file_tabs(
                 right: px(0),
                 top: px(-BACKGROUND_BLEED),
                 bottom: px(0),
-
-                ..Default::default()
-            },
-            Pickable::IGNORE,
+            }
+            Pickable::IGNORE
         ]
-    )
+    ]
 }
+
+fn editor_port_content() -> impl Scene {
+    bsn! [
+        #EditorPortContent
+        EditorPortContent
+        Node {
+            width: percent(100.0),
+            height: percent(100.0),
+
+            padding: UiRect::all(px(50.0))
+        }
+        text("Editor Content", LARGE_FONT_SIZE, BUTTON_TEXT)
+    ]
+}
+
+const FILE_TABS_BUTTON_HEIGHT: usize = 40;
+
+const FILE_TABS_BUTTON_PER_CHAR_WIDTH: usize = 10;
+const FILE_TABS_BUTTON_PADDING: usize = 10;
 
 #[derive(Component, Debug, Clone)]
 struct FileTabButton(EditorFile);
@@ -112,7 +102,6 @@ fn update_file_tab_buttons(
         &FileTabButton
     )>,
     file_manager: Res<FileManager>,
-    mut ui_resources: UiResources,
     mut commands: Commands,
 ) {
     let Ok((file_tabs, children)) = file_tabs_query.single() else {
@@ -149,33 +138,28 @@ fn update_file_tab_buttons(
         let label = open_file.loc().id().to_string();
         let label_len = label.len();
 
-        let file_button = commands.spawn((
-            FileTabButton(open_file.clone()),
-            widget_old::sized_button(
-                &mut ui_resources,
-                label,
-                px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
-                percent(100.0),
-                SMALL_FONT_SIZE,
-                on_file_button_clicked
-            ),
-        )).id();
+        let file_button = commands.spawn_scene(bsn! [
+                button::with_text_ext(
+                    label,
+                    SMALL_FONT_SIZE,
+                    BUTTON_TEXT,
+                    px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
+                    percent(100.0),
+                    on_file_button_clicked
+                )
+            ])
+            .insert(FileTabButton({open_file.clone()}))
+            .id();
         commands.entity(file_tabs).add_child(file_button);
     }
 }
 
 fn on_file_button_clicked(
     event: On<Pointer<Click>>,
-    parent_query: Query<&ChildOf>,
     file_query: Query<&FileTabButton>,
     mut file_manager: ResMut<FileManager>,
 ) {
-    let Ok(button_root) = parent_query.get(event.entity).map(ChildOf::get) else {
-        error!("Failed to get button root");
-        return;
-    };
-
-    let Ok(file_button) = file_query.get(button_root) else {
+    let Ok(file_button) = file_query.get(event.entity) else {
         error!("Failed to get file button");
         return;
     };
@@ -191,26 +175,6 @@ fn on_file_button_clicked(
         PointerButton::Secondary => {},
         PointerButton::Middle => file_manager.close(&file_button.0),
     }
-}
-
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct EditorPortContent;
-
-pub(super) fn editor_port_content(
-    ui_resources: &mut UiResources,
-) -> impl Bundle {
-    (
-        EditorPortContent,
-        Node {
-            width: percent(100.0),
-            height: percent(100.0),
-
-            padding: UiRect::all(px(50.0)),
-
-            ..Default::default()
-        },
-        widget_old::text_old("Editor Content", ui_resources.font_builder.with_size(LARGE_FONT_SIZE), BUTTON_TEXT)
-    )
 }
 
 fn update_editor_port_content(

@@ -1,18 +1,18 @@
 use crate::audio::sound_effect;
 use crate::theme::interaction::InteractionAssets;
-use crate::theme::prelude::InteractionPalette;
-use crate::theme::widget_old::ButtonRoot;
+use crate::theme::prelude::SpriteInteractionPalette;
 use bevy::camera::NormalizedRenderTarget;
 use bevy::input_focus::directional_navigation::{
     DirectionalNavigation, DirectionalNavigationPlugin,
 };
-use bevy::input_focus::{InputDispatchPlugin, InputFocus, InputFocusVisible};
+use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::math::CompassOctant;
 use bevy::picking::backend::HitData;
 use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use std::time::Duration;
+use crate::theme::widgets::button::ButtonImpl;
 
 pub fn plugin(app: &mut App) {
     app
@@ -31,6 +31,8 @@ pub fn plugin(app: &mut App) {
                 interact_with_focused_button,
             ),
         );
+
+    // TODO: Implement auto navigation from bevy 0.18
 }
 
 // The indirection between inputs and actions allows us to easily remap inputs
@@ -173,7 +175,7 @@ fn interact_with_focused_button(
     action_state: Res<ActionState>,
     input_focus: Res<InputFocus>,
     children: Query<&Children>,
-    mut button_query: Query<(&mut ImageNode, &InteractionPalette), With<ButtonRoot>>,
+    mut button_query: Query<(&mut ImageNode, &SpriteInteractionPalette), With<ButtonImpl>>,
     mut commands: Commands,
 ) {
     if action_state

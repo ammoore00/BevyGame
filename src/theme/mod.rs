@@ -5,12 +5,11 @@
 
 pub mod interaction;
 pub mod palette;
-pub mod widget_old;
 pub mod widgets;
 
 #[allow(unused_imports)]
 pub mod prelude {
-    pub use super::{interaction::InteractionPalette, palette as ui_palette, widget_old};
+    pub use super::{interaction::SpriteInteractionPalette, palette as ui_palette};
 }
 
 use bevy::prelude::*;
@@ -18,7 +17,6 @@ use bevy::prelude::*;
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         interaction::plugin,
-        widget_old::plugin,
         widgets::plugin,
     ));
 }

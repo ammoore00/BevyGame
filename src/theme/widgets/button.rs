@@ -1,17 +1,15 @@
-use crate::asset_tracking::LoadResource;
 use crate::data::loc;
-use crate::theme::interaction::InteractionPalette;
+use crate::theme::interaction::{BackgroundInteractionPalette, SpriteInteractionPalette};
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widgets::text::LARGE_FONT_SIZE;
-use crate::theme::widgets::{text, UiAssets, UiSpriteResource};
+use crate::theme::widgets::{text, UiSpriteResource};
 use bevy::ecs::system::IntoObserverSystem;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
+use bevy::ui::auto_directional_navigation::AutoDirectionalNavigation;
 
 pub(super) fn plugin(app: &mut App) {
-    app.load_resource::<UiAssets>();
-
     app.add_systems(
         Update,
         update_button_style
@@ -46,6 +44,34 @@ where
     I: IntoObserverSystem<E, B, M> + Clone + Send + Sync,
 {
     let config = ButtonConfig::text(text.into(), font_size.into(), text_color)
+        .with_scene(bsn! [
+            Node {
+                width,
+                height,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+            }
+        ]);
+
+    base(config, action)
+}
+
+pub fn with_text_inline<E, B, M, I>(
+    text: impl Into<String>,
+    font_size: impl Into<FontSize>,
+    text_color: Color,
+    width: Val,
+    height: Val,
+    palette: BackgroundInteractionPalette,
+    action: I,
+) -> impl Scene
+where
+    E: EntityEvent,
+    B: Bundle,
+    M: 'static,
+    I: IntoObserverSystem<E, B, M> + Clone + Send + Sync,
+{
+    let config = ButtonConfig::text_inline(text.into(), font_size.into(), text_color, palette)
         .with_scene(bsn! [
             Node {
                 width,
@@ -105,20 +131,40 @@ where
 
 #[derive(SceneComponent, Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[scene(ButtonConfigProp)]
-struct ButtonImpl;
+pub struct ButtonImpl;
 impl ButtonImpl {
     fn scene(config: ButtonConfigProp) -> impl Scene {
-        let ButtonConfigScene {
-            button_style,
+        let (
+            style,
             button_children,
-            scene,
-        } = config.config.make_scene();
+            scene
+        ) = match config.config.make_scene() {
+            ButtonConfigScene::Styled {
+                button_style,
+                button_children,
+                scene,
+            } => (
+                Box::new(bsn! [button_style]),
+                button_children,
+                scene,
+            ),
+            ButtonConfigScene::Background {
+                background,
+                button_children,
+                scene
+            } => (
+                Box::new(bsn! [background]),
+                button_children,
+                scene,
+            ),
+        };
 
         bsn! [
             #Button
             ButtonImpl
             Button
-            button_style
+            AutoDirectionalNavigation
+            style
             Children [
                 (
                     #ButtonChildren
@@ -136,7 +182,7 @@ impl ButtonImpl {
 }
 
 #[derive(Default)]
-struct ButtonConfigProp {
+pub struct ButtonConfigProp {
     config: ButtonConfig
 }
 
@@ -151,6 +197,13 @@ enum ButtonConfig {
         color: Color,
         scene: Option<Box<dyn Scene>>,
     },
+    TextInline {
+        text: String,
+        font_size: FontSize,
+        color: Color,
+        palette: BackgroundInteractionPalette,
+        scene: Option<Box<dyn Scene>>,
+    }
 }
 impl ButtonConfig {
     fn styled(style: ButtonStyle) -> Self {
@@ -161,10 +214,18 @@ impl ButtonConfig {
         Self::Text { text, font_size, color, scene: None }
     }
 
+    fn text_inline(text: String, font_size: FontSize, color: Color, palette: BackgroundInteractionPalette) -> Self {
+        Self::TextInline { text, font_size, color, palette, scene: None }
+    }
+
     fn with_scene(self, scene: impl Scene) -> Self {
         match self {
-            Self::Styled { style, .. } => Self::Styled { style, scene: Some(Box::new(scene)) },
-            Self::Text { text, font_size, color, .. } => Self::Text { text, font_size, color, scene: Some(Box::new(scene)) },
+            Self::Styled { style, .. } =>
+                Self::Styled { style, scene: Some(Box::new(scene)) },
+            Self::Text { text, font_size, color, .. } =>
+                Self::Text { text, font_size, color, scene: Some(Box::new(scene)) },
+            Self::TextInline { text, font_size, color, palette, .. } =>
+                Self::TextInline { text, font_size, color, palette, scene: Some(Box::new(scene)) },
         }
     }
 
@@ -174,7 +235,7 @@ impl ButtonConfig {
                 let style = Box::new(bsn! [
                     {Self::make_scene_from_style(style)}
                 ]);
-                ButtonConfigScene {
+                ButtonConfigScene::Styled {
                     button_style: style,
                     button_children: Box::new(bsn![]),
                     scene,
@@ -192,8 +253,32 @@ impl ButtonConfig {
                 let button_children = Box::new(bsn! [
                     {text::text(text, font_size, color)}
                 ]);
-                ButtonConfigScene {
+                ButtonConfigScene::Styled {
                     button_style,
+                    button_children,
+                    scene,
+                }
+            }
+            ButtonConfig::TextInline {
+                text,
+                font_size,
+                color,
+                palette,
+                scene
+            } => {
+                let background = Box::new(bsn! [
+                    BackgroundColor({palette.none})
+                    BackgroundInteractionPalette {
+                        none: {palette.none},
+                        hovered: {palette.hovered},
+                        pressed: {palette.pressed},
+                    }
+                ]);
+                let button_children = Box::new(bsn! [
+                    {text::text(text, font_size, color)}
+                ]);
+                ButtonConfigScene::Background {
+                    background,
                     button_children,
                     scene,
                 }
@@ -221,10 +306,17 @@ impl Default for ButtonConfig {
     }
 }
 
-struct ButtonConfigScene {
-    button_style: Box<dyn Scene>,
-    button_children: Box<dyn Scene>,
-    scene: Option<Box<dyn Scene>>,
+enum ButtonConfigScene {
+    Styled {
+        button_style: Box<dyn Scene>,
+        button_children: Box<dyn Scene>,
+        scene: Option<Box<dyn Scene>>,
+    },
+    Background {
+        background: Box<dyn Scene>,
+        button_children: Box<dyn Scene>,
+        scene: Option<Box<dyn Scene>>,
+    }
 }
 
 #[derive(Component, Debug, Clone, Copy, Default)]
@@ -286,7 +378,7 @@ impl ButtonStyle {
     fn make_palette_scene(self) -> impl Scene {
         let indices = self.get_indices();
         bsn! [
-            InteractionPalette {
+            SpriteInteractionPalette {
                 none: {indices.0},
                 hovered: {indices.1},
                 pressed: {indices.2},
@@ -294,9 +386,9 @@ impl ButtonStyle {
         ]
     }
 
-    fn get_palette(&self) -> InteractionPalette {
+    fn get_palette(&self) -> SpriteInteractionPalette {
         let indices = self.get_indices();
-        InteractionPalette {
+        SpriteInteractionPalette {
             none: {indices.0},
             hovered: {indices.1},
             pressed: {indices.2},
@@ -320,7 +412,7 @@ fn update_button_style(
             &ButtonStyle,
             &Interaction,
             &mut ImageNode,
-            &mut InteractionPalette,
+            &mut SpriteInteractionPalette,
         ),
         (
             With<ButtonImpl>,
@@ -344,7 +436,7 @@ fn apply_button_style(
     interaction: Interaction,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     image_node: &mut ImageNode,
-    interaction_palette: &mut InteractionPalette,
+    interaction_palette: &mut SpriteInteractionPalette,
 ) {
     let layout = texture_atlas_layouts.add(style.make_layout());
     let palette = style.get_palette();

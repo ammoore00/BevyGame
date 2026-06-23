@@ -3,11 +3,14 @@ use crate::data::{AnyResourceLocation, ResolvableResource, ResourceKind, Resourc
 use crate::datagen_api::animation::AnimationResource;
 use crate::datagen_api::assets::CharacterResource;
 use crate::datagen_api::attack::AttackResource;
-use crate::theme::widgets::text::FontBuilder;
+use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
+use crate::marker;
 use crate::screens::Screen;
 use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
-use crate::theme::widget_old;
-use crate::theme::widget_old::{styled_button, UiResources};
+use crate::theme::widgets;
+use crate::theme::widgets::button::ButtonStyle;
+use crate::theme::widgets::text::{FontBuilder, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use crate::theme::widgets::{button, text};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::{IntoObserverSystem, SystemParam};
@@ -15,10 +18,7 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
-use crate::theme::widgets::button::ButtonStyle;
-use crate::theme::widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
-use crate::theme::widgets::UiAssets;
+use crate::theme::interaction::BackgroundInteractionPalette;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -44,152 +44,98 @@ pub(super) fn plugin(app: &mut App) {
             update_menu_items,
             finalize_menu_items,
             render_menu_items,
-            handle_menu_browser_button_interaction,
         )
             .chain()
             .run_if(in_state(Screen::Editor))
     );
 }
 
-#[derive(Component, Debug, Clone, Default, Copy)]
-struct FileBrowser;
+marker!(FileBrowser);
 
 pub(super) fn spawn_file_browser() -> impl Scene {
-
-}
-
-pub(super) fn spawn_file_browser_old(
-    ui_resources: &mut UiResources,
-    mut commands: Commands,
-) -> Entity {
-    let browser = commands.spawn((
-        FileBrowser,
+    bsn! [
+        #FileBrowser
+        FileBrowser
+        widgets::scrollable_ui_root()
         Node {
-            flex_direction: FlexDirection::Column,
+            position_type: PositionType::Relative,
+            justify_content: JustifyContent::FlexStart,
             row_gap: px(2.),
-
-            width: percent(100),
-            height: percent(100),
-
-            ..Default::default()
-        },
-    )).id();
-
-    let characters = collapsible_menu(
-        ui_resources,
-        "Characters",
-        MEDIUM_FONT_SIZE,
-        commands.reborrow(),
-    );
-    commands.entity(characters).insert(CharacterMenu);
-    commands.entity(browser).add_child(characters);
-
-    let animations = collapsible_menu(
-        ui_resources,
-        "Animations",
-        MEDIUM_FONT_SIZE,
-        commands.reborrow(),
-    );
-    commands.entity(animations).insert(AnimationMenu);
-    commands.entity(browser).add_child(animations);
-
-    let attacks = collapsible_menu(
-        ui_resources,
-        "Attacks",
-        MEDIUM_FONT_SIZE,
-        commands.reborrow(),
-    );
-    commands.entity(attacks).insert(AttackMenu);
-    commands.entity(browser).add_child(attacks);
-
-    browser
+        }
+        Children [
+            (
+                #CharacterMenu
+                CharacterMenu
+                collapsible_menu("Characters", MEDIUM_FONT_SIZE)
+            ),
+            (
+                #AnimationMenu
+                AnimationMenu
+                collapsible_menu("Animations", MEDIUM_FONT_SIZE)
+            ),
+            (
+                #AttackMenu
+                AttackMenu
+                collapsible_menu("Attacks", MEDIUM_FONT_SIZE)
+            ),
+        ]
+    ]
 }
 
 #[derive(Component, Debug, Clone, Copy)]
 struct Collapsed(bool);
 impl Default for Collapsed { fn default() -> Self { Self(true) } }
 
-fn collapsible_menu(
-    ui_resources: &mut UiResources,
-    text: impl Into<String>,
-    font_size: FontSize,
-    mut commands: Commands,
-) -> Entity {
-    let menu = commands.spawn((
-        Collapsed::default(),
+fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> impl Scene {
+    bsn! [
+        Collapsed
         Node {
             flex_direction: FlexDirection::Column,
-
             width: percent(100),
+        }
+        Children [
+            Node {
+                flex_direction: FlexDirection::Row,
+                column_gap: px(8),
+                width: percent(100),
+            }
+            Children [
+                button::with_style(ButtonStyle::ArrowRight, 2, {
+                    |
+                        event: On<Pointer<Click>>,
+                        parent_query: Query<&ChildOf>,
+                        mut commands: Commands,
+                        mut menu_query: Query<&mut Collapsed>,
+                    | {
+                        let Ok(menu_inner) = parent_query.get(event.entity).map(ChildOf::get) else {
+                            error!("Failed to get menu inner");
+                            return;
+                        };
 
-            ..Default::default()
-        },
-    )).id();
+                        let Ok(menu) = parent_query.get(menu_inner).map(ChildOf::get) else {
+                            error!("Failed to get menu root");
+                            return;
+                        };
 
-    let menu_inner = commands.spawn((
-        Node {
-            flex_direction: FlexDirection::Row,
-            column_gap: px(8),
+                        if let Ok(mut collapsed) = menu_query.get_mut(menu) {
+                            collapsed.0 = !collapsed.0;
 
-            width: percent(100),
+                            let style = if collapsed.0 {
+                                ButtonStyle::ArrowRight
+                            } else {
+                                ButtonStyle::ArrowDown
+                            };
 
-            ..Default::default()
-        },
-    )).id();
-    commands.entity(menu).add_child(menu_inner);
-
-    let button = commands.spawn((
-        styled_button(
-            ui_resources,
-            2,
-            |
-                event: On<Pointer<Click>>,
-                parent_query: Query<&ChildOf>,
-                mut commands: Commands,
-                mut menu_query: Query<&mut Collapsed>,
-            | {
-                let Ok(button_root) = parent_query.get(event.entity).map(ChildOf::get) else {
-                    error!("Failed to get button root");
-                    return;
-                };
-
-                let Ok(menu_inner) = parent_query.get(button_root).map(ChildOf::get) else {
-                    error!("Failed to get menu inner");
-                    return;
-                };
-
-                let Ok(menu) = parent_query.get(menu_inner).map(ChildOf::get) else {
-                    error!("Failed to get menu root");
-                    return;
-                };
-
-                if let Ok(mut collapsed) = menu_query.get_mut(menu) {
-                    collapsed.0 = !collapsed.0;
-
-                    let style = if collapsed.0 {
-                        ButtonStyle::ArrowRight
-                    } else {
-                        ButtonStyle::ArrowDown
-                    };
-
-                    commands.entity(event.entity).insert(style);
-                } else {
-                    error!("Failed to get collapsed component for menu");
-                }
-            },
-            ButtonStyle::ArrowRight,
-        ),
-    )).id();
-    commands.entity(menu_inner).add_child(button);
-
-    let text = commands.spawn(widget_old::text_old(
-        text,
-        ui_resources.font_builder.with_size(font_size),
-        HEADER_TEXT,
-    )).id();
-    commands.entity(menu_inner).add_child(text);
-
-    menu
+                            commands.entity(event.entity).insert(style);
+                        } else {
+                            error!("Failed to get collapsed component for menu");
+                        }
+                    }
+                }),
+                text::text(text, font_size, HEADER_TEXT)
+            ]
+        ]
+    ]
 }
 
 trait MenuContentsKind: Component + Debug {
@@ -533,6 +479,13 @@ fn finalize_menu_items(
     }
 }
 
+const TRANSPARENT_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.0);
+const HOVERED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.2);
+const PRESSED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.3);
+
+const BROWSER_BUTTON_PADDING: f32 = 6.;
+const BROWSER_BUTTON_MARGIN: f32 = 12.;
+
 fn render_menu_items(
     // Only process rendering information if everything is done processing
     processing_query: Query<(), Or<(
@@ -547,7 +500,6 @@ fn render_menu_items(
         ),
         Without<Node>
     >,
-    font_builder: FontBuilder,
     mut commands: Commands
 ) {
     // Wait until all components are initialized
@@ -570,94 +522,51 @@ fn render_menu_items(
             ..Default::default()
         });
 
-        let button = match item {
-            MenuItem::Folder(_) => commands.spawn(browser_button(
-                item.name(),
-                &font_builder,
-                HEADER_TEXT,
-                folder_button_clicked,
-            )).id(),
-            MenuItem::File(_, _, _) => commands.spawn(browser_button(
-                item.name(),
-                &font_builder,
-                BUTTON_TEXT,
-                file_button_clicked,
-            )).id(),
+        let palette = BackgroundInteractionPalette {
+            none: TRANSPARENT_COLOR,
+            hovered: HOVERED_COLOR,
+            pressed: PRESSED_COLOR,
         };
-        commands.entity(item_entity).add_child(button);
-    }
-}
 
-#[derive(Component, Debug, Clone)]
-struct BrowserButton;
-#[derive(Component, Debug, Clone)]
-struct BrowserButtonInner;
-
-const TRANSPARENT_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.0);
-const HOVERED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.2);
-const PRESSED_COLOR: Color = Color::srgba(1.0, 1.0, 1.0, 0.3);
-
-const BROWSER_BUTTON_PADDING: f32 = 6.;
-const BROWSER_BUTTON_MARGIN: f32 = 12.;
-
-fn browser_button<E, B, M, I>(
-    text: impl AsRef<str>,
-    font_builder: &FontBuilder,
-    color: Color,
-    action: I,
-) -> impl Bundle
-where
-    E: EntityEvent,
-    B: Bundle,
-    I: IntoObserverSystem<E, B, M>,
-{
-    let text = text.as_ref();
-    let action = IntoObserverSystem::into_system(action);
-
-    let text_bundle = (
-        Text(text.to_string()),
-        font_builder.with_size(SMALL_FONT_SIZE),
-        TextLayout {
-            justify: Justify::Left,
-            ..Default::default()
-        },
-        TextColor(color),
-    );
-
-    (
-        BrowserButton,
-        Node {
-            ..Default::default()
-        },
-        Children::spawn(SpawnWith(move |parent: &mut ChildSpawner| {
-            parent.spawn((
-                BrowserButtonInner,
-                Button,
-                BackgroundColor(TRANSPARENT_COLOR),
+        let button = {
+            bsn! [
+                {
+                    match item {
+                        MenuItem::Folder(_) => Box::new(bsn! [{
+                            button::with_text_inline(
+                                item.name(),
+                                SMALL_FONT_SIZE,
+                                HEADER_TEXT,
+                                percent(100),
+                                Val::Auto,
+                                palette,
+                                folder_button_clicked,
+                            )
+                        }]) as Box<dyn Scene>,
+                        MenuItem::File(_, _, _) => Box::new(bsn! [{
+                            button::with_text_inline(
+                                item.name(),
+                                SMALL_FONT_SIZE,
+                                BUTTON_TEXT,
+                                percent(100),
+                                Val::Auto,
+                                palette,
+                                file_button_clicked,
+                            )
+                        }]) as Box<dyn Scene>,
+                    }
+                }
                 Node {
                     width: percent(100),
                     margin: UiRect::right(px(BROWSER_BUTTON_MARGIN)),
                     padding: UiRect::horizontal(px(BROWSER_BUTTON_PADDING)),
+                    justify_content: JustifyContent::FlexStart,
+                }
+            ]
+        };
 
-                    ..Default::default()
-                },
-                children![text_bundle],
-            )).observe(action);
-        })),
-    )
-}
-fn handle_menu_browser_button_interaction(
-    button_query: Query<
-        (&Interaction, &mut BackgroundColor, &BrowserButtonInner),
-        (Changed<Interaction>, With<BrowserButtonInner>),
-    >,
-) {
-    for (interaction, mut background_color, _) in button_query {
-        *background_color = match interaction {
-            Interaction::Pressed => BackgroundColor(PRESSED_COLOR),
-            Interaction::Hovered => BackgroundColor(HOVERED_COLOR),
-            Interaction::None => BackgroundColor(TRANSPARENT_COLOR),
-        }
+        let button = commands.spawn_scene(button).id();
+        commands.entity(item_entity).add_child(button);
     }
 }
 
@@ -672,12 +581,7 @@ fn file_button_clicked(
     mut file_manager: ResMut<FileManager>,
     channel_set: FileTaskChannelSet,
 ) {
-    let Ok(button_root) = parent_query.get(event.entity).map(ChildOf::get) else {
-        error!("Failed to get button root");
-        return;
-    };
-
-    let Ok(menu_item) = parent_query.get(button_root).map(ChildOf::get) else {
+    let Ok(menu_item) = parent_query.get(event.entity).map(ChildOf::get) else {
         error!("Failed to get menu item entity");
         return;
     };

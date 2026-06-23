@@ -1,15 +1,14 @@
 //! The credits menu.
 
 use crate::gamepad::gamepad_just_pressed;
-use crate::theme::widgets::text::FontBuilder;
-use crate::theme::widget_old::UiResources;
-use crate::{asset_tracking::LoadResource, audio::music, menus::Menu, theme::prelude::*};
-use bevy::input_focus::{FocusCause, InputFocus};
-use bevy::{ecs::spawn::SpawnIter, input::common_conditions::input_just_pressed, prelude::*};
-use crate::theme::widgets::UiAssets;
+use crate::theme::widgets;
+use crate::theme::widgets::{button, text};
+use crate::{asset_tracking::LoadResource, audio::music, menus::Menu};
+use bevy::input_focus::InputFocus;
+use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu);
+    app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu.spawn());
     app.add_systems(
         Update,
         go_back.run_if(in_state(Menu::Credits).and(
@@ -21,45 +20,60 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), start_credits_music);
 }
 
-fn spawn_credits_menu(
-    mut ui_resources: UiResources,
-    mut input_focus: ResMut<InputFocus>,
-    mut commands: Commands,
-) {
-    let ui_root = commands
-        .spawn((
-            widget_old::scrollable_ui_root("Credits Menu"),
-            GlobalZIndex(2),
-            DespawnOnExit(Menu::Credits),
-            children![
-                widget_old::header_old("Created by", &ui_resources.font_builder),
-                created_by(&ui_resources.font_builder),
-                widget_old::header_old("Assets", &ui_resources.font_builder),
-                assets(&ui_resources.font_builder),
-                widget_old::header_old("License", &ui_resources.font_builder),
-                widget_old::label_old("This game is provided under the Mozilla Public License 2.0", &ui_resources.font_builder),
-                license(&ui_resources.font_builder),
-            ],
-        ))
-        .id();
-
-    let back_button = commands
-        .spawn(widget_old::button(
-            &mut ui_resources,
-            "Back",
-            go_back_on_click,
-        ))
-        .id();
-    commands.entity(ui_root).add_child(back_button);
-    input_focus.set(back_button, FocusCause::Navigated);
+fn spawn_credits_menu() -> impl Scene {
+    bsn! [
+        #CreditsMenu
+        widgets::scrollable_ui_root()
+        GlobalZIndex(2)
+        DespawnOnExit<Menu>(Menu::Credits)
+        Children [
+            text::header("Created by"),
+            created_by(),
+            text::header("Assets"),
+            assets(),
+            text::header("License"),
+            license(),
+            button::with_text("Back", go_back_on_click)
+        ]
+    ]
+    // TODO: Figure out a way to set the input focus
 }
 
-fn created_by(font_builder: &FontBuilder) -> impl Bundle {
-    grid(vec![["The Lady Dawn", "Art, Programming"]], font_builder)
+macro_rules! grid {
+    ($([$label:expr, $text:expr $(,)*]),* $(,)?) => {
+        bsn! [
+            Node {
+                display: Display::Grid,
+                row_gap: px(10),
+                column_gap: px(30),
+                grid_template_columns: RepeatedGridTrack::px::<Vec<RepeatedGridTrack>>(2, 500.0),
+            }
+            Children [
+                $(
+                    (
+                        text::label($label)
+                        TextLayout {
+                            justify: Justify::Right
+                        }
+                    ),
+                    (
+                        text::label($text)
+                        TextLayout {
+                            justify: Justify::Left
+                        }
+                    )
+                )*
+            ]
+        ]
+    };
 }
 
-fn assets(font_builder: &FontBuilder) -> impl Bundle {
-    grid(vec![
+fn created_by() -> impl Scene {
+    grid!(["The Lady Dawn", "Art, Programming"])
+}
+
+fn assets() -> impl Scene {
+    grid!(
         ["Button SFX", "CC0 by Jaszunio15"],
         [
             "Music",
@@ -72,55 +86,14 @@ fn assets(font_builder: &FontBuilder) -> impl Bundle {
             "Bevy Logo",
             "All rights reserved by the Bevy Foundation, permission granted for splash screen use when unmodified",
         ],
-    ], font_builder)
+    )
 }
 
-fn license(font_builder: &FontBuilder) -> impl Bundle {
-    grid(vec![
-        [
-            "More Information",
-            "https://www.mozilla.org/en-US/MPL/2.0/FAQ/",
-        ],
-        [
-            "Full License Text",
-            "https://www.mozilla.org/en-US/MPL/2.0/",
-        ],
-    ], font_builder)
-}
-
-fn grid(content: Vec<[&'static str; 2]>, font_builder: &FontBuilder) -> impl Bundle {
-    let content = content.into_iter().map(|row| {
-        [
-            widget_old::label_old(row[0], &font_builder),
-            widget_old::label_old(row[1], &font_builder)
-        ]
-    })
-        .collect::<Vec<_>>();
-    
-    (
-        Name::new("Grid"),
-        Node {
-            display: Display::Grid,
-            row_gap: px(10),
-            column_gap: px(30),
-            grid_template_columns: RepeatedGridTrack::px(2, 500.0),
-            ..default()
-        },
-        Children::spawn(SpawnIter(content.into_iter().flatten().enumerate().map(
-            |(i, text)| {
-                (
-                    text,
-                    Node {
-                        justify_self: if i.is_multiple_of(2) {
-                            JustifySelf::End
-                        } else {
-                            JustifySelf::Start
-                        },
-                        ..default()
-                    },
-                )
-            },
-        ))),
+fn license() -> impl Scene {
+    grid!(
+        ["Engine Code", "Mozilla Public License 2.0"],
+        ["Assets and Game Content", "All Rights Reserved"],
+        ["Provisions granted for user generated content", "See LICENSE.md for more information"],
     )
 }
 

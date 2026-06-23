@@ -1,7 +1,6 @@
 use crate::data;
 use crate::data::{loc, ResourceFileType};
 use crate::define_sprite_resource;
-use crate::theme::widget_old::UiResources;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
@@ -106,42 +105,4 @@ impl UiBackgroundStyle {
             UiBackgroundStyle::Panel => 1,
         }
     }
-}
-
-#[derive(Resource, Asset, Clone, Reflect)]
-#[reflect(Resource)]
-pub struct UiAssets {
-    pub buttons: Handle<Image>,
-    pub background: Handle<Image>,
-}
-
-impl FromWorld for UiAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-        Self {
-            buttons: assets.load("base/images/ui/buttons.png"),
-            background: assets.load("base/images/ui/background.png"),
-        }
-    }
-}
-
-pub fn ui_background_old(
-    ui_resources: &mut UiResources,
-    style: UiBackgroundStyle,
-) -> impl Bundle {
-    let image = ui_resources.ui_assets.background.clone();
-
-    let layout = style.make_layout();
-    let layout = ui_resources.texture_atlas_layouts.add(layout);
-
-    let index = style.get_index();
-
-    (
-        ImageNode {
-            image,
-            image_mode: NodeImageMode::Sliced(style.make_slicer()),
-            texture_atlas: Some(TextureAtlas { layout, index }),
-            ..default()
-        },
-    )
 }
