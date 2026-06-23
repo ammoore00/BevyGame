@@ -10,7 +10,7 @@ use crate::game::character::player::player;
 use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
 use crate::game::level::grid::Grid;
 use crate::game::level::map::palette::{Palette, Palettes};
-use crate::game::level::map::{spawn_map_grid, map_scene, Map};
+use crate::game::level::map::{map_scene, Map};
 use crate::{audio::music, marker, screens::Screen};
 use bevy::prelude::*;
 

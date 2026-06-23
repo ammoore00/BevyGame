@@ -1,6 +1,5 @@
-use crate::data::loader::LoaderJobManager;
-use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
-use crate::data::{loc, ResourceLocation};
+use crate::data::prelude::*;
+use crate::data::registry::ResolvedSystemRegistry;
 use crate::datagen_api::animation::AnimationResource;
 use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::assets::{CharacterData, CharacterResource};
@@ -10,7 +9,8 @@ use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::PhysicsData;
 use crate::game::physics::movement::{MovementController, DEFAULT_MAX_SPEED};
 use crate::screens::Screen;
-use crate::{action_state_scene, Scale};
+use crate::{action_state_scene, register_prototype_system, Scale};
+use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::any::TypeId;
@@ -44,6 +44,8 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, initialize_characters.run_if(in_state(Screen::Gameplay)));
 }
 
+register_prototype_system!(initialize_characters, CharacterBuilder);
+
 /// Marker for a fully initialized character. Presence of this Component
 /// guarantees inclusion of all other necessary Components
 ///
@@ -53,8 +55,8 @@ pub fn plugin(app: &mut App) {
 /// Use the SceneComponent `CharacterPrototype` instead for constructing characters
 #[derive(Component, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Character(()); // Private unit field to prevent improper construction
-impl Character {
-    pub fn new() -> Self { Self(()) }
+impl PrototypeFinalizedMarker for Character {
+    fn new(_: PrototypeMarkerToken) -> Self { Self(()) }
 }
 
 /// Used to temporarily store the location from which to load the character's data
@@ -69,10 +71,15 @@ impl Character {
 ///
 /// This will not panic, but it will result in an error, and the character will not be spawned
 #[derive(Component, Clone)]
-struct CharacterDataLocation(ResourceLocation<CharacterResource>);
+pub struct CharacterDataLocation(ResourceLocation<CharacterResource>);
 impl Default for CharacterDataLocation {
     fn default() -> Self {
         Self(loc::<CharacterResource>("placeholder").unwrap())
+    }
+}
+impl From<CharacterDataLocation> for ResourceLocation<CharacterResource> {
+    fn from(loc: CharacterDataLocation) -> Self {
+        loc.0
     }
 }
 
@@ -116,27 +123,26 @@ impl CharacterPrototype {
         ]
     }
 }
+impl Prototype for CharacterPrototype {
+    type Marker = Character;
+    type Resource = CharacterResource;
+    type DataLocation = CharacterDataLocation;
+}
 
-/// Find all character prototypes, load their data, then spawn in relevant components
-fn initialize_characters(
-    character_prototype_query: Query<
-        (
-            Entity,
-            &CharacterDataLocation,
-            &WorldPosition,
-        ),
-        With<CharacterPrototype>,
-    >,
-    context: CharacterBuilderContext,
-    scale: Res<Scale>,
-    mut commands: Commands,
-) {
-    for (entity, data_loc, position) in character_prototype_query {
-        let Some(data) = context.get_character_data(&data_loc.0) else {
-            error!("Failed to find character data for {}", data_loc.0);
-            commands.entity(entity).despawn();
-            continue;
-        };
+struct CharacterBuilder;
+impl PrototypeBuilder for CharacterBuilder {
+    type Proto = CharacterPrototype;
+    type Context<'w, 's> = CharacterBuilderContext<'w>;
+    type QueryData<'w, 's> = &'s WorldPosition;
+
+    fn build(
+        entity: Entity,
+        data_loc: &<Self::Proto as Prototype>::DataLocation,
+        position: &QueryItem<'_, '_, <Self::QueryData<'_, '_> as QueryData>::ReadOnly>,
+        context: &mut Self::Context<'_, '_>,
+        mut commands: Commands
+    ) -> Result<(), BevyError> {
+        let data = context.get_character_data(&data_loc.0).ok_or(BevyError::error("Failed to find character data"))?;
 
         let animation_registry = context.animation_registry().resolved_registry();
         let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_registry));
@@ -162,12 +168,10 @@ fn initialize_characters(
             state_capabilities,
             sprite,
             collider,
-            Transform::from_scale(Vec3::splat(scale.0)),
+            Transform::from_scale(Vec3::splat(context.scale.0)),
         ));
 
-        // Mark character as finalized
-        commands.entity(entity).remove::<(CharacterDataLocation, CharacterPrototype)>();
-        commands.entity(entity).insert(Character::new());
+        Ok(())
     }
 }
 
@@ -177,6 +181,8 @@ pub struct CharacterBuilderContext<'w> {
     character_registry: SystemRegistry<'w, CharacterResource>,
     #[getset(get = "pub")]
     animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
+    #[getset(get = "pub")]
+    scale: Res<'w, Scale>
 }
 impl CharacterBuilderContext<'_> {
     pub fn get_character_data(&self, loc: &ResourceLocation<CharacterResource>) -> Option<&CharacterData> {

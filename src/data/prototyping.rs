@@ -2,7 +2,6 @@ use crate::data::{ResourceKind, ResourceLocation};
 use bevy::ecs::query::QueryItem;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use std::error::Error;
 
 /// Used to prevent construction of marker outside of proper systems
 pub struct PrototypeMarkerToken(());
@@ -27,18 +26,15 @@ pub trait PrototypeBuilder {
     /// The context needed to initialize the prototype
     type Context<'w, 's>: SystemParam;
     /// Any additional query data needed to initialize the prototype
-    type QueryData: bevy::ecs::query::QueryData;
-
-    /// The error type returned by the `build` method
-    type Err: Error;
+    type QueryData<'w, 's>: bevy::ecs::query::QueryData;
 
     fn build(
         entity: Entity,
         loc: &<Self::Proto as Prototype>::DataLocation,
-        extra_data: &QueryItem<'_, '_, <Self::QueryData as bevy::ecs::query::QueryData>::ReadOnly>,
+        extra_data: &QueryItem<'_, '_, <Self::QueryData<'_, '_> as bevy::ecs::query::QueryData>::ReadOnly>,
         context: &mut Self::Context<'_, '_>,
         commands: Commands,
-    ) -> Result<(), Self::Err>;
+    ) -> Result<(), BevyError>;
 }
 
 /// SECURE GATEWAY: This handles the actual transformation and safely mints the `MarkerToken`.
@@ -65,7 +61,7 @@ macro_rules! register_prototype_system {
                 (
                     bevy::prelude::Entity,
                     &<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Proto as $crate::data::prototyping::Prototype>::DataLocation,
-                    <$builder_type as $crate::data::prototyping::PrototypeBuilder>::QueryData
+                    <$builder_type as $crate::data::prototyping::PrototypeBuilder>::QueryData<'_, '_>
                 ),
                 bevy::prelude::With<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Proto>,
             >,

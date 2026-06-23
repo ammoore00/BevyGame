@@ -9,7 +9,6 @@ use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::prelude::*;
 use getset::CopyGetters;
 use rand::{Rng, RngExt};
-use std::convert::Infallible;
 
 pub mod palette;
 pub mod room;
@@ -121,20 +120,20 @@ struct MapBuilder;
 impl PrototypeBuilder for MapBuilder {
     type Proto = MapPrototype;
     type Context<'w, 's> = RoomBuilderContext<'w, 's>;
-    type QueryData = ();
-    type Err = Infallible;
+    type QueryData<'w, 's> = ();
 
     fn build(
         entity: Entity,
         loc: &<Self::Proto as Prototype>::DataLocation,
-        _: &QueryItem<'_, '_, <Self::QueryData as QueryData>::ReadOnly>,
+        _: &QueryItem<'_, '_, <Self::QueryData<'_, '_> as QueryData>::ReadOnly>,
         context: &mut Self::Context<'_, '_>,
         _: Commands
-    ) -> Result<(), Self::Err> {
+    ) -> Result<(), BevyError> {
         // TODO: Real data handling
         let data = loc.0.as_ref().unwrap();
         let palette = loc.1.as_ref().unwrap();
 
+        // TODO: Propagate errors up
         let grid_entity = spawn_map_grid(data, rand::rng(), palette, context);
         context.commands.entity(entity).add_child(grid_entity);
 
