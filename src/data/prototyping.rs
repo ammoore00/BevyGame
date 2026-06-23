@@ -5,10 +5,10 @@ use bevy::prelude::*;
 use std::error::Error;
 
 /// Used to prevent construction of marker outside of proper systems
-pub struct MarkerToken(());
+pub struct PrototypeMarkerToken(());
 
 pub trait PrototypeFinalizedMarker: Component {
-    fn new(token: MarkerToken) -> Self;
+    fn new(token: PrototypeMarkerToken) -> Self;
 }
 
 pub trait Prototype: SceneComponent {
@@ -54,7 +54,7 @@ pub fn finalize_prototype<B: PrototypeBuilder>(
             <B as PrototypeBuilder>::Proto,
             <<B as PrototypeBuilder>::Proto as Prototype>::DataLocation
         )>()
-        .insert(<<B as PrototypeBuilder>::Proto as Prototype>::Marker::new(MarkerToken(())));
+        .insert(<<B as PrototypeBuilder>::Proto as Prototype>::Marker::new(PrototypeMarkerToken(())));
 }
 
 #[macro_export]

@@ -1,14 +1,14 @@
-pub mod registry;
 pub mod loader;
-pub mod sprite;
 pub mod prototyping;
+pub mod registry;
+pub mod sprite;
 
 use crate::data::registry::ResourceRegistry;
 use bevy::asset::AssetPath;
 use bevy::prelude::*;
 use getset::Getters;
 use regex::Regex;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -16,7 +16,21 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
 
-pub fn plugin(app: &mut App) {
+pub mod prelude {
+    pub use crate::{
+        data::{
+            ResourceFileType, ResourceKind, ResourceLocation,
+            loader::LoaderJobManager,
+            prototyping::{
+                Prototype, PrototypeBuilder, PrototypeFinalizedMarker, PrototypeMarkerToken,
+            },
+            registry::{ResourceRegistry, SystemRegistry, SystemRegistryMut},
+        },
+        define_data_resource, define_resource, define_sprite_resource,
+    };
+}
+
+pub(super) fn plugin(app: &mut App) {
     app.add_plugins((loader::plugin,));
 }
 
@@ -67,33 +81,43 @@ impl<T: ResourceKind> ResourceLocation<T> {
             }
 
             path.with_extension("")
-        }
-        else {
+        } else {
             path.to_path_buf()
         };
 
         let mut components = path.components();
 
-        let namespace = components.next()
+        let namespace = components
+            .next()
             .ok_or(ResourceLocationParseError::Empty)?
             .as_os_str()
             .to_str()
-            .ok_or(ResourceLocationParseError::InvalidPath(path.display().to_string()))?;
+            .ok_or(ResourceLocationParseError::InvalidPath(
+                path.display().to_string(),
+            ))?;
         let namespace = Namespace::from_str(namespace)?;
 
         let path_without_namespace = components.as_path();
 
         let id_path = path_without_namespace
             .strip_prefix(T::ROOT_DIR)
-            .map_err(|_| ResourceLocationParseError::InvalidPath(format!(
-                "Mismatched root dir: {}, expected: {}",
-                path.display(),
-                T::ROOT_DIR
-            )))?;
+            .map_err(|_| {
+                ResourceLocationParseError::InvalidPath(format!(
+                    "Mismatched root dir: {}, expected: {}",
+                    path.display(),
+                    T::ROOT_DIR
+                ))
+            })?;
 
         let id = id_path
             .components()
-            .map(|c| c.as_os_str().to_str().ok_or(ResourceLocationParseError::InvalidPath(path.display().to_string())))
+            .map(|c| {
+                c.as_os_str()
+                    .to_str()
+                    .ok_or(ResourceLocationParseError::InvalidPath(
+                        path.display().to_string(),
+                    ))
+            })
             .filter_map(|s| s.ok())
             .collect::<Vec<_>>()
             .join("/");
@@ -116,17 +140,20 @@ impl<T: ResourceKind> ResourceLocation<T> {
 
     /// Returns the resource location as a path, without the root folder or file extension
     pub fn as_local_path(&self) -> PathBuf {
-        Path::new(&self.namespace.0)
-            .join(&self.id.0)
+        Path::new(&self.namespace.0).join(&self.id.0)
     }
-    
+
     pub fn get(&self, registry: &ResourceRegistry<T>) -> Option<Handle<T::AssetKind>> {
         registry.get(self).cloned()
     }
 }
 impl<T: ResourceKind> ResourceLoc for ResourceLocation<T> {
     fn new(namespace: Namespace, id: ResourceId) -> Self {
-        Self { namespace, id, phantom_data: Default::default() }
+        Self {
+            namespace,
+            id,
+            phantom_data: Default::default(),
+        }
     }
 }
 
@@ -184,8 +211,7 @@ impl AnyResourceLocation {
 
     /// Returns the resource location as a path
     pub fn as_path(&self) -> PathBuf {
-        Path::new(&self.namespace.0)
-            .join(&self.id.0)
+        Path::new(&self.namespace.0).join(&self.id.0)
     }
 }
 
@@ -195,14 +221,21 @@ impl ResourceLoc for AnyResourceLocation {
     }
 }
 
-impl <T: ResourceKind> From<AnyResourceLocation> for ResourceLocation<T> {
+impl<T: ResourceKind> From<AnyResourceLocation> for ResourceLocation<T> {
     fn from(value: AnyResourceLocation) -> Self {
-        Self { namespace: value.namespace, id: value.id, phantom_data: Default::default() }
+        Self {
+            namespace: value.namespace,
+            id: value.id,
+            phantom_data: Default::default(),
+        }
     }
 }
-impl <T: ResourceKind> From<ResourceLocation<T>> for AnyResourceLocation {
+impl<T: ResourceKind> From<ResourceLocation<T>> for AnyResourceLocation {
     fn from(value: ResourceLocation<T>) -> Self {
-        Self { namespace: value.namespace, id: value.id }
+        Self {
+            namespace: value.namespace,
+            id: value.id,
+        }
     }
 }
 
@@ -220,7 +253,9 @@ impl FromStr for AnyResourceLocation {
     }
 }
 
-pub trait ResourceKind: Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static {
+pub trait ResourceKind:
+    Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static
+{
     type AssetKind: Asset + Clone + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
@@ -240,13 +275,13 @@ pub enum ResourceFileType {
 }
 impl ResourceFileType {
     pub const fn ext(self) -> &'static str {
-         match self {
-             ResourceFileType::Image => "png",
-             ResourceFileType::Audio => "ogg",
-             ResourceFileType::Font => "ttf",
-             ResourceFileType::Data => "ron",
-             ResourceFileType::Other(s) => s,
-         }
+        match self {
+            ResourceFileType::Image => "png",
+            ResourceFileType::Audio => "ogg",
+            ResourceFileType::Font => "ttf",
+            ResourceFileType::Data => "ron",
+            ResourceFileType::Other(s) => s,
+        }
     }
 }
 
@@ -318,7 +353,10 @@ impl FromStr for Namespace {
                 .filter(|c| !matches!(c, 'a'..='z' | '0'..='9' | '-' | '_'))
                 .collect();
 
-            return Err(ResourceLocationParseError::InvalidNamespaceChars(s.to_string(), invalid_chars));
+            return Err(ResourceLocationParseError::InvalidNamespaceChars(
+                s.to_string(),
+                invalid_chars,
+            ));
         }
 
         Ok(Self(s.to_string()))
@@ -350,7 +388,10 @@ impl FromStr for ResourceId {
                 .filter(|c| !matches!(c, 'a'..='z' | '0'..='9' | '-' | '_' | '/'))
                 .collect();
 
-            return Err(ResourceLocationParseError::InvalidResourceChars(s.to_string(), invalid_chars));
+            return Err(ResourceLocationParseError::InvalidResourceChars(
+                s.to_string(),
+                invalid_chars,
+            ));
         }
 
         Ok(Self(s.to_string()))
@@ -364,11 +405,17 @@ impl Display for ResourceId {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ResourceLocationParseError {
-    #[error("Error parsing {0}: Resource namespaces may only contain [a-z, 0-9, -, _]. The following characters were found: {1:?}")]
+    #[error(
+        "Error parsing {0}: Resource namespaces may only contain [a-z, 0-9, -, _]. The following characters were found: {1:?}"
+    )]
     InvalidNamespaceChars(String, Vec<char>),
-    #[error("Error parsing {0}: Resource ids may only contain [a-z, 0-9, -, _, /]. The following characters were found: {1:?}")]
+    #[error(
+        "Error parsing {0}: Resource ids may only contain [a-z, 0-9, -, _, /]. The following characters were found: {1:?}"
+    )]
     InvalidResourceChars(String, Vec<char>),
-    #[error("Error parsing {0}: Resource id must have a valid path (no trailing slash, no double slashes, etc.")]
+    #[error(
+        "Error parsing {0}: Resource id must have a valid path (no trailing slash, no double slashes, etc."
+    )]
     InvalidPath(String),
     #[error("Error parsing {0}: Resource locations may contain at most one divider character ':'")]
     MultipleDividers(String),

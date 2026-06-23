@@ -1,7 +1,4 @@
-use crate::data::prototyping::{MarkerToken, Prototype, PrototypeBuilder, PrototypeFinalizedMarker};
-use crate::data::{ResourceFileType, ResourceLocation};
-use crate::define_data_resource;
-use crate::define_resource;
+use crate::data::prelude::*;
 use crate::game::level::grid;
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
@@ -94,7 +91,7 @@ impl Default for MapProps {
 #[derive(Component, Default, Clone)]
 pub struct Map(());
 impl PrototypeFinalizedMarker for Map {
-    fn new(_: MarkerToken) -> Self { Self(()) }
+    fn new(_: PrototypeMarkerToken) -> Self { Self(()) }
 }
 
 #[derive(SceneComponent, Default, Clone)]
