@@ -10,8 +10,7 @@ use crate::game::character::player::player;
 use crate::game::level::grid::nav::{TileNavMap, TileNavQuery};
 use crate::game::level::grid::Grid;
 use crate::game::level::map::palette::{Palette, Palettes};
-use crate::game::level::map::room::RoomBuilderContext;
-use crate::game::level::map::{build_map_grid, map_scene, Map};
+use crate::game::level::map::{spawn_map_grid, map_scene, Map};
 use crate::{audio::music, marker, screens::Screen};
 use bevy::prelude::*;
 
@@ -96,7 +95,6 @@ fn bake_tiles(
     level: Query<Entity, With<Level>>,
     level_palettes: Res<Palettes>,
     palette_assets: Res<Assets<Palette>>,
-    mut builder_context: RoomBuilderContext,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
     mut commands: Commands,
 ) {
@@ -114,20 +112,9 @@ fn bake_tiles(
     let palette = palette_assets.get(palettes.standard.id()).unwrap();
 
     let map = &palette.main_map_pool().0[0];
-    let rng = rand::rng();
 
-    // TODO: Move this responsibility into map module
-    let grid_entity = build_map_grid(
-        map,
-        rng,
-        palette,
-        &mut builder_context,
-    );
-
-    let map_entity = commands.spawn_scene(map_scene(map))
-        .add_child(grid_entity)
-        .id();
-    commands.entity(level).add_child(map_entity);
+    let map = commands.spawn_scene(map_scene(map, palette)).id();
+    commands.entity(level).add_child(map);
 
     next_state.set(LevelSpawnState::BakeTiles.next());
 }

@@ -25,7 +25,7 @@ impl FromWorld for Palettes {
     }
 }
 
-#[derive(Asset, TypePath)]
+#[derive(Asset, Clone, Default, TypePath)]
 pub struct Palette {
     main_map_pool: MapPool,
     transition_pool: TransitionRoomPool,

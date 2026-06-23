@@ -35,7 +35,7 @@ register_prototype_system!(initialize_maps, MapBuilder);
 
 /// Pool of all registered map definitions
 /// This contains every map def that the game knows about
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct MapPool(pub(crate) Vec<MapDefinition>);
 
 /// The type for this map. This affects where in the world it will be used
@@ -71,7 +71,7 @@ impl MapDefinition {
 
 // TODO: Replace this with actually loading map definitions from data files
 #[derive(Component, Default, Clone)]
-pub struct MapDataLocation(Option<MapDefinition>);
+pub struct MapDataLocation(Option<MapDefinition>, Option<Palette>);
 impl From<MapDataLocation> for ResourceLocation<MapResource> {
     fn from(_value: MapDataLocation) -> Self {
         todo!()
@@ -81,10 +81,14 @@ impl From<MapDataLocation> for ResourceLocation<MapResource> {
 #[derive(Clone)]
 pub struct MapProps {
     definition: MapDefinition,
+    palette: Palette,
 }
 impl Default for MapProps {
     fn default() -> Self {
-        Self { definition: MapDefinition::PLACEHOLDER }
+        Self {
+            definition: MapDefinition::PLACEHOLDER,
+            palette: Palette::default(),
+        }
     }
 }
 
@@ -103,7 +107,7 @@ impl MapPrototype {
             Map
             Transform
             Visibility
-            MapDataLocation({Some(props.definition)})
+            MapDataLocation({Some(props.definition)}, {Some(props.palette)})
         ]
     }
 }
@@ -121,25 +125,34 @@ impl PrototypeBuilder for MapBuilder {
     type Err = Infallible;
 
     fn build(
-        _entity: Entity,
-        _loc: &<Self::Proto as Prototype>::DataLocation,
+        entity: Entity,
+        loc: &<Self::Proto as Prototype>::DataLocation,
         _: &QueryItem<'_, '_, <Self::QueryData as QueryData>::ReadOnly>,
-        _context: &Self::Context<'_, '_>,
-        _commands: Commands
+        context: &mut Self::Context<'_, '_>,
+        _: Commands
     ) -> Result<(), Self::Err> {
+        // TODO: Real data handling
+        let data = loc.0.as_ref().unwrap();
+        let palette = loc.1.as_ref().unwrap();
+
+        let grid_entity = spawn_map_grid(data, rand::rng(), palette, context);
+        context.commands.entity(entity).add_child(grid_entity);
+
         Ok(())
     }
 }
 
-pub fn map_scene(definition: &MapDefinition) -> impl Scene {
+pub fn map_scene(definition: &MapDefinition, palette: &Palette) -> impl Scene {
     bsn! [
         @MapPrototype {
-            @definition: {definition.clone()}
+            @definition: {definition.clone()},
+            @palette: {palette.clone()},
         }
     ]
 }
 
-pub fn build_map_grid(
+pub fn spawn_map_grid(
+    // TODO: Map definitions should be loaded from Palette?
     map_definition: &MapDefinition,
     mut rand: impl Rng,
     palette: &Palette,

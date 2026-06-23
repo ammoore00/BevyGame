@@ -36,7 +36,7 @@ pub trait PrototypeBuilder {
         entity: Entity,
         loc: &<Self::Proto as Prototype>::DataLocation,
         extra_data: &QueryItem<'_, '_, <Self::QueryData as bevy::ecs::query::QueryData>::ReadOnly>,
-        context: &Self::Context<'_, '_>,
+        context: &mut Self::Context<'_, '_>,
         commands: Commands,
     ) -> Result<(), Self::Err>;
 }
@@ -69,7 +69,7 @@ macro_rules! register_prototype_system {
                 ),
                 bevy::prelude::With<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Proto>,
             >,
-            context: bevy::ecs::system::StaticSystemParam<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Context<'_, '_>>,
+            mut context: bevy::ecs::system::StaticSystemParam<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Context<'_, '_>>,
             mut commands: bevy::prelude::Commands,
         ) {
             for (entity, data_loc, extra_data) in &query {
@@ -77,7 +77,7 @@ macro_rules! register_prototype_system {
                     entity,
                     data_loc,
                     &extra_data,
-                    &context,
+                    &mut context,
                     commands.reborrow()
                 ) {
                     Ok(_) => $crate::data::prototyping::finalize_prototype::<$builder_type>(entity, commands.reborrow()),

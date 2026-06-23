@@ -21,6 +21,7 @@ pub mod prelude {
         data::{
             ResourceFileType, ResourceKind, ResourceLocation,
             loader::LoaderJobManager,
+            loc,
             prototyping::{
                 Prototype, PrototypeBuilder, PrototypeFinalizedMarker, PrototypeMarkerToken,
             },

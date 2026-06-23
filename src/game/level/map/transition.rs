@@ -8,9 +8,11 @@ pub(super) fn plugin(_app: &mut App) {}
 pub struct _Connector {}
 
 /// Pool of rooms, which can be selected from for a transition
+#[derive(Debug, Clone, Default)]
 pub struct TransitionRoomPool(pub Vec<TransitionRoom>);
 
 /// Definition for rooms to be used for populating transition sections
+#[derive(Debug, Clone)]
 pub struct TransitionRoom {
     /// The physical room layout
     room: ResourceLocation<RoomResource>,
