@@ -1,12 +1,10 @@
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
-use crate::data::loc::ResourceLocation;
-use crate::data::resource::ResourceFileType;
-use crate::define_data_resource;
 use crate::codec::TileCodec;
-use crate::{define_sprite_resource, AssetSystems};
-use bevy::prelude::*;
-use std::sync::LazyLock;
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::game::level::grid::tile::TileShape;
+use bevy::prelude::*;
+use game_data::prelude::*;
+use std::sync::LazyLock;
+use crate::AssetSystems;
 
 pub(in crate::game) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();

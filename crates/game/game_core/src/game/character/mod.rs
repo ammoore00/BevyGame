@@ -1,22 +1,24 @@
 use crate::data::prelude::*;
+use crate::game::character::animation::AnimationContext;
 use crate::game::character::assets::{CharacterData, CharacterResource};
 use crate::game::character::state::states::Idle;
-use state::tracking::ActionStateTracker;
 use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::PhysicsData;
 use crate::game::physics::movement::{MovementController, DEFAULT_MAX_SPEED};
 use crate::screens::Screen;
-use crate::{action_state_scene, register_prototype_system, Scale};
+use crate::{action_state_scene, Scale};
+use animation::{AnimationStateMap, CharacterAnimationTracker};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use game_data::prelude::*;
+use state::tracking::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use animation::{AnimationStateMap, CharacterAnimationTracker};
-use crate::data::loc;
-use crate::game::character::animation::AnimationContext;
+use game_data::register_prototype_system;
+use crate::data::loader::LoaderJobManager;
 
 pub mod animation;
 pub mod health;
@@ -74,7 +76,7 @@ impl PrototypeFinalizedMarker for Character {
 pub struct CharacterDataLocation(ResourceLocation<CharacterResource>);
 impl Default for CharacterDataLocation {
     fn default() -> Self {
-        Self(loc::loc::<CharacterResource>("placeholder").unwrap())
+        Self(loc::<CharacterResource>("placeholder").unwrap())
     }
 }
 impl From<CharacterDataLocation> for ResourceLocation<CharacterResource> {
@@ -93,7 +95,7 @@ impl Default for CharacterProps {
         Self {
             position: Vec3::ZERO,
             max_speed: DEFAULT_MAX_SPEED,
-            data_loc: loc::loc::<CharacterResource>("placeholder").unwrap(),
+            data_loc: loc::<CharacterResource>("placeholder").unwrap(),
         }
     }
 }

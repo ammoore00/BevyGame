@@ -1,5 +1,6 @@
 use crate::data::prelude::*;
 use bevy::prelude::TypePath;
+use game_data::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

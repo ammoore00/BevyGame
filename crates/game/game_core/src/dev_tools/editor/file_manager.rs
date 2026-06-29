@@ -6,11 +6,12 @@ use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::tasks::IoTaskPool;
 use crossbeam::channel::{Receiver, Sender};
+use game_data::loc::AnyResourceLocation;
+use game_data::prelude::*;
 use getset::Getters;
 use std::any::TypeId;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use crate::data::loc::AnyResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<FileManager>();

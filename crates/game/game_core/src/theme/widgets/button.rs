@@ -1,4 +1,3 @@
-use crate::data::prelude::*;
 use crate::theme::interaction::{BackgroundInteractionPalette, SpriteInteractionPalette};
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widgets::text::LARGE_FONT_SIZE;
@@ -8,6 +7,7 @@ use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
 use bevy::ui::auto_directional_navigation::AutoDirectionalNavigation;
+use game_data::prelude::loc;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

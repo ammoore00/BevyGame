@@ -2377,6 +2377,7 @@ name = "datagen"
 version = "0.1.0"
 dependencies = [
  "game_core",
+ "game_data",
  "getset",
  "ron 0.10.1",
  "serde",
@@ -2829,6 +2830,7 @@ dependencies = [
  "const_format",
  "crossbeam",
  "derive-new",
+ "game_data",
  "getrandom 0.4.2",
  "getset",
  "maybe_fields",
@@ -2840,6 +2842,18 @@ dependencies = [
  "serde",
  "thiserror 2.0.17",
  "tracing",
+ "walkdir",
+]
+
+[[package]]
+name = "game_data"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "getset",
+ "regex",
+ "serde",
+ "thiserror 2.0.17",
  "walkdir",
 ]
 

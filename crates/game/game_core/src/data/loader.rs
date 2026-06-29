@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use crate::{AssetLoadState, AssetSystems};
+use game_data::prelude::*;
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;

@@ -1,15 +1,16 @@
 //! Player-specific behavior.
 
 use crate::data::prelude::*;
+use crate::game::character::attack::AttackContext;
 //use crate::game::object::Shadow;
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::character::{CharacterProps, CharacterPrototype, Facing};
 use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
-use bevy::prelude::*;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
-use crate::game::character::attack::AttackContext;
+use bevy::prelude::*;
+use game_data::prelude::*;
 
 mod input;
 

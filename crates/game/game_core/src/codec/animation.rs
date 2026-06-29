@@ -2,6 +2,7 @@ use crate::codec::sprite::TextureAtlasCodec;
 use crate::data::prelude::*;
 use bevy::math::UVec2;
 use bevy::prelude::TypePath;
+use game_data::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

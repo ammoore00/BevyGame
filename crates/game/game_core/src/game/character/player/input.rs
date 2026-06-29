@@ -1,8 +1,10 @@
-use crate::data::prelude::*;
+use crate::game::character::attack::AttackDefinition;
 use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::game::character::stamina::Stamina;
-use crate::game::character::state::states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::state::capabilities::ActionStateCapabilities;
+use crate::game::character::state::states::{Attacking, Idle, Running, Sprinting, Walking};
+use crate::game::character::state::tracking;
+use crate::game::character::state::tracking::{is_in_movement_state, ActionState, ActionStateEvent, ActionStateTracker};
 use crate::game::character::{Character, Facing};
 use crate::game::level::grid::coords::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, WorldPosition};
 use crate::game::physics::components::PhysicsData;
@@ -11,10 +13,9 @@ use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
+use game_data::prelude::*;
 use std::any::TypeId;
-use crate::game::character::attack::AttackDefinition;
-use crate::game::character::state::tracking;
-use crate::game::character::state::tracking::{is_in_movement_state, ActionState, ActionStateEvent, ActionStateTracker};
+use crate::prelude::{AttackRegistry, AttackResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

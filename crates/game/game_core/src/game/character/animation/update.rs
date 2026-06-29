@@ -6,6 +6,7 @@ use crate::game::character::state::tracking::ActionStateTracker;
 use crate::game::character::Facing;
 use tracing::warn;
 use crate::screens::Screen;
+use game_data::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

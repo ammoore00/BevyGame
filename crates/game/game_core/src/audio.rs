@@ -1,7 +1,6 @@
 use bevy::asset::HandleTemplate;
 use crate::data::loader::LoaderJobManager;
-use crate::data::resource::ResourceFileType;
-use crate::define_resource;
+use game_data::prelude::*;
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {

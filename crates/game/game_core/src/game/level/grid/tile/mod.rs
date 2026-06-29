@@ -6,6 +6,7 @@ use assets::{TileAsset, TileRegistry, TileResource};
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;
+use game_data::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign};

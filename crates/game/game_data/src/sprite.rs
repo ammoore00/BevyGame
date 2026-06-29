@@ -6,7 +6,7 @@ macro_rules! define_sprite_resource {
                 [<$name Sprite>],
                 concat!("images/", $path),
                 Image,
-                ResourceFileType::Image
+                $crate::resource::ResourceFileType::Image
             );
         }
     };

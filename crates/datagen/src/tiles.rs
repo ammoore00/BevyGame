@@ -1,5 +1,6 @@
-use game_core::datagen_api::*;
 use crate::{create_dir, write_data, WriteError};
+use game_core::datagen_api::*;
+use game_data::prelude::*;
 
 const LATEST_FORMAT: u8 = 1;
 

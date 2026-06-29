@@ -1,4 +1,5 @@
 use game_core::datagen_api::*;
+use game_data::prelude::*;
 use crate::{create_dir, write_data, WriteError};
 
 pub fn generate_rooms() -> Result<(), WriteError> {

@@ -4,10 +4,12 @@ use crate::game::character::state::states::Attacking;
 use crate::game::character::state::tracking::ActionStateTracker;
 use crate::prelude::*;
 use crate::{AssetLoadState};
+use game_data::prelude::*;
 use getset::{CloneGetters, Getters};
 use std::time::Duration;
 use bevy::ecs::system::SystemParam;
 use tracing::{info, warn};
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<PartialAnimationData>();

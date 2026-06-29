@@ -1,4 +1,5 @@
 use game_core::datagen_api::*;
+use game_data::prelude::*;
 
 pub struct TextureAtlasData {
     size: (u32, u32),

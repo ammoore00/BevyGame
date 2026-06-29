@@ -1,7 +1,8 @@
-use crate::data::prelude::*;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
+use game_data::define_sprite_resource;
+use game_data::prelude::loc;
 
 pub mod button;
 pub mod text;

@@ -1,15 +1,16 @@
 use crate::data::prelude::*;
 use crate::game::level::grid;
+use crate::game::level::grid::nav::{NavContext, TileNavMap};
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
 use crate::game::level::map::palette::Palette;
 use crate::game::level::map::room::RoomBuilderContext;
-use crate::register_prototype_system;
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::prelude::*;
+use game_data::prelude::*;
+use game_data::register_prototype_system;
 use getset::CopyGetters;
 use rand::{Rng, RngExt};
-use crate::game::level::grid::nav::{NavContext, TileNavMap};
 
 pub mod palette;
 pub mod room;

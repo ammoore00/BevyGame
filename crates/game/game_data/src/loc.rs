@@ -1,5 +1,5 @@
-use crate::data::prelude::ResourceRegistry;
-use crate::data::resource::ResourceKind;
+use crate::prelude::ResourceRegistry;
+use crate::resource::ResourceKind;
 use bevy::asset::{AssetPath, Handle};
 use bevy::prelude;
 use bevy::prelude::Reflect;

@@ -12,10 +12,11 @@ use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use game_data::loc::AnyResourceLocation;
+use game_data::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use crate::data::loc::AnyResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

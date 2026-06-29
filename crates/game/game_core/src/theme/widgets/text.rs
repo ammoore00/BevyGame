@@ -1,10 +1,8 @@
-use bevy::prelude::*;
-use bevy::ecs::system::SystemParam;
-use crate::data::registry::ResourceRegistry;
 use crate::data::loader::LoaderJobManager;
-use crate::data::loc::ResourceLocation;
-use crate::data::resource::{ResourceFileType, ResourceKind};
 use crate::theme::palette::{HEADER_TEXT, LABEL_TEXT};
+use bevy::ecs::system::SystemParam;
+use bevy::prelude::*;
+use game_data::prelude::*;
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<FontResource>();

@@ -1,8 +1,8 @@
-use crate::data::resource::ResourceKind;
+use crate::resource::ResourceKind;
 use bevy::ecs::query::QueryItem;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use crate::data::loc::ResourceLocation;
+use crate::loc::ResourceLocation;
 
 /// Used to prevent construction of marker outside of proper systems
 pub struct PrototypeMarkerToken(());
@@ -61,23 +61,23 @@ macro_rules! register_prototype_system {
             query: bevy::prelude::Query<
                 (
                     bevy::prelude::Entity,
-                    &<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Proto as $crate::data::prototyping::Prototype>::DataLocation,
-                    <$builder_type as $crate::data::prototyping::PrototypeBuilder>::QueryData<'_, '_>
+                    &<<$builder_type as $crate::prototyping::PrototypeBuilder>::Proto as $crate::prototyping::Prototype>::DataLocation,
+                    <$builder_type as $crate::prototyping::PrototypeBuilder>::QueryData<'_, '_>
                 ),
-                bevy::prelude::With<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Proto>,
+                bevy::prelude::With<<$builder_type as $crate::prototyping::PrototypeBuilder>::Proto>,
             >,
-            mut context: bevy::ecs::system::StaticSystemParam<<$builder_type as $crate::data::prototyping::PrototypeBuilder>::Context<'_, '_>>,
+            mut context: bevy::ecs::system::StaticSystemParam<<$builder_type as $crate::prototyping::PrototypeBuilder>::Context<'_, '_>>,
             mut commands: bevy::prelude::Commands,
         ) {
             for (entity, data_loc, extra_data) in &query {
-                match <$builder_type as $crate::data::prototyping::PrototypeBuilder>::build(
+                match <$builder_type as $crate::prototyping::PrototypeBuilder>::build(
                     entity,
                     data_loc,
                     &extra_data,
                     &mut context,
                     commands.reborrow()
                 ) {
-                    Ok(_) => $crate::data::prototyping::finalize_prototype::<$builder_type>(entity, commands.reborrow()),
+                    Ok(_) => $crate::prototyping::finalize_prototype::<$builder_type>(entity, commands.reborrow()),
                     Err(err) => {
                         error!("{}", err);
                         commands.entity(entity).despawn_children().despawn();

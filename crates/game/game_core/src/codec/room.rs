@@ -1,7 +1,8 @@
 use crate::data::prelude::*;
-use bevy::prelude::TypePath;
-use serde::{Deserialize, Serialize};
 use crate::game::level::map::room::RoomConnection;
+use bevy::prelude::TypePath;
+use game_data::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, TypePath)]
 pub struct RoomCodec {

@@ -1,5 +1,6 @@
 use crate::data::prelude::*;
 use bevy::prelude::*;
+use game_data::prelude::*;
 
 pub(super) fn plugin(_app: &mut App) {}
 

@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 game_core = { path = "../game/game_core" }
+game_data = { path = "../game/game_data" }
+
 thiserror = "2.0.17"
 ron = "0.10.1"
 serde = { version = "1.0.228", features = ["derive"] }

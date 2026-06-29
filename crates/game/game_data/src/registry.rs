@@ -1,8 +1,8 @@
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet};
-use crate::data::loc::ResourceLocation;
-use crate::data::resource::ResourceKind;
+use crate::loc::ResourceLocation;
+use crate::resource::ResourceKind;
 // TODO: Change registry to dynamically register loaded assets instead of loading them all at once
 //       to support new BSN inline asset definitions
 

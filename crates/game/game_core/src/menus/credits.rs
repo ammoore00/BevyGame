@@ -1,12 +1,12 @@
 //! The credits menu.
 
 use crate::audio::AudioResource;
-use crate::data::loc::loc;
 use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widgets;
 use crate::theme::widgets::{button, text};
 use crate::{audio::music, menus::Menu};
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
+use game_data::prelude::loc;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu.spawn());

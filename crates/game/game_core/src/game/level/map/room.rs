@@ -5,11 +5,13 @@ use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource};
 use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
-use crate::{define_data_resource, Scale};
+use crate::Scale;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use game_data::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
