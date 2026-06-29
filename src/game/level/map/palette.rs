@@ -58,7 +58,7 @@ impl PaletteDefinition for StandardPalette {
 
     fn create_main_map_pool() -> MapPool {
         let main_map = MapDefinition {
-            map_type: MapType::Main,
+            _map_type: MapType::Main,
             map_size: 3,
         };
         MapPool(vec![main_map])

@@ -1,12 +1,12 @@
-use crate::datagen_api::components::Collider;
-use crate::datagen_api::tile::Tile;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::{Grid, TileMap};
 use bevy::prelude::*;
 use getset::{CopyGetters, Getters};
 use std::collections::BTreeMap;
 use bevy::ecs::system::SystemParam;
+use crate::game::level::grid::tile::Tile;
 use crate::game::level::map::Map;
+use crate::game::physics::components::Collider;
 
 pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 }

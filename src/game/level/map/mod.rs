@@ -57,14 +57,14 @@ pub enum MapType {
 /// - Build information includes things like set pieces, injectables, and connections
 #[derive(Asset, Debug, Clone, TypePath)]
 pub struct MapDefinition {
-    map_type: MapType,
+    _map_type: MapType,
 
     // Temporary
     map_size: usize,
 }
 impl MapDefinition {
     const PLACEHOLDER: Self = Self {
-        map_type: MapType::Main,
+        _map_type: MapType::Main,
         map_size: 1,
     };
 }

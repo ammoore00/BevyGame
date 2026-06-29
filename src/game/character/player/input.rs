@@ -1,5 +1,4 @@
-use crate::data::loc::ResourceLocation;
-use crate::datagen_api::attack::{AttackDefinition, AttackRegistry, AttackResource};
+use crate::data::prelude::*;
 use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::game::character::stamina::Stamina;
 use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking};
@@ -14,6 +13,7 @@ use crate::screens::Screen;
 use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::any::TypeId;
+use crate::game::character::attack::AttackDefinition;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

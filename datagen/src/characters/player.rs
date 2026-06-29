@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-use bevy_game_2d::datagen_api::animation::FrameDataCodec;
-use bevy_game_2d::datagen_api::assets::ActionStateEnum;
-use bevy_game_2d::datagen_api::components::{CapsuleCodec, ColliderTypeCodec};
+use bevy_game_2d::datagen_api::*;
 use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
 use crate::WriteError;
 
@@ -82,7 +80,7 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let attack_set = AttackSetData::new(basic_attack_loc, attacks);
 
-    let collider = ColliderTypeCodec::Capsule(
+    let collider = ColliderKindCodec::Capsule(
         CapsuleCodec::Vertical {
             height: 1.25,
             radius: 0.25,

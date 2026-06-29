@@ -1,11 +1,11 @@
 pub mod ai;
 
 use crate::data::loc::ResourceLocation;
-use crate::datagen_api::assets::CharacterResource;
+use crate::data::prelude::*;
+use crate::game::character::npc::ai::ai_scene;
+use crate::game::character::CharacterPrototype;
 use crate::marker;
 use bevy::prelude::*;
-use crate::datagen_api::ai::ai_scene;
-use crate::game::character::CharacterPrototype;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(ai::plugin);

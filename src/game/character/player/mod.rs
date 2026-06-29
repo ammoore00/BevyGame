@@ -1,8 +1,6 @@
 //! Player-specific behavior.
 
 use crate::data::prelude::*;
-use crate::datagen_api::assets::{CharacterResource, CharacterSpriteResource};
-use crate::datagen_api::attack::{AttackContext, AttackResource};
 //use crate::game::object::Shadow;
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
@@ -12,6 +10,7 @@ use bevy::prelude::*;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use tracing::warn;
+use crate::game::character::attack::AttackContext;
 
 mod input;
 

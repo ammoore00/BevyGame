@@ -76,13 +76,13 @@ impl GameAssetLoader {
         self.loader_jobs.push(Arc::new(LoaderJob::<T>::default()));
     }
 
-    pub fn all_jobs_loaded(&self, world: &World) -> bool {
+    pub fn _all_jobs_loaded(&self, world: &World) -> bool {
         self.loader_jobs.iter()
             .all(|job| job.is_loaded(world))
     }
 
-    pub fn add_resolver_job<T: ResolvableResource>(&mut self) {
-        self.resolver_jobs.push(Arc::new(ResolverJob::<T>::default()));
+    pub fn _add_resolver_job<T: ResolvableResource>(&mut self) {
+        self.resolver_jobs.push(Arc::new(_ResolverJob::<T>::default()));
     }
 }
 
@@ -234,15 +234,15 @@ trait RegistryResolver: Send + Sync + 'static {
 }
 
 #[derive(Debug)]
-struct ResolverJob<T: ResolvableResource> {
+struct _ResolverJob<T: ResolvableResource> {
     phantom_data: PhantomData<T>,
 }
-impl<T: ResolvableResource> Default for ResolverJob<T> {
+impl<T: ResolvableResource> Default for _ResolverJob<T> {
     fn default() -> Self {
         Self { phantom_data: Default::default() }
     }
 }
-impl<T: ResolvableResource> RegistryResolver for ResolverJob<T> {
+impl<T: ResolvableResource> RegistryResolver for _ResolverJob<T> {
     fn resolve(&self, world: &mut World) -> Result<(), LoaderError> {
         let _partial_registry = world.resource::<ResourceRegistry<T>>();
         let _resolved_registry = world.resource_mut::<ResolvedResourceRegistry<T>>();
@@ -392,7 +392,7 @@ impl<T: Serialize + Copy> Copy for Maybe<T> {}
         deserialize = "ResourceLocation<T>: Deserialize<'de>, Codec: Deserialize<'de>"
     )
 )]
-pub enum InlineOrResourceLocation<T, Codec>
+pub enum _InlineOrResourceLocation<T, Codec>
 where
     T: ResourceKind,
     Codec: RonCodec<T::AssetKind>,
@@ -400,15 +400,15 @@ where
     Inline(Codec),
     ResourceLocation(ResourceLocation<T>),
 }
-impl<T, Codec> InlineOrResourceLocation<T, Codec>
+impl<T, Codec> _InlineOrResourceLocation<T, Codec>
 where
     T: ResourceKind,
     Codec: RonCodec<T::AssetKind>,
 {
-    pub fn resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetKind> {
+    pub fn _resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetKind> {
         match self {
-            InlineOrResourceLocation::Inline(codec) => Some(codec.into()),
-            InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(&location).cloned(),
+            _InlineOrResourceLocation::Inline(codec) => Some(codec.into()),
+            _InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(&location).cloned(),
         }
     }
 }

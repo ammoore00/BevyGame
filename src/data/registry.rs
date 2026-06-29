@@ -133,15 +133,18 @@ macro_rules! registry_read_only_impl {
         }
     ) => {
         impl<T: $bound> $system_param<'_, $type_param> {
+            #[allow(unused)]
             pub fn $handle_fn(&self, id: &ResourceLocation<$type_param>) -> Option<Handle<$type_param::AssetKind>> {
                 self.registry.registry.get(&id).cloned()
             }
 
+            #[allow(unused)]
             pub fn $asset_fn(&self, id: &ResourceLocation<$type_param>) -> Option<&$type_param::AssetKind> {
                 let handle = self.$handle_fn(id);
                 handle.and_then(|handle| self.$asset_from_handle_fn(handle))
             }
 
+            #[allow(unused)]
             pub fn $asset_from_handle_fn(&self, handle: Handle<$type_param::AssetKind>) -> Option<&$type_param::AssetKind> {
                 self.assets.get(handle.id())
             }
@@ -158,15 +161,18 @@ macro_rules! resolved_registry_read_only_impl {
         }
     ) => {
         impl<$type_param: $bound> $system_param<'_, $type_param> {
+            #[allow(unused)]
             pub fn $resolved_handle_fn(&self, id: &ResourceLocation<$type_param>) -> Option<Handle<$type_param::ResolvedAssetType>> {
                 self.resolved_registry.registry.get(&id).cloned()
             }
 
+            #[allow(unused)]
             pub fn $resolved_asset_fn(&self, id: &ResourceLocation<$type_param>) -> Option<&$type_param::ResolvedAssetType> {
                 let handle = self.$resolved_handle_fn(id);
                 handle.and_then(|handle| self.$resolved_asset_from_handle_fn(handle))
             }
 
+            #[allow(unused)]
             pub fn $resolved_asset_from_handle_fn(&self, handle: Handle<$type_param::ResolvedAssetType>) -> Option<&$type_param::ResolvedAssetType> {
                 self.resolved_assets.get(handle.id())
             }

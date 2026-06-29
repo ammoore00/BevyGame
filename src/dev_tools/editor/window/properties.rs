@@ -1,6 +1,5 @@
-use crate::datagen_api::animation::{AnimationCodec, AnimationResource};
-use crate::datagen_api::assets::{CharacterCodec, CharacterResource};
-use crate::datagen_api::attack::{AttackCodec, AttackResource};
+use crate::codec::*;
+use crate::data::prelude::*;
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
 use crate::marker;
 use crate::screens::Screen;

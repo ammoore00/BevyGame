@@ -1,6 +1,5 @@
 use crate::data::prelude::*;
 use crate::data::registry::ResolvedSystemRegistry;
-use crate::datagen_api::animation::AnimationResource;
 use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::assets::{CharacterData, CharacterResource};
 use crate::game::character::state::action_states::Idle;
@@ -24,7 +23,7 @@ pub mod health;
 pub mod player;
 pub mod stamina;
 pub mod assets;
-mod state;
+pub(crate) mod state;
 pub mod attack;
 pub mod npc;
 

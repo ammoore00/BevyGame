@@ -5,13 +5,13 @@ use bevy::prelude::*;
 use getset::Getters;
 use rand::{Rng, RngExt};
 use crate::{AppSystems, PausableSystems};
-use crate::datagen_api::components::Collider;
 use crate::game::character::state::{try_set_state, ActionState, ActionStateTracker};
 use crate::game::character::state::action_states::{Idle, Running, Walking};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords, WorldPosition};
 use crate::game::level::grid::nav::{NavEdgeKind, TileNavMap};
 use crate::game::level::LevelSpawnState;
+use crate::game::physics::components::Collider;
 use crate::game::physics::movement::MovementController;
 use crate::screens::Screen;
 

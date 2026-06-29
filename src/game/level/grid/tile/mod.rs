@@ -1,5 +1,4 @@
-use crate::data::loc::ResourceLocation;
-use crate::datagen_api::tile::assets::TileSpriteRegistry;
+use crate::data::prelude::*;
 use crate::game::level::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use crate::game::level::grid::tile::assets::TileLayout;
 use crate::game::physics::components::{Collider, PhysicsData};
@@ -103,15 +102,15 @@ fn update_tile_collision(
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct TileEdges {
+pub struct _TileEdges {
     pub pos_x: bool,
     pub neg_x: bool,
     pub pos_z: bool,
     pub neg_z: bool,
 }
 
-impl TileEdges {
-    pub fn pos_x() -> Self {
+impl _TileEdges {
+    pub fn _pos_x() -> Self {
         Self {
             pos_x: true,
             neg_x: false,
@@ -120,7 +119,7 @@ impl TileEdges {
         }
     }
 
-    pub fn neg_x() -> Self {
+    pub fn _neg_x() -> Self {
         Self {
             pos_x: false,
             neg_x: true,
@@ -129,7 +128,7 @@ impl TileEdges {
         }
     }
 
-    pub fn pos_z() -> Self {
+    pub fn _pos_z() -> Self {
         Self {
             pos_x: false,
             neg_x: false,
@@ -138,7 +137,7 @@ impl TileEdges {
         }
     }
 
-    pub fn neg_z() -> Self {
+    pub fn _neg_z() -> Self {
         Self {
             pos_x: false,
             neg_x: false,
@@ -148,7 +147,7 @@ impl TileEdges {
     }
 }
 
-impl Add for TileEdges {
+impl Add for _TileEdges {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
@@ -161,7 +160,7 @@ impl Add for TileEdges {
     }
 }
 
-impl AddAssign for TileEdges {
+impl AddAssign for _TileEdges {
     fn add_assign(&mut self, other: Self) {
         self.pos_x |= other.pos_x;
         self.neg_x |= other.neg_x;

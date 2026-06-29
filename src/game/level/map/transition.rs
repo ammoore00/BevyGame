@@ -1,5 +1,4 @@
-use crate::data::loc::ResourceLocation;
-use crate::datagen_api::room::RoomResource;
+use crate::data::prelude::*;
 use bevy::prelude::*;
 
 pub(super) fn plugin(_app: &mut App) {}

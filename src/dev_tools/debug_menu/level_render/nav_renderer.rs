@@ -1,10 +1,10 @@
 use crate::dev_tools::debug_menu::debug_options::{RenderNPCPathsState, RenderNavMapEdgesState, RenderNavMapNodesState};
-use bevy::prelude::*;
-use crate::datagen_api::ai::pathfinding::{Pathfinder, PathfinderState};
 use crate::dev_tools::debug_menu::level_render::{draw_projected_camera_facing_circle, draw_screen_line, project_point};
+use crate::game::character::npc::ai::pathfinding::{Pathfinder, PathfinderState};
 use crate::game::level::grid::coords::WorldPosition;
 use crate::game::level::grid::nav::TileNavMap;
 use crate::Scale;
+use bevy::prelude::*;
 
 const NAV_NODE_COLOR: Color = Color::srgb(
     0.55,

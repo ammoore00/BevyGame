@@ -1,17 +1,9 @@
 mod player;
 mod test_npc;
-mod ai;
 
 use std::collections::HashMap;
-use bevy_game_2d::data::resource::ResourceKind;
-use bevy_game_2d::data::loc::ResourceLocation;
-use bevy_game_2d::data::sprite::TextureAtlasCodec;
-use bevy_game_2d::datagen_api::animation::{AnimationCodec, AnimationResource, FrameDataCodec};
-use bevy_game_2d::datagen_api::assets::{ActionStateEnum, AllowedStatesCodec, CharacterCodec, CharacterResource, CharacterSpriteResource};
-use bevy_game_2d::datagen_api::attack::{AttackCodec, AttackResource, AttackSetCodec, AttackSetResource};
-use bevy_game_2d::datagen_api::components::{ColliderCodec, ColliderTypeCodec};
+use bevy_game_2d::datagen_api::*;
 use crate::{create_dir, write_data, WriteError};
-use crate::characters::ai::generate_generic_ai_data;
 use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
@@ -21,8 +13,6 @@ pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(AnimationResource::ROOT_DIR)?;
     create_dir(AttackResource::ROOT_DIR)?;
     create_dir(AttackSetResource::ROOT_DIR)?;
-
-    generate_generic_ai_data()?;
 
     generate_player()?;
     generate_test_npc()?;
@@ -85,12 +75,12 @@ struct CharacterData {
     #[getset(set_with)]
     animations: HashMap<ActionStateEnum, AnimationData>,
     attack_set: Option<AttackSetData>,
-    collider: ColliderTypeCodec,
+    collider: ColliderKindCodec,
 }
 impl CharacterData {
     fn new(
         loc: &str,
-        collider: ColliderTypeCodec,
+        collider: ColliderKindCodec,
     ) -> Self {
         Self {
             loc: loc.parse().unwrap(),

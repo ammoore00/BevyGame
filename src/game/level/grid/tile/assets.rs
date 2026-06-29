@@ -1,13 +1,12 @@
-use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
+use crate::data::loc::ResourceLocation;
 use crate::data::resource::ResourceFileType;
-use crate::datagen_api::tile::TileShape;
 use crate::define_data_resource;
+use crate::codec::TileCodec;
 use crate::{define_sprite_resource, AssetSystems};
 use bevy::prelude::*;
-use maybe_fields_macro::maybe_fields;
-use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
-use crate::data::loc::ResourceLocation;
+use crate::game::level::grid::tile::TileShape;
 
 pub(in crate::game) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();
@@ -46,15 +45,6 @@ impl TileLayout {
     }
 }
 
-#[maybe_fields]
-#[derive(derive_new::new, Serialize, Deserialize, TypePath)]
-pub struct TileCodec {
-    pub format: u8,
-    pub sprite_sheet: ResourceLocation<TileSpriteResource>,
-    pub sprite_index: u8,
-    pub shape: Maybe<TileShape>,
-}
-
 #[derive(Debug, Clone, Asset, TypePath)]
 pub struct TileAsset {
     sprite_sheet: ResourceLocation<TileSpriteResource>,
@@ -81,7 +71,6 @@ impl From<TileCodec> for TileAsset {
         }
     }
 }
-
 
 define_data_resource!(Tile, "tiles", TileAsset);
 define_sprite_resource!(Tile, "tiles");

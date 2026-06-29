@@ -3,8 +3,14 @@
 // Disable console on Windows for non-dev builds.
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
+use bevy::feathers::FeathersPlugins;
+use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
+use bevy::{asset::AssetMetaCheck, prelude::*};
+
 mod asset_tracking;
 mod audio;
+mod codec;
+mod data;
 #[cfg(feature = "dev")]
 mod dev_tools;
 mod game;
@@ -12,12 +18,17 @@ mod gamepad;
 mod menus;
 mod screens;
 mod theme;
-pub mod datagen_api;
-pub mod data;
 
-use bevy::feathers::FeathersPlugins;
-use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
-use bevy::{asset::AssetMetaCheck, prelude::*};
+pub mod datagen_api {
+    pub use crate::{
+        codec::*,
+        data::prelude::*,
+        game::level::{
+            grid::tile::{TileFacing, TileShape},
+            map::room::{ConnectionFacing, ConnectionSize, RoomConnection},
+        },
+    };
+}
 
 pub struct AppPlugin;
 
@@ -39,7 +50,7 @@ impl Plugin for AppPlugin {
                         fit_canvas_to_parent: true,
                         ..default()
                     }
-                        .into(),
+                    .into(),
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
@@ -50,7 +61,6 @@ impl Plugin for AppPlugin {
         app.add_plugins((
             asset_tracking::plugin,
             data::plugin,
-
             audio::plugin,
             game::plugin,
             gamepad::plugin,
@@ -77,11 +87,7 @@ impl Plugin for AppPlugin {
         app.init_state::<AssetLoadState>();
         app.configure_sets(
             Startup,
-            (
-                AssetSystems::RegisterManifests,
-                AssetSystems::LoadAssets,
-            )
-                .chain(),
+            (AssetSystems::RegisterManifests, AssetSystems::LoadAssets).chain(),
         );
 
         app.configure_sets(
@@ -108,10 +114,7 @@ impl Plugin for AppPlugin {
         #[cfg(feature = "dev")]
         {
             info!("Dev tools enabled");
-            app.add_plugins((
-                FeathersPlugins,
-                dev_tools::plugin,
-            ));
+            app.add_plugins((FeathersPlugins, dev_tools::plugin));
         }
     }
 }

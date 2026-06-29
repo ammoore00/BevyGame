@@ -5,7 +5,6 @@ use parry3d::query;
 use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
-use serde::{Deserialize, Serialize};
 use crate::game::physics::math::{ToBevy, ToParry};
 
 pub(super) fn plugin(app: &mut App) {
@@ -67,62 +66,6 @@ impl PartialEq for ColliderType {
                 ColliderType::ConvexHull { shape: b_shape, .. }
             ) => a_shape == b_shape,
             _ => false,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-pub struct ColliderCodec {
-    pub format: u8,
-    pub collider: ColliderTypeCodec,
-}
-impl ColliderCodec {
-    pub const LATEST_FORMAT: u8 = 1;
-}
-impl ColliderCodec {
-    pub fn make_collider(&self, pos: Vec3) -> Collider {
-        match &self.collider {
-            ColliderTypeCodec::Cuboid { x, y, z } => Collider::cuboid((*x, *y, *z).into(), pos),
-            ColliderTypeCodec::ConvexHull(points) => Collider::convex_hull(points, pos),
-            ColliderTypeCodec::Capsule(capsule) => capsule.make_collider(pos),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-pub enum ColliderTypeCodec {
-    Cuboid {
-        x: f32,
-        y: f32,
-        z: f32,
-    },
-    ConvexHull(Vec<Vec3>),
-    #[serde(untagged)]
-    Capsule(CapsuleCodec),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-#[serde(untagged)]
-pub enum CapsuleCodec {
-    Oriented {
-        start: Vec3,
-        end: Vec3,
-        radius: f32,
-    },
-    Vertical {
-        height: f32,
-        radius: f32,
-    },
-}
-impl CapsuleCodec {
-    pub fn make_collider(&self, pos: Vec3) -> Collider {
-        match self {
-            CapsuleCodec::Oriented { start, end, radius } => {
-                Collider::capsule(*start, *end, *radius, pos)
-            }
-            CapsuleCodec::Vertical { height, radius } => {
-                Collider::vertical_capsule(*height, *radius, pos)
-            }
         }
     }
 }

@@ -11,11 +11,7 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         apply_global_volume.run_if(resource_changed::<GlobalVolume>),
     );
-
-    app.add_systems(Startup, shut_up_unused);
 }
-
-fn shut_up_unused(_: Res<AudioRegistry>) {}
 
 /// An organizational marker component that should be added to a spawned [`AudioPlayer`] if it's in the
 /// general "music" category (e.g. global background music, soundtrack).

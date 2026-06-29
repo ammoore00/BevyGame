@@ -1,21 +1,16 @@
-use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
-use crate::data::registry::ResolvedResourceRegistry;
-use crate::data::resource::ResourceFileType;
-use crate::datagen_api::animation::{AnimationResource, ResolvedAnimationData};
-use crate::datagen_api::attack::{AttackContext, AttackSetResource};
-use crate::datagen_api::components::{CapsuleCodec, ColliderTypeCodec};
-use crate::game::character::attack::AttackDefinition;
-use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
+use crate::codec::CharacterCodec;
+use crate::codec::ColliderCodec;
+use crate::data::prelude::*;
+use crate::game::character::attack::{AttackContext, AttackDefinition};
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
-use crate::game::physics::components::ColliderCodec;
 use crate::{define_data_resource, define_sprite_resource};
 use bevy::prelude::*;
 use getset::Getters;
-use maybe_fields_macro::maybe_fields;
-use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
-use crate::data::loc::ResourceLocation;
+use crate::data::registry::ResolvedResourceRegistry;
+use crate::game::character::animation::ResolvedAnimationData;
+use crate::game::character::state::action_states::DEFAULT_STATES;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterSpriteResource>();
@@ -98,77 +93,5 @@ impl From<CharacterCodec> for CharacterData {
     }
 }
 
-#[maybe_fields]
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-pub struct CharacterCodec {
-    pub format: u8,
-    pub allowed_states: Maybe<AllowedStatesCodec>,
-    pub animations: HashMap<ActionStateEnum, ResourceLocation<AnimationResource>>,
-    pub attack_set: Maybe<ResourceLocation<AttackSetResource>>,
-    pub collider: ColliderCodec,
-}
-impl CharacterCodec {
-    pub const LATEST_FORMAT: u8 = 1;
-}
-impl Default for CharacterCodec {
-    fn default() -> Self {
-        Self {
-            format: Self::LATEST_FORMAT,
-            allowed_states: Maybe(None),
-            animations: HashMap::new(),
-            attack_set: Maybe(None),
-            collider: ColliderCodec {
-                format: ColliderCodec::LATEST_FORMAT,
-                collider: ColliderTypeCodec::Capsule(
-                    CapsuleCodec::Vertical {
-                        radius: 1.25,
-                        height: 0.25,
-                    }
-                )
-            },
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]
-pub enum AllowedStatesCodec {
-    #[default]
-    Default,
-    Passive,
-    #[serde(untagged)]
-    Custom(Vec<ActionStateEnum>),
-}
-impl AllowedStatesCodec {
-    pub fn into_type_ids(self) -> Vec<TypeId> {
-        match self {
-            AllowedStatesCodec::Default => DEFAULT_STATES.clone(),
-            AllowedStatesCodec::Passive => DEFAULT_STATES_NON_ATTACKING.clone(),
-            AllowedStatesCodec::Custom(states) => states.into_iter().map(|state| state.into_type_id()).collect(),
-        }
-    }
-}
-
 define_data_resource!(Character, "characters/characters", CharacterData);
-
-/// Enum used for referencing action states in data context
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum ActionStateEnum {
-    Idle,
-    Walking,
-    Running,
-    Sprinting,
-    Attacking,
-}
-impl ActionStateEnum {
-    pub fn into_type_id(self) -> TypeId {
-        match self {
-            ActionStateEnum::Idle => TypeId::of::<Idle>(),
-            ActionStateEnum::Walking => TypeId::of::<Walking>(),
-            ActionStateEnum::Running => TypeId::of::<Running>(),
-            ActionStateEnum::Sprinting => TypeId::of::<Sprinting>(),
-            ActionStateEnum::Attacking => TypeId::of::<Attacking>(),
-        }
-    }
-}
-
 define_sprite_resource!(Character, "characters");

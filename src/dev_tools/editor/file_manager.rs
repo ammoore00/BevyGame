@@ -1,7 +1,5 @@
-use crate::data::resource::ResourceKind;
-use crate::datagen_api::animation::{AnimationCodec, AnimationResource};
-use crate::datagen_api::assets::{CharacterCodec, CharacterResource};
-use crate::datagen_api::attack::{AttackCodec, AttackResource};
+use crate::codec::*;
+use crate::data::prelude::*;
 use crate::dev_tools::editor::window::properties::EditorCodec;
 use crate::screens::Screen;
 use bevy::ecs::system::SystemParam;
@@ -46,12 +44,12 @@ impl FileTaskChannelSet<'_> {
                 // SAFETY: This cast is safe because we verify the type_id above
                 unsafe { &*(self.character.as_ref() as *const _ as *const FileTaskChannel<Codec>) }
             }
-            FileKind::Animation if type_id == TypeId::of::<AnimationCodec>() => {
-                unsafe { &*(self.animation.as_ref() as *const _ as *const FileTaskChannel<Codec>) }
-            }
-            FileKind::Attack if type_id == TypeId::of::<AttackCodec>() => {
-                unsafe { &*(self.attack.as_ref() as *const _ as *const FileTaskChannel<Codec>) }
-            }
+            FileKind::Animation if type_id == TypeId::of::<AnimationCodec>() => unsafe {
+                &*(self.animation.as_ref() as *const _ as *const FileTaskChannel<Codec>)
+            },
+            FileKind::Attack if type_id == TypeId::of::<AttackCodec>() => unsafe {
+                &*(self.attack.as_ref() as *const _ as *const FileTaskChannel<Codec>)
+            },
             _ => {
                 panic!(
                     "Requested codec type does not match the associated FileKind: {:?}. This is a compile time bug!",
@@ -92,9 +90,15 @@ impl FileManager {
         let file = EditorFile { loc, kind };
 
         match kind {
-            FileKind::Character => self.open_typed::<CharacterCodec>(file, set_active, &channel_set.character),
-            FileKind::Animation => self.open_typed::<AnimationCodec>(file, set_active, &channel_set.animation),
-            FileKind::Attack => self.open_typed::<AttackCodec>(file, set_active, &channel_set.attack),
+            FileKind::Character => {
+                self.open_typed::<CharacterCodec>(file, set_active, &channel_set.character)
+            }
+            FileKind::Animation => {
+                self.open_typed::<AnimationCodec>(file, set_active, &channel_set.animation)
+            }
+            FileKind::Attack => {
+                self.open_typed::<AttackCodec>(file, set_active, &channel_set.attack)
+            }
         }
     }
 
@@ -103,8 +107,7 @@ impl FileManager {
         file: EditorFile,
         set_active: bool,
         channel: &FileTaskChannel<Codec>,
-    )
-    where
+    ) where
         Codec: EditorCodec,
     {
         // If the file is already open, just set it as active

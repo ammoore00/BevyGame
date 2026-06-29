@@ -1,3 +1,4 @@
+use crate::game::character::state::action_states::Idle;
 use crate::game::character::Character;
 use crate::AppSystems;
 use bevy::ecs::world::DeferredWorld;
@@ -6,7 +7,6 @@ use state_transitions::{ActionStateCapabilities, StateTransitionError};
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
 use tracing::warn;
-use crate::game::character::state::action_states::Idle;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
@@ -309,7 +309,6 @@ pub mod state_transitions {
 
 pub mod action_states {
     use super::*;
-    use crate::datagen_api::attack::AttackResource;
     use crate::game::character::state::state_transitions::{
         StateMatcher, StateTransitionChecker, StateTransitionRule,
     };

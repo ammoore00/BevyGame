@@ -40,8 +40,10 @@ impl ResourceFileType {
 macro_rules! define_resource {
     ($name:ident, $path:expr, $asset_type:ty, $file_type:expr) => {
         paste::paste! {
+            #[allow(unused)]
             pub type [<$name Registry>] = $crate::data::registry::ResourceRegistry<[<$name Resource>]>;
 
+            #[allow(unused)]
             #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
             pub struct [<$name Resource>];
 
@@ -70,6 +72,7 @@ macro_rules! define_resolvable_resource {
         paste::paste! {
             $crate::define_data_resource!($name, $path, $asset_type);
 
+            #[allow(unused)]
             pub type [<Resolved $name Registry>] = $crate::data::registry::ResolvedResourceRegistry<[<$name Resource>]>;
 
             impl $crate::data::resource::ResolvableResource for [<$name Resource>] {

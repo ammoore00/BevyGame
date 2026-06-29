@@ -1,7 +1,4 @@
-use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
-use crate::datagen_api::animation::AnimationResource;
-use crate::datagen_api::assets::CharacterResource;
-use crate::datagen_api::attack::AttackResource;
+use crate::data::prelude::*;
 use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
 use crate::marker;
 use crate::screens::Screen;
@@ -18,8 +15,9 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use crate::data::loc::{AnyResourceLocation, ResourceLocation};
-use crate::data::resource::{ResolvableResource, ResourceKind};
+use crate::data::loc::AnyResourceLocation;
+use crate::data::registry::ResolvedSystemRegistry;
+use crate::data::resource::ResolvableResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

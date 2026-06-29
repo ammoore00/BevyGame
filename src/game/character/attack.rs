@@ -1,15 +1,11 @@
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
-use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
-use crate::data::resource::ResourceFileType;
-use crate::datagen_api::animation::AnimationResource;
-use crate::datagen_api::assets::CharacterSpriteResource;
+use crate::data::prelude::*;
 use crate::define_data_resource;
+use crate::codec::{AttackCodec, AttackSetCodec};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use getset::{CopyGetters, Getters};
-use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use crate::data::loc::ResourceLocation;
+use crate::data::registry::ResolvedSystemRegistry;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AttackDefinition>();
@@ -51,29 +47,6 @@ impl From<AttackCodec> for AttackDefinition {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-pub struct AttackCodec {
-    pub format: u8,
-    pub duration: u64,
-    pub stamina_cost: usize,
-    pub animation: ResourceLocation<AnimationResource>,
-    pub particle_sprite: ResourceLocation<CharacterSpriteResource>,
-}
-impl AttackCodec {
-    pub const LATEST_FORMAT: u8 = 1;
-}
-impl Default for AttackCodec {
-    fn default() -> Self {
-        AttackCodec {
-            format: AttackCodec::LATEST_FORMAT,
-            duration: 150,
-            stamina_cost: 0,
-            animation: "untitled".parse().unwrap(),
-            particle_sprite: "untitled".parse().unwrap(),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Asset, TypePath, Getters)]
 pub struct AttackSet {
     #[getset(get = "pub")]
@@ -90,12 +63,6 @@ impl From<AttackSetCodec> for AttackSet {
             attacks: value.attacks,
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-pub struct AttackSetCodec {
-    pub format: u8,
-    pub attacks: Vec<ResourceLocation<AttackResource>>,
 }
 
 define_data_resource!(Attack, "characters/attacks", AttackDefinition);

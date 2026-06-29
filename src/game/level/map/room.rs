@@ -1,6 +1,5 @@
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
-use crate::data::resource::ResourceFileType;
-use crate::datagen_api::tile::assets::TileSpriteRegistry;
+use crate::codec::RoomCodec;
+use crate::data::prelude::*;
 use crate::game::level::grid;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource};
@@ -11,7 +10,6 @@ use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use crate::data::loc::ResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
@@ -21,30 +19,6 @@ pub(super) fn plugin(app: &mut App) {
 
 type RoomTileCoords = TileCoords;
 type _RoomWorldCoords = WorldCoords;
-
-#[derive(Serialize, Deserialize, TypePath)]
-pub struct RoomCodec {
-    format: u8,
-    tile_palette: Vec<ResourceLocation<TileResource>>,
-    /// Stored in YZX order (outer to inner)
-    tiles: Vec<Vec<Vec<u8>>>,
-    connections: Vec<RoomConnection>,
-}
-impl RoomCodec {
-    pub fn new(
-        format: u8,
-        tile_palette: Vec<ResourceLocation<TileResource>>,
-        tiles: Vec<Vec<Vec<u8>>>,
-        connections: Vec<RoomConnection>,
-    ) -> Self {
-        Self {
-            format,
-            tile_palette,
-            tiles,
-            connections,
-        }
-    }
-}
 
 /// The type of room this is
 /// Set pieces and injectables are rooms designed for a specific instance

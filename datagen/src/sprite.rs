@@ -1,4 +1,4 @@
-use bevy_game_2d::data::sprite::TextureAtlasCodec;
+use bevy_game_2d::datagen_api::*;
 
 pub struct TextureAtlasData {
     size: (u32, u32),

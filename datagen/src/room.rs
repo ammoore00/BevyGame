@@ -1,7 +1,4 @@
-use bevy_game_2d::data::resource::ResourceKind;
-use bevy_game_2d::data::loc::ResourceLocation;
-use bevy_game_2d::datagen_api::room::{ConnectionFacing, ConnectionSize, RoomCodec, RoomConnection, RoomResource};
-use bevy_game_2d::datagen_api::tile::assets::TileResource;
+use bevy_game_2d::datagen_api::*;
 use crate::{create_dir, write_data, WriteError};
 
 pub fn generate_rooms() -> Result<(), WriteError> {

@@ -1,9 +1,5 @@
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
-use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistry, ResolvedSystemRegistryMut, SystemRegistry};
-use crate::data::sprite::TextureAtlasCodec;
-use crate::data::resource::ResourceFileType;
-use crate::datagen_api::assets::CharacterSpriteResource;
-use crate::datagen_api::attack::AttackResource;
+use crate::codec::{AnimationCodec, FrameDataCodec};
+use crate::data::prelude::*;
 use crate::game::character::state::action_states::Attacking;
 use crate::game::character::state::ActionStateTracker;
 use crate::game::character::Facing;
@@ -12,12 +8,11 @@ use crate::{define_resolvable_resource, AssetLoadState};
 use crate::{AppSystems, AssetSystems, PausableSystems};
 use bevy::prelude::*;
 use getset::{CloneGetters, Getters};
-use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
-use crate::data::loc::ResourceLocation;
+use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistry, ResolvedSystemRegistryMut};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<PartialAnimationData>();
@@ -233,7 +228,7 @@ impl CharacterAnimationTracker {
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct AnimationStateMap(pub HashMap<TypeId, Handle<ResolvedAnimationData>>);
 impl AnimationStateMap {
-    pub fn from_resource_location_map(map: &HashMap<TypeId, ResourceLocation<AnimationResource>>, registry: &ResolvedResourceRegistry<AnimationResource>) -> Self {
+    pub fn _from_resource_location_map(map: &HashMap<TypeId, ResourceLocation<AnimationResource>>, registry: &ResolvedResourceRegistry<AnimationResource>) -> Self {
         let resolved_map = map.iter()
             .map(|(type_id, location)| {
                 (*type_id, registry.get(location).unwrap().clone())
@@ -353,26 +348,6 @@ impl From<FrameDataCodec> for FrameData {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum FrameDataCodec {
-    FixedInterval {
-        num_frames: usize,
-        interval: u64,
-    },
-    Distinct {
-        intervals: Vec<u64>,
-    }
-}
-impl FrameDataCodec {
-    pub fn num_frames(&self) -> u32 {
-        match self {
-            FrameDataCodec::FixedInterval { num_frames, .. } => *num_frames as u32,
-            FrameDataCodec::Distinct { intervals } => intervals.len() as u32,
-        }
-    }
-}
-
 /// Stores the sprite and frame data for an animation
 #[derive(Debug, Clone, PartialEq, Asset, TypePath)]
 pub struct PartialAnimationData {
@@ -388,37 +363,6 @@ impl From<AnimationCodec> for PartialAnimationData {
             atlas: codec.atlas.into(),
             frame_data: codec.frame_data.into(),
             resolved_handle: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-pub struct AnimationCodec {
-    pub format: u8,
-    pub image: ResourceLocation<CharacterSpriteResource>,
-    pub atlas: TextureAtlasCodec,
-    pub frame_data: FrameDataCodec,
-}
-impl AnimationCodec {
-    pub const LATEST_FORMAT: u8 = 1;
-}
-impl Default for AnimationCodec {
-    fn default() -> Self {
-        Self {
-            format: Self::LATEST_FORMAT,
-            image: "untitled".parse().unwrap(),
-            atlas: TextureAtlasCodec {
-                format: TextureAtlasCodec::LATEST_FORMAT,
-                size: UVec2::splat(64),
-                columns: 8,
-                rows: 8,
-                padding: Default::default(),
-                offset: Default::default(),
-            },
-            frame_data: FrameDataCodec::FixedInterval {
-                num_frames: 8,
-                interval: 50,
-            },
         }
     }
 }
