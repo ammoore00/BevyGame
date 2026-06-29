@@ -5,7 +5,7 @@ use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use getset::{CopyGetters, Getters};
 use std::time::Duration;
-use crate::data::registry::ResolvedSystemRegistry;
+use crate::game::character::animation::AnimationContext;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AttackDefinition>();
@@ -21,7 +21,7 @@ pub(super) fn plugin(app: &mut App) {
 pub struct AttackContext<'w> {
     pub attack_registry: SystemRegistry<'w, AttackResource>,
     pub attack_set_registry: SystemRegistry<'w, AttackSetResource>,
-    pub animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
+    pub animation_context: AnimationContext<'w>,
     pub character_sprite_registry: SystemRegistry<'w, CharacterSpriteResource>,
 }
 

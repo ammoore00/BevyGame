@@ -1,8 +1,7 @@
 use crate::codec::CharacterCodec;
 use crate::codec::ColliderCodec;
 use crate::data::prelude::*;
-use crate::data::registry::ResolvedResourceRegistry;
-use crate::game::character::animation::ResolvedAnimationData;
+use crate::game::character::animation::{AnimationContext, AnimationData};
 use crate::game::character::attack::{AttackContext, AttackDefinition};
 use crate::game::character::state::action_states::DEFAULT_STATES;
 use crate::game::character::state::state_transitions::ActionStateCapabilities;
@@ -31,15 +30,19 @@ impl CharacterData {
         &self.state_capabilities
     }
     
-    pub fn resolve_animation_handles(&self, animation_registry: &ResolvedResourceRegistry<AnimationResource>) -> HashMap<TypeId, Handle<ResolvedAnimationData>> {
+    pub fn resolve_animation_handles(&self, animation_context: &AnimationContext) -> HashMap<TypeId, Handle<AnimationData>> {
         let mut animation_handles = HashMap::new();
 
         for (state_id, animation_loc) in self.animations.iter() {
-            let Some(animation) = animation_registry.get(animation_loc) else {
-                error!("Failed to retrieve animation: {}", animation_loc);
-                continue;
-            };
-            animation_handles.insert(*state_id, animation.clone());
+            match animation_context.get_handle(animation_loc) {
+                Ok(animation) => {
+                    animation_handles.insert(*state_id, animation.clone());
+                }
+                Err(err) => {
+                    // TODO: Handle this more gracefully
+                    panic!("Failed to retrieve animation: {}", err);
+                }
+            }
         }
         animation_handles
     }

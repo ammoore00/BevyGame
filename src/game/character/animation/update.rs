@@ -1,11 +1,9 @@
-use crate::data::registry::ResolvedSystemRegistry;
-use crate::datagen_api::{AnimationResource, AttackResource, SystemRegistry};
-use crate::game::character::animation::assets::ResolvedAnimationData;
-use crate::game::character::animation::{assets, AnimationStateMap, CharacterAnimationTracker};
+use crate::prelude::*;
+use crate::game::character::animation::assets::AnimationData;
+use crate::game::character::animation::{assets, AnimationContext, AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::state::action_states::Attacking;
 use crate::game::character::state::ActionStateTracker;
 use crate::game::character::Facing;
-use crate::prelude::*;
 use tracing::warn;
 use crate::screens::Screen;
 
@@ -25,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn update_animation_timer(
     time: Res<Time>,
-    assets: Res<Assets<ResolvedAnimationData>>,
+    assets: Res<Assets<AnimationData>>,
     mut query: Query<&mut CharacterAnimationTracker>,
 ) {
     for mut animation in &mut query {
@@ -42,7 +40,7 @@ fn update_animation_state(
         Option<&Attacking>,
     )>,
     attack_context: SystemRegistry<AttackResource>,
-    animation_context: ResolvedSystemRegistry<AnimationResource>,
+    animation_context: AnimationContext,
 ) {
     for (
         state_tracker,
@@ -66,7 +64,7 @@ fn update_animation_state(
 
         // Update animation tracker state if the animation has changed
         animation_tracker.current_animation = animation_handle.clone();
-        let animation = animation_context.get_resolved_asset_from_handle(animation_handle.clone()).unwrap();
+        let animation = animation_context.get_data_from_handle(animation_handle.clone()).unwrap();
 
         let interval = animation.frame_data().frame_duration(0).unwrap();
 
@@ -88,7 +86,7 @@ fn update_animation_atlas(
         Option<&Attacking>,
     )>,
     attack_context: SystemRegistry<AttackResource>,
-    animation_context: ResolvedSystemRegistry<AnimationResource>,
+    animation_context: AnimationContext,
 ) {
     for (
         state_tracker,
@@ -108,7 +106,7 @@ fn update_animation_atlas(
             return;
         };
 
-        let animation = animation_context.get_resolved_asset_from_handle(animation_handle).unwrap();
+        let animation = animation_context.get_data_from_handle(animation_handle).unwrap();
 
         sprite.image = animation.image().clone();
 

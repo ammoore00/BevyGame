@@ -1,17 +1,15 @@
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::time::Duration;
-use crate::data::registry::ResolvedResourceRegistry;
-use crate::datagen_api::{AnimationResource, ResourceLocation};
-use crate::game::character::animation::assets::ResolvedAnimationData;
+use crate::game::character::animation::assets::AnimationData;
 use crate::game::character::Facing;
 use crate::prelude::{Assets, Component, Handle, Image, Reflect, Sprite, TextureAtlas, Timer, TimerMode};
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {
-    pub default_animation: Handle<ResolvedAnimationData>,
-    pub current_animation: Handle<ResolvedAnimationData>,
-    pub prev_animation: Handle<ResolvedAnimationData>,
+    pub default_animation: Handle<AnimationData>,
+    pub current_animation: Handle<AnimationData>,
+    pub prev_animation: Handle<AnimationData>,
 
     pub facing: Facing,
     pub timer: Timer,
@@ -20,8 +18,8 @@ pub struct CharacterAnimationTracker {
 
 impl CharacterAnimationTracker {
     pub fn new(
-        default: Handle<ResolvedAnimationData>,
-        assets: &Assets<ResolvedAnimationData>,
+        default: Handle<AnimationData>,
+        assets: &Assets<AnimationData>,
     ) -> Self {
         let frame_data = assets.get(default.id()).unwrap().frame_data();
         let interval = frame_data.frame_duration(0).unwrap();
@@ -37,14 +35,14 @@ impl CharacterAnimationTracker {
         }
     }
 
-    pub fn default_sprite(&self, assets: &Assets<ResolvedAnimationData>) -> Sprite {
+    pub fn default_sprite(&self, assets: &Assets<AnimationData>) -> Sprite {
         Sprite::from_atlas_image(
             self.get_image(assets).clone(),
             self.get_atlas(assets).clone(),
         )
     }
 
-    pub(crate) fn update_timer(&mut self, delta: Duration, assets: &Assets<ResolvedAnimationData>) {
+    pub(crate) fn update_timer(&mut self, delta: Duration, assets: &Assets<AnimationData>) {
         self.timer.tick(delta);
 
         if !self.timer.is_finished() {
@@ -57,23 +55,24 @@ impl CharacterAnimationTracker {
         self.timer.set_duration(animation.frame_data().frame_duration(self.frame).unwrap());
     }
 
-    fn get_image(&self, assets: &Assets<ResolvedAnimationData>) -> Handle<Image> {
+    fn get_image(&self, assets: &Assets<AnimationData>) -> Handle<Image> {
         assets.get(self.current_animation.id()).unwrap().image().clone()
     }
 
-    fn get_atlas(&self, assets: &Assets<ResolvedAnimationData>) -> TextureAtlas {
+    fn get_atlas(&self, assets: &Assets<AnimationData>) -> TextureAtlas {
         assets.get(self.current_animation.id()).unwrap().atlas().clone()
     }
 
-    pub(crate) fn get_atlas_index(&self, assets: &Assets<ResolvedAnimationData>) -> usize {
+    pub(crate) fn get_atlas_index(&self, assets: &Assets<AnimationData>) -> usize {
         self.frame + self.facing as usize * assets.get(self.current_animation.id()).unwrap().frame_data().num_frames()
     }
 }
 
 /// Maps character states to animation data
 #[derive(Component, Debug, Clone, Reflect)]
-pub struct AnimationStateMap(pub HashMap<TypeId, Handle<ResolvedAnimationData>>);
+pub struct AnimationStateMap(pub HashMap<TypeId, Handle<AnimationData>>);
 
+/*
 impl AnimationStateMap {
     pub fn _from_resource_location_map(map: &HashMap<TypeId, ResourceLocation<AnimationResource>>, registry: &ResolvedResourceRegistry<AnimationResource>) -> Self {
         let resolved_map = map.iter()
@@ -84,3 +83,4 @@ impl AnimationStateMap {
         AnimationStateMap(resolved_map)
     }
 }
+ */

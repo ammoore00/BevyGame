@@ -1,19 +1,19 @@
 use crate::codec::{AnimationCodec, FrameDataCodec};
-use crate::data::registry::{ResolvedSystemRegistry, ResolvedSystemRegistryMut};
 use crate::game::character::animation::components::AnimationStateMap;
 use crate::game::character::state::action_states::Attacking;
 use crate::game::character::state::ActionStateTracker;
 use crate::prelude::*;
-use crate::{define_resolvable_resource, AssetLoadState};
+use crate::{AssetLoadState};
 use getset::{CloneGetters, Getters};
 use std::time::Duration;
+use bevy::ecs::system::SystemParam;
 use tracing::{info, warn};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<PartialAnimationData>();
-    app.init_asset::<ResolvedAnimationData>();
+    app.init_asset::<AnimationData>();
     app.init_asset_loader::<RonAssetLoader<AnimationCodec, PartialAnimationData>>();
-    app.add_resolved_registry_with_discovery::<AnimationResource>();
+    app.add_registry_with_discovery::<AnimationResource>();
     
     app.add_systems(
         OnEnter(AssetLoadState::Resolving),
@@ -26,16 +26,19 @@ pub fn get_animation_handle(
     animation_state_map: &AnimationStateMap,
     attacking_state: Option<&Attacking>,
     attack_context: &SystemRegistry<AttackResource>,
-    animation_context: &ResolvedSystemRegistry<AnimationResource>,
-) -> Option<Handle<ResolvedAnimationData>> {
+    animation_context: &AnimationContext,
+) -> Option<Handle<AnimationData>> {
     if let Some(attacking_state) = attacking_state {
         let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
-            warn!("Could not find attack definition for {}!", attacking_state.attack());
+            error!("Could not find attack definition for {}!", attacking_state.attack());
             return None;
         };
 
-        let Some(animation_handle) = animation_context.get_resolved_handle(attack.animation()) else {
-            warn!("Could not find animation definition for attack: {}!", attacking_state.attack());
+        // TODO: Improve error handling
+        let Some(animation_handle) =
+            animation_context.get_handle(attack.animation()).ok()
+        else {
+            error!("Could not find animation definition for attack: {}!", attacking_state.attack());
             return None;
         };
 
@@ -50,7 +53,7 @@ pub fn get_animation_handle(
 
 /// Resolved asset references for an animation, including handles to other assets
 #[derive(Debug, Clone, PartialEq, Asset, Reflect, Getters, CloneGetters)]
-pub struct ResolvedAnimationData {
+pub struct AnimationData {
     #[getset(get_clone = "pub")]
     image: Handle<Image>,
     #[getset(get = "pub")]
@@ -61,7 +64,7 @@ pub struct ResolvedAnimationData {
 
 pub fn resolve_animation_data(
     mut resolved: Local<bool>,
-    mut animation_registry: ResolvedSystemRegistryMut<AnimationResource>,
+    mut animation_registry: SystemRegistryMut<AnimationResource>,
     animation_sprite_registry: SystemRegistry<CharacterSpriteResource>,
     mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
@@ -74,7 +77,6 @@ pub fn resolve_animation_data(
 
     let (
         animation_registry,
-        resolved_animation_registry,
         animation_assets,
     ) = animation_registry.split();
 
@@ -93,7 +95,7 @@ pub fn resolve_animation_data(
 
         let Some(image) = animation_sprite_registry.get_handle(&animation.image) else {
             // TODO: Real error handling, since this could come up in normal operation
-            warn!("Failed to find image for animation: {:?}", animation.image.clone());
+            error!("Failed to find image for animation: {:?}", animation.image.clone());
             return;
         };
 
@@ -105,15 +107,15 @@ pub fn resolve_animation_data(
 
         let frame_data = animation.frame_data.clone();
 
-        let resolved_animation = ResolvedAnimationData {
+        let resolved_animation = AnimationData {
             image,
             atlas,
             frame_data,
         };
 
         let resolved_animation_handle = asset_server.add(resolved_animation);
-        resolved_animation_registry.register_asset(loc.clone(), resolved_animation_handle.clone());
         animation.resolved_handle = Some(resolved_animation_handle);
+        animation.resolved = true;
     }
 
     *resolved = true;
@@ -166,7 +168,8 @@ pub struct PartialAnimationData {
     image: ResourceLocation<CharacterSpriteResource>,
     atlas: TextureAtlasLayout,
     frame_data: FrameData,
-    resolved_handle: Option<Handle<ResolvedAnimationData>>,
+    resolved_handle: Option<Handle<AnimationData>>,
+    resolved: bool,
 }
 
 impl From<AnimationCodec> for PartialAnimationData {
@@ -176,8 +179,49 @@ impl From<AnimationCodec> for PartialAnimationData {
             atlas: codec.atlas.into(),
             frame_data: codec.frame_data.into(),
             resolved_handle: None,
+            resolved: false,
         }
     }
 }
 
-define_resolvable_resource!(Animation, "characters/animations", PartialAnimationData, ResolvedAnimationData);
+define_data_resource!(Animation, "characters/animations", PartialAnimationData);
+
+#[derive(SystemParam, Getters)]
+pub struct AnimationContext<'w> {
+    registry: SystemRegistry<'w, AnimationResource>,
+    #[getset(get = "pub")]
+    resolved_assets: Res<'w, Assets<AnimationData>>,
+}
+impl AnimationContext<'_> {
+    pub fn get_handle(&self, loc: &ResourceLocation<AnimationResource>) -> Result<Handle<AnimationData>, AnimationContextError> {
+        let partial_data = self.registry.get_asset(loc)
+            .ok_or(AnimationContextError::NonexistentResourceLocation(loc.clone()))?;
+
+        if !partial_data.resolved {
+            return Err(AnimationContextError::NotYetResolved);
+        }
+
+        partial_data.resolved_handle.clone().ok_or(AnimationContextError::ResolvedAssetMissing)
+    }
+    
+    pub fn get_data_from_handle(&self, handle: Handle<AnimationData>) -> Result<&AnimationData, AnimationContextError> {
+        self.resolved_assets.get(&handle).ok_or(AnimationContextError::NonexistentResolvedAsset)
+    }
+    
+    pub fn get_data(&self, loc: &ResourceLocation<AnimationResource>) -> Result<&AnimationData, AnimationContextError> {
+        let handle = self.get_handle(loc)?;
+        self.get_data_from_handle(handle)
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum AnimationContextError {
+    #[error("Asset for resource location {0} does not exist!")]
+    NonexistentResourceLocation(ResourceLocation<AnimationResource>),
+    #[error("Resolved asset not yet loaded, please try again later")]
+    NotYetResolved,
+    #[error("Data does not have a resolved asset linked!")]
+    ResolvedAssetMissing,
+    #[error("Resolved asset does not exist!")]
+    NonexistentResolvedAsset,
+}

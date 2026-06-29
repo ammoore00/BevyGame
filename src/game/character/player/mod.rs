@@ -9,7 +9,6 @@ use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use bevy::prelude::*;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
-use tracing::warn;
 use crate::game::character::attack::AttackContext;
 
 mod input;
@@ -113,13 +112,13 @@ fn on_player_attack(
         return;
     };
 
-    let Some(animation) = context.animation_registry.get_resolved_asset(attack.animation()) else {
-        warn!("Invalid player attack definition: animation {} does not exist!", attack.animation());
+    let Ok(animation) = context.animation_context.get_data(attack.animation()) else {
+        error!("Invalid player attack definition: animation {} does not exist!", attack.animation());
         return;
     };
 
     let Some(particle_sprite) = context.character_sprite_registry.get_handle(attack.particle_sprite()) else {
-        warn!("Invalid player attack definition: particle sprite {} does not exist!", attack.particle_sprite());
+        error!("Invalid player attack definition: particle sprite {} does not exist!", attack.particle_sprite());
         return;
     };
 

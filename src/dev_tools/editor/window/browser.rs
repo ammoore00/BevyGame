@@ -16,8 +16,6 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use crate::data::loc::AnyResourceLocation;
-use crate::data::registry::ResolvedSystemRegistry;
-use crate::data::resource::ResolvableResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -31,7 +29,7 @@ pub(super) fn plugin(app: &mut App) {
                     .chain(),
                 (
                     spawn_collapsible_menu_contents::<AnimationMenu>,
-                    update_menu_contents_from_resolved_registry::<AnimationMenu>,
+                    update_menu_contents_from_registry::<AnimationMenu>,
                 )
                     .chain(),
                 (
@@ -140,9 +138,6 @@ fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> 
 trait MenuContentsKind: Component + Debug {
     type ResourceKind: EditorResourceKind;
 }
-trait ResolvedMenuContentsKind: MenuContentsKind {
-    type ResolvableResourceKind: ResolvableResource + EditorResourceKind;
-}
 
 #[derive(Component, Debug, Clone, Copy, Default)]
 pub struct CharacterMenu;
@@ -154,9 +149,6 @@ impl MenuContentsKind for CharacterMenu {
 pub struct AnimationMenu;
 impl MenuContentsKind for AnimationMenu {
     type ResourceKind = AnimationResource;
-}
-impl ResolvedMenuContentsKind for AnimationMenu {
-    type ResolvableResourceKind = AnimationResource;
 }
 
 #[derive(Component, Debug, Clone, Copy, Default)]
@@ -255,13 +247,6 @@ impl<'w, T: ResourceKind> MenuRegistryAccessor<T> for SystemRegistry<'w, T> {
             .map(|(location, handle)| (location.clone(), handle.clone()))
     }
 }
-impl<'w, T: ResolvableResource> MenuRegistryAccessor<T> for ResolvedSystemRegistry<'w, T> {
-    type AssetKind = T::ResolvedAssetType;
-    fn iter(&self) -> impl Iterator<Item = (ResourceLocation<T>, Handle<Self::AssetKind>)> {
-        self.resolved_registry().iter()
-            .map(|(location, handle)| (location.clone(), handle.clone()))
-    }
-}
 
 fn update_menu_contents_from_registry<
     ContentKind: MenuContentsKind,
@@ -274,22 +259,6 @@ fn update_menu_contents_from_registry<
         With<MenuContents<ContentKind>>
     >,
     registry: SystemRegistry<ContentKind::ResourceKind>,
-    commands: Commands,
-) {
-    update_menu_contents_inner::<ContentKind, _, _>(contents_query, registry, commands)
-}
-
-fn update_menu_contents_from_resolved_registry<
-    ContentKind: ResolvedMenuContentsKind,
-> (
-    contents_query: Query<
-        (
-            Entity,
-            Option<&MenuContentsUninitialized>,
-        ),
-        With<MenuContents<ContentKind>>
-    >,
-    registry: ResolvedSystemRegistry<ContentKind::ResolvableResourceKind>,
     commands: Commands,
 ) {
     update_menu_contents_inner::<ContentKind, _, _>(contents_query, registry, commands)

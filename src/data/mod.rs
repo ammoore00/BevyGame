@@ -22,7 +22,7 @@ pub mod prelude {
         define_data_resource, define_resource, define_sprite_resource,
         game::{
             character::{
-                animation::{AnimationResource, ResolvedAnimationRegistry},
+                animation::{AnimationResource, AnimationRegistry},
                 assets::{
                     CharacterRegistry, CharacterResource, CharacterSpriteRegistry,
                     CharacterSpriteResource,

@@ -1,4 +1,4 @@
-use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
+use crate::prelude::*;
 use crate::{AssetLoadState, AssetSystems};
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
@@ -12,8 +12,6 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
 use walkdir::WalkDir;
-use crate::data::loc::ResourceLocation;
-use crate::data::resource::{ResolvableResource, ResourceKind};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -27,11 +25,6 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         advance_from_loading_to_resolving
             .run_if(in_state(AssetLoadState::Loading)),
-    );
-
-    app.add_systems(
-        OnEnter(AssetLoadState::Resolving),
-        populate_resolved_assets.in_set(AssetSystems::PopulateResolvedAssets),
     );
 }
 
@@ -50,25 +43,17 @@ fn advance_from_loading_to_resolving(world: &mut World) {
     }
 }
 
-fn populate_resolved_assets(world: &mut World) {
-    let loader = world.resource::<GameAssetLoader>();
-    let jobs = loader.resolver_jobs.clone();
-    jobs.iter().for_each(|job| job.resolve(world).expect("Failed to resolve assets"));
-}
-
 /// Resource which holds a list of jobs to load assets
 /// The jobs retrieve the `ResourceRegistry` from the World,
 /// load each asset, then insert them into the registry
 #[derive(Default, Resource)]
 pub struct GameAssetLoader {
     loader_jobs: Vec<Arc<dyn RegistryLoader>>,
-    resolver_jobs: Vec<Arc<dyn RegistryResolver>>,
 }
 impl GameAssetLoader {
     pub fn new() -> Self {
         Self {
             loader_jobs: Vec::new(),
-            resolver_jobs: Vec::new(),
         }
     }
 
@@ -80,10 +65,6 @@ impl GameAssetLoader {
         self.loader_jobs.iter()
             .all(|job| job.is_loaded(world))
     }
-
-    pub fn _add_resolver_job<T: ResolvableResource>(&mut self) {
-        self.resolver_jobs.push(Arc::new(_ResolverJob::<T>::default()));
-    }
 }
 
 pub trait LoaderJobManager {
@@ -93,11 +74,6 @@ pub trait LoaderJobManager {
     fn add_registry_with_manifest<T: ResourceKind>(&mut self, manifest: Vec<ResourceLocation<T>>);
     /// Adds a job to the asset loader which will discover all assets in the registry automatically
     fn add_registry_with_discovery<T: ResourceKind>(&mut self);
-
-
-    fn add_resolved_registry<T: ResolvableResource>(&mut self);
-    fn add_resolved_registry_with_manifest<T: ResolvableResource>(&mut self, manifest: Vec<ResourceLocation<T>>);
-    fn add_resolved_registry_with_discovery<T: ResolvableResource>(&mut self);
 }
 
 impl LoaderJobManager for App {
@@ -158,30 +134,6 @@ impl LoaderJobManager for App {
 
         self.add_registry_with_manifest::<T>(manifest);
     }
-
-    fn add_resolved_registry<T: ResolvableResource>(&mut self) {
-        self.add_resource_registry::<T>();
-        insert_resolved_registry::<T>(self);
-    }
-
-    fn add_resolved_registry_with_manifest<T: ResolvableResource>(&mut self, manifest: Vec<ResourceLocation<T>>) {
-        self.add_registry_with_manifest::<T>(manifest);
-        insert_resolved_registry::<T>(self);
-    }
-
-    fn add_resolved_registry_with_discovery<T: ResolvableResource>(&mut self) {
-        self.add_registry_with_discovery::<T>();
-        insert_resolved_registry::<T>(self);
-    }
-}
-
-fn insert_resolved_registry<T: ResolvableResource>(app: &mut App) {
-    let world = app.world_mut();
-    world.insert_resource(ResolvedResourceRegistry::<T>::default());
-
-    // TODO: See if there is some way to automatically resolve assets?
-    let _asset_loader = world.resource_mut::<GameAssetLoader>();
-    //asset_loader.add_resolver_job::<T>();
 }
 
 trait RegistryLoader: Send + Sync + 'static {
@@ -226,28 +178,6 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
         registry
             .iter()
             .all(|(_, handle)| asset_server.is_loaded_with_dependencies(handle))
-    }
-}
-
-trait RegistryResolver: Send + Sync + 'static {
-    fn resolve(&self, world: &mut World) -> Result<(), LoaderError>;
-}
-
-#[derive(Debug)]
-struct _ResolverJob<T: ResolvableResource> {
-    phantom_data: PhantomData<T>,
-}
-impl<T: ResolvableResource> Default for _ResolverJob<T> {
-    fn default() -> Self {
-        Self { phantom_data: Default::default() }
-    }
-}
-impl<T: ResolvableResource> RegistryResolver for _ResolverJob<T> {
-    fn resolve(&self, world: &mut World) -> Result<(), LoaderError> {
-        let _partial_registry = world.resource::<ResourceRegistry<T>>();
-        let _resolved_registry = world.resource_mut::<ResolvedResourceRegistry<T>>();
-
-        todo!()
     }
 }
 

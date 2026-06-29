@@ -1,5 +1,4 @@
 use crate::data::prelude::*;
-use crate::data::registry::ResolvedSystemRegistry;
 use crate::game::character::assets::{CharacterData, CharacterResource};
 use crate::game::character::state::action_states::Idle;
 use crate::game::character::state::ActionStateTracker;
@@ -17,6 +16,7 @@ use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::data::loc;
+use crate::game::character::animation::AnimationContext;
 
 pub mod animation;
 pub mod health;
@@ -144,18 +144,18 @@ impl PrototypeBuilder for CharacterBuilder {
     ) -> Result<(), BevyError> {
         let data = context.get_character_data(&data_loc.0).ok_or(BevyError::error("Failed to find character data"))?;
 
-        let animation_registry = context.animation_registry().resolved_registry();
-        let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_registry));
+        let animation_context = context.animation_context();
+        let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_context));
 
         let state_capabilities = data.state_capabilities().clone();
 
         let animations =
-            data.resolve_animation_handles(context.animation_registry().resolved_registry());
+            data.resolve_animation_handles(context.animation_context());
         let idle_animation =
             animations.get(&TypeId::of::<Idle>()).cloned()
                 .expect("Failed to find idle animation for player character");
 
-        let animation_assets = context.animation_registry().resolved_assets();
+        let animation_assets = context.animation_context().resolved_assets();
         let animation_tracker =
             CharacterAnimationTracker::new(idle_animation, animation_assets);
         let sprite = animation_tracker.default_sprite(animation_assets);
@@ -180,7 +180,7 @@ pub struct CharacterBuilderContext<'w> {
     #[getset(get = "pub")]
     character_registry: SystemRegistry<'w, CharacterResource>,
     #[getset(get = "pub")]
-    animation_registry: ResolvedSystemRegistry<'w, AnimationResource>,
+    animation_context: AnimationContext<'w>,
     #[getset(get = "pub")]
     scale: Res<'w, Scale>
 }

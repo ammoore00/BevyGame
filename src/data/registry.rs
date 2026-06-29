@@ -2,7 +2,7 @@ use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet};
 use crate::data::loc::ResourceLocation;
-use crate::data::resource::{ResolvableResource, ResourceKind};
+use crate::data::resource::ResourceKind;
 // TODO: Change registry to dynamically register loaded assets instead of loading them all at once
 //       to support new BSN inline asset definitions
 
@@ -82,49 +82,7 @@ impl<T: ResourceKind> IntoIterator for ResourceRegistry<T> {
     }
 }
 
-#[derive(Debug, Resource)]
-pub struct ResolvedResourceRegistry<T: ResolvableResource> {
-    registry: HashMap<ResourceLocation<T>, Handle<T::ResolvedAssetType>>,
-}
-impl<T: ResolvableResource> ResolvedResourceRegistry<T> {
-    /// Inserts a resource location and asset handle into the registry after the asset has been loaded
-    pub fn register_asset(&mut self, loc: ResourceLocation<T>, handle: Handle<T::ResolvedAssetType>) {
-        self.registry.insert(loc, handle);
-    }
-    
-    pub fn get(&self, loc: &ResourceLocation<T>) -> Option<&Handle<T::ResolvedAssetType>> {
-        self.registry.get(loc)
-    }
-
-    pub fn handles(&self) -> impl Iterator<Item = &Handle<T::ResolvedAssetType>> {
-        self.registry.values()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (&ResourceLocation<T>, &Handle<T::ResolvedAssetType>)> {
-        self.registry.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&ResourceLocation<T>, &mut Handle<T::ResolvedAssetType>)> {
-        self.registry.iter_mut()
-    }
-}
-impl<T: ResolvableResource> Default for ResolvedResourceRegistry<T> {
-    fn default() -> Self {
-        Self {
-            registry: Default::default(),
-        }
-    }
-}
-impl<T: ResolvableResource> IntoIterator for ResolvedResourceRegistry<T> {
-    type Item = (ResourceLocation<T>, Handle<T::ResolvedAssetType>);
-    type IntoIter = std::collections::hash_map::IntoIter<ResourceLocation<T>, Handle<T::ResolvedAssetType>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.registry.into_iter()
-    }
-}
-
-macro_rules! registry_read_only_impl {
+macro_rules! registry_impl {
     (
         impl<$type_param:ident : $bound:path> $system_param:ident {
             $handle_fn:ident,
@@ -152,34 +110,6 @@ macro_rules! registry_read_only_impl {
     };
 }
 
-macro_rules! resolved_registry_read_only_impl {
-    (
-        impl<$type_param:ident : $bound:path> $system_param:ident {
-            $resolved_handle_fn:ident,
-            $resolved_asset_fn:ident,
-            $resolved_asset_from_handle_fn:ident,
-        }
-    ) => {
-        impl<$type_param: $bound> $system_param<'_, $type_param> {
-            #[allow(unused)]
-            pub fn $resolved_handle_fn(&self, id: &ResourceLocation<$type_param>) -> Option<Handle<$type_param::ResolvedAssetType>> {
-                self.resolved_registry.registry.get(&id).cloned()
-            }
-
-            #[allow(unused)]
-            pub fn $resolved_asset_fn(&self, id: &ResourceLocation<$type_param>) -> Option<&$type_param::ResolvedAssetType> {
-                let handle = self.$resolved_handle_fn(id);
-                handle.and_then(|handle| self.$resolved_asset_from_handle_fn(handle))
-            }
-
-            #[allow(unused)]
-            pub fn $resolved_asset_from_handle_fn(&self, handle: Handle<$type_param::ResolvedAssetType>) -> Option<&$type_param::ResolvedAssetType> {
-                self.resolved_assets.get(handle.id())
-            }
-        }
-    };
-}
-
 #[derive(SystemParam, getset::Getters)]
 pub struct SystemRegistry<'w, T: ResourceKind> {
     #[getset(get = "pub")]
@@ -187,7 +117,7 @@ pub struct SystemRegistry<'w, T: ResourceKind> {
     #[getset(get = "pub")]
     assets: Res<'w, Assets<<T as ResourceKind>::AssetKind>>,
 }
-registry_read_only_impl!(
+registry_impl!(
     impl<T: ResourceKind> SystemRegistry {
         get_handle,
         get_asset,
@@ -202,7 +132,7 @@ pub struct SystemRegistryMut<'w, T: ResourceKind> {
     #[getset(get = "pub", get_mut = "pub")]
     assets: ResMut<'w, Assets<<T as ResourceKind>::AssetKind>>,
 }
-registry_read_only_impl!(
+registry_impl!(
     impl<T: ResourceKind> SystemRegistryMut {
         get_handle,
         get_asset,
@@ -219,66 +149,3 @@ impl<T: ResourceKind> SystemRegistryMut<'_, T> {
         (&mut self.registry, &mut self.assets)
     }
 }
-
-#[derive(SystemParam, getset::Getters)]
-pub struct ResolvedSystemRegistry<'w, T: ResolvableResource> {
-    #[getset(get = "pub")]
-    registry: Res<'w, ResourceRegistry<T>>,
-    #[getset(get = "pub")]
-    resolved_registry: Res<'w, ResolvedResourceRegistry<T>>,
-    #[getset(get = "pub")]
-    assets: Res<'w, Assets<<T as ResourceKind>::AssetKind>>,
-    #[getset(get = "pub")]
-    resolved_assets: Res<'w, Assets<<T as ResolvableResource>::ResolvedAssetType>>,
-}
-registry_read_only_impl!(
-    impl<T: ResolvableResource> ResolvedSystemRegistry {
-        get_partial_handle,
-        get_partial_asset,
-        get_partial_asset_from_handle,
-    }
-);
-resolved_registry_read_only_impl!(
-    impl<T: ResolvableResource> ResolvedSystemRegistry {
-        get_resolved_handle,
-        get_resolved_asset,
-        get_resolved_asset_from_handle,
-    }
-);
-
-#[derive(SystemParam, getset::Getters, getset::MutGetters)]
-pub struct ResolvedSystemRegistryMut<'w, T: ResolvableResource> {
-    #[getset(get = "pub", get_mut = "pub")]
-    registry: ResMut<'w, ResourceRegistry<T>>,
-    #[getset(get = "pub", get_mut = "pub")]
-    resolved_registry: ResMut<'w, ResolvedResourceRegistry<T>>,
-    #[getset(get = "pub", get_mut = "pub")]
-    assets: ResMut<'w, Assets<<T as ResourceKind>::AssetKind>>,
-    #[getset(get = "pub", get_mut = "pub")]
-    resolved_assets: ResMut<'w, Assets<<T as ResolvableResource>::ResolvedAssetType>>,
-}
-impl<T: ResolvableResource> ResolvedSystemRegistryMut<'_, T> {
-    pub fn split(
-        &mut self,
-    ) -> (
-        &mut ResourceRegistry<T>,
-        &mut ResolvedResourceRegistry<T>,
-        &mut Assets<T::AssetKind>,
-    ) {
-        (&mut self.registry, &mut self.resolved_registry, &mut self.assets)
-    }
-}
-registry_read_only_impl!(
-    impl<T: ResolvableResource> ResolvedSystemRegistryMut {
-        get_partial_handle,
-        get_partial_asset,
-        get_partial_asset_from_handle,
-    }
-);
-resolved_registry_read_only_impl!(
-    impl<T: ResolvableResource> ResolvedSystemRegistryMut {
-        get_resolved_handle,
-        get_resolved_asset,
-        get_resolved_asset_from_handle,
-    }
-);
