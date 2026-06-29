@@ -1,4 +1,4 @@
-use crate::data::ResourceLocation;
+use crate::data::loc::ResourceLocation;
 use crate::datagen_api::tile::assets::TileSpriteRegistry;
 use crate::game::level::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use crate::game::level::grid::tile::assets::TileLayout;

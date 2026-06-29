@@ -1,7 +1,7 @@
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::registry::{ResolvedResourceRegistry, ResolvedSystemRegistry, ResolvedSystemRegistryMut, SystemRegistry};
 use crate::data::sprite::TextureAtlasCodec;
-use crate::data::{ResourceFileType, ResourceLocation};
+use crate::data::resource::ResourceFileType;
 use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::datagen_api::attack::AttackResource;
 use crate::game::character::state::action_states::Attacking;
@@ -17,6 +17,7 @@ use std::any::TypeId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Duration;
+use crate::data::loc::ResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<PartialAnimationData>();

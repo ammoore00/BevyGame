@@ -1,6 +1,6 @@
 pub mod ai;
 
-use crate::data::ResourceLocation;
+use crate::data::loc::ResourceLocation;
 use crate::datagen_api::assets::CharacterResource;
 use crate::marker;
 use bevy::prelude::*;

@@ -1,6 +1,6 @@
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::registry::{ResolvedSystemRegistry, SystemRegistry};
-use crate::data::{ResourceFileType, ResourceLocation};
+use crate::data::resource::ResourceFileType;
 use crate::datagen_api::animation::AnimationResource;
 use crate::datagen_api::assets::CharacterSpriteResource;
 use crate::define_data_resource;
@@ -9,6 +9,7 @@ use bevy::prelude::*;
 use getset::{CopyGetters, Getters};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use crate::data::loc::ResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AttackDefinition>();

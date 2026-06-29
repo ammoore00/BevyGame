@@ -1,7 +1,8 @@
-use crate::data::{ResourceKind, ResourceLocation};
+use crate::data::resource::ResourceKind;
 use bevy::ecs::query::QueryItem;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use crate::data::loc::ResourceLocation;
 
 /// Used to prevent construction of marker outside of proper systems
 pub struct PrototypeMarkerToken(());

@@ -1,7 +1,7 @@
 //! The credits menu.
 
 use crate::audio::AudioResource;
-use crate::data::loc;
+use crate::data::loc::loc;
 use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widgets;
 use crate::theme::widgets::{button, text};

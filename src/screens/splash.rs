@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::data::loc;
+use crate::data::prelude::*;
 use crate::theme::widgets;
 use crate::theme::widgets::UiSpriteResource;
 use crate::{screens::Screen, AppSystems};

@@ -1,4 +1,4 @@
-use crate::data::loc;
+use crate::data::prelude::*;
 use crate::theme::interaction::{BackgroundInteractionPalette, SpriteInteractionPalette};
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widgets::text::LARGE_FONT_SIZE;

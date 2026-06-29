@@ -1,6 +1,6 @@
 //! Player-specific behavior.
 
-use crate::data::{loc, ResourceLocation};
+use crate::data::prelude::*;
 use crate::datagen_api::assets::{CharacterResource, CharacterSpriteResource};
 use crate::datagen_api::attack::{AttackContext, AttackResource};
 //use crate::game::object::Shadow;

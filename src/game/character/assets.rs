@@ -1,6 +1,6 @@
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
 use crate::data::registry::ResolvedResourceRegistry;
-use crate::data::{ResourceFileType, ResourceLocation};
+use crate::data::resource::ResourceFileType;
 use crate::datagen_api::animation::{AnimationResource, ResolvedAnimationData};
 use crate::datagen_api::attack::{AttackContext, AttackSetResource};
 use crate::datagen_api::components::{CapsuleCodec, ColliderTypeCodec};
@@ -15,6 +15,7 @@ use maybe_fields_macro::maybe_fields;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
+use crate::data::loc::ResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterSpriteResource>();

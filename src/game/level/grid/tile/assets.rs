@@ -1,5 +1,5 @@
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
-use crate::data::{ResourceFileType, ResourceLocation};
+use crate::data::resource::ResourceFileType;
 use crate::datagen_api::tile::TileShape;
 use crate::define_data_resource;
 use crate::{define_sprite_resource, AssetSystems};
@@ -7,6 +7,7 @@ use bevy::prelude::*;
 use maybe_fields_macro::maybe_fields;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
+use crate::data::loc::ResourceLocation;
 
 pub(in crate::game) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();

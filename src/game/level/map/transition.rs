@@ -1,4 +1,4 @@
-use crate::data::ResourceLocation;
+use crate::data::loc::ResourceLocation;
 use crate::datagen_api::room::RoomResource;
 use bevy::prelude::*;
 

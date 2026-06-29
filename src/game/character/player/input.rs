@@ -1,4 +1,4 @@
-use crate::data::ResourceLocation;
+use crate::data::loc::ResourceLocation;
 use crate::datagen_api::attack::{AttackDefinition, AttackRegistry, AttackResource};
 use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::game::character::stamina::Stamina;

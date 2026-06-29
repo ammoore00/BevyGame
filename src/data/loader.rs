@@ -1,5 +1,4 @@
 use crate::data::registry::{ResolvedResourceRegistry, ResourceRegistry, SystemRegistry};
-use crate::data::{ResolvableResource, ResourceLocation, ResourceKind};
 use crate::{AssetLoadState, AssetSystems};
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
@@ -13,6 +12,8 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
 use walkdir::WalkDir;
+use crate::data::loc::ResourceLocation;
+use crate::data::resource::{ResolvableResource, ResourceKind};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

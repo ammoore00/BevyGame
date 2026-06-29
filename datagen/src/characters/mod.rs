@@ -3,13 +3,13 @@ mod test_npc;
 mod ai;
 
 use std::collections::HashMap;
-use bevy_game_2d::data::{ResourceLocation, ResourceKind};
+use bevy_game_2d::data::resource::ResourceKind;
+use bevy_game_2d::data::loc::ResourceLocation;
 use bevy_game_2d::data::sprite::TextureAtlasCodec;
-use bevy_game_2d::datagen_api::ai::{AiGraphCodec, AiGraphResource, AiStateCodec, AiStateResource};
 use bevy_game_2d::datagen_api::animation::{AnimationCodec, AnimationResource, FrameDataCodec};
 use bevy_game_2d::datagen_api::assets::{ActionStateEnum, AllowedStatesCodec, CharacterCodec, CharacterResource, CharacterSpriteResource};
 use bevy_game_2d::datagen_api::attack::{AttackCodec, AttackResource, AttackSetCodec, AttackSetResource};
-use bevy_game_2d::datagen_api::components::{CapsuleCodec, ColliderCodec, ColliderTypeCodec};
+use bevy_game_2d::datagen_api::components::{ColliderCodec, ColliderTypeCodec};
 use crate::{create_dir, write_data, WriteError};
 use crate::characters::ai::generate_generic_ai_data;
 use crate::characters::player::generate_player;

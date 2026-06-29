@@ -17,6 +17,7 @@ use std::any::TypeId;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use crate::data::loc;
 
 pub mod animation;
 pub mod health;
@@ -74,7 +75,7 @@ impl PrototypeFinalizedMarker for Character {
 pub struct CharacterDataLocation(ResourceLocation<CharacterResource>);
 impl Default for CharacterDataLocation {
     fn default() -> Self {
-        Self(loc::<CharacterResource>("placeholder").unwrap())
+        Self(loc::loc::<CharacterResource>("placeholder").unwrap())
     }
 }
 impl From<CharacterDataLocation> for ResourceLocation<CharacterResource> {
@@ -93,7 +94,7 @@ impl Default for CharacterProps {
         Self {
             position: Vec3::ZERO,
             max_speed: DEFAULT_MAX_SPEED,
-            data_loc: loc::<CharacterResource>("placeholder").unwrap(),
+            data_loc: loc::loc::<CharacterResource>("placeholder").unwrap(),
         }
     }
 }

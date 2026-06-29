@@ -1,4 +1,4 @@
-use crate::data::{AnyResourceLocation, ResourceKind};
+use crate::data::resource::ResourceKind;
 use crate::datagen_api::animation::{AnimationCodec, AnimationResource};
 use crate::datagen_api::assets::{CharacterCodec, CharacterResource};
 use crate::datagen_api::attack::{AttackCodec, AttackResource};
@@ -12,6 +12,7 @@ use getset::Getters;
 use std::any::TypeId;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
+use crate::data::loc::AnyResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<FileManager>();

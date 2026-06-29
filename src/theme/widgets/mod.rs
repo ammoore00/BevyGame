@@ -1,5 +1,4 @@
-use crate::data::{loc, ResourceFileType};
-use crate::define_sprite_resource;
+use crate::data::prelude::*;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;

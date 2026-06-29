@@ -4,7 +4,7 @@ pub mod grid;
 pub mod map;
 
 use crate::audio::AudioResource;
-use crate::data::loc;
+use crate::data::prelude::*;
 use crate::game::character::npc::npc_bundle;
 use crate::game::character::player::player;
 use crate::game::level::grid::nav::NavContext;

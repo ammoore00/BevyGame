@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use crate::data::registry::ResourceRegistry;
-use crate::data::{ResourceFileType, ResourceKind, ResourceLocation};
 use crate::data::loader::LoaderJobManager;
+use crate::data::loc::ResourceLocation;
+use crate::data::resource::{ResourceFileType, ResourceKind};
 use crate::theme::palette::{HEADER_TEXT, LABEL_TEXT};
 
 pub(crate) fn plugin(app: &mut App) {
