@@ -15,6 +15,8 @@ mod theme;
 pub mod datagen_api;
 pub mod data;
 
+use bevy::feathers::FeathersPlugins;
+use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
 
 pub struct AppPlugin;
@@ -41,6 +43,7 @@ impl Plugin for AppPlugin {
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
+            DirectionalNavigationPlugin,
         ));
 
         // Add other plugins.
@@ -105,7 +108,10 @@ impl Plugin for AppPlugin {
         #[cfg(feature = "dev")]
         {
             info!("Dev tools enabled");
-            app.add_plugins(dev_tools::plugin);
+            app.add_plugins((
+                FeathersPlugins,
+                dev_tools::plugin,
+            ));
         }
     }
 }

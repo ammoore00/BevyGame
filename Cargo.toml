@@ -29,6 +29,9 @@ bevy = { version = "0.19", default-features = false, features = [
     "sysinfo_plugin",
     "trace",
 
+    # UI and input
+    "system_clipboard",
+
     # Gamepad functionality
     "bevy_gilrs",
     "bevy_input_focus",
@@ -92,6 +95,7 @@ dev = [
 
     "bevy/bevy_dev_tools",
     "bevy/bevy_ui_debug",
+    "bevy/bevy_feathers",
 
     "bevy_mod_debugdump",
     "graphviz-rust",
