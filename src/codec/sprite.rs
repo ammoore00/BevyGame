@@ -3,7 +3,7 @@ use bevy::image::TextureAtlasLayout;
 use bevy::math::UVec2;
 use bevy::prelude::TypePath;
 use serde::{Deserialize, Serialize};
-use maybe_fields_macro::maybe_fields;
+use maybe_fields::maybe_fields;
 
 #[maybe_fields]
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

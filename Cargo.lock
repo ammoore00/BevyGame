@@ -835,7 +835,7 @@ dependencies = [
  "getrandom 0.4.2",
  "getset",
  "graphviz-rust",
- "maybe_fields_macro",
+ "maybe_fields",
  "parry3d",
  "paste",
  "rand 0.10.1",
@@ -3627,7 +3627,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "maybe_fields_macro"
+name = "maybe_fields"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",

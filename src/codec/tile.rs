@@ -3,7 +3,7 @@ use crate::data::loc::ResourceLocation;
 use crate::data::prelude::*;
 use crate::game::level::grid::tile::TileShape;
 use bevy::prelude::TypePath;
-use maybe_fields_macro::maybe_fields;
+use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
 
 #[maybe_fields]
