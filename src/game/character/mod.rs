@@ -1,6 +1,5 @@
 use crate::data::prelude::*;
 use crate::data::registry::ResolvedSystemRegistry;
-use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::assets::{CharacterData, CharacterResource};
 use crate::game::character::state::action_states::Idle;
 use crate::game::character::state::ActionStateTracker;
@@ -16,6 +15,7 @@ use std::any::TypeId;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::data::loc;
 
 pub mod animation;

@@ -19,6 +19,14 @@ mod menus;
 mod screens;
 mod theme;
 
+mod prelude {
+    pub use crate::{
+        data::prelude::*,
+        AppSystems, AssetSystems, PausableSystems
+    };
+    pub use bevy::prelude::*;
+}
+
 pub mod datagen_api {
     pub use crate::{
         codec::*,
@@ -123,7 +131,7 @@ impl Plugin for AppPlugin {
 /// When adding a new variant, make sure to order it in the `configure_sets`
 /// call above.
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-enum AppSystems {
+pub enum AppSystems {
     /// Tick timers.
     TickTimers,
     /// Record player input.
@@ -135,7 +143,7 @@ enum AppSystems {
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-enum AssetSystems {
+pub enum AssetSystems {
     /// Register which assets need to be loaded
     RegisterManifests,
     /// Load the assets themselves based on registered manifests
@@ -164,7 +172,7 @@ struct Pause(pub bool);
 
 /// A system set for systems that shouldn't run while the game is paused.
 #[derive(SystemSet, Copy, Clone, Eq, PartialEq, Hash, Debug)]
-struct PausableSystems;
+pub struct PausableSystems;
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((

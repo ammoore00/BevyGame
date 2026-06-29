@@ -8,6 +8,8 @@ use std::any::{Any, TypeId};
 use std::fmt::Debug;
 use tracing::warn;
 
+// TODO: Split this file into multiple files
+
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
     app.add_observer(on_state_change);
