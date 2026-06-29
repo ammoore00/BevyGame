@@ -4,7 +4,7 @@ use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
 use crate::game::level::map::palette::Palette;
 use crate::game::level::map::room::RoomBuilderContext;
-use crate::{data, register_prototype_system};
+use crate::register_prototype_system;
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::prelude::*;
 use getset::CopyGetters;

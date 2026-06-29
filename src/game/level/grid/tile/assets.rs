@@ -1,8 +1,8 @@
 use crate::data::loader::{LoaderJobManager, Maybe, RonAssetLoader};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::datagen_api::tile::TileShape;
-use crate::{data, define_data_resource};
-use crate::{define_resource, define_sprite_resource, AssetSystems};
+use crate::define_data_resource;
+use crate::{define_sprite_resource, AssetSystems};
 use bevy::prelude::*;
 use maybe_fields_macro::maybe_fields;
 use serde::{Deserialize, Serialize};

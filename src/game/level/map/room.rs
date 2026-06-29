@@ -1,8 +1,6 @@
-use crate::data;
 use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::datagen_api::tile::assets::TileSpriteRegistry;
-use crate::define_resource;
 use crate::game::level::grid;
 use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource};

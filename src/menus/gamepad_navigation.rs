@@ -1,10 +1,9 @@
 use crate::audio::sound_effect;
 use crate::theme::interaction::InteractionAssets;
 use crate::theme::prelude::SpriteInteractionPalette;
+use crate::theme::widgets::button::ButtonImpl;
 use bevy::camera::NormalizedRenderTarget;
-use bevy::input_focus::directional_navigation::{
-    DirectionalNavigation, DirectionalNavigationPlugin,
-};
+use bevy::input_focus::directional_navigation::DirectionalNavigation;
 use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::math::CompassOctant;
 use bevy::picking::backend::HitData;
@@ -12,7 +11,6 @@ use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use std::time::Duration;
-use crate::theme::widgets::button::ButtonImpl;
 
 pub fn plugin(app: &mut App) {
     app

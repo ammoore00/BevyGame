@@ -1,9 +1,7 @@
 pub mod pathfinding;
 
-use crate::data;
 use crate::data::{ResourceFileType, ResourceLocation};
 use crate::define_data_resource;
-use crate::define_resource;
 use crate::game::character::npc::ai::pathfinding::pathfinder_scene;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};

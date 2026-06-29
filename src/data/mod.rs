@@ -290,12 +290,12 @@ impl ResourceFileType {
 macro_rules! define_resource {
     ($name:ident, $path:expr, $asset_type:ty, $file_type:expr) => {
         paste::paste! {
-            pub type [<$name Registry>] = data::registry::ResourceRegistry<[<$name Resource>]>;
+            pub type [<$name Registry>] = $crate::data::registry::ResourceRegistry<[<$name Resource>]>;
 
             #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
             pub struct [<$name Resource>];
 
-            impl data::ResourceKind for [<$name Resource>] {
+            impl $crate::data::ResourceKind for [<$name Resource>] {
                 type AssetKind = $asset_type;
 
                 const ROOT_DIR: &'static str = $path;
@@ -309,7 +309,7 @@ macro_rules! define_resource {
 macro_rules! define_data_resource {
     ($name:ident, $path:literal, $asset_type:ty) => {
         paste::paste! {
-            define_resource!($name, const_format::concatcp!("data/", $path), $asset_type, ResourceFileType::Data);
+            $crate::define_resource!($name, const_format::concatcp!("data/", $path), $asset_type, ResourceFileType::Data);
         }
     }
 }
@@ -318,11 +318,11 @@ macro_rules! define_data_resource {
 macro_rules! define_resolvable_resource {
     ($name:ident, $path:literal, $asset_type:ty, $resolved_asset_type:ty) => {
         paste::paste! {
-            define_data_resource!($name, $path, $asset_type);
+            $crate::define_data_resource!($name, $path, $asset_type);
 
-            pub type [<Resolved $name Registry>] = data::registry::ResolvedResourceRegistry<[<$name Resource>]>;
+            pub type [<Resolved $name Registry>] = $crate::data::registry::ResolvedResourceRegistry<[<$name Resource>]>;
 
-            impl data::ResolvableResource for [<$name Resource>] {
+            impl $crate::data::ResolvableResource for [<$name Resource>] {
                 type ResolvedAssetType = $resolved_asset_type;
             }
         }

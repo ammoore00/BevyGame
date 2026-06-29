@@ -1,4 +1,3 @@
-use crate::data;
 use crate::data::{loc, ResourceFileType};
 use crate::define_sprite_resource;
 use bevy::ecs::template::OptionTemplate;

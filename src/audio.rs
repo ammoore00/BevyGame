@@ -1,5 +1,4 @@
 use bevy::asset::HandleTemplate;
-use crate::data;
 use crate::data::loader::LoaderJobManager;
 use crate::data::ResourceFileType;
 use crate::define_resource;
