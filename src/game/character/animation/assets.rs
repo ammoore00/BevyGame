@@ -1,7 +1,7 @@
 use crate::codec::{AnimationCodec, FrameDataCodec};
 use crate::game::character::animation::components::AnimationStateMap;
-use crate::game::character::state::action_states::Attacking;
-use crate::game::character::state::ActionStateTracker;
+use crate::game::character::state::states::Attacking;
+use crate::game::character::state::tracking::ActionStateTracker;
 use crate::prelude::*;
 use crate::{AssetLoadState};
 use getset::{CloneGetters, Getters};
@@ -14,7 +14,7 @@ pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AnimationData>();
     app.init_asset_loader::<RonAssetLoader<AnimationCodec, PartialAnimationData>>();
     app.add_registry_with_discovery::<AnimationResource>();
-    
+
     app.add_systems(
         OnEnter(AssetLoadState::Resolving),
         resolve_animation_data.in_set(AssetSystems::ResolveAssets)
@@ -72,7 +72,7 @@ pub fn resolve_animation_data(
     if *resolved {
         return;
     }
-    
+
     info!("RESOLVING ANIMATIONS");
 
     let (
@@ -203,11 +203,11 @@ impl AnimationContext<'_> {
 
         partial_data.resolved_handle.clone().ok_or(AnimationContextError::ResolvedAssetMissing)
     }
-    
+
     pub fn get_data_from_handle(&self, handle: Handle<AnimationData>) -> Result<&AnimationData, AnimationContextError> {
         self.resolved_assets.get(&handle).ok_or(AnimationContextError::NonexistentResolvedAsset)
     }
-    
+
     pub fn get_data(&self, loc: &ResourceLocation<AnimationResource>) -> Result<&AnimationData, AnimationContextError> {
         let handle = self.get_handle(loc)?;
         self.get_data_from_handle(handle)

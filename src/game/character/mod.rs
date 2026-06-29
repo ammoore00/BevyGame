@@ -1,7 +1,7 @@
 use crate::data::prelude::*;
 use crate::game::character::assets::{CharacterData, CharacterResource};
-use crate::game::character::state::action_states::Idle;
-use crate::game::character::state::ActionStateTracker;
+use crate::game::character::state::states::Idle;
+use state::tracking::ActionStateTracker;
 use crate::game::level::grid::coords::WorldPosition;
 use crate::game::physics::components::PhysicsData;
 use crate::game::physics::movement::{MovementController, DEFAULT_MAX_SPEED};

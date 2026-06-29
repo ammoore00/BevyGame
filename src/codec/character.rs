@@ -1,7 +1,7 @@
 use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderKindCodec};
 use crate::data::loader::Maybe;
 use crate::data::prelude::*;
-use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
+use crate::game::character::state::states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
 use bevy::prelude::TypePath;
 use maybe_fields_macro::maybe_fields;
 use serde::{Deserialize, Serialize};

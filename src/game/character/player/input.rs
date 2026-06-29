@@ -1,10 +1,9 @@
 use crate::data::prelude::*;
 use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::game::character::stamina::Stamina;
-use crate::game::character::state::action_states::{Attacking, Idle, Running, Sprinting, Walking};
-use crate::game::character::state::state_transitions::ActionStateCapabilities;
-use crate::game::character::state::{is_in_movement_state, ActionState, ActionStateTracker, ActionStateEvent};
-use crate::game::character::{state, Character, Facing};
+use crate::game::character::state::states::{Attacking, Idle, Running, Sprinting, Walking};
+use crate::game::character::state::capabilities::ActionStateCapabilities;
+use crate::game::character::{Character, Facing};
 use crate::game::level::grid::coords::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, WorldPosition};
 use crate::game::physics::components::PhysicsData;
 use crate::game::physics::movement::MovementController;
@@ -14,6 +13,8 @@ use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
 use std::any::TypeId;
 use crate::game::character::attack::AttackDefinition;
+use crate::game::character::state::tracking;
+use crate::game::character::state::tracking::{is_in_movement_state, ActionState, ActionStateEvent, ActionStateTracker};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -146,7 +147,7 @@ fn record_player_movement_input(world: &mut World) {
     for entity in entities {
         // Get the current state
         let tracker = world.get::<ActionStateTracker>(entity).cloned().unwrap();
-        let Some(prev_state) = state::get_state(entity, &tracker, world) else {
+        let Some(prev_state) = tracking::get_state(entity, &tracker, world) else {
             warn!("Failed to get reflect component for entity {}", entity);
             continue;
         };
@@ -287,7 +288,7 @@ fn record_action_input(world: &mut World) {
     let prev_state = {
         let state_tracker = world.get::<ActionStateTracker>(player).cloned().unwrap();
 
-        let Some(prev_state) = state::get_state(player, &state_tracker, world) else {
+        let Some(prev_state) = tracking::get_state(player, &state_tracker, world) else {
             error!("Failed to get reflect component for entity {}", player);
             return;
         };

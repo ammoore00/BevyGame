@@ -1,8 +1,8 @@
 use crate::prelude::*;
 use crate::game::character::animation::assets::AnimationData;
 use crate::game::character::animation::{assets, AnimationContext, AnimationStateMap, CharacterAnimationTracker};
-use crate::game::character::state::action_states::Attacking;
-use crate::game::character::state::ActionStateTracker;
+use crate::game::character::state::states::Attacking;
+use crate::game::character::state::tracking::ActionStateTracker;
 use crate::game::character::Facing;
 use tracing::warn;
 use crate::screens::Screen;
