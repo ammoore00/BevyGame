@@ -26,7 +26,7 @@ fn spawn_gameplay_loading_screen() -> impl Scene {
     bsn! [
         #LoadingScreen
         widgets::ui_root()
-        DespawnOnExit<Screen>(Screen::Loading({&Screen::Editor}))
+        DespawnOnExit<Screen>(Screen::Loading({&Screen::Gameplay}))
         Children [text::label("Loading...")]
     ]
 }

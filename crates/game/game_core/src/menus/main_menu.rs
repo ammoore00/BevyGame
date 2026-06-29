@@ -43,6 +43,7 @@ fn enter_loading_or_gameplay_screen(
     }
 }
 
+#[cfg(feature = "dev")]
 fn enter_loading_or_editor_screen(
     _: On<Pointer<Click>>,
     resource_handles: Res<ResourceHandles>,

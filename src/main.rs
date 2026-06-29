@@ -2,8 +2,9 @@ use std::env;
 use std::fs::{create_dir_all, File};
 use std::io::Write;
 use bevy::prelude::*;
+#[cfg(feature = "dev")]
 use bevy_mod_debugdump::schedule_graph;
-use bevy_game_2d::AppPlugin;
+use game_core::AppPlugin;
 
 fn main() -> AppExit {
     let mut app = App::new();

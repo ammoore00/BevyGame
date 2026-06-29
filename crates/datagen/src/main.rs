@@ -1,7 +1,7 @@
 use crate::characters::generate_characters;
 use crate::room::generate_rooms;
 use crate::tiles::generate_tiles;
-use bevy_game_2d::datagen_api::*;
+use game_core::datagen_api::*;
 use serde::Serialize;
 use std::fs::OpenOptions;
 use std::io::Write;

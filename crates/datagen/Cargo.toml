@@ -4,11 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy_game_2d = { path = "../.." }
+game_core = { path = "../game/game_core" }
 thiserror = "2.0.17"
 ron = "0.10.1"
 serde = { version = "1.0.228", features = ["derive"] }
-derive-new = "0.7.0"
 getset = "0.1.6"
 
 tracing = { version = "0.1", features = [

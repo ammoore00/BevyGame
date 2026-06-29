@@ -13,7 +13,7 @@ pub(crate) fn plugin(app: &mut App) {
         &mut app.world_mut().resource_mut(),
         AssetId::default(),
         Font {
-            data: include_bytes!("../../../assets/base/fonts/bold_pixels.ttf")
+            data: include_bytes!("../../../../../../assets/base/fonts/bold_pixels.ttf")
                 .to_vec()
                 .into(),
             alias: "bold_pixels".to_string(),

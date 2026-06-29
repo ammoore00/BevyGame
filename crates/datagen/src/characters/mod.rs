@@ -2,7 +2,7 @@ mod player;
 mod test_npc;
 
 use std::collections::HashMap;
-use bevy_game_2d::datagen_api::*;
+use game_core::datagen_api::*;
 use crate::{create_dir, write_data, WriteError};
 use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;

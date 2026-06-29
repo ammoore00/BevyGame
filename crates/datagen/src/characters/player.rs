@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use bevy_game_2d::datagen_api::*;
+use game_core::datagen_api::*;
 use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
 use crate::WriteError;
 

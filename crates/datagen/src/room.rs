@@ -1,4 +1,4 @@
-use bevy_game_2d::datagen_api::*;
+use game_core::datagen_api::*;
 use crate::{create_dir, write_data, WriteError};
 
 pub fn generate_rooms() -> Result<(), WriteError> {

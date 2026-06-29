@@ -3,6 +3,7 @@
 // Disable console on Windows for non-dev builds.
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
+#[cfg(feature = "dev")]
 use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
