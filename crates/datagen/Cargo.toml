@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-game_core = { path = "../game/game_core" }
-game_data = { path = "../game/game_data" }
+app = { path = "../game/app" }
+data = { path = "../game/data" }
 
 thiserror = "2.0.17"
 ron = "0.10.1"

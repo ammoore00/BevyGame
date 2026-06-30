@@ -8,7 +8,7 @@ edition = "2024"
 members = [
     ".",
     "crates/datagen",
-    "crates/game/game_core", "crates/game/game_data",
+    "crates/game/app", "crates/game/data", "crates/game/physics",
     "crates/macros/maybe_fields",
 ]
 resolver = "2"
@@ -54,6 +54,9 @@ getset = "0.1.6"
 regex = "1.12.3"
 thiserror = "2.0.17"
 
+data = { path = "crates/game/data" }
+maybe_fields = { path = "crates/macros/maybe_fields" }
+
 [features]
 # Default to a native dev build.
 default = ["dev_native"]
@@ -79,12 +82,12 @@ dev_native = [
 ]
 
 [dependencies]
-game_core = { path = "crates/game/game_core", features = ["dev"] }
-
 bevy = { workspace = true }
 
 bevy_mod_debugdump = { version = "0.16.0", optional = true }
 graphviz-rust = { version = "0.9.8", optional = true }
+
+app = { path = "crates/game/app", features = ["dev"] }
 
 
 # Compile with Performance Optimizations:

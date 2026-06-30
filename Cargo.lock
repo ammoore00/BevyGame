@@ -193,6 +193,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
+name = "app"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "const_format",
+ "crossbeam",
+ "data",
+ "derive-new",
+ "getrandom 0.4.2",
+ "getset",
+ "maybe_fields",
+ "parry3d",
+ "paste",
+ "rand 0.10.1",
+ "regex",
+ "ron 0.12.1",
+ "serde",
+ "thiserror 2.0.17",
+ "tracing",
+ "walkdir",
+]
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -825,9 +848,9 @@ dependencies = [
 name = "bevy_game_2d"
 version = "0.1.0"
 dependencies = [
+ "app",
  "bevy",
  "bevy_mod_debugdump",
- "game_core",
  "graphviz-rust",
 ]
 
@@ -2367,6 +2390,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
 
 [[package]]
+name = "data"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "getset",
+ "regex",
+ "serde",
+ "thiserror 2.0.17",
+ "walkdir",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2376,8 +2411,8 @@ checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 name = "datagen"
 version = "0.1.0"
 dependencies = [
- "game_core",
- "game_data",
+ "app",
+ "data",
  "getset",
  "ron 0.10.1",
  "serde",
@@ -2820,41 +2855,6 @@ dependencies = [
  "futures-task",
  "pin-project-lite",
  "slab",
-]
-
-[[package]]
-name = "game_core"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "const_format",
- "crossbeam",
- "derive-new",
- "game_data",
- "getrandom 0.4.2",
- "getset",
- "maybe_fields",
- "parry3d",
- "paste",
- "rand 0.10.1",
- "regex",
- "ron 0.12.1",
- "serde",
- "thiserror 2.0.17",
- "tracing",
- "walkdir",
-]
-
-[[package]]
-name = "game_data"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "getset",
- "regex",
- "serde",
- "thiserror 2.0.17",
- "walkdir",
 ]
 
 [[package]]
@@ -4566,6 +4566,14 @@ dependencies = [
  "indexmap",
  "serde",
  "serde_derive",
+]
+
+[[package]]
+name = "physics"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "parry3d",
 ]
 
 [[package]]

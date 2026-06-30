@@ -4,7 +4,7 @@ use std::io::Write;
 use bevy::prelude::*;
 #[cfg(feature = "dev")]
 use bevy_mod_debugdump::schedule_graph;
-use game_core::AppPlugin;
+use app::AppPlugin;
 
 fn main() -> AppExit {
     let mut app = App::new();

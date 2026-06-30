@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use game_core::datagen_api::*;
+use app::datagen_api::*;
 use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
 use crate::WriteError;
 

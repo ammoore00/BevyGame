@@ -5,8 +5,8 @@ use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
 use crate::{create_dir, write_data, WriteError};
-use game_core::datagen_api::*;
-use game_data::prelude::*;
+use app::datagen_api::*;
+use data::prelude::*;
 use std::collections::HashMap;
 
 pub fn generate_characters() -> Result<(), WriteError> {
