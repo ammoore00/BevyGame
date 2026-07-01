@@ -1,6 +1,8 @@
 use crate::codec::*;
-use crate::data::prelude::*;
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
+use crate::game::character::animation::AnimationResource;
+use crate::game::character::assets::CharacterResource;
+use crate::game::character::attack::AttackResource;
 use crate::marker;
 use crate::screens::Screen;
 use crate::theme::widgets;

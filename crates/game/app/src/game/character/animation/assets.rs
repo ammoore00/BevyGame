@@ -1,15 +1,16 @@
 use crate::codec::{AnimationCodec, FrameDataCodec};
 use crate::game::character::animation::components::AnimationStateMap;
+use crate::game::character::attack::AttackResource;
 use crate::game::character::state::states::Attacking;
 use crate::game::character::state::tracking::ActionStateTracker;
-use crate::prelude::*;
-use crate::{AssetLoadState};
+use assets::{AssetLoadState, AssetSystems, LoaderJobManager, RonAssetLoader};
+use bevy::ecs::system::SystemParam;
+use bevy::prelude::*;
 use data::prelude::*;
 use getset::{CloneGetters, Getters};
 use std::time::Duration;
-use bevy::ecs::system::SystemParam;
 use tracing::{info, warn};
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
+use crate::game::character::assets::CharacterSpriteResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<PartialAnimationData>();

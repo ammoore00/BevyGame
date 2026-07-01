@@ -1,4 +1,4 @@
-use crate::data::prelude::*;
+use crate::game::level::map::room::RoomResource;
 use bevy::prelude::*;
 use data::prelude::*;
 

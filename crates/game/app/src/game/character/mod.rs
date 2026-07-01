@@ -1,5 +1,3 @@
-use crate::data::loader::LoaderJobManager;
-use crate::data::prelude::*;
 use crate::game::character::animation::AnimationContext;
 use crate::game::character::assets::{CharacterData, CharacterResource};
 use crate::game::character::state::states::Idle;
@@ -17,6 +15,7 @@ use std::any::TypeId;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use ::assets::LoaderJobManager;
 use physics::{MovementController, PhysicsData, DEFAULT_MAX_SPEED};
 
 pub mod animation;

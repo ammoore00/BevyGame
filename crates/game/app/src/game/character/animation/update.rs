@@ -2,11 +2,12 @@ use crate::game::character::animation::assets::AnimationData;
 use crate::game::character::animation::{assets, AnimationContext, AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::state::states::Attacking;
 use crate::game::character::state::tracking::ActionStateTracker;
-use crate::prelude::*;
 use crate::screens::Screen;
+use bevy::prelude::*;
 use common::{AppSystems, Facing, PausableSystems};
 use data::prelude::*;
 use tracing::warn;
+use crate::game::character::attack::AttackResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

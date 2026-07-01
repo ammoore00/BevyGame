@@ -1,6 +1,8 @@
 use crate::codec::*;
-use crate::data::prelude::*;
 use crate::dev_tools::editor::window::properties::EditorCodec;
+use crate::game::character::animation::AnimationResource;
+use crate::game::character::assets::CharacterResource;
+use crate::game::character::attack::AttackResource;
 use crate::screens::Screen;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;

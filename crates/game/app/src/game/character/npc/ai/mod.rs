@@ -1,10 +1,10 @@
 pub mod pathfinding;
 
-use crate::data::loader::RonAssetLoader;
 use crate::game::character::npc::ai::pathfinding::pathfinder_scene;
 use bevy::prelude::*;
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
+use assets::RonAssetLoader;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(pathfinding::plugin);

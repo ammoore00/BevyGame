@@ -1,4 +1,4 @@
-use crate::game::character::attack::AttackDefinition;
+use crate::game::character::attack::{AttackDefinition, AttackRegistry, AttackResource};
 use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::game::character::stamina::Stamina;
 use crate::game::character::state::capabilities::ActionStateCapabilities;
@@ -7,7 +7,6 @@ use crate::game::character::state::tracking;
 use crate::game::character::state::tracking::{is_in_movement_state, ActionState, ActionStateEvent, ActionStateTracker};
 use crate::game::character::{Character};
 use crate::gamepad::GamepadRes;
-use crate::prelude::{AttackRegistry, AttackResource};
 use crate::screens::Screen;
 use bevy::prelude::*;
 use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, PausableSystems, WorldPosition};

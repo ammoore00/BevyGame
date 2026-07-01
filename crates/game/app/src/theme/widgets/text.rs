@@ -1,7 +1,7 @@
-use crate::data::loader::LoaderJobManager;
 use crate::theme::palette::{HEADER_TEXT, LABEL_TEXT};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use assets::LoaderJobManager;
 use data::prelude::*;
 
 pub(crate) fn plugin(app: &mut App) {

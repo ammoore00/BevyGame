@@ -9,6 +9,7 @@ use crate::game::character::*;
 use getset::{Getters, Setters};
 use std::cell::LazyCell;
 use std::time::Duration;
+use crate::game::character::attack::AttackResource;
 
 pub(super) fn plugin(app: &mut App) {
     register_states(app);

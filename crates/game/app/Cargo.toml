@@ -4,16 +4,18 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { workspace = true }
-serde = { workspace = true }
-getset = { workspace = true }
-thiserror = { workspace = true }
-
+assets = { workspace = true }
 common = { workspace = true }
 data = { workspace = true }
 physics = { workspace = true }
 
 maybe_fields = { workspace = true }
+
+bevy = { workspace = true }
+getset = { workspace = true }
+ron = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
 
 rand = "0.10.1"
 # Compile out low-severity logs to improve performance.
@@ -24,17 +26,15 @@ tracing = { version = "0.1", features = [
     "release_max_level_warn",
 ] }
 
-parry3d = "0.28.0"
-
-ron = "0.12.1"
-walkdir = "2.5.0"
-
 crossbeam = "0.8.4"
 
 derive-new = "0.7.0"
 
 paste = "1.0.15"
 const_format = "0.2.36"
+
+# TODO: This dependency is only referenced for debug rendering - remove this as soon as reasonable
+parry3d = "0.28.0"
 
 [features]
 dev = []

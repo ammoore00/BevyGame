@@ -1,5 +1,4 @@
-use crate::data::prelude::*;
-use crate::game::level::grid::tile::assets::TileLayout;
+use crate::game::level::grid::tile::assets::{TileLayout, TileSpriteRegistry};
 use assets::{TileAsset, TileRegistry, TileResource};
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;

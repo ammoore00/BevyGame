@@ -196,6 +196,7 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 name = "app"
 version = "0.1.0"
 dependencies = [
+ "assets",
  "bevy",
  "common",
  "const_format",
@@ -213,7 +214,6 @@ dependencies = [
  "serde",
  "thiserror 2.0.17",
  "tracing",
- "walkdir",
 ]
 
 [[package]]
@@ -278,6 +278,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "data",
+ "ron 0.12.1",
+ "serde",
+ "thiserror 2.0.17",
+ "walkdir",
 ]
 
 [[package]]

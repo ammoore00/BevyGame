@@ -1,6 +1,6 @@
-use crate::data::loader::Maybe;
+use crate::game::level::grid::tile::assets::TileSpriteResource;
 use crate::game::level::grid::tile::TileShape;
-use crate::prelude::TileSpriteResource;
+use assets::Maybe;
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use maybe_fields::maybe_fields;

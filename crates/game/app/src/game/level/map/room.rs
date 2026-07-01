@@ -1,10 +1,9 @@
 use crate::codec::RoomCodec;
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
-use crate::data::prelude::*;
 use crate::game::level::grid;
-use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource};
+use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource, TileSpriteRegistry};
 use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
+use assets::{LoaderJobManager, RonAssetLoader};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::{Scale, TileCoords, WorldCoords};

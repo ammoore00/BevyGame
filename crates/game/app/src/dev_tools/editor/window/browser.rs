@@ -1,4 +1,3 @@
-use crate::data::prelude::*;
 use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
 use crate::marker;
 use crate::screens::Screen;
@@ -17,6 +16,9 @@ use data::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
+use crate::game::character::animation::AnimationResource;
+use crate::game::character::assets::CharacterResource;
+use crate::game::character::attack::AttackResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

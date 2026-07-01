@@ -1,16 +1,15 @@
 use crate::codec::CharacterCodec;
 use crate::codec::ColliderCodec;
-use crate::data::prelude::*;
-use crate::game::character::animation::{AnimationContext, AnimationData};
-use crate::game::character::attack::{AttackContext, AttackDefinition};
+use crate::game::character::animation::{AnimationContext, AnimationData, AnimationResource};
+use crate::game::character::attack::{AttackContext, AttackDefinition, AttackSetResource};
 use crate::game::character::state::capabilities::ActionStateCapabilities;
 use crate::game::character::state::states::DEFAULT_STATES;
+use assets::{LoaderJobManager, RonAssetLoader};
 use bevy::prelude::*;
 use data::prelude::*;
 use getset::Getters;
 use std::any::TypeId;
 use std::collections::HashMap;
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterSpriteResource>();

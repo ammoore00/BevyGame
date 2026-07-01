@@ -1,4 +1,6 @@
-use crate::data::prelude::*;
+use crate::game::character::animation::AnimationResource;
+use crate::game::character::assets::CharacterSpriteResource;
+use crate::game::character::attack::AttackResource;
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use serde::{Deserialize, Serialize};

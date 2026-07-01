@@ -1,7 +1,7 @@
 use bevy::asset::HandleTemplate;
-use crate::data::loader::LoaderJobManager;
 use data::prelude::*;
 use bevy::prelude::*;
+use assets::LoaderJobManager;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<AudioResource>();

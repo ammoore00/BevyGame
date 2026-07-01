@@ -1,5 +1,5 @@
 use crate::game::character::animation::assets::AnimationData;
-use crate::prelude::{Assets, Component, Handle, Image, Reflect, Sprite, TextureAtlas, Timer, TimerMode};
+use bevy::prelude::*;
 use common::Facing;
 use std::any::TypeId;
 use std::collections::HashMap;

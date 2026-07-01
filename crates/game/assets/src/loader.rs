@@ -1,4 +1,3 @@
-use crate::{AssetLoadState, AssetSystems};
 use data::prelude::*;
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
@@ -12,6 +11,7 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
 use walkdir::WalkDir;
+use crate::state::{AssetLoadState, AssetSystems};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

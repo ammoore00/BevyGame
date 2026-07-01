@@ -1,5 +1,5 @@
 use crate::codec::sprite::TextureAtlasCodec;
-use crate::data::prelude::*;
+use crate::game::character::assets::CharacterSpriteResource;
 use bevy::math::UVec2;
 use bevy::prelude::TypePath;
 use data::prelude::*;

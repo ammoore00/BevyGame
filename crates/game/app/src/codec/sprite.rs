@@ -1,9 +1,9 @@
-use crate::data::loader::Maybe;
+use assets::Maybe;
 use bevy::image::TextureAtlasLayout;
 use bevy::math::UVec2;
 use bevy::prelude::TypePath;
-use serde::{Deserialize, Serialize};
 use maybe_fields::maybe_fields;
+use serde::{Deserialize, Serialize};
 
 #[maybe_fields]
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

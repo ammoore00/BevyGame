@@ -7,13 +7,13 @@
 use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
+use assets::AssetsPlugin;
 use common::CommonPlugin;
 use physics::PhysicsPlugin;
 
 mod asset_tracking;
 mod audio;
 mod codec;
-mod data;
 #[cfg(feature = "dev")]
 mod dev_tools;
 mod game;
@@ -22,18 +22,9 @@ mod menus;
 mod screens;
 mod theme;
 
-mod prelude {
-    pub use crate::{
-        data::prelude::*,
-        AssetSystems
-    };
-    pub use bevy::prelude::*;
-}
-
 pub mod datagen_api {
     pub use crate::{
         codec::*,
-        data::prelude::*,
         game::level::{
             grid::tile::{TileFacing, TileShape},
             map::room::{ConnectionFacing, ConnectionSize, RoomConnection},
@@ -70,11 +61,11 @@ impl Plugin for AppPlugin {
 
         // Add other plugins.
         app.add_plugins((
+            AssetsPlugin,
             CommonPlugin,
             PhysicsPlugin,
 
             asset_tracking::plugin,
-            data::plugin,
             audio::plugin,
             game::plugin,
             gamepad::plugin,
@@ -82,27 +73,6 @@ impl Plugin for AppPlugin {
             screens::plugin,
             theme::plugin,
         ));
-
-        // Asset loading systems
-        app.init_state::<AssetLoadState>();
-        app.configure_sets(
-            Startup,
-            (AssetSystems::RegisterManifests, AssetSystems::LoadAssets).chain(),
-        );
-
-        app.configure_sets(
-            OnEnter(AssetLoadState::Resolving),
-            (
-                AssetSystems::ResolveAssets,
-                AssetSystems::PopulateResolvedAssets,
-            )
-                .chain(),
-        );
-
-        app.configure_sets(
-            OnEnter(AssetLoadState::Done),
-            AssetSystems::PopulateAssetRefs,
-        );
 
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
@@ -113,30 +83,6 @@ impl Plugin for AppPlugin {
             app.add_plugins((FeathersPlugins, dev_tools::plugin));
         }
     }
-}
-
-#[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub enum AssetSystems {
-    /// Register which assets need to be loaded
-    RegisterManifests,
-    /// Load the assets themselves based on registered manifests
-    /// This should only be used by the asset loader!
-    LoadAssets,
-    /// Resolve any inter-asset references
-    ResolveAssets,
-    /// Load resolved assets into resolved registries
-    /// This should only be used by the asset loader!
-    PopulateResolvedAssets,
-    /// Populate asset reference resources
-    PopulateAssetRefs,
-}
-
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-enum AssetLoadState {
-    #[default]
-    Loading,
-    Resolving,
-    Done,
 }
 
 fn spawn_camera(mut commands: Commands) {

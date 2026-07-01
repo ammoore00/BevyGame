@@ -1,4 +1,4 @@
-use crate::data::prelude::*;
+use crate::game::level::grid::tile::assets::TileResource;
 use crate::game::level::map::room::RoomConnection;
 use bevy::prelude::TypePath;
 use data::prelude::*;

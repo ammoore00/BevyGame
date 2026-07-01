@@ -8,7 +8,7 @@ edition = "2024"
 members = [
     ".",
     "crates/datagen",
-    "crates/game/app", "crates/game/common", "crates/game/data", "crates/game/physics",
+    "crates/game/app", "crates/game/assets", "crates/game/common", "crates/game/data", "crates/game/physics",
     "crates/macros/maybe_fields",
 ]
 resolver = "2"
@@ -52,8 +52,10 @@ bevy = { version = "0.19", default-features = false, features = [
 serde = "1.0.228"
 getset = "0.1.6"
 regex = "1.12.3"
+ron = "0.12.1"
 thiserror = "2.0.17"
 
+assets = { path = "crates/game/assets" }
 common = { path = "crates/game/common" }
 data = { path = "crates/game/data" }
 physics = { path = "crates/game/physics" }

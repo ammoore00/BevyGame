@@ -1,6 +1,6 @@
 use crate::game::character::state::capabilities::{ActionStateCapabilities, StateTransitionError};
 use crate::game::character::state::states::Idle;
-use crate::prelude::*;
+use bevy::prelude::*;
 use bevy::ecs::world::DeferredWorld;
 use std::any::{Any, TypeId};
 use std::fmt::Debug;

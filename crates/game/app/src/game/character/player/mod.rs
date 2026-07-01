@@ -1,8 +1,7 @@
 //! Player-specific behavior.
 
-use crate::data::prelude::*;
-use crate::game::character::attack::AttackContext;
-//use crate::game::object::Shadow;
+use crate::game::character::assets::{CharacterResource, CharacterSpriteResource};
+use crate::game::character::attack::{AttackContext, AttackResource};
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::character::{CharacterProps, CharacterPrototype};
