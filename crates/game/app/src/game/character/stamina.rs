@@ -1,6 +1,6 @@
 use crate::screens::Screen;
-use crate::{AppSystems, PausableSystems};
 use bevy::prelude::*;
+use common::{AppSystems, PausableSystems};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

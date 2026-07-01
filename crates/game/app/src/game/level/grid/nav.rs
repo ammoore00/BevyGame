@@ -1,12 +1,12 @@
-use crate::game::level::grid::coords::{TileCoords, WorldCoords};
-use crate::game::level::grid::{Grid, TileMap};
-use bevy::prelude::*;
-use getset::{CopyGetters, Getters};
-use std::collections::BTreeMap;
-use bevy::ecs::system::SystemParam;
 use crate::game::level::grid::tile::Tile;
+use crate::game::level::grid::{Grid, TileMap};
 use crate::game::level::map::Map;
-use crate::game::physics::components::Collider;
+use bevy::ecs::system::SystemParam;
+use bevy::prelude::*;
+use common::{TileCoords, WorldCoords};
+use getset::{CopyGetters, Getters};
+use physics::Collider;
+use std::collections::BTreeMap;
 
 pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
 }

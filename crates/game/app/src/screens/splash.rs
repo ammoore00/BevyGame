@@ -1,13 +1,13 @@
 //! A splash screen that plays briefly at startup.
 
+use crate::theme::widgets;
+use crate::theme::widgets::UiSpriteResource;
+use crate::screens::Screen;
 use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
-
-use crate::theme::widgets;
-use crate::theme::widgets::UiSpriteResource;
-use crate::{screens::Screen, AppSystems};
+use common::AppSystems;
 use data::prelude::loc;
 
 pub(super) fn plugin(app: &mut App) {

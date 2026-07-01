@@ -1,14 +1,15 @@
-use crate::game::level::grid::tile::{TILE_HEIGHT, TILE_WIDTH};
 use crate::Scale;
 use bevy::prelude::*;
-use parry3d::math::Pose;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::ops::Deref;
 
-pub(in crate::game) const SCREEN_Z_SCALE: f32 = 2.0;
+pub const SCREEN_Z_SCALE: f32 = 2.0;
 
-pub(in crate::game) fn plugin(app: &mut App) {
+pub const TILE_WIDTH: i32 = 32;
+pub const TILE_HEIGHT: i32 = 16;
+
+pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         PreUpdate,
         (
@@ -28,12 +29,6 @@ impl WorldPosition {
 
     pub fn set(&mut self, value: Vec3) {
         self.0.0 = value;
-    }
-}
-
-impl From<WorldPosition> for Pose {
-    fn from(value: WorldPosition) -> Self {
-        Self::translation(value.0.x, value.0.y, value.0.z)
     }
 }
 
@@ -92,7 +87,7 @@ impl From<Vec3> for TileCoords {
 impl From<[i32; 3]> for TileCoords {
     fn from(value: [i32; 3]) -> Self {
         TileCoords(IVec3::new(value[0], value[1], value[2]))
-    }   
+    }
 }
 impl Deref for TileCoords {
     type Target = IVec3;
@@ -135,9 +130,9 @@ impl<'de> Deserialize<'de> for TileCoords {
 }
 
 /// Represents a continuous coordinate in the game world
-/// 
+///
 /// ### Ordering
-/// 
+///
 /// Ordering is performed Y first, then X, then Z, using `f32::total_cmp`
 #[derive(Debug, Clone, Default, Reflect)]
 pub struct WorldCoords(pub Vec3);

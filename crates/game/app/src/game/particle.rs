@@ -1,7 +1,7 @@
-use crate::{AppSystems, PausableSystems};
-use bevy::prelude::*;
-use std::time::Duration;
 use crate::game::character::animation::FrameData;
+use bevy::prelude::*;
+use common::{AppSystems, PausableSystems};
+use std::time::Duration;
 // TODO: Convert particles to use data driven systems
 
 pub(super) fn plugin(app: &mut App) {

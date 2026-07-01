@@ -1,17 +1,16 @@
 use crate::codec::RoomCodec;
+use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 use crate::data::prelude::*;
 use crate::game::level::grid;
-use crate::game::level::grid::coords::{TileCoords, WorldCoords};
 use crate::game::level::grid::tile::assets::{TileAsset, TileLayout, TileRegistry, TileResource};
 use crate::game::level::grid::tile::tile;
 use crate::game::level::grid::TileMap;
-use crate::Scale;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use common::{Scale, TileCoords, WorldCoords};
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use crate::data::loader::{LoaderJobManager, RonAssetLoader};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();

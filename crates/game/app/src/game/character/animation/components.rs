@@ -1,9 +1,9 @@
+use crate::game::character::animation::assets::AnimationData;
+use crate::prelude::{Assets, Component, Handle, Image, Reflect, Sprite, TextureAtlas, Timer, TimerMode};
+use common::Facing;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::time::Duration;
-use crate::game::character::animation::assets::AnimationData;
-use crate::game::character::Facing;
-use crate::prelude::{Assets, Component, Handle, Image, Reflect, Sprite, TextureAtlas, Timer, TimerMode};
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {

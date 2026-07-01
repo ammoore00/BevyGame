@@ -7,6 +7,8 @@
 use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
+use common::CommonPlugin;
+use physics::PhysicsPlugin;
 
 mod asset_tracking;
 mod audio;
@@ -23,7 +25,7 @@ mod theme;
 mod prelude {
     pub use crate::{
         data::prelude::*,
-        AppSystems, AssetSystems, PausableSystems
+        AssetSystems
     };
     pub use bevy::prelude::*;
 }
@@ -68,6 +70,9 @@ impl Plugin for AppPlugin {
 
         // Add other plugins.
         app.add_plugins((
+            CommonPlugin,
+            PhysicsPlugin,
+
             asset_tracking::plugin,
             data::plugin,
             audio::plugin,
@@ -77,20 +82,6 @@ impl Plugin for AppPlugin {
             screens::plugin,
             theme::plugin,
         ));
-
-        app.insert_resource(Scale(6.0));
-
-        // Main game loop systems
-        app.configure_sets(
-            Update,
-            (
-                AppSystems::TickTimers,
-                AppSystems::RecordInput,
-                AppSystems::Update,
-                AppSystems::Respond,
-            )
-                .chain(),
-        );
 
         // Asset loading systems
         app.init_state::<AssetLoadState>();
@@ -113,10 +104,6 @@ impl Plugin for AppPlugin {
             AssetSystems::PopulateAssetRefs,
         );
 
-        // Set up the `Pause` state.
-        app.init_state::<Pause>();
-        app.configure_sets(Update, PausableSystems.run_if(in_state(Pause(false))));
-
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
 
@@ -126,21 +113,6 @@ impl Plugin for AppPlugin {
             app.add_plugins((FeathersPlugins, dev_tools::plugin));
         }
     }
-}
-
-/// High-level groupings of systems for the app in the `Update` schedule.
-/// When adding a new variant, make sure to order it in the `configure_sets`
-/// call above.
-#[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub enum AppSystems {
-    /// Tick timers.
-    TickTimers,
-    /// Record player input.
-    RecordInput,
-    /// Do everything else (consider splitting this into further variants).
-    Update,
-    /// Respond to changes in update
-    Respond,
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -167,14 +139,6 @@ enum AssetLoadState {
     Done,
 }
 
-/// Whether or not the game is paused.
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-struct Pause(pub bool);
-
-/// A system set for systems that shouldn't run while the game is paused.
-#[derive(SystemSet, Copy, Clone, Eq, PartialEq, Hash, Debug)]
-pub struct PausableSystems;
-
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Name::new("Camera"),
@@ -186,9 +150,6 @@ fn spawn_camera(mut commands: Commands) {
         }),
     ));
 }
-
-#[derive(Resource, Debug, Clone, Copy, PartialEq)]
-pub struct Scale(pub f32);
 
 #[macro_export]
 macro_rules! marker {

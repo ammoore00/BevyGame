@@ -1,6 +1,6 @@
-use crate::AppSystems;
 use bevy::input::gamepad::{GamepadConnection, GamepadEvent};
 use bevy::prelude::*;
+use common::AppSystems;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

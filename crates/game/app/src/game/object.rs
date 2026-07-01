@@ -1,7 +1,7 @@
 use crate::asset_tracking::LoadResource;
-use crate::game::level::grid::coords::WorldPosition;
-use crate::game::physics::components::{Collider, PhysicsData};
 use bevy::prelude::*;
+use common::WorldPosition;
+use physics::{Collider, PhysicsData};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<ObjectAssets>();

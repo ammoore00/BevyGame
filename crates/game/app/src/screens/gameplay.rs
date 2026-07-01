@@ -1,9 +1,9 @@
 //! The screen state for the main gameplay.
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
-
+use common::Pause;
 use crate::gamepad::gamepad_just_pressed;
-use crate::{game::level::spawn_level, menus::Menu, screens::Screen, Pause};
+use crate::{game::level::spawn_level, menus::Menu, screens::Screen};
 use crate::game::level::reset_level_state;
 
 pub(super) fn plugin(app: &mut App) {

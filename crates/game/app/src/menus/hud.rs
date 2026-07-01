@@ -4,8 +4,9 @@ use crate::game::character::player::Player;
 use crate::game::character::stamina::Stamina;
 use crate::screens::Screen;
 use crate::theme::widgets;
-use crate::{marker, AppSystems};
+use crate::marker;
 use bevy::prelude::*;
+use common::AppSystems;
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<StatBarAssets>();

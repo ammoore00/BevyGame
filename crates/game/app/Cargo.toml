@@ -7,10 +7,12 @@ edition = "2024"
 bevy = { workspace = true }
 serde = { workspace = true }
 getset = { workspace = true }
-regex = { workspace = true }
 thiserror = { workspace = true }
 
+common = { workspace = true }
 data = { workspace = true }
+physics = { workspace = true }
+
 maybe_fields = { workspace = true }
 
 rand = "0.10.1"

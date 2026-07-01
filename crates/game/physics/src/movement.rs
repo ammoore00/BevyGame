@@ -13,12 +13,9 @@
 //! purposes. If you want to move the player in a smoother way,
 //! consider using a [fixed timestep](https://github.com/bevyengine/bevy/blob/main/examples/movement/physics_in_fixed_timestep.rs).
 
+use crate::components::{Collider, CollisionEvent, PhysicsData};
 use bevy::prelude::*;
-
-use crate::game::character::Facing;
-use crate::game::level::grid::coords::WorldPosition;
-use crate::game::physics::components::{Collider, CollisionEvent, PhysicsData};
-use crate::{AppSystems, PausableSystems};
+use common::{AppSystems, Facing, PausableSystems, WorldPosition};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -35,7 +32,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-pub const DEFAULT_MAX_SPEED: f32 = 3.5;
+pub const DEFAULT_MAX_SPEED: f32 = 2.0;
 
 /// These are the movement parameters for our character controller.
 /// For now, this is only used for a single player, but it could power NPCs or

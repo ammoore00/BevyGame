@@ -1,11 +1,11 @@
-use crate::game::level::grid::coords::{WorldCoords, WorldPosition};
 use bevy::prelude::*;
+use common::{WorldCoords, WorldPosition};
 use parry3d::math::Pose;
 use parry3d::query;
 use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
-use crate::game::physics::math::{ToBevy, ToParry};
+use crate::math::{ToBevy, ToParry};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);
@@ -72,7 +72,7 @@ impl PartialEq for ColliderType {
 
 fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
     for (mut collider, world_position) in query {
-        collider.position = world_position.clone().into();
+        collider.position = Pose::translation(world_position.0.x, world_position.0.y, world_position.0.z);
     }
 }
 

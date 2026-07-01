@@ -197,6 +197,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "common",
  "const_format",
  "crossbeam",
  "data",
@@ -206,8 +207,8 @@ dependencies = [
  "maybe_fields",
  "parry3d",
  "paste",
+ "physics",
  "rand 0.10.1",
- "regex",
  "ron 0.12.1",
  "serde",
  "thiserror 2.0.17",
@@ -2080,6 +2081,14 @@ checksum = "ba5a308b75df32fe02788e748662718f03fde005016435c444eea572398219fd"
 dependencies = [
  "bytes",
  "memchr",
+]
+
+[[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "serde",
 ]
 
 [[package]]
@@ -4573,6 +4582,7 @@ name = "physics"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "common",
  "parry3d",
 ]
 

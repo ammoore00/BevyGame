@@ -1,5 +1,3 @@
-use bevy::prelude::*;
-
 pub mod loc;
 pub mod prototyping;
 pub mod registry;

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::game::level::grid::coords::{ScreenCoords, WorldCoords};
+use common::{ScreenCoords, WorldCoords};
 
 pub mod physics_renderer;
 pub mod nav_renderer;

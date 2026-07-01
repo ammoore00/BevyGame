@@ -1,19 +1,17 @@
+use crate::game::character::state::capabilities::ActionStateCapabilities;
+use crate::game::character::state::states::{Idle, Running, Walking};
+use crate::game::character::state::tracking::{try_set_state, ActionState, ActionStateTracker};
+use crate::game::level::grid::nav::{NavEdgeKind, TileNavMap};
+use crate::game::level::LevelSpawnState;
+use crate::screens::Screen;
+use bevy::prelude::*;
+use common::{AppSystems, PausableSystems, TileCoords, WorldCoords, WorldPosition};
+use getset::Getters;
+use rand::{Rng, RngExt};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
 use std::time::Duration;
-use bevy::prelude::*;
-use getset::Getters;
-use rand::{Rng, RngExt};
-use crate::{AppSystems, PausableSystems};
-use crate::game::character::state::states::{Idle, Running, Walking};
-use crate::game::character::state::capabilities::ActionStateCapabilities;
-use crate::game::character::state::tracking::{try_set_state, ActionState, ActionStateTracker};
-use crate::game::level::grid::coords::{TileCoords, WorldCoords, WorldPosition};
-use crate::game::level::grid::nav::{NavEdgeKind, TileNavMap};
-use crate::game::level::LevelSpawnState;
-use crate::game::physics::components::Collider;
-use crate::game::physics::movement::MovementController;
-use crate::screens::Screen;
+use physics::{Collider, MovementController};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

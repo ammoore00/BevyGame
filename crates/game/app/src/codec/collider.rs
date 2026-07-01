@@ -1,7 +1,7 @@
 use bevy::math::Vec3;
 use bevy::prelude::TypePath;
 use serde::{Deserialize, Serialize};
-use crate::game::physics::components::Collider;
+use physics::Collider;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct ColliderCodec {

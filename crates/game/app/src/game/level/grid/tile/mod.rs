@@ -1,15 +1,15 @@
 use crate::data::prelude::*;
-use crate::game::level::grid::coords::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use crate::game::level::grid::tile::assets::TileLayout;
-use crate::game::physics::components::{Collider, PhysicsData};
 use assets::{TileAsset, TileRegistry, TileResource};
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;
+use common::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign};
+use physics::{Collider, PhysicsData};
 
 pub mod assets;
 mod collision;
@@ -22,9 +22,6 @@ pub fn plugin(app: &mut App) {
         update_tile_collision
     );
 }
-
-pub const TILE_WIDTH: i32 = 32;
-pub const TILE_HEIGHT: i32 = 16;
 
 pub fn tile(
     tile_registry: &TileRegistry,
