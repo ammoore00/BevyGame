@@ -1,7 +1,6 @@
 use crate::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::character::stamina::Stamina;
-use crate::character::state::tracking;
-use crate::character::state::tracking::{is_in_movement_state, ActionStateTracker, TrySetStateEvent};
+use crate::character::state::{get_state, is_in_movement_state, ActionStateTracker, TrySetStateEvent};
 use crate::character::Character;
 use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
 use assets::resource::character::{AttackDefinition, AttackRegistry, AttackResource};
@@ -146,7 +145,7 @@ fn record_player_movement_input(world: &mut World) {
     for entity in entities {
         // Get the current state
         let tracker = world.get::<ActionStateTracker>(entity).cloned().unwrap();
-        let Some(prev_state) = tracking::get_state(entity, &tracker, world) else {
+        let Some(prev_state) = get_state(entity, &tracker, world) else {
             warn!("Failed to get reflect component for entity {}", entity);
             continue;
         };

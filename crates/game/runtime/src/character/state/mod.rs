@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 
-pub mod update;
-pub mod tracking;
-// TODO: Split this file into multiple files
+mod update;
+mod tracking;
+
+pub use tracking::{ActionStateTracker, get_state, is_in_movement_state, TrySetStateEvent};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((

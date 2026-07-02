@@ -9,7 +9,7 @@ use common::{Facing, GameplaySystems, Scale, WorldPosition};
 use data::prelude::*;
 use data::register_prototype_system;
 use physics::{MovementController, PhysicsData, DEFAULT_MAX_SPEED};
-use state::tracking::ActionStateTracker;
+use state::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
 

@@ -1,5 +1,5 @@
 use crate::character::animation::{AnimationStateMap, CharacterAnimationTracker};
-use crate::character::state::tracking::ActionStateTracker;
+use crate::character::state::ActionStateTracker;
 use assets::action_states::Attacking;
 use assets::resource::character::{AnimationContext, AnimationData, AttackResource};
 use bevy::prelude::*;

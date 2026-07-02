@@ -8,7 +8,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
 }
 
-pub fn update_timed_state(
+fn update_timed_state(
     query: Query<(Entity, &ActionStateTracker), With<Character>>,
     time: Res<Time>,
     registry: Res<AppTypeRegistry>,
