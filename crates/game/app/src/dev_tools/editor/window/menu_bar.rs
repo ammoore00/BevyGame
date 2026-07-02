@@ -1,9 +1,9 @@
-use crate::marker;
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widgets::text::MEDIUM_FONT_SIZE;
 use crate::theme::widgets::{button, UiBackgroundStyle};
 use crate::theme::widgets;
 use bevy::prelude::*;
+use common::marker;
 
 marker!(MenuBar);
 marker!(MenuBarButtons);

@@ -1,10 +1,9 @@
-use crate::asset_tracking::LoadResource;
 use bevy::prelude::*;
 use common::WorldPosition;
 use physics::{Collider, PhysicsData};
 
 pub(super) fn plugin(app: &mut App) {
-    app.load_resource::<ObjectAssets>();
+    //app.load_resource::<ObjectAssets>();
 }
 
 #[derive(Component, Debug, Clone, Reflect)]

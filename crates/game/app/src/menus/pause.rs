@@ -1,10 +1,10 @@
 //! The pause menu.
 
-use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widgets;
 use crate::theme::widgets::{button, text};
 use crate::{menus::Menu, screens::Screen};
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
+use input::gamepad::gamepad_just_pressed;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Pause), spawn_pause_menu.spawn());

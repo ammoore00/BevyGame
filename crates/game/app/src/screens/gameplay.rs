@@ -1,10 +1,10 @@
 //! The screen state for the main gameplay.
 
+use crate::{menus::Menu, screens::Screen};
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use common::{GameState, GameplaySystems, Pause};
-use crate::gamepad::gamepad_just_pressed;
-use crate::{game::level::spawn_level, menus::Menu, screens::Screen};
-use crate::game::level::reset_level_state;
+use input::gamepad::gamepad_just_pressed;
+use runtime::{ResetLevelEvent, SpawnLevelEvent};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -13,7 +13,7 @@ pub(super) fn plugin(app: &mut App) {
     );
     app.add_systems(
         OnExit(Screen::Gameplay),
-        (reset_level_state, set_menu_state).chain()
+        (reset_level, set_menu_state).chain()
     );
 
     // Toggle pause on key press.
@@ -41,6 +41,14 @@ pub(super) fn plugin(app: &mut App) {
         OnEnter(Menu::None),
         unpause.in_set(GameplaySystems),
     );
+}
+
+fn spawn_level(mut commands: Commands) {
+    commands.trigger(SpawnLevelEvent);
+}
+
+fn reset_level(mut commands: Commands) {
+    commands.trigger(ResetLevelEvent);
 }
 
 fn unpause(mut next_pause: ResMut<NextState<Pause>>) {

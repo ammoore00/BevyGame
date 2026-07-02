@@ -1,8 +1,8 @@
-use crate::game::level::grid;
-use crate::game::level::grid::nav::{NavContext, TileNavMap};
-use crate::game::level::grid::tile::{set_tile_location, TileEntity};
-use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
-use crate::game::level::map::room::{build_room, RoomBuilderContext};
+use crate::level::grid;
+use crate::level::grid::nav::{NavContext, TileNavMap};
+use crate::level::grid::tile::{set_tile_location, TileEntity};
+use crate::level::grid::{grid_bundle, merge_tile_map, Grid};
+use crate::level::map::room::{build_room, RoomBuilderContext};
 use assets::resource::map::{MapDataLocation, MapDefinition, MapResource, Palette};
 use bevy::ecs::query::{QueryData, QueryItem, QuerySingleError};
 use bevy::prelude::*;

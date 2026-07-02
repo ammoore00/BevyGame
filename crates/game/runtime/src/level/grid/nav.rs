@@ -1,6 +1,6 @@
-use crate::game::level::grid::tile::Tile;
-use crate::game::level::grid::{Grid, TileMap};
-use crate::game::level::map::Map;
+use crate::level::grid::tile::Tile;
+use crate::level::grid::{Grid, TileMap};
+use crate::level::map::Map;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::{TileCoords, WorldCoords};
@@ -8,7 +8,7 @@ use getset::{CopyGetters, Getters};
 use physics::Collider;
 use std::collections::BTreeMap;
 
-pub(in crate::game::level::grid) fn plugin(_app: &mut App) {
+pub(super) fn plugin(_app: &mut App) {
 }
 
 // Type aliasing done here to allow for conversion without requiring explicit deconstruction,
@@ -386,13 +386,13 @@ mod debug_helpers {
     use super::*;
 
     impl TileNavMap {
-        pub(crate) fn debug_node_positions(&self) -> impl Iterator<Item = Vec3> + '_ {
+        pub fn debug_node_positions(&self) -> impl Iterator<Item = Vec3> + '_ {
             self.nodes
                 .iter()
                 .map(|(coords, node)| nav_node_debug_position(coords, node))
         }
 
-        pub(crate) fn debug_edge_segments(&self) -> impl Iterator<Item = (Vec3, Vec3)> + '_ {
+        pub fn debug_edge_segments(&self) -> impl Iterator<Item = (Vec3, Vec3)> + '_ {
             self.edges
                 .keys()
                 .filter_map(|key| {

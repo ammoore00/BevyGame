@@ -1,5 +1,4 @@
 use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
-use crate::marker;
 use crate::screens::Screen;
 use crate::theme::interaction::BackgroundInteractionPalette;
 use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
@@ -17,6 +16,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use assets::resource::character::{AnimationResource, AttackResource, CharacterResource};
+use common::marker;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

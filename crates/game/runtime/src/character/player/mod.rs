@@ -1,9 +1,9 @@
 //! Player-specific behavior.
 
-use crate::game::character::health::Health;
-use crate::game::character::stamina::{Stamina, StaminaEvent};
-use crate::game::character::{CharacterProps, CharacterPrototype};
-use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
+use crate::character::health::Health;
+use crate::character::stamina::{Stamina, StaminaEvent};
+use crate::character::{CharacterProps, CharacterPrototype};
+use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;

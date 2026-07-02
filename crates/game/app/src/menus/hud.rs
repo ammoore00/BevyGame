@@ -1,12 +1,9 @@
 use crate::asset_tracking::LoadResource;
-use crate::game::character::health::Health;
-use crate::game::character::player::Player;
-use crate::game::character::stamina::Stamina;
 use crate::screens::Screen;
 use crate::theme::widgets;
-use crate::marker;
 use bevy::prelude::*;
-use common::{AppSystems, GameplaySystems};
+use common::{marker, AppSystems, GameplaySystems};
+use runtime::debug::{Health, Player, Stamina};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<StatBarAssets>();
@@ -84,6 +81,7 @@ impl FromWorld for StatBarAssets {
 
 const HEALTH_BAR_PIXEL_VALUE: usize = 10;
 
+// TODO: Update this to not need to query values from runtime directly
 fn update_health_bar(
     player_query: Query<
         &Health,
@@ -126,6 +124,7 @@ fn update_health_bar(
 
 const STAMINA_BAR_PIXEL_VALUE: usize = 10;
 
+// TODO: Update this to not need to query values from runtime directly
 fn update_stamina_bar(
     player_query: Query<
         &Stamina,

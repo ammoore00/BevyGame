@@ -10,6 +10,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/game/physics/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/game/assets/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/game/common/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/game/input/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/game/runtime/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/crates/datagen/target" />
     </content>

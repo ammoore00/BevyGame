@@ -3,16 +3,15 @@
 pub mod grid;
 pub mod map;
 
-use crate::game::character::npc::npc_bundle;
-use crate::game::character::player::player;
-use crate::game::level::grid::nav::NavContext;
-use crate::game::level::map::{map_scene, NavBakeError};
-use crate::{audio::music, marker};
+use crate::character::npc::npc_bundle;
+use crate::character::player::player;
+use crate::level::grid::nav::NavContext;
+use crate::level::map::{map_scene, NavBakeError};
 use assets::resource::map::{Palette, Palettes};
 use assets::resource::AudioResource;
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
-use common::GameState;
+use common::{marker, GameState};
 use data::prelude::loc;
 
 pub(super) fn plugin(app: &mut App) {
@@ -25,6 +24,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(LevelSpawnState::AddObjects), add_objects);
     app.add_systems(OnEnter(LevelSpawnState::Cleanup), finish_level_spawn);
 
+    app.add_observer(on_spawn_level);
+    app.add_observer(on_reset_level);
     app.add_observer(on_level_error);
 }
 
@@ -63,7 +64,13 @@ impl LevelSpawnState {
     }
 }
 
-pub fn spawn_level(
+#[derive(Event)]
+pub struct SpawnLevelEvent;
+#[derive(Event)]
+pub struct ResetLevelEvent;
+
+fn on_spawn_level(
+    _: On<SpawnLevelEvent>,
     prev_state: Res<State<LevelSpawnState>>,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
 ) {
@@ -76,7 +83,8 @@ pub fn spawn_level(
     next_state.set(LevelSpawnState::Uninitialized.next());
 }
 
-pub fn reset_level_state(
+fn on_reset_level(
+    _: On<ResetLevelEvent>,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
 ) {
     info!("Cleaning up level");
@@ -96,7 +104,8 @@ fn construct_level(
         Visibility
         DespawnOnExit<GameState>(GameState::Gameplay)
         Children [
-            music(loc::<AudioResource>("music/8_bit_open_world").unwrap())
+            // TODO: Fix this
+            //music(loc::<AudioResource>("music/8_bit_open_world").unwrap())
         ]
     ];
     commands.spawn_scene(level);

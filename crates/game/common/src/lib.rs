@@ -4,6 +4,7 @@ mod app;
 mod character;
 mod coords;
 mod game_states;
+pub mod macros;
 
 pub use crate::{
     app::{AppSystems, PausableSystems, Pause},

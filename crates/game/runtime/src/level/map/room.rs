@@ -1,6 +1,6 @@
-use crate::game::level::grid;
-use crate::game::level::grid::tile::tile;
-use crate::game::level::grid::TileMap;
+use crate::level::grid;
+use crate::level::grid::tile::tile;
+use crate::level::grid::TileMap;
 use assets::resource::map::{RoomDefinition, RoomLayout, RoomRegistry};
 use assets::resource::{TileAsset, TileLayout, TileRegistry, TileSpriteRegistry};
 use bevy::ecs::system::SystemParam;

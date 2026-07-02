@@ -1,7 +1,6 @@
-use crate::game::character::state::tracking::{try_set_state, ActionStateTracker};
-use crate::game::level::grid::nav::{NavEdgeKind, TileNavMap};
-use crate::game::level::LevelSpawnState;
-use crate::screens::Screen;
+use crate::character::state::tracking::{try_set_state, ActionStateTracker};
+use crate::level::grid::nav::{NavEdgeKind, TileNavMap};
+use crate::level::LevelSpawnState;
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
 use bevy::prelude::*;
 use common::{AppSystems, GameplaySystems, PausableSystems, TileCoords, WorldCoords, WorldPosition};

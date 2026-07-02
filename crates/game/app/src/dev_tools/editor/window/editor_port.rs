@@ -1,6 +1,5 @@
 use crate::dev_tools::editor::file_manager::{EditorFile, FileManager};
 use crate::dev_tools::editor::window::BACKGROUND_BLEED;
-use crate::marker;
 use crate::screens::Screen;
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widgets;
@@ -8,6 +7,7 @@ use crate::theme::widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
 use crate::theme::widgets::{button, UiBackgroundStyle};
 use bevy::prelude::*;
 use std::collections::HashSet;
+use common::marker;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

@@ -2,12 +2,12 @@
 //!
 //! Additional settings and accessibility options should go here.
 
-use crate::gamepad::gamepad_just_pressed;
+use crate::theme::widgets;
 use crate::theme::widgets::{button, text};
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;
 use bevy::{audio::Volume, input::common_conditions::input_just_pressed, prelude::*};
-use crate::theme::widgets;
+use input::gamepad::gamepad_just_pressed;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Settings), spawn_settings_menu.spawn());

@@ -201,14 +201,14 @@ dependencies = [
  "common",
  "crossbeam",
  "data",
- "derive-new",
  "getrandom 0.4.2",
  "getset",
+ "input",
  "parry3d",
  "paste",
  "physics",
- "rand 0.10.1",
  "ron",
+ "runtime",
  "serde",
  "thiserror 2.0.17",
  "tracing",
@@ -3403,6 +3403,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "input"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "common",
+]
+
+[[package]]
 name = "into-attr"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5037,6 +5045,22 @@ dependencies = [
  "heapless 0.8.0",
  "num-traits",
  "smallvec",
+]
+
+[[package]]
+name = "runtime"
+version = "0.1.0"
+dependencies = [
+ "assets",
+ "bevy",
+ "common",
+ "data",
+ "getset",
+ "input",
+ "physics",
+ "rand 0.10.1",
+ "thiserror 2.0.17",
+ "tracing",
 ]
 
 [[package]]

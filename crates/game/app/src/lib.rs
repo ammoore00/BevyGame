@@ -7,16 +7,13 @@
 use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
-use assets::AssetsPlugin;
-use common::CommonPlugin;
-use physics::PhysicsPlugin;
+use input::InputPlugin;
+use runtime::RuntimePlugin;
 
 mod asset_tracking;
 mod audio;
 #[cfg(feature = "dev")]
 mod dev_tools;
-mod game;
-mod gamepad;
 mod menus;
 mod screens;
 mod theme;
@@ -50,14 +47,11 @@ impl Plugin for AppPlugin {
 
         // Add other plugins.
         app.add_plugins((
-            AssetsPlugin,
-            CommonPlugin,
-            PhysicsPlugin,
+            InputPlugin,
+            RuntimePlugin,
 
             asset_tracking::plugin,
             audio::plugin,
-            game::plugin,
-            gamepad::plugin,
             menus::plugin,
             screens::plugin,
             theme::plugin,
@@ -84,16 +78,4 @@ fn spawn_camera(mut commands: Commands) {
             ..OrthographicProjection::default_2d()
         }),
     ));
-}
-
-#[macro_export]
-macro_rules! marker {
-    ($marker:ident) => {
-        #[derive(Component, Debug, Clone, Copy, Eq, PartialEq, Default)]
-        struct $marker;
-    };
-    (pub $marker:ident) => {
-        #[derive(Component, Debug, Clone, Copy, Eq, PartialEq, Default)]
-        pub struct $marker;
-    };
 }

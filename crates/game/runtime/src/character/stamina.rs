@@ -1,4 +1,3 @@
-use crate::screens::Screen;
 use bevy::prelude::*;
 use common::{AppSystems, GameplaySystems, PausableSystems};
 

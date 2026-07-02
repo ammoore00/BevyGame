@@ -1,0 +1,21 @@
+[package]
+name = "runtime"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+assets = { workspace = true }
+common = { workspace = true }
+data = { workspace = true }
+input = { workspace = true }
+physics = { workspace = true }
+
+bevy = { workspace = true }
+getset = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+rand = "0.10.1"
+
+[features]
+dev = []

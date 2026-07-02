@@ -1,10 +1,10 @@
 pub mod ai;
 
-use crate::game::character::npc::ai::ai_scene;
-use crate::game::character::CharacterPrototype;
-use crate::marker;
+use crate::character::npc::ai::ai_scene;
+use crate::character::CharacterPrototype;
 use assets::resource::character::CharacterResource;
 use bevy::prelude::*;
+use common::marker;
 use data::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {

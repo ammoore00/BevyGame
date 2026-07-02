@@ -1,17 +1,20 @@
-use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
-use crate::game::character::stamina::Stamina;
-use crate::game::character::state::tracking;
-use crate::game::character::state::tracking::{is_in_movement_state, ActionStateEvent, ActionStateTracker};
-use crate::game::character::Character;
-use crate::gamepad::GamepadRes;
-use crate::screens::Screen;
+use crate::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
+use crate::character::stamina::Stamina;
+use crate::character::state::tracking;
+use crate::character::state::tracking::{is_in_movement_state, ActionStateEvent, ActionStateTracker};
+use crate::character::Character;
 use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
 use assets::resource::character::{AttackDefinition, AttackRegistry, AttackResource};
 use bevy::prelude::*;
 use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameplaySystems, PausableSystems, WorldPosition};
 use data::prelude::*;
+use input::gamepad::GamepadRes;
 use physics::{MovementController, PhysicsData};
 use std::any::TypeId;
+
+// TODO: Split this module into multiple files
+//       One file should be in `input` to handle the actual player input
+//       That file should emit events that this file consumes
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

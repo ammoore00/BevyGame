@@ -2,11 +2,11 @@ use crate::dev_tools::editor::window::browser::spawn_file_browser;
 use crate::dev_tools::editor::window::editor_port::spawn_editor_port;
 use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
 use crate::dev_tools::editor::window::properties::spawn_details_screen;
-use crate::marker;
 use crate::screens::Screen;
 use crate::theme::widgets::UiBackgroundStyle;
 use crate::theme::widgets;
 use bevy::prelude::*;
+use common::marker;
 
 mod menu_bar;
 mod browser;

@@ -8,7 +8,14 @@ edition = "2024"
 members = [
     ".",
     "crates/datagen",
-    "crates/game/app", "crates/game/assets", "crates/game/common", "crates/game/data", "crates/game/physics",
+
+    "crates/game/app",
+    "crates/game/assets",
+    "crates/game/common",
+    "crates/game/data", "crates/game/input",
+    "crates/game/physics",
+    "crates/game/runtime",
+
     "crates/macros/maybe_fields",
 ]
 resolver = "2"
@@ -69,12 +76,16 @@ tracing = { version = "0.1", features = [
 assets = { path = "crates/game/assets" }
 common = { path = "crates/game/common" }
 data = { path = "crates/game/data" }
+input = { path = "crates/game/input" }
 physics = { path = "crates/game/physics" }
+runtime = { path = "crates/game/runtime" }
 
 [features]
 # Default to a native dev build.
 default = ["dev_native"]
 dev = [
+    "app/dev",
+
     # Improve compile times for dev builds by linking Bevy as a dynamic library.
     "bevy/dynamic_linking",
     # Improve error messages coming from Bevy
@@ -101,7 +112,7 @@ bevy = { workspace = true }
 bevy_mod_debugdump = { version = "0.16.0", optional = true }
 graphviz-rust = { version = "0.9.8", optional = true }
 
-app = { path = "crates/game/app", features = ["dev"] }
+app = { path = "crates/game/app" }
 
 
 # Compile with Performance Optimizations:
