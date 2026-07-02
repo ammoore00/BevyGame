@@ -23,13 +23,35 @@ impl Default for ActionStateTracker {
     }
 }
 
-// TODO: Reduce code duplication in these functions
-
 pub fn get_state(
     entity: Entity,
     tracker: &ActionStateTracker,
     world: &World,
 ) -> Option<Box<dyn ActionState>> {
+    get_state_properties(entity, tracker, world)
+        .map(|props| props.state)
+}
+
+pub fn is_in_movement_state(
+    entity: Entity,
+    tracker: &ActionStateTracker,
+    world: &World,
+) -> bool {
+    get_state_properties(entity, tracker, world)
+        .map(|props| props.is_movement)
+        .unwrap_or(false)
+}
+
+struct StateProperties {
+    state: Box<dyn ActionState>,
+    is_movement: bool,
+}
+
+fn get_state_properties(
+    entity: Entity,
+    tracker: &ActionStateTracker,
+    world: &World,
+) -> Option<StateProperties>  {
     let type_registry = world.resource::<AppTypeRegistry>().clone();
     let type_registry = type_registry.read();
 
@@ -38,33 +60,19 @@ pub fn get_state(
     let reflect_state = reg.data::<ReflectActionState>().unwrap();
 
     if let Ok(entity) = world.get_entity(entity)
-        && let Some(reflect_data) = reflect_component.reflect(&entity)
+        && let Some(reflect_data) = reflect_component.reflect(entity)
         && let Some(state) = reflect_state.get(reflect_data)
     {
-        Some(state.box_clone())
+        let is_movement = if let Some(reflect_movement_state) = reg.data::<ReflectMovementActionState>() {
+            reflect_movement_state.get(reflect_data).is_some()
+        } else { false };
+
+        Some(StateProperties {
+            state: state.box_clone(),
+            is_movement,
+        })
     } else {
-        warn!("Failed to get reflect component for entity {}", entity);
         None
-    }
-}
-
-pub fn is_in_movement_state(
-    entity: Entity,
-    tracker: &ActionStateTracker,
-    world: &World,
-) -> bool {
-    let registry = world.resource::<AppTypeRegistry>().clone();
-    let type_registry = registry.read();
-    let reg = type_registry.get(tracker.type_id).unwrap();
-    let reflect_component = reg.data::<ReflectComponent>().unwrap();
-
-    if let Ok(entity) = world.get_entity(entity)
-        && let Some(reflect_data) = reflect_component.reflect(entity)
-        && let Some(reflect_movement_state) = reg.data::<ReflectMovementActionState>()
-    {
-        reflect_movement_state.get(reflect_data).is_some()
-    } else {
-        false
     }
 }
 
