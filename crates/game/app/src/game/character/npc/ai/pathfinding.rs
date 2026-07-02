@@ -4,7 +4,7 @@ use crate::game::level::LevelSpawnState;
 use crate::screens::Screen;
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
 use bevy::prelude::*;
-use common::{AppSystems, PausableSystems, TileCoords, WorldCoords, WorldPosition};
+use common::{AppSystems, GameplaySystems, PausableSystems, TileCoords, WorldCoords, WorldPosition};
 use getset::Getters;
 use physics::{Collider, MovementController};
 use rand::{Rng, RngExt};
@@ -21,12 +21,10 @@ pub(super) fn plugin(app: &mut App) {
             update_movement_state,
         )
             .chain()
-            .run_if(
-                in_state(Screen::Gameplay)
-                    .and_then(in_state(LevelSpawnState::Finished))
-            )
+            .in_set(GameplaySystems)
+            .in_set(PausableSystems)
             .in_set(AppSystems::Update)
-            .in_set(PausableSystems),
+            .run_if(in_state(LevelSpawnState::Finished)),
     );
 }
 

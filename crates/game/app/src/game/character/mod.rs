@@ -1,12 +1,11 @@
 use crate::action_state_scene;
-use crate::screens::Screen;
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
 use assets::resource::character::{AnimationContext, CharacterData, CharacterResource};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use common::{Facing, Scale, WorldPosition};
+use common::{Facing, GameplaySystems, Scale, WorldPosition};
 use data::prelude::*;
 use data::register_prototype_system;
 use physics::{MovementController, PhysicsData, DEFAULT_MAX_SPEED};
@@ -31,7 +30,7 @@ pub fn plugin(app: &mut App) {
         state::plugin,
     ));
 
-    app.add_systems(Update, initialize_characters.run_if(in_state(Screen::Gameplay)));
+    app.add_systems(Update, initialize_characters.in_set(GameplaySystems));
 }
 
 register_prototype_system!(initialize_characters, CharacterBuilder);

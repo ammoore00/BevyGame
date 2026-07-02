@@ -1,32 +1,24 @@
 use bevy::prelude::*;
 
-mod coords;
 mod app;
 mod character;
+mod coords;
+mod game_states;
 
 pub use crate::{
-    app::{
-        AppSystems,
-        Pause, PausableSystems,
-    },
+    app::{AppSystems, PausableSystems, Pause},
     character::Facing,
     coords::{
-        TileCoords, TilePosition,
-        WorldCoords, WorldPosition,
-        ScreenCoords,
-        SCREEN_Z_SCALE, TILE_WIDTH, TILE_HEIGHT,
-        rotate_screen_space_to_facing,
-        rotate_screen_space_to_movement,
-    }
+        SCREEN_Z_SCALE, ScreenCoords, TILE_HEIGHT, TILE_WIDTH, TileCoords, TilePosition,
+        WorldCoords, WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
+    },
+    game_states::{GameState, GameplaySystems},
 };
 
 pub struct CommonPlugin;
 impl Plugin for CommonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            app::plugin,
-            coords::plugin,
-        ));
+        app.add_plugins((app::plugin, coords::plugin, game_states::plugin));
 
         app.insert_resource(Scale(6.0));
     }

@@ -4,7 +4,7 @@ use crate::screens::Screen;
 use assets::action_states::Attacking;
 use assets::resource::character::{AnimationContext, AnimationData, AttackResource};
 use bevy::prelude::*;
-use common::{AppSystems, Facing, PausableSystems};
+use common::{AppSystems, Facing, GameplaySystems, PausableSystems};
 use data::prelude::*;
 use tracing::warn;
 
@@ -17,7 +17,7 @@ pub(super) fn plugin(app: &mut App) {
                 .chain()
                 .in_set(AppSystems::Respond),
         )
-            .run_if(in_state(Screen::Gameplay))
+            .in_set(GameplaySystems)
             .in_set(PausableSystems),
     );
 }

@@ -1,6 +1,6 @@
 use crate::screens::Screen;
 use bevy::prelude::*;
-use common::{AppSystems, PausableSystems};
+use common::{AppSystems, GameplaySystems, PausableSystems};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -9,7 +9,7 @@ pub(super) fn plugin(app: &mut App) {
             update_stamina_timer.in_set(AppSystems::TickTimers),
             update_stamina.in_set(AppSystems::Update),
         )
-            .run_if(in_state(Screen::Gameplay))
+            .in_set(GameplaySystems)
             .in_set(PausableSystems),
     )
     .add_observer(on_stamina_event);

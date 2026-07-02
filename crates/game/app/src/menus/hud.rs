@@ -6,7 +6,7 @@ use crate::screens::Screen;
 use crate::theme::widgets;
 use crate::marker;
 use bevy::prelude::*;
-use common::AppSystems;
+use common::{AppSystems, GameplaySystems};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<StatBarAssets>();
@@ -15,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (update_health_bar, update_stamina_bar)
-            .run_if(in_state(Screen::Gameplay))
+            .in_set(GameplaySystems)
             .in_set(AppSystems::Respond),
     );
 }

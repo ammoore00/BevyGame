@@ -1,37 +1,45 @@
 //! The screen state for the main gameplay.
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
-use common::Pause;
+use common::{GameState, GameplaySystems, Pause};
 use crate::gamepad::gamepad_just_pressed;
 use crate::{game::level::spawn_level, menus::Menu, screens::Screen};
 use crate::game::level::reset_level_state;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Screen::Gameplay), spawn_level);
-    app.add_systems(OnExit(Screen::Gameplay), reset_level_state);
+    app.add_systems(
+        OnEnter(Screen::Gameplay),
+        (set_game_state, spawn_level).chain()
+    );
+    app.add_systems(
+        OnExit(Screen::Gameplay),
+        (reset_level_state, set_menu_state).chain()
+    );
 
     // Toggle pause on key press.
     app.add_systems(
         Update,
         (
-            (pause, spawn_pause_overlay, open_pause_menu).run_if(
-                in_state(Screen::Gameplay).and_then(in_state(Menu::None)).and_then(
-                    input_just_pressed(KeyCode::KeyP)
+            (pause, spawn_pause_overlay, open_pause_menu)
+                .in_set(GameplaySystems)
+                .run_if(
+                    in_state(Menu::None)
+                        .and_then(input_just_pressed(KeyCode::KeyP))
                         .or_else(input_just_pressed(KeyCode::Escape))
                         .or_else(gamepad_just_pressed(GamepadButton::Start)),
                 ),
-            ),
-            close_menu.run_if(
-                in_state(Screen::Gameplay)
-                    .and_then(not(in_state(Menu::None)))
+            close_menu
+                .in_set(GameplaySystems)
+                .run_if(
+                    not(in_state(Menu::None))
                     .and_then(input_just_pressed(KeyCode::KeyP)),
-            ),
+                ),
         ),
     );
     app.add_systems(OnExit(Screen::Gameplay), (close_menu, unpause));
     app.add_systems(
         OnEnter(Menu::None),
-        unpause.run_if(in_state(Screen::Gameplay)),
+        unpause.in_set(GameplaySystems),
     );
 }
 
@@ -63,4 +71,12 @@ fn open_pause_menu(mut next_menu: ResMut<NextState<Menu>>) {
 
 fn close_menu(mut next_menu: ResMut<NextState<Menu>>) {
     next_menu.set(Menu::None);
+}
+
+fn set_game_state(mut next_game_state: ResMut<NextState<GameState>>) {
+    next_game_state.set(GameState::Gameplay)
+}
+
+fn set_menu_state(mut next_game_state: ResMut<NextState<GameState>>) {
+    next_game_state.set(GameState::Menu)
 }

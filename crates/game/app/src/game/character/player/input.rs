@@ -8,7 +8,7 @@ use crate::screens::Screen;
 use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
 use assets::resource::character::{AttackDefinition, AttackRegistry, AttackResource};
 use bevy::prelude::*;
-use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, PausableSystems, WorldPosition};
+use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameplaySystems, PausableSystems, WorldPosition};
 use data::prelude::*;
 use physics::{MovementController, PhysicsData};
 use std::any::TypeId;
@@ -19,17 +19,16 @@ pub(super) fn plugin(app: &mut App) {
         (
             // Normal Systems
             (record_aim_input,)
-                .run_if(in_state(Screen::Gameplay))
-                .in_set(AppSystems::RecordInput)
-                .in_set(PausableSystems),
+                .in_set(GameplaySystems)
+                .in_set(PausableSystems)
+                .in_set(AppSystems::RecordInput),
             camera_follow_player.in_set(AppSystems::Respond),
             // Exclusive Systems
-            // Note: Chaining exclusive systems works if they all have the &mut World signature
             (record_action_input, record_player_movement_input)
                 .chain()
-                .run_if(in_state(Screen::Gameplay))
-                .in_set(AppSystems::RecordInput)
-                .in_set(PausableSystems),
+                .in_set(GameplaySystems)
+                .in_set(PausableSystems)
+                .in_set(AppSystems::RecordInput),
         ),
     );
 }

@@ -11,6 +11,7 @@ use crate::{audio::music, marker, screens::Screen};
 use assets::resource::map::{Palette, Palettes};
 use assets::resource::AudioResource;
 use bevy::prelude::*;
+use common::GameState;
 use data::prelude::loc;
 
 pub(super) fn plugin(app: &mut App) {
@@ -68,6 +69,7 @@ pub fn spawn_level(
 }
 
 pub fn reset_level_state(mut next_state: ResMut<NextState<LevelSpawnState>>) {
+    info!("Cleaning up level");
     next_state.set(LevelSpawnState::Uninitialized);
 }
 
@@ -82,7 +84,7 @@ fn construct_level(
         Level
         Transform
         Visibility
-        DespawnOnExit<Screen>(Screen::Gameplay)
+        DespawnOnExit<GameState>(GameState::Gameplay)
         Children [
             music(loc::<AudioResource>("music/8_bit_open_world").unwrap())
         ]
