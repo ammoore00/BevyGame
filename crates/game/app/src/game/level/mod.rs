@@ -6,10 +6,11 @@ pub mod map;
 use crate::game::character::npc::npc_bundle;
 use crate::game::character::player::player;
 use crate::game::level::grid::nav::NavContext;
-use crate::game::level::map::map_scene;
-use crate::{audio::music, marker, screens::Screen};
+use crate::game::level::map::{map_scene, NavBakeError};
+use crate::{audio::music, marker};
 use assets::resource::map::{Palette, Palettes};
 use assets::resource::AudioResource;
+use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use common::GameState;
 use data::prelude::loc;
@@ -23,11 +24,13 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(LevelSpawnState::BakeNav), bake_nav);
     app.add_systems(OnEnter(LevelSpawnState::AddObjects), add_objects);
     app.add_systems(OnEnter(LevelSpawnState::Cleanup), finish_level_spawn);
+
+    app.add_observer(on_level_error);
 }
 
 marker!(Level);
 
-#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(States, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LevelSpawnState {
     #[default]
     Uninitialized,
@@ -37,6 +40,7 @@ pub enum LevelSpawnState {
     AddObjects,
     Cleanup,
     Finished,
+    Error,
 }
 impl LevelSpawnState {
     fn next(self) -> Self {
@@ -50,6 +54,10 @@ impl LevelSpawnState {
             LevelSpawnState::Finished => {
                 warn!("Attempting to transition from Finished state using next().");
                 LevelSpawnState::Finished
+            },
+            LevelSpawnState::Error=> {
+                error!("Attempting to transition from Error state using next().");
+                LevelSpawnState::Error
             },
         }
     }
@@ -68,7 +76,9 @@ pub fn spawn_level(
     next_state.set(LevelSpawnState::Uninitialized.next());
 }
 
-pub fn reset_level_state(mut next_state: ResMut<NextState<LevelSpawnState>>) {
+pub fn reset_level_state(
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+) {
     info!("Cleaning up level");
     next_state.set(LevelSpawnState::Uninitialized);
 }
@@ -104,8 +114,10 @@ fn bake_tiles(
     let level = match level.single() {
         Ok(level) => level,
         Err(err) => {
-            // TODO: figure out how to recover from this error
-            panic!("Error getting level entity: {:?}", err);
+            error!("Error getting level entity while baking tiles: {:?}", err);
+            next_state.set(LevelSpawnState::Error);
+            commands.trigger(LevelErrorEvent(err.into()));
+            return;
         },
     };
 
@@ -122,13 +134,14 @@ fn bake_tiles(
 fn bake_nav(
     nav_context: NavContext,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
-    commands: Commands,
+    mut commands: Commands,
 ) {
     info!("Level construction - baking nav map");
 
-    if let Err(err) = map::bake_nav(nav_context, commands) {
-        // TODO: figure out how to recover from this error
-        panic!("Error baking nav map: {:?}", err);
+    if let Err(err) = map::bake_nav(nav_context, commands.reborrow()) {
+        error!("Error baking nav map: {:?}", err);
+        commands.trigger(LevelErrorEvent(err.into()));
+        return;
     };
 
     next_state.set(LevelSpawnState::BakeNav.next());
@@ -143,8 +156,10 @@ fn add_objects(
     let level = match level.single() {
         Ok(level) => level,
         Err(err) => {
-            // TODO: figure out how to recover from this error
-            panic!("Error getting level entity: {:?}", err);
+            error!("Error getting level entity while adding objects: {:?}", err);
+            next_state.set(LevelSpawnState::Error);
+            commands.trigger(LevelErrorEvent(err.into()));
+            return;
         },
     };
 
@@ -169,4 +184,20 @@ fn finish_level_spawn(
     info!("Level construction - cleanup");
     next_state.set(LevelSpawnState::Cleanup.next());
     info!("Finished constructing level");
+}
+
+fn on_level_error(event: On<LevelErrorEvent>) {
+    error!("Error encountered while building level: {:?}", event.0);
+    todo!()
+}
+
+#[derive(Event, Debug)]
+pub struct LevelErrorEvent(LevelError);
+
+#[derive(thiserror::Error, Debug)]
+enum LevelError {
+    #[error("Failed to get level entity: {}", .0)]
+    LevelEntity(#[from] QuerySingleError),
+    #[error("Failed to bake navmesh: {}", .0)]
+    NavBaking(#[from] NavBakeError),
 }

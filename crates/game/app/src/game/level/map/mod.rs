@@ -4,7 +4,7 @@ use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
 use crate::game::level::map::room::{build_room, RoomBuilderContext};
 use assets::resource::map::{MapDataLocation, MapDefinition, MapResource, Palette};
-use bevy::ecs::query::{QueryData, QueryItem};
+use bevy::ecs::query::{QueryData, QueryItem, QuerySingleError};
 use bevy::prelude::*;
 use data::prelude::*;
 use data::register_prototype_system;
@@ -137,11 +137,8 @@ pub fn spawn_map_grid(
 pub fn bake_nav(
     context: NavContext,
     mut commands: Commands,
-) -> Result<(), BevyError> {
-    let (map_entity, children) = context.map.single()
-        .map_err(|err| {
-            BevyError::error(format!("Error getting level entity: {:?}", err))
-        })?;
+) -> Result<(), NavBakeError> {
+    let (map_entity, children) = context.map.single()?;
 
     let mut tile_map = None;
     for child in children {
@@ -150,13 +147,21 @@ pub fn bake_nav(
             break;
         }
     }
-    let tile_map = tile_map.ok_or(BevyError::error("No grid child found for level map"))?;
+    let tile_map = tile_map.ok_or(NavBakeError::GridMissing)?;
 
     let tile_nav_map = TileNavMap::from_map(tile_map, context.nav_query);
     let nav_entity = commands.spawn(tile_nav_map).id();
     commands.entity(map_entity).add_child(nav_entity);
     
     Ok(())
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum NavBakeError {
+    #[error("Failed to get level entity: {}", .0)]
+    LevelEntity(#[from] QuerySingleError),
+    #[error("No grid child found for level map")]
+    GridMissing,
 }
 
 /// Stores the current state of the generated map
