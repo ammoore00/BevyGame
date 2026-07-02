@@ -1,5 +1,6 @@
+use assets::codec::TileCodec;
+use assets::resource::{TileFacing, TileResource, TileShape};
 use crate::{create_dir, write_data, WriteError};
-use app::datagen_api::*;
 use data::prelude::*;
 
 const LATEST_FORMAT: u8 = 1;

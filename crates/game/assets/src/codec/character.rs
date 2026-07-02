@@ -14,7 +14,7 @@ use std::collections::HashMap;
 pub struct CharacterCodec {
     pub format: u8,
     pub allowed_states: Maybe<AllowedStatesCodec>,
-    pub animations: HashMap<ActionStateEnum, ResourceLocation<AnimationResource>>,
+    pub animations: HashMap<ActionStateCodec, ResourceLocation<AnimationResource>>,
     pub attack_set: Maybe<ResourceLocation<AttackSetResource>>,
     pub collider: ColliderCodec,
 }
@@ -49,7 +49,7 @@ pub enum AllowedStatesCodec {
     Default,
     Passive,
     #[serde(untagged)]
-    Custom(Vec<ActionStateEnum>),
+    Custom(Vec<ActionStateCodec>),
 }
 
 impl AllowedStatesCodec {
@@ -64,7 +64,7 @@ impl AllowedStatesCodec {
 
 /// Enum used for referencing action states in data context
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum ActionStateEnum {
+pub enum ActionStateCodec {
     Idle,
     Walking,
     Running,
@@ -72,14 +72,14 @@ pub enum ActionStateEnum {
     Attacking,
 }
 
-impl ActionStateEnum {
+impl ActionStateCodec {
     pub fn into_type_id(self) -> TypeId {
         match self {
-            ActionStateEnum::Idle => TypeId::of::<Idle>(),
-            ActionStateEnum::Walking => TypeId::of::<Walking>(),
-            ActionStateEnum::Running => TypeId::of::<Running>(),
-            ActionStateEnum::Sprinting => TypeId::of::<Sprinting>(),
-            ActionStateEnum::Attacking => TypeId::of::<Attacking>(),
+            ActionStateCodec::Idle => TypeId::of::<Idle>(),
+            ActionStateCodec::Walking => TypeId::of::<Walking>(),
+            ActionStateCodec::Running => TypeId::of::<Running>(),
+            ActionStateCodec::Sprinting => TypeId::of::<Sprinting>(),
+            ActionStateCodec::Attacking => TypeId::of::<Attacking>(),
         }
     }
 }

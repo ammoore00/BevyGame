@@ -8,7 +8,7 @@ pub mod transition;
 pub use {
     map::{MapDataLocation, MapDefinition, MapRegistry, MapResource},
     palette::{Palette, Palettes},
-    room::{RoomConnection, RoomDefinition, RoomLayout, RoomRegistry, RoomResource},
+    room::{ConnectionSize, ConnectionFacing, RoomConnection, RoomDefinition, RoomLayout, RoomRegistry, RoomResource},
 };
 
 pub(super) fn plugin(app: &mut App) {

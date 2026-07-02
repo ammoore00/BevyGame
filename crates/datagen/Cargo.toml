@@ -4,15 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-app = { path = "../game/app" }
-data = { path = "../game/data" }
+assets = { workspace = true }
+data = { workspace = true }
 
-thiserror = "2.0.17"
-ron = "0.10.1"
-serde = { version = "1.0.228", features = ["derive"] }
-getset = "0.1.6"
-
-tracing = { version = "0.1", features = [
-    "max_level_debug",
-    "release_max_level_warn",
-] }
+getset = { workspace = true }
+ron = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

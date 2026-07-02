@@ -208,7 +208,7 @@ dependencies = [
  "paste",
  "physics",
  "rand 0.10.1",
- "ron 0.12.1",
+ "ron",
  "serde",
  "thiserror 2.0.17",
  "tracing",
@@ -291,7 +291,7 @@ dependencies = [
  "maybe_fields",
  "paste",
  "physics",
- "ron 0.12.1",
+ "ron",
  "serde",
  "thiserror 2.0.17",
  "tracing",
@@ -411,12 +411,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
-name = "base64"
-version = "0.22.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
-
-[[package]]
 name = "bevy"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -473,7 +467,7 @@ dependencies = [
  "downcast-rs 2.0.2",
  "either",
  "petgraph",
- "ron 0.12.1",
+ "ron",
  "serde",
  "smallvec",
  "thiserror 2.0.17",
@@ -571,7 +565,7 @@ dependencies = [
  "futures-util",
  "js-sys",
  "notify-debouncer-full",
- "ron 0.12.1",
+ "ron",
  "serde",
  "stackfuture",
  "thiserror 2.0.17",
@@ -1858,7 +1852,7 @@ dependencies = [
  "bevy_transform",
  "bevy_utils",
  "derive_more",
- "ron 0.12.1",
+ "ron",
  "serde",
  "thiserror 2.0.17",
  "uuid",
@@ -2438,10 +2432,10 @@ checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 name = "datagen"
 version = "0.1.0"
 dependencies = [
- "app",
+ "assets",
  "data",
  "getset",
- "ron 0.10.1",
+ "ron",
  "serde",
  "thiserror 2.0.17",
  "tracing",
@@ -5018,19 +5012,6 @@ dependencies = [
  "num-rational",
  "thiserror 2.0.17",
  "tracing",
-]
-
-[[package]]
-name = "ron"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "beceb6f7bf81c73e73aeef6dd1356d9a1b2b4909e1f0fc3e59b034f9572d7b7f"
-dependencies = [
- "base64",
- "bitflags 2.13.0",
- "serde",
- "serde_derive",
- "unicode-ident",
 ]
 
 [[package]]

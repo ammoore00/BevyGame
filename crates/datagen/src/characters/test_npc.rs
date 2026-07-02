@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use app::datagen_api::*;
+use assets::codec::{ActionStateCodec, CapsuleCodec, ColliderKindCodec, FrameDataCodec};
 use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
 use crate::WriteError;
 
@@ -16,7 +16,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
             interval: 150,
         },
     ).with_image("player/idle");
-    animation_map.insert(ActionStateEnum::Idle, idle);
+    animation_map.insert(ActionStateCodec::Idle, idle);
 
     let walking = AnimationData::new(
         "test/walking",
@@ -26,7 +26,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
             interval: 50,
         },
     ).with_image("player/walking");
-    animation_map.insert(ActionStateEnum::Walking, walking);
+    animation_map.insert(ActionStateCodec::Walking, walking);
 
     let running = AnimationData::new(
         "test/running",
@@ -36,7 +36,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
             interval: 50,
         },
     ).with_image("player/running");
-    animation_map.insert(ActionStateEnum::Running, running);
+    animation_map.insert(ActionStateCodec::Running, running);
 
     let sprinting = AnimationData::new(
         "test/sprinting",
@@ -46,7 +46,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
             interval: 35,
         },
     ).with_image("player/running");
-    animation_map.insert(ActionStateEnum::Sprinting, sprinting);
+    animation_map.insert(ActionStateCodec::Sprinting, sprinting);
 
     // Attacks
 

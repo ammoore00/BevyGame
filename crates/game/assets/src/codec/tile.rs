@@ -6,7 +6,7 @@ use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
 
 #[maybe_fields]
-#[derive(Serialize, Deserialize, TypePath)]
+#[derive(Serialize, Deserialize, TypePath, derive_new::new)]
 pub struct TileCodec {
     pub format: u8,
     pub sprite_sheet: ResourceLocation<TileSpriteResource>,

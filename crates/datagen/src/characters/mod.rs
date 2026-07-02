@@ -5,9 +5,10 @@ use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
 use crate::{create_dir, write_data, WriteError};
-use app::datagen_api::*;
 use data::prelude::*;
 use std::collections::HashMap;
+use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderKindCodec, FrameDataCodec, TextureAtlasCodec};
+use assets::resource::character::{AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
 
 pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(CharacterResource::ROOT_DIR)?;
@@ -74,7 +75,7 @@ struct CharacterData {
     #[getset(set_with)]
     allowed_states: AllowedStatesCodec,
     #[getset(set_with)]
-    animations: HashMap<ActionStateEnum, AnimationData>,
+    animations: HashMap<ActionStateCodec, AnimationData>,
     attack_set: Option<AttackSetData>,
     collider: ColliderKindCodec,
 }

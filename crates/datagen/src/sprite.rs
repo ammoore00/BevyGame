@@ -1,4 +1,4 @@
-use app::datagen_api::*;
+use assets::codec::TextureAtlasCodec;
 
 pub struct TextureAtlasData {
     size: (u32, u32),
