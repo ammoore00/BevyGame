@@ -199,13 +199,11 @@ dependencies = [
  "assets",
  "bevy",
  "common",
- "const_format",
  "crossbeam",
  "data",
  "derive-new",
  "getrandom 0.4.2",
  "getset",
- "maybe_fields",
  "parry3d",
  "paste",
  "physics",
@@ -285,10 +283,18 @@ name = "assets"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "common",
+ "const_format",
  "data",
+ "derive-new",
+ "getset",
+ "maybe_fields",
+ "paste",
+ "physics",
  "ron 0.12.1",
  "serde",
  "thiserror 2.0.17",
+ "tracing",
  "walkdir",
 ]
 

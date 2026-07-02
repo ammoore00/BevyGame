@@ -1,4 +1,4 @@
-//! A loading screen during which game assets are loaded if necessary.
+//! A loading screen during which game resource are loaded if necessary.
 //! This reduces stuttering, especially for audio on Wasm.
 
 use bevy::prelude::*;

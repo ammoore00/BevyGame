@@ -14,7 +14,7 @@ pub mod tiles;
 mod characters;
 mod sprite;
 
-static ROOT_GENERATED: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from(Path::new("../assets/generated")));
+static ROOT_GENERATED: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from(Path::new("../resource/generated")));
 pub static ROOT: LazyLock<PathBuf> = LazyLock::new(|| ROOT_GENERATED.join("base"));
 
 fn main() {

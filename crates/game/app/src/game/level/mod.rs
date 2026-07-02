@@ -3,13 +3,13 @@
 pub mod grid;
 pub mod map;
 
-use crate::audio::AudioResource;
 use crate::game::character::npc::npc_bundle;
 use crate::game::character::player::player;
 use crate::game::level::grid::nav::NavContext;
-use crate::game::level::map::palette::{Palette, Palettes};
 use crate::game::level::map::map_scene;
 use crate::{audio::music, marker, screens::Screen};
+use assets::resource::map::{Palette, Palettes};
+use assets::resource::AudioResource;
 use bevy::prelude::*;
 use data::prelude::loc;
 

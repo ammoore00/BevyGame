@@ -24,14 +24,14 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub enum AssetSystems {
-    /// Register which assets need to be loaded
+    /// Register which resource need to be loaded
     RegisterManifests,
-    /// Load the assets themselves based on registered manifests
+    /// Load the resource themselves based on registered manifests
     /// This should only be used by the asset loader!
     LoadAssets,
     /// Resolve any inter-asset references
     ResolveAssets,
-    /// Load resolved assets into resolved registries
+    /// Load resolved resource into resolved registries
     /// This should only be used by the asset loader!
     PopulateResolvedAssets,
     /// Populate asset reference resources

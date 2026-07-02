@@ -109,7 +109,7 @@ impl<T: ResourceKind> ResourceLocation<T> {
         })
     }
 
-    /// Returns the full path to the associated file on disk, relative to the base assets folder
+    /// Returns the full path to the associated file on disk, relative to the base resource folder
     pub fn as_path(&self) -> PathBuf {
         Path::new(&self.namespace.0)
             .join(T::ROOT_DIR)

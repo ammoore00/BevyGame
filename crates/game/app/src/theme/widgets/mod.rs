@@ -1,17 +1,11 @@
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
-use data::define_sprite_resource;
+use assets::resource::UiSpriteResource;
 use data::prelude::loc;
 
 pub mod button;
 pub mod text;
-
-define_sprite_resource!(Ui, "ui");
-
-pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(text::plugin);
-}
 
 pub fn ui_root() -> impl Scene {
     bsn! [

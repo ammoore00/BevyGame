@@ -1,18 +1,17 @@
 use crate::codec::{AnimationCodec, FrameDataCodec};
-use crate::game::character::animation::components::AnimationStateMap;
-use crate::game::character::attack::AttackResource;
-use crate::game::character::state::states::Attacking;
-use crate::game::character::state::tracking::ActionStateTracker;
-use assets::{AssetLoadState, AssetSystems, LoaderJobManager, RonAssetLoader};
+use crate::loader::{LoaderJobManager, RonAssetLoader};
+use crate::resource::character::CharacterSpriteResource;
+use crate::state::AssetSystems;
+use crate::AssetLoadState;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use data::define_data_resource;
 use data::prelude::*;
 use getset::{CloneGetters, Getters};
 use std::time::Duration;
-use tracing::{info, warn};
-use crate::game::character::assets::CharacterSpriteResource;
+use tracing::info;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<PartialAnimationData>();
     app.init_asset::<AnimationData>();
     app.init_asset_loader::<RonAssetLoader<AnimationCodec, PartialAnimationData>>();
@@ -24,37 +23,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-pub fn get_animation_handle(
-    state_tracker: &ActionStateTracker,
-    animation_state_map: &AnimationStateMap,
-    attacking_state: Option<&Attacking>,
-    attack_context: &SystemRegistry<AttackResource>,
-    animation_context: &AnimationContext,
-) -> Option<Handle<AnimationData>> {
-    if let Some(attacking_state) = attacking_state {
-        let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
-            error!("Could not find attack definition for {}!", attacking_state.attack());
-            return None;
-        };
-
-        // TODO: Improve error handling
-        let Some(animation_handle) =
-            animation_context.get_handle(attack.animation()).ok()
-        else {
-            error!("Could not find animation definition for attack: {}!", attacking_state.attack());
-            return None;
-        };
-
-        Some(animation_handle)
-    } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
-        Some(animation_handle)
-    } else {
-        warn!("Could not find animation data for state!");
-        None
-    }
-}
-
-/// Resolved asset references for an animation, including handles to other assets
+/// Resolved asset references for an animation, including handles to other resource
 #[derive(Debug, Clone, PartialEq, Asset, Reflect, Getters, CloneGetters)]
 pub struct AnimationData {
     #[getset(get_clone = "pub")]

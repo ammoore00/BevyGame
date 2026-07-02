@@ -1,7 +1,5 @@
 //! Player-specific behavior.
 
-use crate::game::character::assets::{CharacterResource, CharacterSpriteResource};
-use crate::game::character::attack::{AttackContext, AttackResource};
 use crate::game::character::health::Health;
 use crate::game::character::stamina::{Stamina, StaminaEvent};
 use crate::game::character::{CharacterProps, CharacterPrototype};
@@ -9,6 +7,7 @@ use crate::game::particle::{ParticleAnimation, ParticleSpawnEvent};
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
+use assets::resource::character::{AttackContext, AttackResource, CharacterResource, CharacterSpriteResource};
 use common::Facing;
 use data::prelude::*;
 

@@ -1,7 +1,6 @@
-use crate::game::character::state::capabilities::ActionStateCapabilities;
-use crate::game::character::state::states::Idle;
-use crate::game::character::state::tracking::{ActionStateEvent, ActionStateTracker, ReflectTimedActionState};
+use crate::game::character::state::tracking::{ActionStateEvent, ActionStateTracker};
 use crate::game::character::Character;
+use assets::action_states::{ActionStateCapabilities, Idle, ReflectTimedActionState};
 use bevy::prelude::*;
 use common::AppSystems;
 use tracing::error;

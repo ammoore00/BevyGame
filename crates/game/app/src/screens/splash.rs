@@ -1,8 +1,8 @@
 //! A splash screen that plays briefly at startup.
 
-use crate::theme::widgets;
-use crate::theme::widgets::UiSpriteResource;
 use crate::screens::Screen;
+use crate::theme::widgets;
+use assets::resource::UiSpriteResource;
 use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,

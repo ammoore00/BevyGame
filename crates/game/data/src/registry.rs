@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use std::collections::{HashMap, HashSet};
 use crate::loc::ResourceLocation;
 use crate::resource::ResourceKind;
-// TODO: Change registry to dynamically register loaded assets instead of loading them all at once
+// TODO: Change registry to dynamically register loaded resource instead of loading them all at once
 //       to support new BSN inline asset definitions
 
 /// Maps resource locations to bevy asset handles
@@ -40,7 +40,7 @@ impl<T: ResourceKind> ResourceRegistry<T> {
         self.manifest.contains(loc)
     }
 
-    /// Checks if all assets in the manifest have been loaded
+    /// Checks if all resource in the manifest have been loaded
     pub fn all_loaded(&self) -> bool {
         self.manifest.iter().all(|e| self.registry.contains_key(e))
     }

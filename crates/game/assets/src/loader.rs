@@ -31,7 +31,7 @@ pub(super) fn plugin(app: &mut App) {
 fn load_assets(world: &mut World) {
     let loader = world.resource::<GameAssetLoader>();
     let jobs = loader.loader_jobs.clone();
-    jobs.iter().for_each(|job| job.load(world).expect("Failed to load assets"));
+    jobs.iter().for_each(|job| job.load(world).expect("Failed to load resource"));
 }
 
 fn advance_from_loading_to_resolving(world: &mut World) {
@@ -43,7 +43,7 @@ fn advance_from_loading_to_resolving(world: &mut World) {
     }
 }
 
-/// Resource which holds a list of jobs to load assets
+/// Resource which holds a list of jobs to load resource
 /// The jobs retrieve the `ResourceRegistry` from the World,
 /// load each asset, then insert them into the registry
 #[derive(Default, Resource)]
@@ -68,11 +68,11 @@ impl GameAssetLoader {
 }
 
 pub trait LoaderJobManager {
-    /// Adds a job to the asset loader which will load all assets in the registry
+    /// Adds a job to the asset loader which will load all resource in the registry
     fn add_resource_registry<T: ResourceKind>(&mut self);
     /// Adds a job to the asset loader with a pre-filled manifest
     fn add_registry_with_manifest<T: ResourceKind>(&mut self, manifest: Vec<ResourceLocation<T>>);
-    /// Adds a job to the asset loader which will discover all assets in the registry automatically
+    /// Adds a job to the asset loader which will discover all resource in the registry automatically
     fn add_registry_with_discovery<T: ResourceKind>(&mut self);
 }
 
@@ -100,8 +100,8 @@ impl LoaderJobManager for App {
         registry.extend_manifest(manifest);
     }
 
-    // TODO: Eventually I want to be able to load assets from multiple places (e.g. mod files)
-    //       This will require a way to check all places, not just the normal assets folder
+    // TODO: Eventually I want to be able to load resource from multiple places (e.g. mod files)
+    //       This will require a way to check all places, not just the normal resource folder
     fn add_registry_with_discovery<T: ResourceKind>(&mut self) {
         // Find all namespaces currently available
         let Ok(namespaces) = std::fs::read_dir("./assets/") else {
@@ -151,7 +151,7 @@ impl<T: ResourceKind> Default for LoaderJob<T> {
     }
 }
 impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
-    /// Iterate through all registered assets for the associated registry and loads them
+    /// Iterate through all registered resource for the associated registry and loads them
     fn load(&self, world: &mut World) -> Result<(), LoaderError> {
         let asset_server = world.resource::<AssetServer>();
 

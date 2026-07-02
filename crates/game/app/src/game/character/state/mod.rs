@@ -1,14 +1,11 @@
 use bevy::prelude::*;
 
-pub mod capabilities;
-pub mod states;
 pub mod update;
 pub mod tracking;
 // TODO: Split this file into multiple files
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
-        states::plugin,
         tracking::plugin,
         update::plugin,
     ));

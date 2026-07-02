@@ -1,18 +1,17 @@
-use crate::game::character::attack::{AttackDefinition, AttackRegistry, AttackResource};
 use crate::game::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::game::character::stamina::Stamina;
-use crate::game::character::state::capabilities::ActionStateCapabilities;
-use crate::game::character::state::states::{Attacking, Idle, Running, Sprinting, Walking};
 use crate::game::character::state::tracking;
-use crate::game::character::state::tracking::{is_in_movement_state, ActionState, ActionStateEvent, ActionStateTracker};
-use crate::game::character::{Character};
+use crate::game::character::state::tracking::{is_in_movement_state, ActionStateEvent, ActionStateTracker};
+use crate::game::character::Character;
 use crate::gamepad::GamepadRes;
 use crate::screens::Screen;
+use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
+use assets::resource::character::{AttackDefinition, AttackRegistry, AttackResource};
 use bevy::prelude::*;
 use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, PausableSystems, WorldPosition};
 use data::prelude::*;
-use std::any::TypeId;
 use physics::{MovementController, PhysicsData};
+use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -299,6 +298,7 @@ fn record_action_input(world: &mut World) {
     let aim_facing = aim_facing_query.single(world).unwrap();
     let aim_facing = world.get::<AimFacing>(aim_facing).cloned().unwrap();
 
+    // TODO: Move this logic into attack module
     if attack && (is_movement || is_idle) && stamina.current > 0 {
         let facing = {
             let mut facing = world.get_mut::<Facing>(player).unwrap();

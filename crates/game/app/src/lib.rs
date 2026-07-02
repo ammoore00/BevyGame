@@ -13,7 +13,6 @@ use physics::PhysicsPlugin;
 
 mod asset_tracking;
 mod audio;
-mod codec;
 #[cfg(feature = "dev")]
 mod dev_tools;
 mod game;
@@ -21,16 +20,6 @@ mod gamepad;
 mod menus;
 mod screens;
 mod theme;
-
-pub mod datagen_api {
-    pub use crate::{
-        codec::*,
-        game::level::{
-            grid::tile::{TileFacing, TileShape},
-            map::room::{ConnectionFacing, ConnectionSize, RoomConnection},
-        },
-    };
-}
 
 pub struct AppPlugin;
 

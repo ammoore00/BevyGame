@@ -1,39 +1,29 @@
-use crate::game::character::animation::AnimationContext;
-use crate::game::character::assets::{CharacterData, CharacterResource};
-use crate::game::character::state::states::Idle;
-use crate::screens::Screen;
 use crate::action_state_scene;
+use crate::screens::Screen;
 use animation::{AnimationStateMap, CharacterAnimationTracker};
+use assets::action_states::Idle;
+use assets::resource::character::{AnimationContext, CharacterData, CharacterResource};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::{Facing, Scale, WorldPosition};
 use data::prelude::*;
 use data::register_prototype_system;
+use physics::{MovementController, PhysicsData, DEFAULT_MAX_SPEED};
 use state::tracking::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
-use std::fmt::Display;
-use std::sync::{Arc, RwLock};
-use ::assets::LoaderJobManager;
-use physics::{MovementController, PhysicsData, DEFAULT_MAX_SPEED};
 
 pub mod animation;
 pub mod health;
 pub mod player;
 pub mod stamina;
-pub mod assets;
-pub(crate) mod state;
-pub mod attack;
+pub mod state;
 pub mod npc;
 
 pub fn plugin(app: &mut App) {
-    app.add_registry_with_discovery::<CharacterResource>();
-
     app.add_plugins((
         animation::plugin,
-        assets::plugin,
-        attack::plugin,
         health::plugin,
         npc::plugin,
         player::plugin,

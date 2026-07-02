@@ -1,9 +1,9 @@
-use crate::game::character::animation::assets::AnimationData;
 use bevy::prelude::*;
 use common::Facing;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::time::Duration;
+use assets::resource::character::AnimationData;
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {

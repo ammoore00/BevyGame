@@ -1,6 +1,6 @@
-use crate::game::level::map::transition::{TransitionRoom, TransitionRoomPool};
-use crate::game::level::map::{MapDefinition, MapPool, MapType};
 use bevy::prelude::*;
+use crate::resource::map::map::{MapDefinition, MapPool, MapType};
+use crate::resource::map::transition::{TransitionRoom, TransitionRoomPool};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<Palette>();
@@ -35,7 +35,7 @@ impl Palette {
     pub fn transition_pool(&self) -> &TransitionRoomPool {
         &self.transition_pool
     }
-    
+
     pub fn main_map_pool(&self) -> &MapPool {
         &self.main_map_pool
     }
@@ -57,10 +57,7 @@ impl PaletteDefinition for StandardPalette {
     }
 
     fn create_main_map_pool() -> MapPool {
-        let main_map = MapDefinition {
-            _map_type: MapType::Main,
-            map_size: 3,
-        };
+        let main_map = MapDefinition::new(MapType::Main, 3);
         MapPool(vec![main_map])
     }
 

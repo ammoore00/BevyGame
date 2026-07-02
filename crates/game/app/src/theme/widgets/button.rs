@@ -1,7 +1,8 @@
 use crate::theme::interaction::{BackgroundInteractionPalette, SpriteInteractionPalette};
 use crate::theme::palette::BUTTON_TEXT;
 use crate::theme::widgets::text::LARGE_FONT_SIZE;
-use crate::theme::widgets::{text, UiSpriteResource};
+use crate::theme::widgets::text;
+use assets::resource::UiSpriteResource;
 use bevy::ecs::system::IntoObserverSystem;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;

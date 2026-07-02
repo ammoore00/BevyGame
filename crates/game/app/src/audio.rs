@@ -1,11 +1,7 @@
 use bevy::asset::HandleTemplate;
-use data::prelude::*;
 use bevy::prelude::*;
-use assets::LoaderJobManager;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_registry_with_discovery::<AudioResource>();
-
     app.add_systems(
         Update,
         apply_global_volume.run_if(resource_changed::<GlobalVolume>),
@@ -51,5 +47,3 @@ fn apply_global_volume(
         sink.set_volume(global_volume.volume * playback.volume);
     }
 }
-
-define_resource!(Audio, "audio", AudioSource, ResourceFileType::Audio);

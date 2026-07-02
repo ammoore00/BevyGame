@@ -4,11 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+common = { workspace = true }
 data = { workspace = true }
+# TODO: Figure out some way to remove this dependency
+physics = { workspace = true }
+
+maybe_fields = { path = "../../macros/maybe_fields" }
 
 bevy = { workspace = true }
+const_format = { workspace = true }
+derive-new = { workspace = true }
+getset = { workspace = true }
+paste = { workspace = true }
+ron = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
-ron = { workspace = true }
+tracing = { workspace = true }
 
 walkdir = "2.5.0"

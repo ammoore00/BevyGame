@@ -1,14 +1,12 @@
-use crate::codec::*;
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
-use crate::game::character::animation::AnimationResource;
-use crate::game::character::assets::CharacterResource;
-use crate::game::character::attack::AttackResource;
 use crate::marker;
 use crate::screens::Screen;
 use crate::theme::widgets;
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use serde::de::DeserializeOwned;
+use assets::codec::{AnimationCodec, AttackCodec, CharacterCodec};
+use assets::resource::character::{AnimationResource, AttackResource, CharacterResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

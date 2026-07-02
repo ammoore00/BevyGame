@@ -1,8 +1,8 @@
-use crate::game::level::grid::tile::assets::TileResource;
-use crate::game::level::map::room::RoomConnection;
+use crate::resource::TileResource;
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::resource::map::RoomConnection;
 
 #[derive(Serialize, Deserialize, TypePath)]
 pub struct RoomCodec {

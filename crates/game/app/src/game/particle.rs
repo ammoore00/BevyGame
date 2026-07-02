@@ -1,4 +1,4 @@
-use crate::game::character::animation::FrameData;
+use assets::resource::character::FrameData;
 use bevy::prelude::*;
 use common::{AppSystems, PausableSystems};
 use std::time::Duration;

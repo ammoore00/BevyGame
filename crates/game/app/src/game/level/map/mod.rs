@@ -2,8 +2,8 @@ use crate::game::level::grid;
 use crate::game::level::grid::nav::{NavContext, TileNavMap};
 use crate::game::level::grid::tile::{set_tile_location, TileEntity};
 use crate::game::level::grid::{grid_bundle, merge_tile_map, Grid};
-use crate::game::level::map::palette::Palette;
-use crate::game::level::map::room::RoomBuilderContext;
+use crate::game::level::map::room::{build_room, RoomBuilderContext};
+use assets::resource::map::{MapDataLocation, MapDefinition, MapResource, Palette};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::prelude::*;
 use data::prelude::*;
@@ -11,72 +11,16 @@ use data::register_prototype_system;
 use getset::CopyGetters;
 use rand::{Rng, RngExt};
 
-pub mod palette;
 pub mod room;
-mod transition;
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_asset::<MapDefinition>();
-
-    app.add_plugins((
-        transition::plugin,
-        room::plugin,
-        palette::plugin, // Order matters here - palette must be after room
-    ));
-
     app.add_systems(
         Update,
         initialize_maps
     );
 }
 
-define_data_resource!(Map, "level/maps", MapDefinition);
 register_prototype_system!(initialize_maps, MapBuilder);
-
-/// Pool of all registered map definitions
-/// This contains every map def that the game knows about
-#[derive(Debug, Clone, Default)]
-pub struct MapPool(pub(crate) Vec<MapDefinition>);
-
-/// The type for this map. This affects where in the world it will be used
-///
-/// Main - used as a main map for a world
-/// Boss - boss dungeon, which may or may not be optional, depending on where it gets used
-/// Side - optional side dungeon without a boss
-#[derive(Debug, Clone, Copy)]
-pub enum MapType {
-    Main,
-    _Boss,
-    _Side,
-}
-
-/// Contains all the information needed to generate a map
-///
-/// This contains both information about map selection and information about building the map
-/// - Selection information includes things such as map type and palette
-/// - Build information includes things like set pieces, injectables, and connections
-#[derive(Asset, Debug, Clone, TypePath)]
-pub struct MapDefinition {
-    _map_type: MapType,
-
-    // Temporary
-    map_size: usize,
-}
-impl MapDefinition {
-    const PLACEHOLDER: Self = Self {
-        _map_type: MapType::Main,
-        map_size: 1,
-    };
-}
-
-// TODO: Replace this with actually loading map definitions from data files
-#[derive(Component, Default, Clone)]
-pub struct MapDataLocation(Option<MapDefinition>, Option<Palette>);
-impl From<MapDataLocation> for ResourceLocation<MapResource> {
-    fn from(_value: MapDataLocation) -> Self {
-        todo!()
-    }
-}
 
 #[derive(Clone)]
 pub struct MapProps {
@@ -162,14 +106,14 @@ pub fn spawn_map_grid(
 
     let mut grid = Grid::new(grid::tile_map());
 
-    for _ in 0..map_definition.map_size {
+    for _ in 0..*map_definition.map_size() {
         let index = rand.random_range(0..transition_pool.0.len());
         let room = transition_pool.0[index].room();
 
         let room = context.room_registry.get(room).unwrap();
         let room = context.room_assets.get(room).cloned().unwrap();
 
-        let room_tile_map = room.build(context);
+        let room_tile_map = build_room(&room, context);
 
         let grid_size = grid.size();
         merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))

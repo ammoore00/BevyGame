@@ -1,10 +1,10 @@
 //! The credits menu.
 
-use crate::audio::AudioResource;
 use crate::gamepad::gamepad_just_pressed;
 use crate::theme::widgets;
 use crate::theme::widgets::{button, text};
 use crate::{audio::music, menus::Menu};
+use assets::resource::AudioResource;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use data::prelude::loc;
 

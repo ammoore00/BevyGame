@@ -1,20 +1,21 @@
-use crate::codec::CharacterCodec;
-use crate::codec::ColliderCodec;
-use crate::game::character::animation::{AnimationContext, AnimationData, AnimationResource};
-use crate::game::character::attack::{AttackContext, AttackDefinition, AttackSetResource};
-use crate::game::character::state::capabilities::ActionStateCapabilities;
-use crate::game::character::state::states::DEFAULT_STATES;
-use assets::{LoaderJobManager, RonAssetLoader};
+use crate::action_states::{ActionStateCapabilities, DEFAULT_STATES};
+use crate::codec::{CharacterCodec, ColliderCodec};
+use crate::loader::{LoaderJobManager, RonAssetLoader};
+use crate::resource::character::{AnimationContext, AnimationData, AnimationResource, AttackContext, AttackDefinition, AttackSetResource};
 use bevy::prelude::*;
-use data::prelude::*;
+use data::loc::ResourceLocation;
+use data::{define_data_resource, define_sprite_resource};
 use getset::Getters;
 use std::any::TypeId;
 use std::collections::HashMap;
+use tracing::error;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_registry_with_discovery::<CharacterSpriteResource>();
+    app.add_registry_with_discovery::<CharacterResource>();
     app.init_asset::<CharacterData>();
     app.init_asset_loader::<RonAssetLoader<CharacterCodec, CharacterData>>();
+
+    app.add_registry_with_discovery::<CharacterSpriteResource>();
 }
 
 #[derive(Debug, Clone, Asset, TypePath, derive_new::new, Getters)]
@@ -29,7 +30,7 @@ impl CharacterData {
     pub fn state_capabilities(&self) -> &ActionStateCapabilities {
         &self.state_capabilities
     }
-    
+
     pub fn resolve_animation_handles(&self, animation_context: &AnimationContext) -> HashMap<TypeId, Handle<AnimationData>> {
         let mut animation_handles = HashMap::new();
 
@@ -46,7 +47,7 @@ impl CharacterData {
         }
         animation_handles
     }
-    
+
     pub fn _resolve_attack_handles(&self, context: &AttackContext) -> Vec<Handle<AttackDefinition>> {
         match &self._attack_set {
             None => Vec::new(),

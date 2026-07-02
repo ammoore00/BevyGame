@@ -1,13 +1,12 @@
-use crate::game::character::animation::assets::AnimationData;
-use crate::game::character::animation::{assets, AnimationContext, AnimationStateMap, CharacterAnimationTracker};
-use crate::game::character::state::states::Attacking;
+use crate::game::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::game::character::state::tracking::ActionStateTracker;
 use crate::screens::Screen;
+use assets::action_states::Attacking;
+use assets::resource::character::{AnimationContext, AnimationData, AttackResource};
 use bevy::prelude::*;
 use common::{AppSystems, Facing, PausableSystems};
 use data::prelude::*;
 use tracing::warn;
-use crate::game::character::attack::AttackResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -53,7 +52,7 @@ fn update_animation_state(
     ) in &mut query {
         animation_tracker.facing = *facing;
 
-        let Some(animation_handle) = assets::get_animation_handle(
+        let Some(animation_handle) = get_animation_handle(
             state_tracker,
             animation_state_map,
             attacking_state,
@@ -97,7 +96,7 @@ fn update_animation_atlas(
         mut sprite,
         attacking_state
     ) in &mut query {
-        let Some(animation_handle) = assets::get_animation_handle(
+        let Some(animation_handle) = get_animation_handle(
             state_tracker,
             animation_state_map,
             attacking_state,
@@ -116,5 +115,35 @@ fn update_animation_atlas(
         // Calculate index: (Direction Row * Frames per row) + Current Frame
         atlas.index = animation_tracker.get_atlas_index(animation_context.resolved_assets());
         sprite.texture_atlas = Some(atlas);
+    }
+}
+
+pub fn get_animation_handle(
+    state_tracker: &ActionStateTracker,
+    animation_state_map: &AnimationStateMap,
+    attacking_state: Option<&Attacking>,
+    attack_context: &SystemRegistry<AttackResource>,
+    animation_context: &AnimationContext,
+) -> Option<Handle<AnimationData>> {
+    if let Some(attacking_state) = attacking_state {
+        let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
+            error!("Could not find attack definition for {}!", attacking_state.attack());
+            return None;
+        };
+
+        // TODO: Improve error handling
+        let Some(animation_handle) =
+            animation_context.get_handle(attack.animation()).ok()
+        else {
+            error!("Could not find animation definition for attack: {}!", attacking_state.attack());
+            return None;
+        };
+
+        Some(animation_handle)
+    } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
+        Some(animation_handle)
+    } else {
+        warn!("Could not find animation data for state!");
+        None
     }
 }

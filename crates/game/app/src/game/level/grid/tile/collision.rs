@@ -1,4 +1,4 @@
-use crate::game::level::grid::tile::TileFacing;
+use assets::resource::TileFacing;
 use bevy::prelude::*;
 use common::WorldCoords;
 use physics::Collider;

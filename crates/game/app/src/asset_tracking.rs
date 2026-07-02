@@ -12,7 +12,7 @@ pub(super) fn plugin(app: &mut App) {
 pub trait LoadResource {
     /// This will load the [`Resource`] as an [`Asset`]. When all of its asset dependencies
     /// have been loaded, it will be inserted as a resource. This ensures that the resource only
-    /// exists when the assets are ready.
+    /// exists when the resource are ready.
     fn load_resource<T: Resource + Asset + Clone + FromWorld>(&mut self) -> &mut Self;
 }
 
@@ -41,7 +41,7 @@ type InsertLoadedResource = fn(&mut World, &UntypedHandle);
 
 #[derive(Resource, Default)]
 pub struct ResourceHandles {
-    // Use a queue for waiting assets so they can be cycled through and moved to
+    // Use a queue for waiting resource so they can be cycled through and moved to
     // `finished` one at a time.
     waiting: VecDeque<(UntypedHandle, InsertLoadedResource)>,
     finished: Vec<UntypedHandle>,

@@ -1,14 +1,14 @@
 use crate::codec::{AttackCodec, AttackSetCodec};
-use crate::game::character::animation::{AnimationContext, AnimationResource};
+use crate::loader::{LoaderJobManager, RonAssetLoader};
+use crate::resource::character::{AnimationContext, AnimationResource, CharacterSpriteResource};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use data::define_data_resource;
 use data::prelude::*;
 use getset::{CopyGetters, Getters};
 use std::time::Duration;
-use assets::{LoaderJobManager, RonAssetLoader};
-use crate::game::character::assets::CharacterSpriteResource;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<AttackDefinition>();
     app.init_asset_loader::<RonAssetLoader<AttackCodec, AttackDefinition>>();
     app.add_registry_with_discovery::<AttackResource>();

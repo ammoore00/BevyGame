@@ -51,8 +51,8 @@ env:
   # The base filename of the binary produced by `cargo build`.
   cargo_build_binary_name: bevy_game_2d
 
-  # The path to the assets directory.
-  assets_path: assets
+  # The path to the resource directory.
+  assets_path: resource
 
   # The itch.io project to deploy to in the format `user-name/project-name`.
   # There will be no deployment to itch.io if this is commented out.
@@ -247,9 +247,9 @@ jobs:
             mv tmp/binary/*'${{ matrix.binary_ext }}' '${{ env.app }}/${{ env.app_binary_name }}${{ matrix.binary_ext }}'
           fi
 
-      - name: Add assets to app (non-Web)
+      - name: Add resource to app (non-Web)
         if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' }}
-        run: cp -R ./'${{ env.assets_path }}' '${{ env.app }}' || true # Ignore error if assets folder does not exist.
+        run: cp -R ./'${{ env.assets_path }}' '${{ env.app }}' || true # Ignore error if resource folder does not exist.
 
       - name: Add metadata to app (macOS)
         if: ${{ env.is_platform_enabled == 'true' && matrix.platform == 'macos' }}

@@ -1,8 +1,7 @@
-use crate::game::character::state::capabilities::{ActionStateCapabilities, StateTransitionError};
-use crate::game::character::state::states::Idle;
-use bevy::prelude::*;
+use assets::action_states::{ActionState, ActionStateCapabilities, Idle, ReflectActionState, ReflectMovementActionState, StateTransitionError};
 use bevy::ecs::world::DeferredWorld;
-use std::any::{Any, TypeId};
+use bevy::prelude::*;
+use std::any::TypeId;
 use std::fmt::Debug;
 use tracing::warn;
 
@@ -22,36 +21,6 @@ impl Default for ActionStateTracker {
             type_id: TypeId::of::<Idle>(),
         }
     }
-}
-
-pub trait ActionStateMarker: Reflect + Send + Sync + Debug + 'static {}
-
-#[reflect_trait]
-pub trait ActionState: Reflect + Send + Sync + Debug + 'static {
-    fn clone_value(&self) -> Box<dyn Reflect>;
-    fn box_clone(&self) -> Box<dyn ActionState>;
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl<T: ActionStateMarker + Clone> ActionState for T {
-    fn clone_value(&self) -> Box<dyn Reflect> {
-        Box::new(self.clone())
-    }
-    fn box_clone(&self) -> Box<dyn ActionState> {
-        Box::new(self.clone())
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
-#[reflect_trait]
-pub trait MovementActionState: ActionState {}
-
-#[reflect_trait]
-pub trait TimedActionState: ActionState {
-    fn time_left(&self) -> f32;
-    fn set_time(&mut self, time: f32);
 }
 
 pub fn get_state(

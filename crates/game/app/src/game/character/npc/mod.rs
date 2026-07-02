@@ -1,9 +1,9 @@
 pub mod ai;
 
-use crate::game::character::assets::CharacterResource;
 use crate::game::character::npc::ai::ai_scene;
 use crate::game::character::CharacterPrototype;
 use crate::marker;
+use assets::resource::character::CharacterResource;
 use bevy::prelude::*;
 use data::prelude::*;
 

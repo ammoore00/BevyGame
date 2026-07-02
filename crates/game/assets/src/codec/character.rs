@@ -1,8 +1,7 @@
+use crate::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
 use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderKindCodec};
-use crate::game::character::animation::AnimationResource;
-use crate::game::character::attack::AttackSetResource;
-use crate::game::character::state::states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
-use assets::Maybe;
+use crate::loader::Maybe;
+use crate::resource::character::{AnimationResource, AttackSetResource};
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use maybe_fields::maybe_fields;

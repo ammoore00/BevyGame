@@ -16,9 +16,7 @@ use data::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use crate::game::character::animation::AnimationResource;
-use crate::game::character::assets::CharacterResource;
-use crate::game::character::attack::AttackResource;
+use assets::resource::character::{AnimationResource, AttackResource, CharacterResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

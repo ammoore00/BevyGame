@@ -12,6 +12,5 @@ pub mod prelude {
         },
         registry::{ResourceRegistry, SystemRegistry, SystemRegistryMut},
         resource::{ResourceFileType, ResourceKind},
-        define_data_resource, define_resource, define_sprite_resource,
     };
 }

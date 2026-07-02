@@ -1,8 +1,4 @@
-use crate::codec::*;
 use crate::dev_tools::editor::window::properties::EditorCodec;
-use crate::game::character::animation::AnimationResource;
-use crate::game::character::assets::CharacterResource;
-use crate::game::character::attack::AttackResource;
 use crate::screens::Screen;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -14,6 +10,8 @@ use getset::Getters;
 use std::any::TypeId;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
+use assets::codec::{AnimationCodec, AttackCodec, CharacterCodec};
+use assets::resource::character::{AnimationResource, AttackResource, CharacterResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<FileManager>();

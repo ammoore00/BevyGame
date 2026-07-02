@@ -1,18 +1,16 @@
-mod state;
-mod loader;
+//! This crate maintains asset loading and static definitions
 
 use bevy::prelude::*;
 
+pub(crate) mod state;
+pub(crate) mod loader;
+
+pub mod codec;
+pub mod action_states;
+pub mod resource;
 pub use crate::{
     state::{
         AssetLoadState,
-        AssetSystems,
-    },
-    loader::{
-        LoaderJobManager,
-        // TODO: All uses of this type will be moved into this module, so this export should be removed then
-        Maybe,
-        RonAssetLoader,
     },
 };
 
@@ -20,6 +18,8 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            action_states::plugin,
+            resource::plugin,
             loader::plugin,
             state::plugin,
         ));
