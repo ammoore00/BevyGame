@@ -5055,6 +5055,7 @@ dependencies = [
  "bevy",
  "common",
  "data",
+ "derive-new",
  "getset",
  "input",
  "physics",

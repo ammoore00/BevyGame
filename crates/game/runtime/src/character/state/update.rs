@@ -1,24 +1,23 @@
-use crate::character::state::tracking::{ActionStateEvent, ActionStateTracker};
+use crate::character::state::tracking::{ActionStateTracker, TrySetStateEvent};
 use crate::character::Character;
-use assets::action_states::{ActionStateCapabilities, Idle, ReflectTimedActionState};
+use assets::action_states::{Idle, ReflectTimedActionState};
 use bevy::prelude::*;
 use common::AppSystems;
-use tracing::error;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (update_timed_state,).in_set(AppSystems::Update));
 }
 
 pub fn update_timed_state(
+    query: Query<(Entity, &ActionStateTracker), With<Character>>,
     time: Res<Time>,
-    mut commands: Commands,
     registry: Res<AppTypeRegistry>,
-    query: Query<(Entity, &ActionStateTracker, &ActionStateCapabilities), With<Character>>,
+    mut commands: Commands,
 ) {
     let delta = time.delta_secs();
     let type_registry = registry.read();
 
-    for (entity, tracker, state_capabilities) in &query {
+    for (entity, tracker) in &query {
         // Find the type registration for the current state
         let Some(registration) = type_registry.get(tracker.type_id) else {
             continue;
@@ -31,7 +30,6 @@ pub fn update_timed_state(
         };
 
         let type_id = tracker.type_id;
-        let state_capabilities = state_capabilities.clone();
 
         // Perform the update via command queue to get EntityWorldMut
         commands.queue(move |world: &mut World| {
@@ -54,19 +52,7 @@ pub fn update_timed_state(
                     return;
                 }
 
-                let prev_data = timed_state.box_clone();
-
-                match ActionStateEvent::try_new(
-                    entity,
-                    &state_capabilities,
-                    Box::new(Idle),
-                    prev_data,
-                ) {
-                    Ok(event) => {
-                        world.commands().trigger(event);
-                    }
-                    Err(_) => error!("Failed to transition to Idle state for entity {}", entity),
-                }
+                world.commands().trigger(TrySetStateEvent::new(entity, Box::new(Idle)));
             }
         });
     }

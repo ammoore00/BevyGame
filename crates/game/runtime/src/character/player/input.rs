@@ -1,7 +1,7 @@
 use crate::character::player::{AimFacing, AimFacingEvent, Player, PlayerAttackEvent};
 use crate::character::stamina::Stamina;
 use crate::character::state::tracking;
-use crate::character::state::tracking::{is_in_movement_state, ActionStateEvent, ActionStateTracker};
+use crate::character::state::tracking::{is_in_movement_state, ActionStateTracker, TrySetStateEvent};
 use crate::character::Character;
 use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
 use assets::resource::character::{AttackDefinition, AttackRegistry, AttackResource};
@@ -159,61 +159,59 @@ fn record_player_movement_input(world: &mut World) {
         );
 
         // Determine new state from movement intent
-        let mut sprinting = {
+        let sprinting = {
             let controller = world.get::<MovementController>(entity).unwrap();
             controller.sprinting
         };
 
         let new_state: Box<dyn ActionState> = if intent.length() > 1e-6 {
             if intent.length() < 0.7 {
-                sprinting = false;
                 Box::new(Walking)
             } else {
                 match (toggle_sprint, sprinting) {
                     // We aren't sprinting, and don't want to sprint
-                    (false, false) => {
-                        sprinting = false;
-                        Box::new(Running)
-                    }
+                    (false, false) => Box::new(Running),
                     // We aren't sprinting, and want to start sprinting
-                    (false, true) => {
-                        sprinting = true;
-                        Box::new(Sprinting)
-                    }
+                    (false, true) => Box::new(Sprinting),
                     // We are sprinting, and want to keep sprinting
-                    (true, false) => {
-                        sprinting = true;
-                        Box::new(Sprinting)
-                    }
+                    (true, false) => Box::new(Sprinting),
                     // We are sprinting, and want to stop sprinting
-                    (true, true) => {
-                        sprinting = false;
-                        Box::new(Running)
-                    }
+                    (true, true) => Box::new(Running),
                 }
             }
         } else {
-            sprinting = false;
             Box::new(Idle)
         };
 
-        let state_capabilities = world.get::<ActionStateCapabilities>(entity).cloned().unwrap();
-
         // If the character state has changed
         if (*prev_state).type_id() != (*new_state).type_id() {
-            // Attempt to create a state transition event
             let should_sprint = (*new_state).type_id() == TypeId::of::<Sprinting>();
-            if let Ok(event) =
-                ActionStateEvent::try_new(entity, &state_capabilities, new_state, prev_state)
-            {
-                world.trigger(event);
-                sprinting = should_sprint;
-            }
+
+            // Set the state to the new state, with handling depending on the result
+            let event = TrySetStateEvent::new(entity, new_state)
+                .with_callback(move |entity, mut commands, result| {
+                    // If the state was not set, do nothing
+                    if let Err(err) = result {
+                        error!("Failed to transition states: {}", err);
+                        return;
+                    }
+                    
+                    // If the state was set, update the controller's sprinting state as appropriate
+                    commands.entity(entity).queue(
+                        move |mut entity_world: EntityWorldMut| {
+                            if let Some(mut controller) = entity_world.get_mut::<MovementController>() {
+                                controller.sprinting = should_sprint;
+                            } else {
+                                error!("Failed to get MovementController component for player");
+                            }
+                        });
+                });
+
+            world.trigger(event);
         }
 
         // Update the controller's intent
         if let Some(mut controller) = world.get_mut::<MovementController>(entity) {
-            controller.sprinting = sprinting;
             if is_movement {
                 controller.intent = intent;
             } else {
@@ -270,8 +268,6 @@ fn record_action_input(world: &mut World) {
     )>();
     let player = player_query.single(world).unwrap();
 
-    let state_capabilities = world.get::<ActionStateCapabilities>(player).cloned().unwrap();
-
     // 2. Check if it's a movement state (this takes &mut World)
     let is_movement = is_in_movement_state(
         player,
@@ -283,16 +279,6 @@ fn record_action_input(world: &mut World) {
         .query_filtered::<Entity, With<Idle>>()
         .get(world, player)
         .is_ok();
-
-    let prev_state = {
-        let state_tracker = world.get::<ActionStateTracker>(player).cloned().unwrap();
-
-        let Some(prev_state) = tracking::get_state(player, &state_tracker, world) else {
-            error!("Failed to get reflect component for entity {}", player);
-            return;
-        };
-        prev_state
-    };
 
     let stamina = world.get::<Stamina>(player).cloned().unwrap();
 
@@ -330,17 +316,8 @@ fn record_action_input(world: &mut World) {
             return;
         };
 
-        match ActionStateEvent::try_new(
-            player,
-            &state_capabilities,
-            Box::new(Attacking::new(&attack_loc, *attack.duration())),
-            prev_state,
-        ) {
-            Ok(event) => world.trigger(event),
-            Err(_) => {
-                error!("Failed to create CharacterStateEvent for Attacking state");
-            }
-        }
+        let attack_state = Box::new(Attacking::new(&attack_loc, *attack.duration()));
+        world.trigger(TrySetStateEvent::new(player, attack_state));
     }
 }
 

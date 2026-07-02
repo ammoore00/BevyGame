@@ -1,4 +1,4 @@
-use crate::character::state::tracking::{try_set_state, ActionStateTracker};
+use crate::character::state::tracking::{ActionStateTracker, TrySetStateEvent};
 use crate::level::grid::nav::{NavEdgeKind, TileNavMap};
 use crate::level::LevelSpawnState;
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
@@ -229,6 +229,7 @@ fn update_movement_intent(
 }
 
 /// Update the action state based on the movement intent
+// TODO: Remove the direct world access here
 fn update_movement_state(
     world: &mut World
 ) {
@@ -256,10 +257,7 @@ fn update_movement_state(
             continue;
         }
 
-        if let Err(err) = try_set_state(entity, new_state, world) {
-            error!("Failed to set movement state for NPC: {}", err);
-            continue;
-        }
+        world.trigger(TrySetStateEvent::new(entity, new_state));
     }
 }
 

@@ -1,9 +1,9 @@
+use crate::character::Character;
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, ReflectActionState, ReflectMovementActionState, StateTransitionError};
-use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
 use std::any::TypeId;
 use std::fmt::Debug;
-use tracing::warn;
+use std::sync::Arc;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_state_change);
@@ -23,10 +23,12 @@ impl Default for ActionStateTracker {
     }
 }
 
+// TODO: Reduce code duplication in these functions
+
 pub fn get_state(
     entity: Entity,
     tracker: &ActionStateTracker,
-    world: &mut World,
+    world: &World,
 ) -> Option<Box<dyn ActionState>> {
     let type_registry = world.resource::<AppTypeRegistry>().clone();
     let type_registry = type_registry.read();
@@ -35,9 +37,9 @@ pub fn get_state(
     let reflect_component = reg.data::<ReflectComponent>().unwrap();
     let reflect_state = reg.data::<ReflectActionState>().unwrap();
 
-    if let Ok(mut entity_mut) = world.get_entity_mut(entity)
-        && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
-        && let Some(state) = reflect_state.get_mut(reflect_data.into_inner())
+    if let Ok(entity) = world.get_entity(entity)
+        && let Some(reflect_data) = reflect_component.reflect(&entity)
+        && let Some(state) = reflect_state.get(reflect_data)
     {
         Some(state.box_clone())
     } else {
@@ -49,7 +51,7 @@ pub fn get_state(
 pub fn is_in_movement_state(
     entity: Entity,
     tracker: &ActionStateTracker,
-    world: &mut World,
+    world: &World,
 ) -> bool {
     let registry = world.resource::<AppTypeRegistry>().clone();
     let type_registry = registry.read();
@@ -66,36 +68,6 @@ pub fn is_in_movement_state(
     }
 }
 
-/// Attempts to set the state of the provided entity to the new state, triggering a state event if successful.
-/// 
-/// Entity must have the following components:
-/// - `ActionStateTracker`
-/// - `ActionStateCapabilities`
-/// - Some variant of `ActionState`
-/// 
-/// Returns an error if any required component is missing or if the state transition is invalid.
-pub fn try_set_state(
-    entity: Entity,
-    new_state: Box<dyn ActionState>,
-    world: &mut World
-) -> Result<(), SetStateError> {
-    let state_tracker = *world.get::<ActionStateTracker>(entity)
-        .ok_or(SetStateError::StateTracker)?;
-    
-    let prev_state = get_state(entity, &state_tracker, world)
-        .ok_or(SetStateError::PrevState)?;
-
-    let state_capabilities = world.get::<ActionStateCapabilities>(entity)
-        .cloned()
-        .ok_or(SetStateError::Capabilities)?;
-
-    let state_event = ActionStateEvent::try_new(entity, &state_capabilities, new_state, prev_state)
-        .map_err(SetStateError::from)?;
-    
-    world.trigger(state_event);
-    Ok(())
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum SetStateError {
     #[error(transparent)]
@@ -104,44 +76,93 @@ pub enum SetStateError {
     StateTracker,
     #[error("Failed to retrieve previous state component")]
     PrevState,
-    #[error("Failed to retrieve state capabilities component")]
-    Capabilities,
+    #[error("Failed to update state")]
+    StateUpdate,
 }
 
-#[derive(EntityEvent, Debug)]
-pub struct ActionStateEvent {
+
+/// Trigger to attempt to set the state of the provided entity to the new state.
+///
+/// Entity must have the following components:
+/// - `ActionStateTracker`
+/// - `ActionStateCapabilities`
+/// - Some variant of `ActionState`
+///
+/// Fails if any required component is missing or if the state transition is invalid.
+///
+/// Use `with_callback` to provide a callback to be invoked when the state transition is invoked.
+/// The callback parameters include the result of the state transition.
+#[derive(EntityEvent)]
+pub struct TrySetStateEvent {
     entity: Entity,
-    new_state: Box<dyn ActionState>,
-    prev_state: Box<dyn ActionState>,
+    state: Box<dyn ActionState>,
+    // Arc is used to allow for passing the callback into command queue closure
+    callback: Option<Arc<Box<dyn StateEventCallback>>>,
 }
+impl TrySetStateEvent {
+    pub fn new(entity: Entity, state: Box<dyn ActionState>) -> Self {
+        Self { entity, state, callback: None }
+    }
 
-impl ActionStateEvent {
-    pub fn try_new(
-        entity: Entity,
-        transitions: &ActionStateCapabilities,
-        new_state: Box<dyn ActionState>,
-        prev_state: Box<dyn ActionState>,
-    ) -> Result<Self, StateTransitionError> {
-        transitions.can_transition(prev_state.as_ref(), new_state.as_ref())?;
-
-        Ok(Self {
-            entity,
-            new_state,
-            prev_state,
-        })
+    pub fn with_callback<Callback: StateEventCallback + 'static>(self, callback: Callback) -> Self {
+        Self { callback: Some(Arc::new(Box::new(callback))), ..self }
     }
 }
 
-pub fn on_state_change(event: On<ActionStateEvent>, mut world: DeferredWorld) {
-    let entity = event.entity;
+pub trait StateEventCallback: Fn(Entity, Commands, Result<(), SetStateError>) + Send + Sync + 'static {}
+impl<T> StateEventCallback for T
+where T: Fn(Entity, Commands, Result<(), SetStateError>) + Send + Sync + 'static {}
 
-    // We clone these to move them into the command closure
-    let new_state = event.new_state.clone_value();
-    let prev_type_id = (*event.prev_state).type_id();
-    let new_type_id = (*new_state).type_id();
+pub fn on_state_change(
+    event: On<TrySetStateEvent>,
+    mut commands: Commands
+) {
+    let entity = event.entity;
+    let new_state = event.state.box_clone();
+    let callback = event.callback.clone();
 
     // Use the queue to get full World access after the observer logic
-    world.commands().queue(move |world: &mut World| {
+    commands.queue(move |world: &mut World| {
+        // Query the world to get the components necessary to set the state
+        let mut entity_query = world.query_filtered::<
+            (
+                &ActionStateTracker,
+                &ActionStateCapabilities,
+            ),
+            With<Character>,
+        >();
+        let (tracker, capabilities) = match entity_query.get(world, entity) {
+            Ok((tracker, capabilities)) => (tracker, capabilities),
+            Err(err) => {
+                if let Some(callback) = callback {
+                    callback(entity, world.commands(), Err(SetStateError::StateTracker));
+                }
+                error!("Failed to get action state tracker for entity: {}", err);
+                return;
+            }
+        };
+
+        // Get the entity's previous state
+        let Some(prev_state) = get_state(entity, tracker, world) else {
+            if let Some(callback) = callback {
+                callback(entity, world.commands(), Err(SetStateError::PrevState));
+            }
+            error!("Failed to get previous action state for entity {}", entity);
+            return;
+        };
+
+        // Validate if the transition is allowed
+        if let Err(err) =  capabilities.can_transition(prev_state.as_ref(), new_state.as_ref()) {
+            if let Some(callback) = callback {
+                callback(entity, world.commands(), Err(err.into()));
+            }
+            return;
+        };
+
+        // Use reflection to perform the state transition
+        let new_type_id = (*new_state).type_id();
+        let prev_type_id = prev_state.type_id();
+
         let registry = world.resource::<AppTypeRegistry>().clone();
         let type_registry = registry.read();
 
@@ -162,7 +183,10 @@ pub fn on_state_change(event: On<ActionStateEvent>, mut world: DeferredWorld) {
                 type_id: new_type_id,
             });
         } else {
-            warn!("Failed to update state for entity {}: ", entity);
+            if let Some(callback) = callback {
+                callback(entity, world.commands(), Err(SetStateError::StateUpdate));
+            }
+            error!("Failed to update state for entity {}: ", entity);
         }
     });
 }

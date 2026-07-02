@@ -8,11 +8,9 @@ use crate::character::player::player;
 use crate::level::grid::nav::NavContext;
 use crate::level::map::{map_scene, NavBakeError};
 use assets::resource::map::{Palette, Palettes};
-use assets::resource::AudioResource;
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use common::{marker, GameState};
-use data::prelude::loc;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((grid::plugin, map::plugin));

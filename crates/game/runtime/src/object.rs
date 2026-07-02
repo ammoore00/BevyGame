@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use common::WorldPosition;
 use physics::{Collider, PhysicsData};
 
-pub(super) fn plugin(app: &mut App) {
+pub(super) fn plugin(_app: &mut App) {
     //app.load_resource::<ObjectAssets>();
 }
 
