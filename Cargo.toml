@@ -11,7 +11,7 @@ members = [
 
     "crates/game/app",
     "crates/game/assets",
-    "crates/game/common",
+    "crates/game/common", "crates/game/controls",
     "crates/game/data", "crates/game/input",
     "crates/game/physics",
     "crates/game/runtime",
@@ -75,6 +75,7 @@ tracing = { version = "0.1", features = [
 
 assets = { path = "crates/game/assets" }
 common = { path = "crates/game/common" }
+controls = { path = "crates/game/controls" }
 data = { path = "crates/game/data" }
 input = { path = "crates/game/input" }
 physics = { path = "crates/game/physics" }

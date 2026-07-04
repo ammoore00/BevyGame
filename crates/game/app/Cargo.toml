@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 assets = { workspace = true }
 common = { workspace = true }
+controls = { workspace = true }
 data = { workspace = true }
 input = { workspace = true }
 physics = { workspace = true }

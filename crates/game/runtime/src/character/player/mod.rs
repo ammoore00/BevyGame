@@ -13,6 +13,8 @@ use data::prelude::*;
 
 mod input;
 
+pub use input::{InputAttackEvent, InputJumpEvent, InputMoveEvent};
+
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(input::plugin);
 
@@ -20,7 +22,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_player_attack);
 }
 
-pub fn player(position: Vec3) -> impl Scene {
+pub(crate) fn player(position: Vec3) -> impl Scene {
     bsn! [
         @Player {
             @position,
@@ -64,10 +66,10 @@ impl Player {
     }
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Default, Eq, Reflect)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Default, Eq)]
 pub struct AimFacing(pub Option<Facing>);
 
-#[derive(EntityEvent, Debug, Clone, Reflect)]
+#[derive(EntityEvent, Debug, Clone, derive_new::new)]
 pub struct AimFacingEvent {
     entity: Entity,
     facing: Option<Facing>,

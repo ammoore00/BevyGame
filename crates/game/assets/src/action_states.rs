@@ -40,13 +40,16 @@ pub const DEFAULT_STATES_NON_ATTACKING: LazyCell<Vec<TypeId>> = LazyCell::new(||
     ]
 });
 
-pub trait ActionStateMarker: Reflect + Send + Sync + Debug + 'static {}
+pub trait ActionStateMarker: Reflect + Send + Sync + Debug + 'static {
+    fn is_movement() -> bool;
+}
 
 #[reflect_trait]
 pub trait ActionState: Reflect + Send + Sync + Debug + 'static {
     fn clone_value(&self) -> Box<dyn Reflect>;
     fn box_clone(&self) -> Box<dyn ActionState>;
     fn as_any(&self) -> &dyn Any;
+    fn is_movement(&self) -> bool;
 }
 
 impl<T: ActionStateMarker + Clone> ActionState for T {
@@ -58,6 +61,9 @@ impl<T: ActionStateMarker + Clone> ActionState for T {
     }
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    fn is_movement(&self) -> bool {
+        T::is_movement()
     }
 }
 
@@ -73,24 +79,32 @@ pub trait TimedActionState: ActionState {
 #[derive(Component, Debug, Clone, PartialEq, Reflect, Default)]
 #[reflect(Component, ActionState)]
 pub struct Idle;
-impl ActionStateMarker for Idle {}
+impl ActionStateMarker for Idle {
+    fn is_movement() -> bool { false }
+}
 
 #[derive(Component, Debug, Clone, Reflect, Default)]
 #[reflect(Component, ActionState, MovementActionState)]
 pub struct Walking;
-impl ActionStateMarker for Walking {}
+impl ActionStateMarker for Walking {
+    fn is_movement() -> bool { true }
+}
 impl MovementActionState for Walking {}
 
 #[derive(Component, Debug, Clone, Reflect, Default)]
 #[reflect(Component, ActionState, MovementActionState)]
 pub struct Running;
-impl ActionStateMarker for Running {}
+impl ActionStateMarker for Running {
+    fn is_movement() -> bool { true }
+}
 impl MovementActionState for Running {}
 
 #[derive(Component, Debug, Clone, Reflect, Default)]
 #[reflect(Component, ActionState, MovementActionState)]
 pub struct Sprinting;
-impl ActionStateMarker for Sprinting {}
+impl ActionStateMarker for Sprinting {
+    fn is_movement() -> bool { true }
+}
 impl MovementActionState for Sprinting {}
 
 #[derive(Component, Debug, Clone, Reflect, Getters, Setters)]
@@ -109,7 +123,9 @@ impl Attacking {
         }
     }
 }
-impl ActionStateMarker for Attacking {}
+impl ActionStateMarker for Attacking {
+    fn is_movement() -> bool { false }
+}
 impl TimedActionState for Attacking {
     fn time_left(&self) -> f32 {
         self.time_left

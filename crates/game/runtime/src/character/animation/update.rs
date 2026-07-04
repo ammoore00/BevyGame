@@ -139,7 +139,7 @@ pub fn get_animation_handle(
         };
 
         Some(animation_handle)
-    } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.type_id).cloned() {
+    } else if let Some(animation_handle) = animation_state_map.0.get(&state_tracker.state_type_id()).cloned() {
         Some(animation_handle)
     } else {
         warn!("Could not find animation data for state!");

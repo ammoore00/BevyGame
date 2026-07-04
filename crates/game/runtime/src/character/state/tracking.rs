@@ -1,6 +1,7 @@
 use crate::character::Character;
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, ReflectActionState, ReflectMovementActionState, StateTransitionError};
 use bevy::prelude::*;
+use getset::CopyGetters;
 use std::any::TypeId;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -9,16 +10,37 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_state_change);
 }
 
-#[derive(Component, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Debug, Clone, Copy, Reflect, CopyGetters)]
 #[reflect(Component)]
 pub struct ActionStateTracker {
-    pub(crate) type_id: TypeId,
+    #[getset(get_copy = "pub")]
+    state_type_id: TypeId,
+    is_movement: bool,
 }
+impl ActionStateTracker {
+    pub fn new<T: ActionState>(state: T) -> Self {
+        Self {
+            state_type_id: TypeId::of::<T>(),
+            is_movement: state.is_movement(),
+        }
+    }
 
+    pub fn from_box(state: Box<dyn ActionState>) -> Self {
+        Self {
+            state_type_id: (*state).type_id(),
+            is_movement: state.is_movement(),
+        }
+    }
+
+    pub fn is_movement(&self) -> bool {
+        self.is_movement
+    }
+}
 impl Default for ActionStateTracker {
     fn default() -> Self {
         Self {
-            type_id: TypeId::of::<Idle>(),
+            state_type_id: TypeId::of::<Idle>(),
+            is_movement: false,
         }
     }
 }
@@ -55,7 +77,7 @@ fn get_state_properties(
     let type_registry = world.resource::<AppTypeRegistry>().clone();
     let type_registry = type_registry.read();
 
-    let reg = type_registry.get(tracker.type_id).unwrap();
+    let reg = type_registry.get(tracker.state_type_id).unwrap();
     let reflect_component = reg.data::<ReflectComponent>().unwrap();
     let reflect_state = reg.data::<ReflectActionState>().unwrap();
 
@@ -187,9 +209,7 @@ pub fn on_state_change(
             next_reflect_component.insert(&mut entity_mut, new_state.as_reflect(), &type_registry);
 
             // Update the tracker component
-            entity_mut.insert(ActionStateTracker {
-                type_id: new_type_id,
-            });
+            entity_mut.insert(ActionStateTracker::from_box(new_state));
         } else {
             if let Some(callback) = callback {
                 callback(entity, world.commands(), Err(SetStateError::StateUpdate));

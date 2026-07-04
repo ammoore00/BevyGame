@@ -1,0 +1,11 @@
+[package]
+name = "controls"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+common = { workspace = true }
+input = { workspace = true }
+runtime = { workspace = true }
+
+bevy = { workspace = true }

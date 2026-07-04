@@ -13,14 +13,16 @@ use state::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
 
-pub mod animation;
-pub mod health;
-pub mod player;
-pub mod stamina;
-pub mod state;
-pub mod npc;
+// TODO: Remove these pub(crate) declarations in favor of better exports
+pub(crate) mod animation;
+pub(crate) mod health;
+pub(crate) mod stamina;
+pub(crate) mod state;
+pub(crate) mod npc;
 
-pub fn plugin(app: &mut App) {
+pub mod player;
+
+pub(crate) fn plugin(app: &mut App) {
     app.add_plugins((
         animation::plugin,
         health::plugin,
@@ -60,7 +62,7 @@ impl PrototypeFinalizedMarker for Character {
 ///
 /// This will not panic, but it will result in an error, and the character will not be spawned
 #[derive(Component, Clone)]
-pub struct CharacterDataLocation(ResourceLocation<CharacterResource>);
+pub(crate) struct CharacterDataLocation(ResourceLocation<CharacterResource>);
 impl Default for CharacterDataLocation {
     fn default() -> Self {
         Self(loc::<CharacterResource>("placeholder").unwrap())
@@ -92,7 +94,7 @@ impl Default for CharacterProps {
 /// See `CharacterProps` for parameters
 #[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[scene(CharacterProps)]
-pub struct CharacterPrototype;
+pub(crate) struct CharacterPrototype;
 impl CharacterPrototype {
     /// Initializes character components which do not need top be loaded from data
     /// Remaining components are loaded from data after spawning (see `initialize_characters`)
@@ -165,7 +167,7 @@ impl PrototypeBuilder for CharacterBuilder {
 }
 
 #[derive(SystemParam, getset::Getters)]
-pub struct CharacterBuilderContext<'w> {
+struct CharacterBuilderContext<'w> {
     #[getset(get = "pub")]
     character_registry: SystemRegistry<'w, CharacterResource>,
     #[getset(get = "pub")]

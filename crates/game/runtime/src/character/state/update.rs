@@ -19,7 +19,7 @@ fn update_timed_state(
 
     for (entity, tracker) in &query {
         // Find the type registration for the current state
-        let Some(registration) = type_registry.get(tracker.type_id) else {
+        let Some(registration) = type_registry.get(tracker.state_type_id()) else {
             continue;
         };
         let Some(_) = registration.data::<ReflectTimedActionState>() else {
@@ -29,7 +29,7 @@ fn update_timed_state(
             continue;
         };
 
-        let type_id = tracker.type_id;
+        let type_id = tracker.state_type_id();
 
         // Perform the update via command queue to get EntityWorldMut
         commands.queue(move |world: &mut World| {

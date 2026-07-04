@@ -199,6 +199,7 @@ dependencies = [
  "assets",
  "bevy",
  "common",
+ "controls",
  "crossbeam",
  "data",
  "getrandom 0.4.2",
@@ -2178,6 +2179,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e1aaf9b65849a68662ac6c0810c8893a765c960b907dd7cfab9c4a50bf764fbc"
 dependencies = [
  "const_soft_float",
+]
+
+[[package]]
+name = "controls"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "common",
+ "input",
+ "runtime",
 ]
 
 [[package]]
@@ -5057,7 +5068,6 @@ dependencies = [
  "data",
  "derive-new",
  "getset",
- "input",
  "physics",
  "rand 0.10.1",
  "thiserror 2.0.17",

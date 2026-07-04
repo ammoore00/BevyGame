@@ -7,6 +7,7 @@
 use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
+use controls::ControlsPlugin;
 use input::InputPlugin;
 use runtime::RuntimePlugin;
 
@@ -47,6 +48,7 @@ impl Plugin for AppPlugin {
 
         // Add other plugins.
         app.add_plugins((
+            ControlsPlugin,
             InputPlugin,
             RuntimePlugin,
 

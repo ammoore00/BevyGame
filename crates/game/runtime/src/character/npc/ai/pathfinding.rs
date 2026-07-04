@@ -253,7 +253,7 @@ fn update_movement_state(
         };
 
         let state = world.get::<ActionStateTracker>(entity).unwrap();
-        if (*new_state).type_id() == state.type_id {
+        if (*new_state).type_id() == state.state_type_id() {
             continue;
         }
 

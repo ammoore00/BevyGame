@@ -3,7 +3,7 @@ use bevy::prelude::*;
 mod update;
 mod tracking;
 
-pub use tracking::{ActionStateTracker, get_state, is_in_movement_state, TrySetStateEvent};
+pub use tracking::{ActionStateTracker, TrySetStateEvent};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
@@ -16,9 +16,7 @@ pub(super) fn plugin(app: &mut App) {
 macro_rules! action_state_scene {
     ($state:ty) => {
         bsn! [
-            ActionStateTracker {
-                type_id: {TypeId::of::<$state>()},
-            }
+            ActionStateTracker::new($state)
             $state
         ]
     };

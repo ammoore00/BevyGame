@@ -3,7 +3,7 @@ use assets::AssetsPlugin;
 use common::CommonPlugin;
 use physics::PhysicsPlugin;
 
-mod character;
+pub mod character;
 mod level;
 mod particle;
 mod object;
@@ -21,7 +21,7 @@ pub mod debug {
 }
 
 pub use crate::{
-    level::{SpawnLevelEvent, ResetLevelEvent}
+    level::{SpawnLevelEvent, ResetLevelEvent},
 };
 
 pub struct RuntimePlugin;
