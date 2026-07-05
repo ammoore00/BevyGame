@@ -13,15 +13,13 @@ use std::any::TypeId;
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            // Normal Systems
-            camera_follow_player.in_set(AppSystems::Respond),
-        ),
+        camera_follow_player.in_set(AppSystems::Respond)
     );
 
-    app.add_observer(on_movement);
-    app.add_observer(on_jump);
-    app.add_observer(on_player_attack);
+    app.add_observer(on_movement_input);
+    app.add_observer(on_jump_input);
+    app.add_observer(on_attack_input);
+    app.add_observer(on_aim_input);
 }
 
 const COYOTE_TIME: f32 = 0.2;
@@ -29,34 +27,14 @@ const COYOTE_TIME_HEIGHT_THRESHOLD: f32 = 0.1;
 const JUMP_VELOCITY: f32 = 2.75;
 
 #[derive(EntityEvent, derive_new::new)]
-pub struct InputMoveEvent {
+pub struct MoveInputEvent {
     entity: Entity,
     intent: Vec3,
     toggle_sprint: bool,
 }
 
-#[derive(EntityEvent, derive_new::new)]
-pub struct InputJumpEvent {
-    entity: Entity,
-}
-
-#[derive(EntityEvent)]
-pub struct InputAttackEvent {
-    entity: Entity,
-    _attack: ResourceLocation<AttackResource>,
-}
-impl InputAttackEvent {
-    pub fn new(entity: Entity, attack_loc: impl AsRef<str>) -> Self {
-        Self {
-            entity,
-            _attack: loc::<AttackResource>(attack_loc.as_ref())
-                .expect(format!("Failed to parse attack resource location: {}", attack_loc.as_ref()).as_str()),
-        }
-    }
-}
-
-fn on_movement(
-    event: On<InputMoveEvent>,
+fn on_movement_input(
+    event: On<MoveInputEvent>,
     mut player_query: Query<
         (
             &mut MovementController,
@@ -133,9 +111,14 @@ fn on_movement(
     }
 }
 
+#[derive(EntityEvent, derive_new::new)]
+pub struct JumpInputEvent {
+    entity: Entity,
+}
+
 // TODO: Convert jumping to use its own state
-fn on_jump(
-    event: On<InputJumpEvent>,
+fn on_jump_input(
+    event: On<JumpInputEvent>,
     mut player_query: Query<
         (
             &mut MovementController,
@@ -182,8 +165,23 @@ fn on_jump(
     } else { panic!("Player assigned static physics data! This is a bug!") }
 }
 
-fn on_player_attack(
-    event: On<InputAttackEvent>,
+#[derive(EntityEvent)]
+pub struct AttackInputEvent {
+    entity: Entity,
+    _attack: ResourceLocation<AttackResource>,
+}
+impl AttackInputEvent {
+    pub fn new(entity: Entity, attack_loc: impl AsRef<str>) -> Self {
+        Self {
+            entity,
+            _attack: loc::<AttackResource>(attack_loc.as_ref())
+                .expect(format!("Failed to parse attack resource location: {}", attack_loc.as_ref()).as_str()),
+        }
+    }
+}
+
+fn on_attack_input(
+    event: On<AttackInputEvent>,
     mut player_query: Query<
         (
             Entity,
@@ -235,6 +233,46 @@ fn on_player_attack(
         commands.trigger(TrySetStateEvent::new(player_entity, attack_state));
     }
 }
+
+#[derive(EntityEvent, Debug, Clone, derive_new::new)]
+pub struct AimInputEvent {
+    entity: Entity,
+    facing: Option<Facing>,
+}
+
+fn on_aim_input(
+    event: On<AimInputEvent>,
+    mut query: Query<(&mut AimFacing, &mut Sprite, &mut Visibility, &ChildOf)>,
+) {
+    let Ok((mut aim_facing, mut sprite, mut visibility, child_of)) = query.single_mut() else {
+        error!("Failed to get aim facing query!");
+        return;
+    };
+
+    if child_of.0 != event.entity {
+        error!("Aim facing event received for wrong entity!");
+        return;
+    }
+
+    if event.facing == aim_facing.0 {
+        return;
+    }
+
+    if let Some(new_facing) = event.facing {
+        aim_facing.0 = Some(new_facing);
+        visibility
+            .set(Box::new(Visibility::Inherited))
+            .expect("Failed to set visibility");
+        sprite.texture_atlas.as_mut().unwrap().index = new_facing as usize;
+    } else {
+        aim_facing.0 = None;
+        visibility
+            .set(Box::new(Visibility::Hidden))
+            .expect("Failed to set visibility");
+    }
+    info!("Aim facing event success!");
+}
+
 
 fn camera_follow_player(
     player_query: Query<&mut Transform, (With<Player>, Without<Camera2d>)>,

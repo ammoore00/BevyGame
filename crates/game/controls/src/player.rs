@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameplaySystems, PausableSystems, ScreenCoords, WorldPosition};
 use input::{InputReader, LastInputMode};
-use runtime::character::player::{AimFacingEvent, InputAttackEvent, InputJumpEvent, InputMoveEvent, Player};
+use runtime::character::player::{AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player};
 use runtime::LevelLoadedSystems;
 
 pub(super) fn plugin(app: &mut App) {
@@ -47,7 +47,7 @@ fn record_aim_input(
         } else {
             None
         };
-        commands.trigger(AimFacingEvent::new(player_entity, new_facing));
+        commands.trigger(AimInputEvent::new(player_entity, new_facing));
     }
 
     if *last_input_mode == LastInputMode::MouseAndKeyboard {
@@ -61,7 +61,7 @@ fn record_aim_input(
         delta.y *= 0.707; // Scale to isometric
         let new_facing = Some(Facing::from(rotate_screen_space_to_facing(delta, false)));
 
-        commands.trigger(AimFacingEvent::new(player_entity, new_facing));
+        commands.trigger(AimInputEvent::new(player_entity, new_facing));
     }
 }
 
@@ -121,7 +121,7 @@ fn record_movement_input(
         intent = rotate_screen_space_to_movement(intent);
     }
 
-    commands.trigger(InputMoveEvent::new(player_entity, intent, toggle_sprint));
+    commands.trigger(MoveInputEvent::new(player_entity, intent, toggle_sprint));
 }
 
 fn record_jump_input(
@@ -141,7 +141,7 @@ fn record_jump_input(
     };
 
     if jump {
-        commands.trigger(InputJumpEvent::new(player_entity));
+        commands.trigger(JumpInputEvent::new(player_entity));
     }
 }
 
@@ -162,6 +162,6 @@ fn record_attack_input(
     };
 
     if attack {
-        commands.trigger(InputAttackEvent::new(player_entity, "player/basic_attack"));
+        commands.trigger(AttackInputEvent::new(player_entity, "player/basic_attack"));
     }
 }
