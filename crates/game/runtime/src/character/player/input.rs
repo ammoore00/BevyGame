@@ -59,15 +59,10 @@ fn on_movement_input(
         if event.intent.length() < 0.7 {
             Box::new(Walking)
         } else {
-            match (event.toggle_sprint, controller.sprinting) {
-                // We aren't sprinting, and don't want to sprint
-                (false, false) => Box::new(Running),
-                // We aren't sprinting, and want to start sprinting
-                (false, true) => Box::new(Sprinting),
-                // We are sprinting, and want to keep sprinting
-                (true, false) => Box::new(Sprinting),
-                // We are sprinting, and want to stop sprinting
-                (true, true) => Box::new(Running),
+            if event.toggle_sprint ^ controller.sprinting {
+                Box::new(Sprinting)
+            } else {
+                Box::new(Running)
             }
         }
     } else {
