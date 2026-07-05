@@ -27,24 +27,29 @@ pub(crate) fn player(position: Vec3) -> impl Scene {
         @Player {
             @position,
             @max_speed: 4.5,
-            @data_loc: {loc::<CharacterResource>("player").unwrap()}
         }
     ]
 }
 
+#[derive(Debug, Default, Clone)]
+pub struct PlayerProps {
+    position: Vec3,
+    max_speed: f32,
+}
+
 #[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
 #[reflect(Component)]
-#[scene(CharacterProps)]
+#[scene(PlayerProps)]
 pub struct Player;
 impl Player {
-    fn scene(props: CharacterProps) -> impl Scene {
+    fn scene(props: PlayerProps) -> impl Scene {
         bsn! [
             #Player
             Player
             @CharacterPrototype {
                 @position: {props.position},
                 @max_speed: {props.max_speed},
-                @data_loc: {props.data_loc}
+                @data_loc: {loc::<CharacterResource>("player").unwrap()}
             }
             Health::new(300)
             Stamina::new(200, 200, 1.0)
