@@ -18,7 +18,7 @@ pub use input::{InputAttackEvent, InputJumpEvent, InputMoveEvent};
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(input::plugin);
 
-    app.add_observer(on_aim_facing_changed);
+    app.add_observer(on_aim_facing);
     app.add_observer(on_player_attack);
 }
 
@@ -75,13 +75,23 @@ pub struct AimFacingEvent {
     facing: Option<Facing>,
 }
 
-fn on_aim_facing_changed(
+fn on_aim_facing(
     event: On<AimFacingEvent>,
-    mut query: Query<(&mut AimFacing, &mut Sprite, &mut Visibility)>,
+    mut query: Query<(&mut AimFacing, &mut Sprite, &mut Visibility, &ChildOf)>,
 ) {
-    let Ok((mut aim_facing, mut sprite, mut visibility)) = query.get_mut(event.entity) else {
+    let Ok((mut aim_facing, mut sprite, mut visibility, child_of)) = query.single_mut() else {
+        error!("Failed to get aim facing query!");
         return;
     };
+
+    if child_of.0 != event.entity {
+        error!("Aim facing event received for wrong entity!");
+        return;
+    }
+
+    if event.facing == aim_facing.0 {
+        return;
+    }
 
     if let Some(new_facing) = event.facing {
         aim_facing.0 = Some(new_facing);
@@ -95,6 +105,7 @@ fn on_aim_facing_changed(
             .set(Box::new(Visibility::Hidden))
             .expect("Failed to set visibility");
     }
+    info!("Aim facing event success!");
 }
 
 #[derive(EntityEvent, Debug, Clone, Reflect)]

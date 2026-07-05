@@ -1,11 +1,10 @@
 use crate::character::player::{AimFacing, Player, PlayerAttackEvent};
 use crate::character::stamina::Stamina;
 use crate::character::state::{ActionStateTracker, TrySetStateEvent};
-use crate::character::Character;
 use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
-use assets::resource::character::{AttackDefinition, AttackRegistry, AttackResource};
+use assets::resource::character::{AttackResource};
 use bevy::prelude::*;
-use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldPosition};
+use common::{AppSystems, Facing, WorldPosition};
 use data::prelude::*;
 use physics::{MovementController, PhysicsData};
 use std::any::TypeId;
@@ -43,13 +42,13 @@ pub struct InputJumpEvent {
 #[derive(EntityEvent)]
 pub struct InputAttackEvent {
     entity: Entity,
-    attack: ResourceLocation<AttackResource>,
+    _attack: ResourceLocation<AttackResource>,
 }
 impl InputAttackEvent {
     pub fn new(entity: Entity, attack_loc: impl AsRef<str>) -> Self {
         Self {
             entity,
-            attack: loc::<AttackResource>(attack_loc.as_ref())
+            _attack: loc::<AttackResource>(attack_loc.as_ref())
                 .expect(format!("Failed to parse attack resource location: {}", attack_loc.as_ref()).as_str()),
         }
     }
@@ -107,8 +106,7 @@ fn on_movement(
         let event = TrySetStateEvent::new(event.entity, new_state)
             .with_callback(move |entity, mut commands, result| {
                 // If the state was not set, do nothing
-                if let Err(err) = result {
-                    error!("Failed to transition states: {}", err);
+                if result.is_err() {
                     return;
                 }
 
@@ -161,7 +159,7 @@ fn on_jump(
         error!("Failed to get player movement info");
         return;
     };
-    
+
     if let None = idle && !tracker.is_movement() {
         info!("Cannot jump, player is not in valid state!");
         return;
@@ -189,24 +187,30 @@ fn on_attack(
         (
             Entity,
             &mut Facing,
-            &AimFacing,
             &Stamina,
         ),
-        With<Player>,
+        (
+            With<Player>,
+            With<Children>,
+        )
     >,
+    aim_facing_query: Query<(&AimFacing, &ChildOf)>,
     attack_registry: SystemRegistry<AttackResource>,
     mut commands: Commands,
 ) {
-    let Ok((
+    let (
         player_entity,
         mut facing,
-        aim_facing,
         stamina,
-    )) = player_query.get_mut(event.entity) else {
-        error!("Failed to get player movement info");
+    ) = player_query.get_mut(event.entity)
+        .expect("Failed to get player entity");
+    let (aim_facing, child_of) = aim_facing_query.single().expect("Failed to get aim facing");
+
+    if child_of.0 != player_entity {
+        error!("AimFacing is not a child of the player entity!");
         return;
-    };
-    
+    }
+
     // TODO: Make this check better
     if stamina.current > 0 {
         // TODO: Move this into the character attack event
@@ -224,7 +228,7 @@ fn on_attack(
             facing,
             attack: attack_loc.clone(),
         });
-        
+
         let Some(attack) = attack_registry.get_asset(&attack_loc) else {
             error!("Attack resource {} does not exist!", attack_loc);
             return;

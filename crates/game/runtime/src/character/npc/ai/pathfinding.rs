@@ -1,6 +1,5 @@
 use crate::character::state::{ActionStateTracker, TrySetStateEvent};
 use crate::level::grid::nav::{NavEdgeKind, TileNavMap};
-use crate::level::LevelSpawnState;
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
 use bevy::prelude::*;
 use common::{AppSystems, GameplaySystems, PausableSystems, TileCoords, WorldCoords, WorldPosition};
@@ -10,6 +9,7 @@ use rand::{Rng, RngExt};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
 use std::time::Duration;
+use crate::LevelLoadedSystems;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -22,8 +22,8 @@ pub(super) fn plugin(app: &mut App) {
             .chain()
             .in_set(GameplaySystems)
             .in_set(PausableSystems)
-            .in_set(AppSystems::Update)
-            .run_if(in_state(LevelSpawnState::Finished)),
+            .in_set(LevelLoadedSystems)
+            .in_set(AppSystems::Update),
     );
 }
 

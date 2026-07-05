@@ -54,19 +54,19 @@ pub fn get_state(
         .map(|props| props.state)
 }
 
-pub fn is_in_movement_state(
+pub fn _is_in_movement_state(
     entity: Entity,
     tracker: &ActionStateTracker,
     world: &World,
 ) -> bool {
     get_state_properties(entity, tracker, world)
-        .map(|props| props.is_movement)
+        .map(|props| props._is_movement)
         .unwrap_or(false)
 }
 
 struct StateProperties {
     state: Box<dyn ActionState>,
-    is_movement: bool,
+    _is_movement: bool,
 }
 
 fn get_state_properties(
@@ -91,7 +91,7 @@ fn get_state_properties(
 
         Some(StateProperties {
             state: state.box_clone(),
-            is_movement,
+            _is_movement: is_movement,
         })
     } else {
         None

@@ -25,7 +25,13 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_spawn_level);
     app.add_observer(on_reset_level);
     app.add_observer(on_level_error);
+
+    app.configure_sets(Update, LevelLoadedSystems.run_if(in_state(LevelSpawnState::Finished)));
 }
+
+/// Systems that should run only after the level has been loaded
+#[derive(SystemSet, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LevelLoadedSystems;
 
 marker!(Level);
 

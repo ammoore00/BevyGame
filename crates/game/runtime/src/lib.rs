@@ -21,7 +21,7 @@ pub mod debug {
 }
 
 pub use crate::{
-    level::{SpawnLevelEvent, ResetLevelEvent},
+    level::{LevelLoadedSystems, SpawnLevelEvent, ResetLevelEvent},
 };
 
 pub struct RuntimePlugin;
