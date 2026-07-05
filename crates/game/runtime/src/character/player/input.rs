@@ -1,8 +1,9 @@
-use crate::character::player::{AimFacing, Player, PlayerAttackEvent};
+use crate::character::attack::AttackEvent;
+use crate::character::player::{AimFacing, Player};
 use crate::character::stamina::Stamina;
 use crate::character::state::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
-use assets::resource::character::{AttackResource};
+use assets::resource::character::AttackResource;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, WorldPosition};
 use data::prelude::*;
@@ -20,7 +21,7 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_observer(on_movement);
     app.add_observer(on_jump);
-    app.add_observer(on_attack);
+    app.add_observer(on_player_attack);
 }
 
 const COYOTE_TIME: f32 = 0.2;
@@ -181,7 +182,7 @@ fn on_jump(
     } else { panic!("Player assigned static physics data! This is a bug!") }
 }
 
-fn on_attack(
+fn on_player_attack(
     event: On<InputAttackEvent>,
     mut player_query: Query<
         (
@@ -223,11 +224,7 @@ fn on_attack(
 
         let attack_loc: ResourceLocation<AttackResource> = "player/basic_attack".parse().unwrap();
 
-        commands.trigger(PlayerAttackEvent {
-            entity: player_entity,
-            facing,
-            attack: attack_loc.clone(),
-        });
+        commands.trigger(AttackEvent::new(player_entity, facing, attack_loc.clone()));
 
         let Some(attack) = attack_registry.get_asset(&attack_loc) else {
             error!("Attack resource {} does not exist!", attack_loc);

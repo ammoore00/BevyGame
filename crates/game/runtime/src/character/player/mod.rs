@@ -1,13 +1,12 @@
 //! Player-specific behavior.
 
 use crate::character::health::Health;
-use crate::character::stamina::{Stamina, StaminaEvent};
-use crate::character::{CharacterProps, CharacterPrototype};
-use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
+use crate::character::stamina::Stamina;
+use crate::character::CharacterPrototype;
+use assets::resource::character::{CharacterResource, CharacterSpriteResource};
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
-use assets::resource::character::{AttackContext, AttackResource, CharacterResource, CharacterSpriteResource};
 use common::Facing;
 use data::prelude::*;
 
@@ -19,7 +18,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(input::plugin);
 
     app.add_observer(on_aim_facing);
-    app.add_observer(on_player_attack);
 }
 
 pub(crate) fn player(position: Vec3) -> impl Scene {
@@ -111,52 +109,4 @@ fn on_aim_facing(
             .expect("Failed to set visibility");
     }
     info!("Aim facing event success!");
-}
-
-#[derive(EntityEvent, Debug, Clone, Reflect)]
-struct PlayerAttackEvent {
-    entity: Entity,
-    facing: Facing,
-    attack: ResourceLocation<AttackResource>,
-}
-
-fn on_player_attack(
-    event: On<PlayerAttackEvent>,
-    context: AttackContext,
-    mut commands: Commands,
-) {
-    let Some(attack) = context.attack_registry.get_asset(&event.attack) else {
-        error!("Invalid player attack event: attack {} does not exist!", event.attack);
-        return;
-    };
-
-    let Ok(animation) = context.animation_context.get_data(attack.animation()) else {
-        error!("Invalid player attack definition: animation {} does not exist!", attack.animation());
-        return;
-    };
-
-    let Some(particle_sprite) = context.character_sprite_registry.get_handle(attack.particle_sprite()) else {
-        error!("Invalid player attack definition: particle sprite {} does not exist!", attack.particle_sprite());
-        return;
-    };
-
-    let particle_atlas = animation.atlas().clone().with_index(event.facing as usize);
-
-    let particle_sprite = Sprite::from_atlas_image(
-        particle_sprite,
-        particle_atlas,
-    );
-
-    let particle_animation = ParticleAnimation::new(
-        event.facing as usize * animation.frame_data().num_frames(),
-        animation.frame_data().clone(),
-    );
-
-    commands.trigger(ParticleSpawnEvent::with_parent(
-        particle_sprite,
-        particle_animation,
-        event.entity,
-    ));
-
-    commands.trigger(StaminaEvent::new(event.entity, attack.stamina_cost()));
 }

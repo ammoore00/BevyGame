@@ -21,10 +21,12 @@ pub(crate) mod state;
 pub(crate) mod npc;
 
 pub mod player;
+mod attack;
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_plugins((
         animation::plugin,
+        attack::plugin,
         health::plugin,
         npc::plugin,
         player::plugin,
