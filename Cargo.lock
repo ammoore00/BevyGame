@@ -196,6 +196,7 @@ dependencies = [
  "controls",
  "crossbeam",
  "data",
+ "debug",
  "getrandom 0.4.3",
  "getset",
  "input",
@@ -208,6 +209,7 @@ dependencies = [
  "settings",
  "thiserror 2.0.18",
  "tracing",
+ "widgets",
 ]
 
 [[package]]
@@ -2438,6 +2440,14 @@ dependencies = [
  "serde",
  "thiserror 2.0.18",
  "tracing",
+]
+
+[[package]]
+name = "debug"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "runtime",
 ]
 
 [[package]]
@@ -6151,6 +6161,15 @@ checksum = "dfdfe6a32973f2d1b268b8895845a8a96cac2f0191e72c27cc929036060dbf89"
 dependencies = [
  "bytemuck",
  "safe_arch",
+]
+
+[[package]]
+name = "widgets"
+version = "0.1.0"
+dependencies = [
+ "assets",
+ "bevy",
+ "data",
 ]
 
 [[package]]

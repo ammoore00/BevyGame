@@ -1,7 +1,7 @@
-use crate::theme::widgets::button::ButtonImpl;
-use crate::{asset_tracking::LoadResource, audio::sound_effect};
 use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::prelude::*;
+use crate::button::ButtonImpl;
+use crate::theme::palette::{BackgroundInteractionPalette, SpriteInteractionPalette};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -12,20 +12,8 @@ pub(super) fn plugin(app: &mut App) {
         ),
     );
 
-    app.load_resource::<InteractionAssets>();
     app.add_observer(play_on_hover_sound_effect);
     app.add_observer(play_on_click_sound_effect);
-}
-
-/// Palette for widget interactions. Add this to an entity that supports
-/// [`Interaction`]s, such as a button, to change its [`BackgroundColor`] based
-/// on the current interaction state.
-#[derive(Component, Debug, Reflect, FromTemplate)]
-#[reflect(Component)]
-pub struct SpriteInteractionPalette {
-    pub none: usize,
-    pub hovered: usize,
-    pub pressed: usize,
 }
 
 fn apply_sprite_interaction_palette(
@@ -89,14 +77,6 @@ fn apply_gamepad_sprite_interaction_palette(
     }
 }
 
-#[derive(Component, Debug, Reflect, FromTemplate)]
-#[reflect(Component)]
-pub struct BackgroundInteractionPalette {
-    pub none: Color,
-    pub hovered: Color,
-    pub pressed: Color,
-}
-
 fn apply_background_interaction_palette(
     mut palette_query: Query<
         (&Interaction, &BackgroundInteractionPalette, &mut BackgroundColor),
@@ -158,6 +138,7 @@ fn apply_gamepad_background_interaction_palette(
     }
 }
 
+// TODO: Update these assets to use resource locations
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct InteractionAssets {
@@ -179,30 +160,32 @@ impl FromWorld for InteractionAssets {
 
 fn play_on_hover_sound_effect(
     trigger: On<Pointer<Over>>,
-    mut commands: Commands,
+    _commands: Commands,
     interaction_assets: Option<Res<InteractionAssets>>,
     interaction_query: Query<(), With<Interaction>>,
 ) {
-    let Some(interaction_assets) = interaction_assets else {
+    let Some(_interaction_assets) = interaction_assets else {
         return;
     };
 
     if interaction_query.contains(trigger.entity) {
-        commands.spawn(sound_effect(interaction_assets.hover.clone()));
+        // TODO: Fix this after audio is separated into its own crate
+        //commands.spawn(sound_effect(interaction_assets.hover.clone()));
     }
 }
 
 fn play_on_click_sound_effect(
     trigger: On<Pointer<Click>>,
-    mut commands: Commands,
+    _commands: Commands,
     interaction_assets: Option<Res<InteractionAssets>>,
     interaction_query: Query<(), With<Interaction>>,
 ) {
-    let Some(interaction_assets) = interaction_assets else {
+    let Some(_interaction_assets) = interaction_assets else {
         return;
     };
 
     if interaction_query.contains(trigger.entity) {
-        commands.spawn(sound_effect(interaction_assets.click.clone()));
+        // TODO: Fix this after audio is separated into its own crate
+        //commands.spawn(sound_effect(interaction_assets.click.clone()));
     }
 }

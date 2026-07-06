@@ -1,11 +1,5 @@
 use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
 use crate::screens::Screen;
-use crate::theme::interaction::BackgroundInteractionPalette;
-use crate::theme::palette::{BUTTON_TEXT, HEADER_TEXT};
-use crate::theme::widgets;
-use crate::theme::widgets::button::ButtonStyle;
-use crate::theme::widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
-use crate::theme::widgets::{button, text};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::SystemParam;
@@ -17,6 +11,10 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
 use common::marker;
+use widgets::{button, text};
+use widgets::button::ButtonStyle;
+use widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use widgets::theme::palette::{BackgroundInteractionPalette, BUTTON_TEXT, HEADER_TEXT};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -54,7 +52,7 @@ pub(super) fn spawn_file_browser() -> impl Scene {
     bsn! [
         #FileBrowser
         FileBrowser
-        widgets::scrollable_ui_root()
+        widgets::background::scrollable_ui_root()
         Node {
             position_type: PositionType::Relative,
             justify_content: JustifyContent::FlexStart,

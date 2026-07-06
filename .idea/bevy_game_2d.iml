@@ -14,6 +14,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/game/runtime/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/game/controls/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/game/settings/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/game/debug/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/game/widgets/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/crates/datagen/target" />
     </content>

@@ -1,6 +1,5 @@
 use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
 use crate::screens::Screen;
-use crate::theme::widgets;
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use serde::de::DeserializeOwned;
@@ -24,7 +23,7 @@ pub(super) fn spawn_details_screen() -> impl Scene {
     bsn! [
         #PropertiesScreen
         PropertiesScreen
-        widgets::ui_root()
+        widgets::background::ui_root()
         Node {
             position_type: PositionType::Relative,
             justify_content: JustifyContent::FlexStart,

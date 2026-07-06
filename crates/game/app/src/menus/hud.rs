@@ -1,6 +1,5 @@
 use crate::asset_tracking::LoadResource;
 use crate::screens::Screen;
-use crate::theme::widgets;
 use bevy::prelude::*;
 use common::{marker, AppSystems, GameplaySystems};
 use runtime::debug::{Health, Player, Stamina};
@@ -23,7 +22,7 @@ fn spawn_hud() -> impl Scene {
     bsn! [
         #Hud
         HudRoot
-        widgets::ui_root()
+        widgets::background::ui_root()
         GlobalZIndex(1)
         DespawnOnExit<Screen>(Screen::Gameplay)
         Children [

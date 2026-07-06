@@ -12,9 +12,9 @@ members = [
     "crates/game/app",
     "crates/game/assets",
     "crates/game/common", "crates/game/controls",
-    "crates/game/data", "crates/game/input",
+    "crates/game/data", "crates/game/debug", "crates/game/input",
     "crates/game/physics",
-    "crates/game/runtime", "crates/game/settings",
+    "crates/game/runtime", "crates/game/settings", "crates/game/widgets",
 
     "crates/macros/maybe_fields",
 ]
@@ -74,10 +74,12 @@ assets = { path = "crates/game/assets" }
 common = { path = "crates/game/common" }
 controls = { path = "crates/game/controls" }
 data = { path = "crates/game/data" }
+debug = { path = "crates/game/debug" }
 input = { path = "crates/game/input" }
 physics = { path = "crates/game/physics" }
 settings = { path = "crates/game/settings" }
 runtime = { path = "crates/game/runtime" }
+widgets = { path = "crates/game/widgets" }
 
 [features]
 # Default to a native dev build.

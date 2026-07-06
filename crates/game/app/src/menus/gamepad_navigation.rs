@@ -1,7 +1,3 @@
-use crate::audio::sound_effect;
-use crate::theme::interaction::InteractionAssets;
-use crate::theme::prelude::SpriteInteractionPalette;
-use crate::theme::widgets::button::ButtonImpl;
 use bevy::camera::NormalizedRenderTarget;
 use bevy::input_focus::directional_navigation::DirectionalNavigation;
 use bevy::input_focus::{InputFocus, InputFocusVisible};
@@ -11,6 +7,10 @@ use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use std::time::Duration;
+use widgets::button::ButtonImpl;
+use widgets::theme::palette::SpriteInteractionPalette;
+
+// TODO: Move this to a separate crate, likely `input`
 
 pub fn plugin(app: &mut App) {
     app
@@ -116,8 +116,7 @@ fn process_inputs(
 fn navigate(
     action_state: Res<ActionState>,
     mut directional_navigation: DirectionalNavigation,
-    interaction_assets: Option<Res<InteractionAssets>>,
-    mut commands: Commands,
+    mut _commands: Commands,
 ) {
     // If the user is pressing both left and right, or up and down,
     // we should not move in either direction.
@@ -155,10 +154,9 @@ fn navigate(
             // on both successful and unsuccessful navigation attempts
             Ok(entity) => {
                 println!("Navigated {direction:?} successfully. {entity} is now focused.");
-
-                if let Some(ref interaction_assets) = interaction_assets {
-                    commands.spawn(sound_effect(interaction_assets.hover.clone()));
-                }
+                
+                // TODO: Fix this once audio is its own crate
+                //if let Some(ref interaction_assets) = interaction_assets { commands.spawn(sound_effect(interaction_assets.hover.clone())); }
             }
             Err(e) => println!("Navigation failed: {e}"),
         }

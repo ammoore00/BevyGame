@@ -3,10 +3,9 @@ use crate::dev_tools::editor::window::editor_port::spawn_editor_port;
 use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
 use crate::dev_tools::editor::window::properties::spawn_details_screen;
 use crate::screens::Screen;
-use crate::theme::widgets::UiBackgroundStyle;
-use crate::theme::widgets;
 use bevy::prelude::*;
 use common::marker;
+use widgets::background::UiBackgroundStyle;
 
 mod menu_bar;
 mod browser;
@@ -48,7 +47,7 @@ fn spawn_editor() -> impl Scene {
     bsn! {
         #EditorUiRoot
         EditorUiRoot
-        widgets::ui_root()
+        widgets::background::ui_root()
         Node {
             row_gap: px(0),
         }
@@ -79,7 +78,7 @@ fn spawn_editor() -> impl Scene {
                             (
                                 #LeftPanel
                                 EditorLeftPanel
-                                widgets::scrollable_ui_root()
+                                widgets::background::scrollable_ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
                                     width: percent(LEFT_PANEL_WIDTH_TARGET),
@@ -98,7 +97,7 @@ fn spawn_editor() -> impl Scene {
                             (
                                 #CenterPanel
                                 EditorCenterPanel
-                                widgets::ui_root()
+                                widgets::background::ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
                                     flex_grow: 1.0,
@@ -111,7 +110,7 @@ fn spawn_editor() -> impl Scene {
                             (
                                 #RightPanel
                                 EditorRightPanel
-                                widgets::scrollable_ui_root()
+                                widgets::background::scrollable_ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
                                     width: percent(RIGHT_PANEL_WIDTH_TARGET),
@@ -132,7 +131,7 @@ fn spawn_editor() -> impl Scene {
                     (
                         #BottomPanel
                         EditorBottomPanel
-                        widgets::ui_background(UiBackgroundStyle::Main)
+                        widgets::background::ui_background(UiBackgroundStyle::Main)
                         Node {
                             width: percent(100),
                             height: percent(LOWER_PANEL_HEIGHT),
@@ -151,7 +150,7 @@ fn spawn_editor() -> impl Scene {
 
 fn background() -> impl Scene {
     bsn! [
-        widgets::ui_background(UiBackgroundStyle::Panel)
+        widgets::background::ui_background(UiBackgroundStyle::Panel)
         Node {
             position_type: PositionType::Absolute,
             left: px(0),

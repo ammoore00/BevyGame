@@ -4,8 +4,7 @@
 use bevy::prelude::*;
 
 use crate::{asset_tracking::ResourceHandles, screens::Screen};
-use crate::theme::widgets;
-use crate::theme::widgets::text;
+use widgets::text;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Loading(&Screen::Gameplay)), spawn_gameplay_loading_screen.spawn());
@@ -25,7 +24,7 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_gameplay_loading_screen() -> impl Scene {
     bsn! [
         #LoadingScreen
-        widgets::ui_root()
+        widgets::background::ui_root()
         DespawnOnExit<Screen>(Screen::Loading({&Screen::Gameplay}))
         Children [text::label("Loading...")]
     ]
@@ -35,7 +34,7 @@ fn spawn_gameplay_loading_screen() -> impl Scene {
 fn spawn_editor_loading_screen() -> impl Scene {
     bsn! [
         #LoadingScreen
-        widgets::ui_root()
+        widgets::background::ui_root()
         DespawnOnExit<Screen>(Screen::Loading({&Screen::Editor}))
         Children [text::label("Loading...")]
     ]

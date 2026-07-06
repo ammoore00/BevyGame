@@ -9,9 +9,11 @@ use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use bevy::window::ExitCondition;
 use controls::ControlsPlugin;
+use debug::DebugPlugin;
 use input::InputPlugin;
 use runtime::RuntimePlugin;
 use settings::GameSettingsPlugin;
+use widgets::WidgetsPlugin;
 
 mod asset_tracking;
 mod audio;
@@ -19,7 +21,6 @@ mod audio;
 mod dev_tools;
 mod menus;
 mod screens;
-mod theme;
 
 pub struct AppPlugin;
 
@@ -55,12 +56,12 @@ impl Plugin for AppPlugin {
             GameSettingsPlugin,
             InputPlugin,
             RuntimePlugin,
+            WidgetsPlugin,
 
             asset_tracking::plugin,
             audio::plugin,
             menus::plugin,
             screens::plugin,
-            theme::plugin,
         ));
 
         // Spawn the main camera.
@@ -69,7 +70,12 @@ impl Plugin for AppPlugin {
         #[cfg(feature = "dev")]
         {
             info!("Dev tools enabled");
-            app.add_plugins((FeathersPlugins, dev_tools::plugin));
+            app.add_plugins((
+                FeathersPlugins,
+                DebugPlugin,
+
+                dev_tools::plugin
+            ));
         }
     }
 }

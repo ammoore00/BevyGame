@@ -1,12 +1,11 @@
 //! The credits menu.
 
-use crate::theme::widgets;
-use crate::theme::widgets::{button, text};
 use crate::{audio::music, menus::Menu};
 use assets::resource::AudioResource;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use data::prelude::loc;
 use input::gamepad::gamepad_just_pressed;
+use widgets::{button, text};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Credits), spawn_credits_menu.spawn());
@@ -23,7 +22,7 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_credits_menu() -> impl Scene {
     bsn! [
         #CreditsMenu
-        widgets::scrollable_ui_root()
+        widgets::background::scrollable_ui_root()
         GlobalZIndex(2)
         DespawnOnExit<Menu>(Menu::Credits)
         Children [

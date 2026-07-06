@@ -1,13 +1,13 @@
 use crate::dev_tools::editor::file_manager::{EditorFile, FileManager};
 use crate::dev_tools::editor::window::BACKGROUND_BLEED;
 use crate::screens::Screen;
-use crate::theme::palette::BUTTON_TEXT;
-use crate::theme::widgets;
-use crate::theme::widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
-use crate::theme::widgets::{button, UiBackgroundStyle};
 use bevy::prelude::*;
 use std::collections::HashSet;
 use common::marker;
+use widgets::background::UiBackgroundStyle;
+use widgets::button;
+use widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
+use widgets::theme::palette::BUTTON_TEXT;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -28,7 +28,7 @@ pub(super) fn spawn_editor_port() -> impl Scene {
     bsn! [
         #EditorPort
         EditorPort
-        widgets::ui_root()
+        widgets::background::ui_root()
         Node {
             position_type: PositionType::Relative,
             justify_content: JustifyContent::FlexStart,
@@ -44,7 +44,7 @@ fn file_tabs() -> impl Scene {
     bsn! [
         #FileTabs
         FileTabs
-        widgets::ui_root()
+        widgets::background::ui_root()
         Node {
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::FlexStart,
@@ -53,7 +53,7 @@ fn file_tabs() -> impl Scene {
         }
         Children [
             #FileTabsBackground
-            widgets::ui_background(UiBackgroundStyle::Panel)
+            widgets::background::ui_background(UiBackgroundStyle::Panel)
             Node {
                 position_type: PositionType::Absolute,
 

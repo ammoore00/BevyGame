@@ -1,9 +1,9 @@
-use crate::theme::palette::BUTTON_TEXT;
-use crate::theme::widgets::text::MEDIUM_FONT_SIZE;
-use crate::theme::widgets::{button, UiBackgroundStyle};
-use crate::theme::widgets;
 use bevy::prelude::*;
 use common::marker;
+use widgets::background::UiBackgroundStyle;
+use widgets::button;
+use widgets::text::MEDIUM_FONT_SIZE;
+use widgets::theme::palette::BUTTON_TEXT;
 
 marker!(MenuBar);
 marker!(MenuBarButtons);
@@ -21,7 +21,7 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
     bsn! [
         #MenuBar
         MenuBar
-        widgets::ui_root()
+        widgets::background::ui_root()
         Node {
             flex_direction: FlexDirection::Row,
 
@@ -37,11 +37,11 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                 MENU_PADDING_VERTICAL as f32,
             ),
         }
-        widgets::ui_background(UiBackgroundStyle::Main)
+        widgets::background::ui_background(UiBackgroundStyle::Main)
         Children [
             #MenuBarButtons
             MenuBarButtons
-            widgets::ui_root()
+            widgets::background::ui_root()
             Node {
                 position_type: PositionType::Relative,
                 flex_direction: FlexDirection::Row,

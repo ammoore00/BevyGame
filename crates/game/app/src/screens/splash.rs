@@ -1,7 +1,6 @@
 //! A splash screen that plays briefly at startup.
 
 use crate::screens::Screen;
-use crate::theme::widgets;
 use assets::resource::UiSpriteResource;
 use bevy::{
     input::common_conditions::input_just_pressed,
@@ -52,7 +51,7 @@ const SPLASH_FADE_DURATION_SECS: f32 = 0.6;
 fn spawn_splash_screen() -> impl Scene {
     bsn! [
         #SplashScreen
-        widgets::ui_root()
+        widgets::background::ui_root()
         BackgroundColor(SPLASH_BACKGROUND_COLOR)
         DespawnOnExit<Screen>(Screen::Splash)
         Children [

@@ -1,9 +1,8 @@
 //! The main menu (seen on the title screen).
 
-use crate::theme::widgets;
-use crate::theme::widgets::button;
 use crate::{asset_tracking::ResourceHandles, menus::Menu, screens::Screen};
 use bevy::prelude::*;
+use widgets::button;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Main), spawn_main_menu.spawn());
@@ -12,7 +11,7 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_main_menu() -> impl Scene {
     bsn! [
         #MainMenu
-        widgets::ui_root()
+        widgets::background::ui_root()
         GlobalZIndex(2)
         DespawnOnExit<Menu>(Menu::Main)
         Children [
