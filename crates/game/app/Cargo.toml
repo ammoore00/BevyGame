@@ -9,8 +9,11 @@ common = { workspace = true }
 controls = { workspace = true }
 data = { workspace = true }
 input = { workspace = true }
-physics = { workspace = true }
+settings = { workspace = true }
 runtime = { workspace = true }
+
+# TODO: Remove this dependency, as it is only used for debug rendering
+physics = { workspace = true }
 
 bevy = { workspace = true }
 getset = { workspace = true }

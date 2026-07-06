@@ -14,7 +14,7 @@ members = [
     "crates/game/common", "crates/game/controls",
     "crates/game/data", "crates/game/input",
     "crates/game/physics",
-    "crates/game/runtime",
+    "crates/game/runtime", "crates/game/settings",
 
     "crates/macros/maybe_fields",
 ]
@@ -24,12 +24,12 @@ resolver = "2"
 bevy = { version = "0.19", default-features = false, features = [
     # Base feature sets
     "2d",
+    "audio",
     "ui",
 
     # Additional features
-    "audio",
+    "bevy_settings",
     "bevy_state",
-    "debug",
     "multi_threaded",
     "reflect_auto_register",
     "serialize",
@@ -42,14 +42,11 @@ bevy = { version = "0.19", default-features = false, features = [
 
     # Gamepad functionality
     "bevy_gilrs",
-    "bevy_input_focus",
 
     # File formats
     "png",
-    "vorbis",
 
     # Picking (aka clicking on world objects)
-    "ui_picking",
     "sprite_picking",
 
     # Linux rendering
@@ -79,6 +76,7 @@ controls = { path = "crates/game/controls" }
 data = { path = "crates/game/data" }
 input = { path = "crates/game/input" }
 physics = { path = "crates/game/physics" }
+settings = { path = "crates/game/settings" }
 runtime = { path = "crates/game/runtime" }
 
 [features]
@@ -95,6 +93,8 @@ dev = [
     "bevy/bevy_dev_tools",
     "bevy/bevy_ui_debug",
     "bevy/bevy_feathers",
+
+    "bevy/debug",
 
     "bevy_mod_debugdump",
     "graphviz-rust",

@@ -7,9 +7,11 @@
 use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::{asset::AssetMetaCheck, prelude::*};
+use bevy::window::ExitCondition;
 use controls::ControlsPlugin;
 use input::InputPlugin;
 use runtime::RuntimePlugin;
+use settings::GameSettingsPlugin;
 
 mod asset_tracking;
 mod audio;
@@ -34,12 +36,13 @@ impl Plugin for AppPlugin {
                     ..default()
                 })
                 .set(WindowPlugin {
+                    // Intercept window close for other plugins to clean up on app exit
+                    exit_condition: ExitCondition::DontExit,
                     primary_window: Window {
                         title: "Bevy Game 2d".to_string(),
                         fit_canvas_to_parent: true,
                         ..default()
-                    }
-                    .into(),
+                    }.into(),
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
@@ -49,6 +52,7 @@ impl Plugin for AppPlugin {
         // Add other plugins.
         app.add_plugins((
             ControlsPlugin,
+            GameSettingsPlugin,
             InputPlugin,
             RuntimePlugin,
 
