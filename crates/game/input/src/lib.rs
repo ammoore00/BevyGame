@@ -1,6 +1,7 @@
 use crate::gamepad::GamepadRes;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use getset::{Getters, MutGetters};
 use common::AppSystems;
 
 pub mod gamepad;
@@ -23,13 +24,18 @@ pub enum LastInputMode {
     MouseAndKeyboard,
 }
 
-#[derive(SystemParam)]
+#[derive(SystemParam, Getters, MutGetters)]
 pub struct InputReader<'w, 's> {
     gamepad_query: Query<'w, 's, &'static Gamepad>,
     gamepad_res: Option<Res<'w, GamepadRes>>,
-    keyboard_input: Res<'w, ButtonInput<KeyCode>>,
+    #[getset(get = "pub")]
+    keyboard: Res<'w, ButtonInput<KeyCode>>,
+    #[getset(get = "pub")]
     mouse_buttons: Res<'w, ButtonInput<MouseButton>>,
+    #[getset(get = "pub", get_mut = "pub")]
     mouse_cursor: MessageReader<'w, 's, CursorMoved>,
+    #[getset(get = "pub")]
+    last_input_mode: Res<'w, LastInputMode>,
 }
 impl<'w, 's> InputReader<'w, 's> {
     pub fn gamepad(&self) -> Option<&Gamepad> {
@@ -37,18 +43,6 @@ impl<'w, 's> InputReader<'w, 's> {
             .as_ref()
             .map(|r| r.0)
             .and_then(|id| self.gamepad_query.get(id).ok())
-    }
-
-    pub fn keyboard(&self) -> &ButtonInput<KeyCode> {
-        &self.keyboard_input
-    }
-
-    pub fn mouse_buttons(&self) -> &ButtonInput<MouseButton> {
-        &self.mouse_buttons
-    }
-
-    pub fn cursor_mut(&mut self) -> &mut MessageReader<'w, 's, CursorMoved> {
-        &mut self.mouse_cursor
     }
 }
 
@@ -73,12 +67,13 @@ impl LastInputReader for InputReader<'_, '_> {
 }
 
 fn set_last_input_mode(
-    mut input_reader: InputReader,
-    mut last_input_mode: ResMut<LastInputMode>,
+    // Input reader does not have mutable access to last input mode
+    // so we need separate access to it
+    mut input_reader: ParamSet<(InputReader, ResMut<LastInputMode>)>,
 ) {
-    if input_reader.gamepad_used_this_frame() {
-        *last_input_mode = LastInputMode::Gamepad;
-    } else if input_reader.mouse_or_keyboard_used_this_frame() {
-        *last_input_mode = LastInputMode::MouseAndKeyboard;
+    if input_reader.p0().gamepad_used_this_frame() {
+        *input_reader.p1() = LastInputMode::Gamepad;
+    } else if input_reader.p0().mouse_or_keyboard_used_this_frame() {
+        *input_reader.p1() = LastInputMode::MouseAndKeyboard;
     }
 }

@@ -265,7 +265,6 @@ fn on_aim_input(
             .set(Box::new(Visibility::Hidden))
             .expect("Failed to set visibility");
     }
-    info!("Aim facing event success!");
 }
 
 

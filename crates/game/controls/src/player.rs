@@ -4,6 +4,9 @@ use input::{InputReader, LastInputMode};
 use runtime::character::player::{AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player};
 use runtime::LevelLoadedSystems;
 
+// TODO: Remappable controls
+// TODO: Split keyboard and gamepad input checks into separate systems
+
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
@@ -27,16 +30,12 @@ fn record_aim_input(
     >,
     window:Query<&Window>,
     mut input_reader: InputReader,
-    last_input_mode: Res<LastInputMode>,
     mut commands: Commands,
 ) {
-    // TODO: Add keyboard and mouse support
-    // TODO: Remappable controls
-
     let (player_entity, position) = player_query.single().expect("Failed to find player entity");
     let window = window.single().expect("Failed to find window");
 
-    if let Some(gamepad) = input_reader.gamepad() {
+    if let Some(gamepad) = input_reader.gamepad() && **input_reader.last_input_mode() == LastInputMode::Gamepad {
         let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap_or(0.0);
         let right_stick_y = gamepad.get(GamepadAxis::RightStickY).unwrap_or(0.0);
 
@@ -50,8 +49,8 @@ fn record_aim_input(
         commands.trigger(AimInputEvent::new(player_entity, new_facing));
     }
 
-    if *last_input_mode == LastInputMode::MouseAndKeyboard {
-        let Some(last_cursor) = input_reader.cursor_mut().read().last() else {
+    if **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard {
+        let Some(last_cursor) = input_reader.mouse_cursor_mut().read().last() else {
             return;
         };
 
@@ -73,13 +72,10 @@ fn record_movement_input(
     let player_entity = player_query.single()
         .expect("Failed to find player entity");
 
-    // TODO: Better split of gamepad and keyboard controls
-    // TODO: Remappable controls
-
     let mut intent = Vec3::ZERO;
     let mut toggle_sprint = false;
 
-    if let Some(gamepad) = input_reader.gamepad() {
+    if let Some(gamepad) = input_reader.gamepad() && **input_reader.last_input_mode() == LastInputMode::Gamepad {
         let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
         let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
 
@@ -97,7 +93,7 @@ fn record_movement_input(
     }
 
     let keyboard = input_reader.keyboard();
-    if intent == Vec3::ZERO {
+    if **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard {
         // Collect directional input.
         if keyboard.pressed(KeyCode::KeyW) || keyboard.pressed(KeyCode::ArrowUp) {
             intent.z -= 1.0;
@@ -133,11 +129,12 @@ fn record_jump_input(
         .expect("Failed to find player entity");
 
     let jump = if let Some(gamepad) = input_reader.gamepad()
+        && **input_reader.last_input_mode() == LastInputMode::Gamepad
         && gamepad.just_pressed(GamepadButton::South)
     {
         true
     } else {
-        input_reader.keyboard().just_pressed(KeyCode::Space)
+        input_reader.keyboard().just_pressed(KeyCode::Space) && **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
     };
 
     if jump {
@@ -154,11 +151,12 @@ fn record_attack_input(
         .expect("Failed to find player entity");
 
     let attack = if let Some(gamepad) = input_reader.gamepad()
+        && **input_reader.last_input_mode() == LastInputMode::Gamepad
         && gamepad.just_pressed(GamepadButton::RightTrigger)
     {
         true
     } else {
-        input_reader.mouse_buttons().just_pressed(MouseButton::Left)
+        input_reader.mouse_buttons().just_pressed(MouseButton::Left) && **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
     };
 
     if attack {
