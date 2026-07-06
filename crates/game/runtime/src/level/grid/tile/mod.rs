@@ -1,4 +1,4 @@
-use assets::resource::{TileAsset, TileLayout, TileRegistry, TileResource, TileShape, TileSpriteRegistry};
+use assets::resource::level::{TileAsset, TileLayout, TileRegistry, TileResource, TileShape, TileSpriteRegistry};
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;

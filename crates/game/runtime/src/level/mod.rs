@@ -7,7 +7,7 @@ use crate::character::npc::npc_bundle;
 use crate::character::player::player;
 use crate::level::grid::nav::NavContext;
 use crate::level::map::{map_scene, NavBakeError};
-use assets::resource::map::{Palette, Palettes};
+use assets::resource::level::{Palette, Palettes};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use common::{marker, GameState};
@@ -149,10 +149,10 @@ fn bake_nav(
     mut next_state: ResMut<NextState<LevelSpawnState>>,
     mut commands: Commands,
 ) {
-    info!("Level construction - baking nav map");
+    info!("Level construction - baking nav level");
 
     if let Err(err) = map::bake_nav(nav_context, commands.reborrow()) {
-        error!("Error baking nav map: {:?}", err);
+        error!("Error baking nav level: {:?}", err);
         commands.trigger(LevelErrorEvent(err.into()));
         return;
     };

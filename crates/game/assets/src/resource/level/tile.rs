@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::state::AssetSystems;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();
     app.init_asset_loader::<RonAssetLoader<TileCodec, TileAsset>>();
     app.add_registry_with_discovery::<TileResource>();

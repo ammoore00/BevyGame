@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use crate::resource::map::map::{MapDefinition, MapPool, MapType};
-use crate::resource::map::transition::{TransitionRoom, TransitionRoomPool};
+use crate::resource::level::map::{MapDefinition, MapPool, MapType};
+use crate::resource::level::transition::{TransitionRoom, TransitionRoomPool};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<Palette>();

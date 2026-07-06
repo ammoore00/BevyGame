@@ -1,7 +1,7 @@
 use crate::character::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::character::state::ActionStateTracker;
 use assets::action_states::Attacking;
-use assets::resource::character::{AnimationContext, AnimationData, AttackResource};
+use assets::resource::characters::{AnimationContext, AnimationData, AttackResource};
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems};
 use data::prelude::*;

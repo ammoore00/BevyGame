@@ -8,3 +8,6 @@ bevy = { workspace = true }
 parry3d = "0.28.0"
 
 common = { workspace = true }
+
+[lints]
+workspace = true

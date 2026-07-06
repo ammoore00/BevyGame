@@ -129,7 +129,7 @@ fn update_pathfinder_wander_state(
 ) {
     let nav_map = nav_map_query.single();
     let Ok(nav_map) = nav_map else {
-        error!("Failed to get nav map!: {:?}", nav_map.err().unwrap());
+        error!("Failed to get nav level!: {:?}", nav_map.err().unwrap());
         return;
     };
 

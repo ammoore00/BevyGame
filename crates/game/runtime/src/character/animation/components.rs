@@ -3,7 +3,7 @@ use common::Facing;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::time::Duration;
-use assets::resource::character::AnimationData;
+use assets::resource::characters::AnimationData;
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {
@@ -68,15 +68,15 @@ impl CharacterAnimationTracker {
     }
 }
 
-/// Maps character states to animation data
+/// Maps characters states to animation data
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct AnimationStateMap(pub HashMap<TypeId, Handle<AnimationData>>);
 
 /*
 impl AnimationStateMap {
-    pub fn _from_resource_location_map(map: &HashMap<TypeId, ResourceLocation<AnimationResource>>, registry: &ResolvedResourceRegistry<AnimationResource>) -> Self {
-        let resolved_map = map.iter()
-            .map(|(type_id, location)| {
+    pub fn _from_resource_location_map(level: &HashMap<TypeId, ResourceLocation<AnimationResource>>, registry: &ResolvedResourceRegistry<AnimationResource>) -> Self {
+        let resolved_map = level.iter()
+            .level(|(type_id, location)| {
                 (*type_id, registry.get(location).unwrap().clone())
             })
             .collect();

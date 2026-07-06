@@ -36,8 +36,7 @@ impl<'w, 's> InputReader<'w, 's> {
         self.gamepad_res
             .as_ref()
             .map(|r| r.0)
-            .map(|id| self.gamepad_query.get(id).ok())
-            .flatten()
+            .and_then(|id| self.gamepad_query.get(id).ok())
     }
 
     pub fn keyboard(&self) -> &ButtonInput<KeyCode> {

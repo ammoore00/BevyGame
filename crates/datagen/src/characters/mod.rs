@@ -8,7 +8,7 @@ use crate::{create_dir, write_data, WriteError};
 use data::prelude::*;
 use std::collections::HashMap;
 use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderKindCodec, FrameDataCodec, TextureAtlasCodec};
-use assets::resource::character::{AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
+use assets::resource::characters::{AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
 
 pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(CharacterResource::ROOT_DIR)?;
@@ -60,10 +60,10 @@ fn create_character(
         write_data(loc, &codec)?;
     }
 
-    // Write the character data to disk
+    // Write the characters data to disk
     let loc = character_data.loc.clone();
     let codec = CharacterCodec::from(character_data);
-    println!("Writing character data to: {}", loc.as_path().display());
+    println!("Writing characters data to: {}", loc.as_path().display());
     write_data(loc, &codec)?;
 
     Ok(())

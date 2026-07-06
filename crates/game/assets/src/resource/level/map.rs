@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use getset::Getters;
 use data::define_data_resource;
 use data::prelude::ResourceLocation;
-use crate::resource::map::palette::Palette;
+use crate::resource::level::palette::Palette;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<MapDefinition>();
@@ -10,14 +10,14 @@ pub(super) fn plugin(app: &mut App) {
 
 define_data_resource!(Map, "level/maps", MapDefinition);
 
-/// Pool of all registered map definitions
-/// This contains every map def that the game knows about
+/// Pool of all registered level definitions
+/// This contains every level def that the game knows about
 #[derive(Debug, Clone, Default)]
 pub struct MapPool(pub Vec<MapDefinition>);
 
-/// The type for this map. This affects where in the world it will be used
+/// The type for this level. This affects where in the world it will be used
 ///
-/// Main - used as a main map for a world
+/// Main - used as a main level for a world
 /// Boss - boss dungeon, which may or may not be optional, depending on where it gets used
 /// Side - optional side dungeon without a boss
 #[derive(Debug, Clone, Copy)]
@@ -27,10 +27,10 @@ pub enum MapType {
     _Side,
 }
 
-/// Contains all the information needed to generate a map
+/// Contains all the information needed to generate a level
 ///
-/// This contains both information about map selection and information about building the map
-/// - Selection information includes things such as map type and palette
+/// This contains both information about level selection and information about building the level
+/// - Selection information includes things such as level type and palette
 /// - Build information includes things like set pieces, injectables, and connections
 #[derive(Asset, Debug, Clone, Getters, derive_new::new, TypePath)]
 pub struct MapDefinition {
@@ -48,7 +48,7 @@ impl MapDefinition {
     };
 }
 
-// TODO: Replace this with actually loading map definitions from data files
+// TODO: Replace this with actually loading level definitions from data files
 #[derive(Component, Default, Clone)]
 pub struct MapDataLocation(pub Option<MapDefinition>, pub Option<Palette>);
 impl From<MapDataLocation> for ResourceLocation<MapResource> {

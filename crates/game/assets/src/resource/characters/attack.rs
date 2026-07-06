@@ -1,6 +1,6 @@
 use crate::codec::{AttackCodec, AttackSetCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::resource::character::{AnimationContext, AnimationResource, CharacterSpriteResource};
+use crate::resource::characters::{AnimationContext, AnimationResource, CharacterSpriteResource};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use data::define_data_resource;

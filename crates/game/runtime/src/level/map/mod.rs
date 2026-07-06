@@ -3,7 +3,7 @@ use crate::level::grid::nav::{NavContext, TileNavMap};
 use crate::level::grid::tile::{set_tile_location, TileEntity};
 use crate::level::grid::{grid_bundle, merge_tile_map, Grid};
 use crate::level::map::room::{build_room, RoomBuilderContext};
-use assets::resource::map::{MapDataLocation, MapDefinition, MapResource, Palette};
+use assets::resource::level::{MapDataLocation, MapDefinition, MapResource, Palette};
 use bevy::ecs::query::{QueryData, QueryItem, QuerySingleError};
 use bevy::prelude::*;
 use data::prelude::*;
@@ -117,7 +117,7 @@ pub fn spawn_map_grid(
 
         let grid_size = grid.size();
         merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))
-            .expect("Failed to merge tile map");
+            .expect("Failed to merge tile level");
     }
 
     let grid_entity = context.commands
@@ -160,11 +160,11 @@ pub fn bake_nav(
 pub enum NavBakeError {
     #[error("Failed to get level entity: {}", .0)]
     LevelEntity(#[from] QuerySingleError),
-    #[error("No grid child found for level map")]
+    #[error("No grid child found for level level")]
     GridMissing,
 }
 
-/// Stores the current state of the generated map
+/// Stores the current state of the generated level
 #[derive(Component, Debug, CopyGetters)]
 pub struct _MapState {
     #[getset(get_copy = "pub")]

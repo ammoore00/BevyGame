@@ -1,8 +1,7 @@
 use crate::level::grid;
 use crate::level::grid::tile::tile;
 use crate::level::grid::TileMap;
-use assets::resource::map::{RoomDefinition, RoomLayout, RoomRegistry};
-use assets::resource::{TileAsset, TileLayout, TileRegistry, TileSpriteRegistry};
+use assets::resource::level::{RoomDefinition, RoomLayout, RoomRegistry, TileAsset, TileLayout, TileRegistry, TileSpriteRegistry};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::{Scale, TileCoords};

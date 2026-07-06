@@ -1,5 +1,5 @@
 use assets::codec::TileCodec;
-use assets::resource::{TileFacing, TileResource, TileShape};
+use assets::resource::level::{TileFacing, TileResource, TileShape};
 use crate::{create_dir, write_data, WriteError};
 use data::prelude::*;
 

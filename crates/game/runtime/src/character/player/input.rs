@@ -3,7 +3,7 @@ use crate::character::player::{AimFacing, Player};
 use crate::character::stamina::Stamina;
 use crate::character::state::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
-use assets::resource::character::AttackResource;
+use assets::resource::characters::AttackResource;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, WorldPosition};
 use data::prelude::*;
@@ -72,7 +72,7 @@ fn on_movement_input(
     let prev_state_id = tracker.state_type_id();
     let new_state_id = (*new_state).type_id();
 
-    // If the character state has changed
+    // If the characters state has changed
     if prev_state_id != new_state_id {
         let should_sprint = (*new_state).type_id() == TypeId::of::<Sprinting>();
 
@@ -170,7 +170,7 @@ impl AttackInputEvent {
         Self {
             entity,
             _attack: loc::<AttackResource>(attack_loc.as_ref())
-                .expect(format!("Failed to parse attack resource location: {}", attack_loc.as_ref()).as_str()),
+                .unwrap_or_else(|_| panic!("Failed to parse attack resource location: {}", attack_loc.as_ref())),
         }
     }
 }
@@ -207,7 +207,7 @@ fn on_attack_input(
 
     // TODO: Make this check better
     if stamina.current > 0 {
-        // TODO: Move this into the character attack event
+        // TODO: Move this into the characters attack event
         let facing = {
             if let Some(aim_facing) = aim_facing.0 {
                 *facing = aim_facing;

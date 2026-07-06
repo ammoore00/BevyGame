@@ -3,7 +3,7 @@
 use crate::character::health::Health;
 use crate::character::stamina::Stamina;
 use crate::character::CharacterPrototype;
-use assets::resource::character::{CharacterResource, CharacterSpriteResource};
+use assets::resource::characters::{CharacterResource, CharacterSpriteResource};
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;

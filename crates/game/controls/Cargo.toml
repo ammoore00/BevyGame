@@ -9,3 +9,6 @@ input = { workspace = true }
 runtime = { workspace = true }
 
 bevy = { workspace = true }
+
+[lints]
+workspace = true

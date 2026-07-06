@@ -111,7 +111,7 @@ fn update_file_tab_buttons(
 
     let children = children.map_or(Vec::new(), |c| c.to_vec());
 
-    // Collect existing buttons and map them to open files
+    // Collect existing buttons and level them to open files
     // TODO: Evaluate the performance impact of this approach
     let mut existing_buttons: HashSet<_> = HashSet::new();
     for child in children.iter() {

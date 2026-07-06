@@ -1,6 +1,5 @@
 use assets::codec::RoomCodec;
-use assets::resource::map::{ConnectionFacing, ConnectionSize, RoomConnection, RoomResource};
-use assets::resource::TileResource;
+use assets::resource::level::{ConnectionFacing, ConnectionSize, RoomConnection, RoomResource, TileResource};
 use data::prelude::*;
 use crate::{create_dir, write_data, WriteError};
 

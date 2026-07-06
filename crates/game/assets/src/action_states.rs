@@ -1,12 +1,11 @@
-use crate::resource::character::AttackResource;
+use crate::resource::characters::AttackResource;
 use bevy::prelude::*;
 use data::prelude::ResourceLocation;
 use getset::{Getters, Setters};
 use std::any::{Any, TypeId};
-use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
@@ -21,7 +20,7 @@ pub(super) fn register_states(app: &mut App) {
     app.register_type::<Attacking>();
 }
 
-pub const DEFAULT_STATES: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
+pub static DEFAULT_STATES: LazyLock<Vec<TypeId>> = LazyLock::new(|| {
     vec![
         TypeId::of::<Idle>(),
         TypeId::of::<Walking>(),
@@ -31,7 +30,7 @@ pub const DEFAULT_STATES: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
     ]
 });
 
-pub const DEFAULT_STATES_NON_ATTACKING: LazyCell<Vec<TypeId>> = LazyCell::new(|| {
+pub static DEFAULT_STATES_NON_ATTACKING: LazyLock<Vec<TypeId>> = LazyLock::new(|| {
     vec![
         TypeId::of::<Idle>(),
         TypeId::of::<Walking>(),
@@ -135,7 +134,7 @@ impl TimedActionState for Attacking {
     }
 }
 
-pub const DEFAULT_TRANSITIONS: LazyCell<Vec<StateTransitionRule>> = LazyCell::new(|| {
+pub static DEFAULT_TRANSITIONS: LazyLock<Vec<StateTransitionRule>> = LazyLock::new(|| {
     vec![
         // Constructor automatically ignores self-transition rules,
         // so duplicates here are fine

@@ -1,4 +1,4 @@
-use assets::resource::TileFacing;
+use assets::resource::level::TileFacing;
 use bevy::prelude::*;
 use common::WorldCoords;
 use physics::Collider;

@@ -1,6 +1,6 @@
 use crate::codec::{AnimationCodec, FrameDataCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::resource::character::CharacterSpriteResource;
+use crate::resource::characters::CharacterSpriteResource;
 use crate::state::AssetSystems;
 use crate::AssetLoadState;
 use bevy::ecs::system::SystemParam;

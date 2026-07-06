@@ -330,7 +330,7 @@ pub enum ResourceLocationParseError {
         "Error parsing {0}: Resource id must have a valid path (no trailing slash, no double slashes, etc."
     )]
     InvalidPath(String),
-    #[error("Error parsing {0}: Resource locations may contain at most one divider character ':'")]
+    #[error("Error parsing {0}: Resource locations may contain at most one divider characters ':'")]
     MultipleDividers(String),
     #[error("Resource locations must contain at least one component")]
     Empty,

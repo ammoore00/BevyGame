@@ -1,7 +1,7 @@
 use crate::action_state_scene;
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
-use assets::resource::character::{AnimationContext, CharacterData, CharacterResource};
+use assets::resource::characters::{AnimationContext, CharacterData, CharacterResource};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -39,7 +39,7 @@ pub(crate) fn plugin(app: &mut App) {
 
 register_prototype_system!(initialize_characters, CharacterBuilder);
 
-/// Marker for a fully initialized character. Presence of this Component
+/// Marker for a fully initialized characters. Presence of this Component
 /// guarantees inclusion of all other necessary Components
 ///
 /// # Panics
@@ -52,17 +52,17 @@ impl PrototypeFinalizedMarker for Character {
     fn new(_: PrototypeMarkerToken) -> Self { Self(()) }
 }
 
-/// Used to temporarily store the location from which to load the character's data
+/// Used to temporarily store the location from which to load the characters's data
 /// when the entity is constructed from its template
 ///
-/// This component should be removed once the character's data has been loaded
+/// This component should be removed once the characters's data has been loaded
 ///
 /// # Errors
 /// This component must have a Default implementation to be loaded through BSN,
 /// but any attempt to use the default value will result in an error when the
-/// character data is loaded
+/// characters data is loaded
 ///
-/// This will not panic, but it will result in an error, and the character will not be spawned
+/// This will not panic, but it will result in an error, and the characters will not be spawned
 #[derive(Component, Clone)]
 pub(crate) struct CharacterDataLocation(ResourceLocation<CharacterResource>);
 impl Default for CharacterDataLocation {
@@ -91,14 +91,14 @@ impl Default for CharacterProps {
     }
 }
 
-/// SceneComponent used to construct a character
+/// SceneComponent used to construct a characters
 ///
 /// See `CharacterProps` for parameters
 #[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[scene(CharacterProps)]
 pub(crate) struct CharacterPrototype;
 impl CharacterPrototype {
-    /// Initializes character components which do not need top be loaded from data
+    /// Initializes characters components which do not need top be loaded from data
     /// Remaining components are loaded from data after spawning (see `initialize_characters`)
     fn scene(props: CharacterProps) -> impl Scene {
         let state = action_state_scene!(Idle);
@@ -135,7 +135,7 @@ impl PrototypeBuilder for CharacterBuilder {
         context: &mut Self::Context<'_, '_>,
         mut commands: Commands
     ) -> Result<(), BevyError> {
-        let data = context.get_character_data(&data_loc.0).ok_or(BevyError::error("Failed to find character data"))?;
+        let data = context.get_character_data(&data_loc.0).ok_or(BevyError::error("Failed to find characters data"))?;
 
         let animation_context = context.animation_context();
         let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_context));
@@ -146,7 +146,7 @@ impl PrototypeBuilder for CharacterBuilder {
             data.resolve_animation_handles(context.animation_context());
         let idle_animation =
             animations.get(&TypeId::of::<Idle>()).cloned()
-                .expect("Failed to find idle animation for player character");
+                .expect("Failed to find idle animation for player characters");
 
         let animation_assets = context.animation_context().resolved_assets();
         let animation_tracker =

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use assets::resource::character::{AttackContext, AttackResource};
+use assets::resource::characters::{AttackContext, AttackResource};
 use common::Facing;
 use data::loc::ResourceLocation;
 use crate::character::stamina::StaminaEvent;

@@ -15,7 +15,7 @@ use data::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use assets::resource::character::{AnimationResource, AttackResource, CharacterResource};
+use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
 use common::marker;
 
 pub(super) fn plugin(app: &mut App) {
@@ -355,7 +355,7 @@ fn update_menu_items(
     for (item_entity, item, parent) in items_query.iter().take(1) {
         let path = item.0.clone();
         let loc = item.1.clone();
-        let file_kind = item.2.clone();
+        let file_kind = item.2;
         
         let mut components = path.components().peekable();
         let Some(component) = components.next() else {
@@ -411,7 +411,7 @@ fn update_menu_items(
             // then add a new uninitialized one under the existing match
             (false, Some((existing, _))) => {
                 commands.entity(item_entity).despawn();
-                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc.into(), file_kind)).id();
+                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc, file_kind)).id();
                 commands.entity(existing).add_child(child);
             },
             // Otherwise, replace the uninitialized reference with a folder,
@@ -419,7 +419,7 @@ fn update_menu_items(
             (false, None) => {
                 commands.entity(item_entity).remove::<UninitializedMenuItem>();
                 commands.entity(item_entity).insert(MenuItem::Folder(component.to_string()));
-                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc.into(), file_kind)).id();
+                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc, file_kind)).id();
                 commands.entity(item_entity).add_child(child);
             },
         }

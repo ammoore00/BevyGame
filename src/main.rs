@@ -36,7 +36,7 @@ fn generate_svg_data(dot_string: String) -> Result<Vec<u8>, std::io::Error> {
     use graphviz_rust::printer::PrinterContext;
     use graphviz_rust::cmd::Format;
 
-    let graph = graphviz_rust::parse(dot_string.as_str()).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let graph = graphviz_rust::parse(dot_string.as_str()).map_err(std::io::Error::other)?;
     graphviz_rust::exec(
         graph,
         &mut PrinterContext::default(),

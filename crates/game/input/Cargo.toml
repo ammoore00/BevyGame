@@ -7,3 +7,6 @@ edition = "2024"
 common = { workspace = true }
 
 bevy = { workspace = true }
+
+[lints]
+workspace = true

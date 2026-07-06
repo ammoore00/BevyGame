@@ -1,13 +1,13 @@
-//! Handle player input and translate it into movement through a character
-//! controller. A character controller is the collection of systems that govern
+//! Handle player input and translate it into movement through a characters
+//! controller. A characters controller is the collection of systems that govern
 //! the movement of characters.
 //!
-//! In our case, the character controller has the following logic:
+//! In our case, the characters controller has the following logic:
 //! - Set [`MovementController`] intent based on directional keyboard input.
 //!   This is done in the `player` module, as it is specific to the player
-//!   character.
+//!   characters.
 //! - Apply movement based on [`MovementController`] intent and maximum speed.
-//! - Wrap the character within the window.
+//! - Wrap the characters within the window.
 //!
 //! Note that the implementation used here is limited for demonstration
 //! purposes. If you want to move the player in a smoother way,
@@ -34,13 +34,13 @@ pub(super) fn plugin(app: &mut App) {
 
 pub const DEFAULT_MAX_SPEED: f32 = 2.0;
 
-/// These are the movement parameters for our character controller.
+/// These are the movement parameters for our characters controller.
 /// For now, this is only used for a single player, but it could power NPCs or
 /// other players as well.
 #[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct MovementController {
-    /// The direction the character wants to move in.
+    /// The direction the characters wants to move in.
     pub intent: Vec3,
 
     pub sprinting: bool,
@@ -158,7 +158,7 @@ fn check_collisions(
     }
 }
 
-/// Applies gravity to the character’s current displacement.
+/// Applies gravity to the characters’s current displacement.
 fn apply_gravity(displacement: &mut Vec3, delta_time: f32) {
     displacement.y -= GRAVITY * delta_time;
 }

@@ -102,8 +102,8 @@ pub(in crate::dev_tools) fn plugin(app: &mut App) {
 
 debug_setting!(LoggingScreenStateTransitions, log_screen_state, "Log Screen State Transitions", "Logging for screen state transitions");
 
-debug_setting!(RenderNavMapNodes, render_nav_map_nodes, "Render Nodes", "Nav map nodes");
-debug_setting!(RenderNavMapEdges, render_nav_map_edges, "Render Edges", "Nav map edges");
+debug_setting!(RenderNavMapNodes, render_nav_map_nodes, "Render Nodes", "Nav level nodes");
+debug_setting!(RenderNavMapEdges, render_nav_map_edges, "Render Edges", "Nav level edges");
 debug_setting!(RenderNPCPaths, render_npc_paths, "Render NPC Paths", "NPC Paths");
 
 debug_setting!(RenderPhysicsEntities, physics_render_entities, "Render Entity Collision", "Entity physics renderer");

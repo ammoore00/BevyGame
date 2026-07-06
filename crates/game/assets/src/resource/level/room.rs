@@ -1,12 +1,12 @@
 use crate::codec::RoomCodec;
 use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::resource::TileResource;
 use bevy::prelude::*;
 use common::TileCoords;
 use data::define_data_resource;
 use data::loc::ResourceLocation;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
+use crate::resource::level::TileResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
@@ -59,7 +59,7 @@ impl RoomDefinition {
         connections: Vec<RoomConnection>,
         layout: RoomLayout,
     ) -> Self {
-        let bounds = layout.bounds().clone();
+        let bounds = *layout.bounds();
 
         Self {
             _room_type: room_type,
