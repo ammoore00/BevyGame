@@ -52,11 +52,11 @@ fn reset_level(mut commands: Commands) {
 }
 
 fn unpause(mut next_pause: ResMut<NextState<Pause>>) {
-    next_pause.set(Pause(false));
+    next_pause.set(Pause::Unpaused);
 }
 
 fn pause(mut next_pause: ResMut<NextState<Pause>>) {
-    next_pause.set(Pause(true));
+    next_pause.set(Pause::Paused);
 }
 
 fn spawn_pause_overlay(mut commands: Commands) {
@@ -69,7 +69,7 @@ fn spawn_pause_overlay(mut commands: Commands) {
         },
         GlobalZIndex(1),
         BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.8)),
-        DespawnOnExit(Pause(true)),
+        DespawnOnExit(Pause::Paused),
     ));
 }
 

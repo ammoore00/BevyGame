@@ -15,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
 
     // Set up the `Pause` state.
     app.init_state::<Pause>();
-    app.configure_sets(Update, PausableSystems.run_if(in_state(Pause(false))));
+    app.configure_sets(Update, PausableSystems.run_if(in_state(Pause::Unpaused)));
 }
 
 /// High-level groupings of systems for the app in the `Update` schedule.
@@ -33,9 +33,17 @@ pub enum AppSystems {
     Respond,
 }
 
-/// Whether or not the game is paused.
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-pub struct Pause(pub bool);
+/// Whether the game is paused.
+#[derive(States, Clone, Eq, PartialEq, Hash, Debug, Default)]
+pub enum Pause {
+    /// The game is not paused
+    #[default]
+    Unpaused,
+    /// The game was paused by the pause menu
+    Paused,
+    /// The game was paused by something else happening, storing the previous state
+    ForcePaused(Box<Pause>),
+}
 
 /// A system set for systems that shouldn't run while the game is paused.
 #[derive(SystemSet, Copy, Clone, Eq, PartialEq, Hash, Debug)]

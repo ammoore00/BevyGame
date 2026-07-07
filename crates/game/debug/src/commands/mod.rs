@@ -1,7 +1,7 @@
 use crate::window;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
-use common::{marker, GameState};
+use common::{marker, GameState, Pause};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_state::<CommandsWindowOpen>();
@@ -33,12 +33,27 @@ fn spawn_command_window() -> impl Scene {
     ]
 }
 
-fn set_commands_window_open(mut state: ResMut<NextState<CommandsWindowOpen>>) {
-    state.set(CommandsWindowOpen(true))
+fn set_commands_window_open(
+    mut state: ResMut<NextState<CommandsWindowOpen>>,
+    mut paused: ResMut<NextState<Pause>>,
+    paused_previous: Res<State<Pause>>,
+) {
+    state.set(CommandsWindowOpen(true));
+    // Save the previous pause state to be restored later
+    paused.set(Pause::ForcePaused(Box::new(paused_previous.clone())));
 }
 
-fn set_commands_window_closed(mut state: ResMut<NextState<CommandsWindowOpen>>) {
-    state.set(CommandsWindowOpen(false))
+fn set_commands_window_closed(
+    mut state: ResMut<NextState<CommandsWindowOpen>>,
+    mut paused: ResMut<NextState<Pause>>,
+    paused_previous: Res<State<Pause>>,
+) {
+    state.set(CommandsWindowOpen(false));
+    
+    // If the previous pause state was ForcePaused, restore the state before the force pause
+    if let Pause::ForcePaused(prev) = paused_previous.clone() {
+        paused.set(*prev);
+    }
 }
 
 #[derive(States, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
