@@ -19,6 +19,8 @@ pub const BUTTON_PRESSED_BACKGROUND: Color = Color::srgb(0.239, 0.286, 0.600);
 /// #6b5052
 pub const TEXT_INPUT_BACKGROUND: Color = Color::srgb(0.420, 0.314, 0.322);
 
+pub const TRANSPARENT_OVERLAY: Color = Color::srgba(0.0, 0.0, 0.0, 0.6);
+
 /// Palette for widget interactions. Add this to an entity that supports
 /// [`Interaction`]s, such as a button, to change its [`BackgroundColor`] based
 /// on the current interaction state.

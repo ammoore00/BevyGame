@@ -1,3 +1,4 @@
+use crate::theme::palette::TRANSPARENT_OVERLAY;
 use assets::resource::UiSpriteResource;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
@@ -38,28 +39,52 @@ pub fn scrollable_ui_root() -> impl Scene {
     ]
 }
 
-pub fn ui_background(style: UiBackgroundStyle) -> impl Scene {
-    bsn! [
-        #UiBackground
-        ImageNode {
-            image: {loc::<UiSpriteResource>("background").unwrap()},
-            image_mode: NodeImageMode::Sliced({style.make_slicer()}),
-            texture_atlas: OptionTemplate::Some(TextureAtlasTemplate {
-                layout: asset_value(style.make_layout()),
-                index: {style.get_index()}
-            }),
-        }
-    ]
+pub fn ui_background(style: UiBackgroundStyle) -> Box<dyn Scene> {
+    if let Ok(style) = UiBackgroundImage::try_from(style) {
+        Box::new(bsn![
+            #UiBackground
+            ImageNode {
+                image: {loc::<UiSpriteResource>("background").unwrap()},
+                image_mode: NodeImageMode::Sliced({style.make_slicer()}),
+                texture_atlas: OptionTemplate::Some(TextureAtlasTemplate {
+                    layout: asset_value(style.make_layout()),
+                    index: {style.get_index()}
+                }),
+            }
+        ]) as Box<dyn Scene>
+    } else {
+        Box::new(bsn![
+            #UiBackground
+            BackgroundColor(TRANSPARENT_OVERLAY)
+        ]) as Box<dyn Scene>
+    }
 }
 
 pub enum UiBackgroundStyle {
     Main,
     Panel,
+    Transparent,
 }
-impl UiBackgroundStyle {
+impl TryFrom<UiBackgroundStyle> for UiBackgroundImage {
+    type Error = String;
+
+    fn try_from(value: UiBackgroundStyle) -> std::result::Result<Self, Self::Error> {
+        match value {
+            UiBackgroundStyle::Main => Ok(UiBackgroundImage::Main),
+            UiBackgroundStyle::Panel => Ok(UiBackgroundImage::Panel),
+            UiBackgroundStyle::Transparent => Err("Transparent background style cannot be converted to UiBackgroundImage".to_string()),
+        }
+    }
+}
+
+pub enum UiBackgroundImage {
+    Main,
+    Panel,
+}
+impl UiBackgroundImage {
     fn make_slicer(&self) -> TextureSlicer {
         match self {
-            UiBackgroundStyle::Main => TextureSlicer {
+            UiBackgroundImage::Main => TextureSlicer {
                 border: BorderRect::all(8.0),
                 center_scale_mode: SliceScaleMode::Tile {
                     stretch_value: 1.0,
@@ -69,7 +94,7 @@ impl UiBackgroundStyle {
                 },
                 max_corner_scale: 2.0,
             },
-            UiBackgroundStyle::Panel => TextureSlicer {
+            UiBackgroundImage::Panel => TextureSlicer {
                 border: BorderRect::all(4.0),
                 center_scale_mode: SliceScaleMode::Tile {
                     stretch_value: 1.0,
@@ -84,15 +109,15 @@ impl UiBackgroundStyle {
 
     fn make_layout(&self) -> TextureAtlasLayout {
         match self {
-            UiBackgroundStyle::Main => TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None),
-            UiBackgroundStyle::Panel => TextureAtlasLayout::from_grid(UVec2::splat(24), 4, 4, Some(UVec2::splat(8)), Some(UVec2::splat(4))),
+            UiBackgroundImage::Main => TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None),
+            UiBackgroundImage::Panel => TextureAtlasLayout::from_grid(UVec2::splat(24), 4, 4, Some(UVec2::splat(8)), Some(UVec2::splat(4))),
         }
     }
 
     fn get_index(&self) -> usize {
         match self {
-            UiBackgroundStyle::Main => 0,
-            UiBackgroundStyle::Panel => 1,
+            UiBackgroundImage::Main => 0,
+            UiBackgroundImage::Panel => 1,
         }
     }
 }

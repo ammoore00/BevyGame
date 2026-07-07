@@ -34,6 +34,7 @@ pub struct InputReader<'w, 's> {
     mouse_buttons: Res<'w, ButtonInput<MouseButton>>,
     #[getset(get = "pub", get_mut = "pub")]
     mouse_cursor: MessageReader<'w, 's, CursorMoved>,
+
     #[getset(get = "pub")]
     last_input_mode: Res<'w, LastInputMode>,
 }

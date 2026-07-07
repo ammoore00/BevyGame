@@ -6,7 +6,7 @@ mod editor;
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(
         (
-            debug_menu::plugin,
+            //debug_menu::plugin,
             editor::plugin,
         )
     );

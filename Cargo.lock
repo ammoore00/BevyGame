@@ -2447,7 +2447,9 @@ name = "debug"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "common",
  "runtime",
+ "widgets",
 ]
 
 [[package]]
