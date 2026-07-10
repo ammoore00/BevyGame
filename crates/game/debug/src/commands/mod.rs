@@ -13,6 +13,9 @@ pub(super) fn plugin(app: &mut App) {
             set_commands_window_closed.run_if(in_state(CommandsWindowOpen(true))),
         )
             .run_if(input_just_pressed(KeyCode::Backquote))
+            // Don't just use GameplaySystems because we want to be able to use commands
+            // even if main gameplay systems are suspended (GameplaySystems is not controlled
+            // by Pause state, but might be separately suspended)
             .run_if(in_state(GameState::Gameplay)),
     );
 
@@ -49,7 +52,7 @@ fn set_commands_window_closed(
     paused_previous: Res<State<Pause>>,
 ) {
     state.set(CommandsWindowOpen(false));
-    
+
     // If the previous pause state was ForcePaused, restore the state before the force pause
     if let Pause::ForcePaused(prev) = paused_previous.clone() {
         paused.set(*prev);

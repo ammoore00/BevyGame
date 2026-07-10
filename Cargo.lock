@@ -2110,6 +2110,7 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "debug_option_derive",
  "serde",
 ]
 
@@ -2450,6 +2451,15 @@ dependencies = [
  "common",
  "runtime",
  "widgets",
+]
+
+[[package]]
+name = "debug_option_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
 ]
 
 [[package]]
@@ -3706,7 +3716,6 @@ dependencies = [
 name = "maybe_fields"
 version = "0.1.0"
 dependencies = [
- "proc-macro2",
  "quote",
  "syn 2.0.118",
 ]

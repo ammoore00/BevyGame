@@ -3,7 +3,7 @@
 # # Faster linker
 #
 # One of the slowest aspects of compiling large Rust programs is the linking time. This file configures an
-# alternate linker that may improve build times. When choosing a new linker, you have two options:
+# alternate linker that may improve build times. When choosing a new linker, you have two debug_options:
 #
 # ## LLD
 #

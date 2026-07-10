@@ -32,6 +32,8 @@ parry3d = { version = "0.28.0", optional = true }
 [features]
 dev = [
     "debug",
+
+    "common/dev",
     "runtime/dev",
 
     "parry3d",

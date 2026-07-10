@@ -14,7 +14,7 @@ members = [
     "crates/game/common", "crates/game/controls",
     "crates/game/data", "crates/game/debug", "crates/game/input",
     "crates/game/physics",
-    "crates/game/runtime", "crates/game/settings", "crates/game/widgets",
+    "crates/game/runtime", "crates/game/settings", "crates/game/widgets", "crates/macros/debug_option_derive",
 
     "crates/macros/maybe_fields",
 ]
@@ -80,6 +80,11 @@ physics = { path = "crates/game/physics" }
 settings = { path = "crates/game/settings" }
 runtime = { path = "crates/game/runtime" }
 widgets = { path = "crates/game/widgets" }
+
+# Proc macro dependencies
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
 
 [features]
 # Default to a native dev build.

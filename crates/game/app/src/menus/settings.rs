@@ -1,6 +1,6 @@
 //! The settings menu.
 //!
-//! Additional settings and accessibility options should go here.
+//! Additional settings and accessibility debug_options should go here.
 
 use crate::{menus::Menu, screens::Screen};
 use bevy::input_focus::directional_navigation::DirectionalNavigationMap;

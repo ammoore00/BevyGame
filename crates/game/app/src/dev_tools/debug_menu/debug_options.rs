@@ -111,7 +111,7 @@ debug_setting!(RenderPhysicsTiles, physics_render_tiles, "Render Tile Collision"
 
 #[derive(SystemParam)]
 pub(crate) struct DebugOptionState<'w> {
-    // TODO: Add new ui debug options from bevy 0.19
+    // TODO: Add new ui debug debug_options from bevy 0.19
     render_ui_debug: Res<'w, GlobalUiDebugOptions>,
 
     log_screen_transitions: Res<'w, State<LoggingScreenStateTransitionsState>>,

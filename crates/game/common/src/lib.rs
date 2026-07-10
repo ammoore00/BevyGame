@@ -6,6 +6,9 @@ mod coords;
 mod game_states;
 pub mod macros;
 
+#[cfg(feature = "dev")]
+pub mod dev_tools;
+
 pub use crate::{
     app::{AppSystems, PausableSystems, Pause},
     character::Facing,
