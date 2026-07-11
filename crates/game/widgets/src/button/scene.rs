@@ -185,7 +185,7 @@ impl Default for ButtonConfig {
     }
 }
 
-enum ButtonConfigScene {
+pub enum ButtonConfigScene {
     Styled {
         button_style: Box<dyn Scene>,
         button_children: Box<dyn Scene>,

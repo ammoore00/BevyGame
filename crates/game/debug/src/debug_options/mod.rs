@@ -1,13 +1,11 @@
-mod window;
 mod options;
+mod window;
 
-use crate::window;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
-use common::marker;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(window::plugin);
+    app.add_plugins((options::plugin, window::plugin,));
 
     app.init_state::<DebugOptionsWindowOpen>();
 

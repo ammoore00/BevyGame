@@ -2457,9 +2457,11 @@ dependencies = [
 name = "debug_option_derive"
 version = "0.1.0"
 dependencies = [
+ "derive-new",
  "proc-macro2",
  "quote",
  "syn 2.0.118",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
