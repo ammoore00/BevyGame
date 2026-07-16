@@ -1,6 +1,6 @@
+use crate::debug_options::options::UiRenderRes;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use crate::debug_options::options::UiRenderRes;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, set_ui_render.run_if(resource_changed::<UiRenderRes>));
