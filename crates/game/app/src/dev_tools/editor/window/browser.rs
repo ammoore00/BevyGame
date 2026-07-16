@@ -12,9 +12,9 @@ use std::path::PathBuf;
 use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
 use common::marker;
 use widgets::{button, text};
-use widgets::button::ButtonStyle;
+use widgets::button::{ButtonStyle, ButtonWithTextOptions};
 use widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
-use widgets::theme::palette::{BackgroundInteractionPalette, BUTTON_TEXT, HEADER_TEXT};
+use widgets::theme::palette::{BackgroundInteractionPalette, HEADER_TEXT};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -502,10 +502,13 @@ fn render_menu_items(
                         MenuItem::Folder(_) => Box::new(bsn! [{
                             button::with_text_inline(
                                 item.name(),
-                                SMALL_FONT_SIZE,
-                                HEADER_TEXT,
-                                percent(100),
-                                Val::Auto,
+                                ButtonWithTextOptions {
+                                    font_size: SMALL_FONT_SIZE,
+                                    color: HEADER_TEXT,
+                                    width: percent(100),
+                                    height: Val::Auto,
+                                    ..default()
+                                },
                                 palette,
                                 folder_button_clicked,
                             )
@@ -513,10 +516,13 @@ fn render_menu_items(
                         MenuItem::File(_, _, _) => Box::new(bsn! [{
                             button::with_text_inline(
                                 item.name(),
-                                SMALL_FONT_SIZE,
-                                BUTTON_TEXT,
-                                percent(100),
-                                Val::Auto,
+                                ButtonWithTextOptions {
+                                    font_size: SMALL_FONT_SIZE,
+                                    color: HEADER_TEXT,
+                                    width: percent(100),
+                                    height: Val::Auto,
+                                    ..default()
+                                },
                                 palette,
                                 file_button_clicked,
                             )

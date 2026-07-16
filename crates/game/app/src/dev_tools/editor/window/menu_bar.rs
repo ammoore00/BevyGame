@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use common::marker;
 use widgets::background::UiBackgroundStyle;
 use widgets::button;
+use widgets::button::ButtonWithTextOptions;
 use widgets::text::MEDIUM_FONT_SIZE;
-use widgets::theme::palette::BUTTON_TEXT;
 
 marker!(MenuBar);
 marker!(MenuBarButtons);
@@ -50,42 +50,52 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
             Children [
                 button::with_text_ext(
                     "File",
-                    MEDIUM_FONT_SIZE,
-                    BUTTON_TEXT,
-                    px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
-                    percent(100),
+                    ButtonWithTextOptions {
+                        font_size: MEDIUM_FONT_SIZE,
+                        width: px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
+                        height: percent(100.0),
+                        ..default()    
+                    },
                     file_button_clicked,
                 ),
                 button::with_text_ext(
                     "Edit",
-                    MEDIUM_FONT_SIZE,
-                    BUTTON_TEXT,
-                    px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
-                    percent(100),
+                    ButtonWithTextOptions {
+                        font_size: MEDIUM_FONT_SIZE,
+                        width: px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
+                        height: percent(100.0),
+                        ..default()    
+                    },
                     edit_button_clicked,
                 ),
                 button::with_text_ext(
                     "View",
-                    MEDIUM_FONT_SIZE,
-                    BUTTON_TEXT,
-                    px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
-                    percent(100),
+                    ButtonWithTextOptions {
+                        font_size: MEDIUM_FONT_SIZE,
+                        width: px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
+                        height: percent(100.0),
+                        ..default()    
+                    },
                     view_button_clicked,
                 ),
                 button::with_text_ext(
                     "Tools",
-                    MEDIUM_FONT_SIZE,
-                    BUTTON_TEXT,
-                    px(MENU_BUTTON_PER_CHAR_WIDTH * 5 + MENU_BUTTON_PADDING),
-                    percent(100),
+                    ButtonWithTextOptions {
+                        font_size: MEDIUM_FONT_SIZE,
+                        width: px(MENU_BUTTON_PER_CHAR_WIDTH * 5 + MENU_BUTTON_PADDING),
+                        height: percent(100.0),
+                        ..default()    
+                    },
                     tools_button_clicked,
                 ),
                 button::with_text_ext(
                     "Window",
-                    MEDIUM_FONT_SIZE,
-                    BUTTON_TEXT,
-                    px(MENU_BUTTON_PER_CHAR_WIDTH * 6 + MENU_BUTTON_PADDING),
-                    percent(100),
+                    ButtonWithTextOptions {
+                        font_size: MEDIUM_FONT_SIZE,
+                        width: px(MENU_BUTTON_PER_CHAR_WIDTH * 6 + MENU_BUTTON_PADDING),
+                        height: percent(100.0),
+                        ..default()    
+                    },
                     window_button_clicked,
                 ),
             ]

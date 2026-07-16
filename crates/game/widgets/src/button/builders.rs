@@ -5,6 +5,30 @@ use crate::button::style::ButtonStyle;
 use crate::text::LARGE_FONT_SIZE;
 use crate::theme::palette::{BackgroundInteractionPalette, BUTTON_TEXT};
 
+#[derive(Debug, Clone)]
+pub struct ButtonWithTextOptions {
+    pub font_size: FontSize,
+    pub color: Color,
+
+    pub width: Val,
+    pub height: Val,
+
+    pub justify_content: JustifyContent,
+}
+impl Default for ButtonWithTextOptions {
+    fn default() -> Self {
+        Self {
+            font_size: LARGE_FONT_SIZE,
+            color: BUTTON_TEXT,
+
+            width: px(380),
+            height: px(80),
+
+            justify_content: JustifyContent::Center,
+        }
+    }
+}
+
 pub fn with_text<E, B, M, I>(
     text: impl Into<String>,
     action: I,
@@ -15,15 +39,12 @@ where
     M: 'static,
     I: IntoObserverSystem<E, B, M> + Clone + Send + Sync,
 {
-    with_text_ext(text, LARGE_FONT_SIZE, BUTTON_TEXT, px(380), px(80), action)
+    with_text_ext(text, ButtonWithTextOptions::default(), action)
 }
 
 pub fn with_text_ext<E, B, M, I>(
     text: impl Into<String>,
-    font_size: impl Into<FontSize>,
-    text_color: Color,
-    width: Val,
-    height: Val,
+    options: ButtonWithTextOptions,
     action: I,
 ) -> impl Scene
 where
@@ -32,13 +53,13 @@ where
     M: 'static,
     I: IntoObserverSystem<E, B, M> + Clone + Send + Sync,
 {
-    let config = ButtonConfig::text(text.into(), font_size.into(), text_color)
+    let config = ButtonConfig::text(text.into(), options.font_size, options.color)
         .with_scene(bsn! [
             Node {
-                width,
-                height,
+                width: {options.width},
+                height: {options.height},
                 align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
+                justify_content: {options.justify_content},
             }
         ]);
 
@@ -47,10 +68,7 @@ where
 
 pub fn with_text_inline<E, B, M, I>(
     text: impl Into<String>,
-    font_size: impl Into<FontSize>,
-    text_color: Color,
-    width: Val,
-    height: Val,
+    options: ButtonWithTextOptions,
     palette: BackgroundInteractionPalette,
     action: I,
 ) -> impl Scene
@@ -60,13 +78,13 @@ where
     M: 'static,
     I: IntoObserverSystem<E, B, M> + Clone + Send + Sync,
 {
-    let config = ButtonConfig::text_inline(text.into(), font_size.into(), text_color, palette)
+    let config = ButtonConfig::text_inline(text.into(), options.font_size, options.color, palette)
         .with_scene(bsn! [
             Node {
-                width,
-                height,
+                width: {options.width},
+                height: {options.height},
                 align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
+                justify_content: {options.justify_content},
             }
         ]);
 

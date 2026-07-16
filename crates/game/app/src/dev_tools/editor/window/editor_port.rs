@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use common::marker;
 use widgets::background::UiBackgroundStyle;
 use widgets::button;
+use widgets::button::ButtonWithTextOptions;
 use widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
 use widgets::theme::palette::BUTTON_TEXT;
 
@@ -141,10 +142,12 @@ fn update_file_tab_buttons(
         let file_button = commands.spawn_scene(bsn! [
                 button::with_text_ext(
                     label,
-                    SMALL_FONT_SIZE,
-                    BUTTON_TEXT,
-                    px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
-                    percent(100.0),
+                    ButtonWithTextOptions {
+                        font_size: SMALL_FONT_SIZE,
+                        width: px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
+                        height: percent(100.0),
+                        ..default()    
+                    },
                     on_file_button_clicked
                 )
             ])

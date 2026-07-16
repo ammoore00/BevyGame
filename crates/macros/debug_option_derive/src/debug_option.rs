@@ -1,6 +1,6 @@
 use crate::{compile_error, compile_error_spanned};
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use syn::spanned::Spanned;
@@ -28,14 +28,30 @@ pub fn derive(input: TokenStream) -> TokenStream {
     // Grab generics so we can implement the trait for generic structs too
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
+    let res_name = format_ident!("{}Res", name);
+
     let expanded = quote! {
         impl #impl_generics ::common::dev_tools::DebugOption for #name #ty_generics #where_clause {
+            type Res = #res_name;
+
             fn get(&self) -> bool {
                 self.#field_access
             }
 
             fn set(&mut self, value: bool) {
                 self.#field_access = value;
+            }
+        }
+
+        #[derive(Resource, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+        pub struct #res_name(bool);
+        impl DebugState for #res_name {
+            fn get(&self) -> bool {
+                self.0
+            }
+
+            fn set(&mut self, value: bool) {
+                self.0 = value;
             }
         }
     };

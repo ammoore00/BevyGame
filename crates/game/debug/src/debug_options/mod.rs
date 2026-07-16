@@ -1,11 +1,16 @@
 mod options;
 mod window;
+mod render;
 
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((options::plugin, window::plugin,));
+    app.add_plugins((
+        options::plugin,
+        render::plugin,
+        window::plugin,
+    ));
 
     app.init_state::<DebugOptionsWindowOpen>();
 

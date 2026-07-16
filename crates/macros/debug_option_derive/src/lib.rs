@@ -1,5 +1,4 @@
 mod debug_option;
-mod debug_option_category;
 
 use proc_macro::{TokenStream};
 use std::error::Error;
@@ -7,11 +6,6 @@ use std::error::Error;
 #[proc_macro_derive(DebugOption, attributes(enabled))]
 pub fn derive_debug_option(input: TokenStream) -> TokenStream {
     debug_option::derive(input)
-}
-
-#[proc_macro_derive(DebugOptionCategory, attributes(debug_options))]
-pub fn derive_debug_option_category(input: TokenStream) -> TokenStream {
-    debug_option_category::derive(input)
 }
 
 fn compile_error_spanned<T: quote::ToTokens>(tokens: T, error: impl Error) -> TokenStream {
