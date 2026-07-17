@@ -5,12 +5,17 @@ use bevy::prelude::*;
 use common::marker;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(DebugOptionsWindowOpen(true)), spawn_debug_options_window.spawn());
+    app.add_systems(OnEnter(DebugOptionsWindowOpen(true)), spawn_debug_window);
 }
 
 marker!(DebugOptionsWindow);
 
-fn spawn_debug_options_window() -> impl Scene {
+fn spawn_debug_window(mut commands: Commands) {
+    commands.spawn_scene(debug_options_window_scene());
+    commands.trigger(DebugWindowInitialized);
+}
+
+fn debug_options_window_scene() -> impl Scene {
     bsn! [
         #DebugOptionsWindow
         DebugOptionsWindow
@@ -26,3 +31,6 @@ fn spawn_debug_options_window() -> impl Scene {
         ]
     ]
 }
+
+#[derive(Event)]
+pub(super) struct DebugWindowInitialized;

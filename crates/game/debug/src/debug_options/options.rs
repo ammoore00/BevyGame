@@ -1,8 +1,10 @@
+use crate::debug_options::window::DebugWindowInitialized;
 use bevy::ecs::component::Mutable;
 use bevy::prelude::*;
 use common::dev_tools::*;
 use common::marker;
-use widgets::button::{ButtonImpl, ButtonWithTextOptions};
+use std::marker::PhantomData;
+use widgets::button::ButtonWithTextOptions;
 use widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE, TINY_FONT_SIZE};
 use widgets::theme::palette::{BackgroundInteractionPalette, BUTTON_TEXT};
 
@@ -14,9 +16,19 @@ pub(super) fn plugin(app: &mut App) {
     app.init_resource::<TileCollisionRes>();
 
     app.init_resource::<UiRenderRes>();
+    
+    app.add_observer(on_debug_window_initialized);
 }
 
-marker!(DebugButton);
+fn on_debug_window_initialized(
+    _: On<DebugWindowInitialized>,
+    debug_buttons: Query<Entity, With<DebugButton>>,
+    mut commands: Commands,
+) {
+    for button in debug_buttons.iter() {
+        commands.trigger(CheckDebugState(button));
+    }
+}
 
 pub(super) fn global_debug() -> impl Scene {
     bsn! [
@@ -89,19 +101,46 @@ macro_rules! debug_option_list {
 macro_rules! debug_option {
     ($option:ident, $display:literal) => {
         bsn! [
-            DebugEntry
-            $option
+            @DebugEntry<$option> {
+                @display: $display
+            }
             Node
-            Children [
-                (
-                    debug_option_button::<$option>($display)
-                    Node {
-                        justify_self: JustifySelf::Start,
-                    }
-                ),
-            ]
         ]
     };
+}
+
+marker!(DebugCategory);
+marker!(DebugButton);
+
+#[derive(SceneComponent, Debug, Clone, Copy, Default)]
+#[scene(DebugButtonProps)]
+struct DebugEntry<T>(PhantomData<T>)
+where T: DebugOption<Mutability = Mutable> + Unpin;
+
+impl<T> DebugEntry<T>
+where T: DebugOption<Mutability = Mutable> + Unpin
+{
+    fn scene(props: DebugButtonProps) -> impl Scene {
+        bsn! [
+            T
+            DebugEntry<T>
+            Node
+            Children [
+                debug_option_button::<T>(props.display)
+            ]
+        ]
+    }
+}
+
+struct DebugButtonProps {
+    display: &'static str,
+}
+impl Default for DebugButtonProps {
+    fn default() -> Self {
+        Self {
+            display: "<unnamed debug option>",
+        }
+    }
 }
 
 const TRANSPARENT_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.0);
@@ -134,49 +173,102 @@ fn debug_option_button<T: DebugOption<Mutability = Mutable>>(text: impl AsRef<st
         text,
         options,
         palette,
-        on_debug_option_button::<T>
+        on_debug_option_button_pressed::<T>
     );
 
     bsn! [
         button
+        DebugButton
         Node {
             justify_self: JustifySelf::Start,
             padding: UiRect::left(px(4)),
         }
+        on(on_debug_option_button_spawned::<T>)
     ]
 }
 
-fn on_debug_option_button<T: DebugOption<Mutability = Mutable>>(
+#[derive(EntityEvent)]
+struct CheckDebugState(Entity);
+
+fn on_debug_option_button_spawned<T: DebugOption<Mutability = Mutable>>(
+    event: On<CheckDebugState>,
+    button_query: Query<
+        (Entity, &ChildOf, &Children),
+        With<DebugButton>,
+    >,
+    text_query: Query<(Entity, &mut Text)>,
+    ui_state_query: Query<&mut T, With<Children>>,
+    debug_state: Res<T::Res>,
+) {
+    let new_state = if debug_state.get() {
+        DebugUiState::True
+    } else {
+        DebugUiState::False
+    };
+
+    let result = set_debug_ui_state::<T>(event.0, button_query, text_query, ui_state_query, new_state);
+
+    if let Err(err) = result {
+        error!("{}", err);
+    }
+}
+
+fn on_debug_option_button_pressed<T: DebugOption<Mutability = Mutable>>(
     event: On<Pointer<Click>>,
+    button_query: Query<
+        (Entity, &ChildOf, &Children),
+        With<DebugButton>,
+    >,
+    text_query: Query<(Entity, &mut Text)>,
+    ui_state_query: Query<&mut T, With<Children>>,
+    debug_state: ResMut<T::Res>,
+) {
+    let result = set_debug_ui_state::<T>(event.entity, button_query, text_query, ui_state_query, DebugUiState::Toggle);
+
+    match result {
+        Ok(new_state) => {
+            debug_state.into_inner().set(new_state);
+        },
+        Err(err) => {
+            error!("{}", err);
+        }
+    }
+}
+
+fn set_debug_ui_state<T: DebugOption<Mutability = Mutable>>(
+    entity: Entity,
     mut button_query: Query<
-        (&ChildOf, &Children),
-        With<ButtonImpl>,
+        (Entity, &ChildOf, &Children),
+        With<DebugButton>,
     >,
     mut text_query: Query<(Entity, &mut Text)>,
     mut ui_state_query: Query<&mut T, With<Children>>,
-    debug_state: ResMut<T::Res>,
-) {
-    let Ok((button_parent, button_children)) = button_query.get_mut(event.entity) else {
-        return error!("Failed to get button from event");
+    new_state: DebugUiState,
+) -> Result<bool> {
+    let Ok((_, button_parent, button_children)) = button_query.get_mut(entity) else {
+        return Err("Failed to get button from event".into());
     };
 
     let Some(mut button_text) = text_query.iter_mut()
         .find(|(entity, _)| button_children.contains(entity))
         .map(|(_, text)| text)
     else {
-        return error!("Failed to get button text from button children");
+        return Err("Failed to get button text from button children".into());
     };
 
     let Ok(mut ui_state) = ui_state_query.get_mut(button_parent.0) else {
-        return error!("Failed to get ui state from button parent");
+        return Err("Failed to get ui state from button parent".into());
     };
 
-    let new_state = !ui_state.get();
+    let new_state = match new_state {
+        DebugUiState::True => true,
+        DebugUiState::False => false,
+        DebugUiState::Toggle => !ui_state.get(),
+    };
 
-    info!("Toggling debug state {:?} to {}", ui_state, new_state);
+    info!("Setting debug state {:?} to {}", ui_state, new_state);
 
     ui_state.set(new_state);
-    debug_state.into_inner().set(new_state);
 
     let marker = if new_state { CHECKED } else { UNCHECKED };
 
@@ -184,6 +276,14 @@ fn on_debug_option_button<T: DebugOption<Mutability = Mutable>>(
     // separating the marker from the label
     let split = button_text.0.split_once(SEPARATOR).unwrap();
     button_text.0 = format!("{} {}{}", marker, SEPARATOR, split.1);
+
+    Ok(new_state)
+}
+
+enum DebugUiState {
+    True,
+    False,
+    Toggle,
 }
 
 //------ Global Debug ------//

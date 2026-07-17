@@ -3,7 +3,7 @@ use crate::debug_options::render::helpers::*;
 use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{marker, Scale, TilePosition, WorldPosition};
+use common::{Scale, TilePosition, WorldPosition, marker, GameState};
 use physics::{Collider, ColliderType};
 use runtime::character::Character;
 use runtime::debug::Tile;
@@ -106,7 +106,7 @@ fn spawn_tile_collision_render(
                 );
 
                 draw_cuboid(
-                    pos.0.as_vec3(),
+                    pos.0.into(),
                     half_extents,
                     LineSettings {
                         color: STATIC_COLLIDER_COLOR,
@@ -116,13 +116,37 @@ fn spawn_tile_collision_render(
                 )
                 .into_iter()
                 .for_each(|line| {
-                    commands.spawn((TileCollisionRender, line));
+                    commands.spawn((tile_collision_bundle(), line));
                 });
             }
-            ColliderType::ConvexHull { .. } => {}
+            ColliderType::ConvexHull {
+                vertices, indices, ..
+            } => {
+                draw_convex_hull(
+                    pos.0.into(),
+                    vertices,
+                    indices,
+                    LineSettings {
+                        color: CONVEX_HULL_COLOR,
+                        thickness: COLLIDER_LINE_THICKNESS,
+                    },
+                    scale.0,
+                )
+                .into_iter()
+                .for_each(|line| {
+                    commands.spawn((tile_collision_bundle(), line));
+                });
+            }
             ColliderType::Capsule(_) => unreachable!("Tiles should not have capsule colliders"),
         }
     }
+}
+
+fn tile_collision_bundle() -> impl Bundle {
+    (
+        TileCollisionRender,
+        DespawnOnExit(GameState::Gameplay),
+    )
 }
 
 fn cleanup_tile_collision_render(

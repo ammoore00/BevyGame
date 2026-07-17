@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use bevy::prelude::*;
 use common::{ScreenCoords, WorldCoords};
 use physics::CapsuleData;
@@ -93,13 +94,13 @@ pub fn draw_world_space_circle_projected(
 
 /// Draw a cuboid based on the given size and location
 pub fn draw_cuboid(
-    center: Vec3,
+    center: WorldCoords,
     half_extents: Vec3,
     settings: LineSettings,
     scale: f32,
 ) -> Vec<impl Bundle> {
-    let min = center - half_extents;
-    let max = center + half_extents;
+    let min = center.0 - half_extents;
+    let max = center.0 + half_extents;
 
     let corners = [
         WorldCoords(Vec3::new(min.x, min.y, min.z)),
@@ -126,6 +127,11 @@ pub fn draw_cuboid(
         .collect()
 }
 
+// TODO: Fix the dual return, as the types are not actually different,
+//  the compiler just doesn't know that
+//  Likely fix is to define a custom `LineBundle` with Sprite and Transform fields
+/// Draw a capsule
+/// Note that two separate collections are returned, as the opaque types are different. 
 pub fn draw_capsule(
     position: WorldCoords,
     capsule: impl Into<CapsuleData>,
@@ -163,6 +169,50 @@ pub fn draw_capsule(
     }
 
     (edges, circles)
+}
+
+/// Draw a convex hull, rendering only the wireframe edges of faces pointing toward the positive axes.
+pub fn draw_convex_hull(
+    position: WorldCoords,
+    vertices: &[Vec3],
+    indices: &[[u32; 3]],
+    settings: LineSettings,
+    scale: f32,
+) -> Vec<impl Bundle> {
+    let mut unique_edges = HashSet::new();
+
+    for &[i0, i1, i2] in indices {
+        let v0 = vertices[i0 as usize];
+        let v1 = vertices[i1 as usize];
+        let v2 = vertices[i2 as usize];
+
+        // Calculate the normal of the triangle
+        let edge1 = v1 - v0;
+        let edge2 = v2 - v0;
+        let normal = edge1.cross(edge2).normalize_or_zero();
+
+        // Check if the face is pointing towards the positive axes.
+        if normal.dot(Vec3::ONE) > 0.0 {
+            // Sort the indices for each edge so that (A, B) and (B, A) hash to the same value
+            let e1 = if i0 < i1 { (i0, i1) } else { (i1, i0) };
+            let e2 = if i1 < i2 { (i1, i2) } else { (i2, i1) };
+            let e3 = if i2 < i0 { (i2, i0) } else { (i0, i2) };
+
+            unique_edges.insert(e1);
+            unique_edges.insert(e2);
+            unique_edges.insert(e3);
+        }
+    }
+
+    unique_edges
+        .into_iter()
+        .map(|(a, b)| {
+            let start = position.0 + vertices[a as usize];
+            let end = position.0 + vertices[b as usize];
+
+            draw_world_line(WorldCoords(start), WorldCoords(end), settings, scale)
+        })
+        .collect()
 }
 
 const WORLD_LINE_Z_OFFSET: f32 = 0.25;
