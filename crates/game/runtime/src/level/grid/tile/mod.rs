@@ -2,7 +2,7 @@ use assets::resource::level::{TileAsset, TileLayout, TileRegistry, TileResource,
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;
-use common::{ScreenCoords, TileCoords, TilePosition, WorldCoords};
+use common::{marker, ScreenCoords, TileCoords, TilePosition, WorldCoords};
 use data::prelude::*;
 use physics::{Collider, PhysicsData};
 use std::fmt::Debug;
@@ -73,8 +73,7 @@ pub fn tile(
     )
 }
 
-#[derive(Component)]
-pub struct Tile;
+marker!(pub Tile);
 /// Newtype wrapper for better API clarity
 pub struct TileEntity(pub Entity);
 

@@ -19,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Debug, Default, Clone, Reflect)]
+#[derive(Component, Debug, Default, Clone)]
 pub struct WorldPosition(pub WorldCoords);
 
 impl WorldPosition {
@@ -134,7 +134,7 @@ impl<'de> Deserialize<'de> for TileCoords {
 /// ### Ordering
 ///
 /// Ordering is performed Y first, then X, then Z, using `f32::total_cmp`
-#[derive(Debug, Clone, Default, Reflect)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct WorldCoords(pub Vec3);
 impl From<TileCoords> for WorldCoords {
     fn from(value: TileCoords) -> Self {
@@ -181,7 +181,7 @@ impl PartialOrd for WorldCoords {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct ScreenCoords(pub Vec3);
 impl From<WorldCoords> for ScreenCoords {
     fn from(value: WorldCoords) -> Self {

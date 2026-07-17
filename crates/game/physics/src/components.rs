@@ -70,6 +70,35 @@ impl PartialEq for ColliderType {
     }
 }
 
+pub struct CapsuleData {
+    pub a: Vec3,
+    pub b: Vec3,
+    pub radius: f32,
+}
+impl From<Capsule> for CapsuleData {
+    fn from(capsule: Capsule) -> Self {
+        let a = Vec3::new(
+            capsule.segment.a.x,
+            capsule.segment.a.y,
+            capsule.segment.a.z,
+        );
+
+        let b = Vec3::new(
+            capsule.segment.b.x,
+            capsule.segment.b.y,
+            capsule.segment.b.z,
+        );
+
+        let radius = capsule.radius;
+
+        Self {
+            a,
+            b,
+            radius,
+        }
+    }
+}
+
 fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
     for (mut collider, world_position) in query {
         collider.position = Pose::translation(world_position.0.x, world_position.0.y, world_position.0.z);

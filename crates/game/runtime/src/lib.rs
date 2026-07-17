@@ -16,7 +16,10 @@ pub mod debug {
             player::Player,
             stamina::Stamina,
         },
-        level::grid::nav::TileNavMap,
+        level::grid::{
+            nav::TileNavMap,
+            tile::Tile,
+        },
     };
 }
 

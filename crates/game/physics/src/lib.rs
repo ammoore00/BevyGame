@@ -7,7 +7,7 @@ mod movement;
 // TODO: ColliderType and ToBevy are only used in debug, figure out something to do there to remove them
 pub use crate::{
     components::{
-        Collider, ColliderType,
+        Collider, ColliderType, CapsuleData,
         PhysicsData,
     },
     math::ToBevy,
