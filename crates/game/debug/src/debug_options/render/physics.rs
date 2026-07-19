@@ -4,7 +4,7 @@ use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
 use common::{Scale, TilePosition, WorldPosition, marker, GameState};
-use physics::{Collider, ColliderType};
+use physics::{Collider, ColliderData};
 use runtime::character::Character;
 use runtime::debug::Tile;
 
@@ -45,9 +45,9 @@ fn update_character_collision_render(
 
     for (collision, pos) in character_query {
         match collision.collider_type() {
-            ColliderType::Cuboid(_) => todo!(),
-            ColliderType::ConvexHull { .. } => todo!(),
-            ColliderType::Capsule(capsule) => {
+            ColliderData::Cuboid(_) => todo!(),
+            ColliderData::ConvexHull { .. } => todo!(),
+            ColliderData::Capsule(capsule) => {
                 let (edges, circles) = draw_capsule(
                     pos.0,
                     *capsule,
@@ -98,7 +98,7 @@ fn spawn_tile_collision_render(
 ) {
     for (collision, pos) in tile_query {
         match collision.collider_type() {
-            ColliderType::Cuboid(cuboid) => {
+            ColliderData::Cuboid(cuboid) => {
                 let half_extents = Vec3::new(
                     cuboid.half_extents.x,
                     cuboid.half_extents.y,
@@ -119,7 +119,7 @@ fn spawn_tile_collision_render(
                     commands.spawn((tile_collision_bundle(), line));
                 });
             }
-            ColliderType::ConvexHull {
+            ColliderData::ConvexHull {
                 vertices, indices, ..
             } => {
                 draw_convex_hull(
@@ -137,7 +137,7 @@ fn spawn_tile_collision_render(
                     commands.spawn((tile_collision_bundle(), line));
                 });
             }
-            ColliderType::Capsule(_) => unreachable!("Tiles should not have capsule colliders"),
+            ColliderData::Capsule(_) => unreachable!("Tiles should not have capsule colliders"),
         }
     }
 }

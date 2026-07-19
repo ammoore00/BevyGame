@@ -1,5 +1,5 @@
 use crate::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
-use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderKindCodec};
+use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec};
 use crate::loader::Maybe;
 use crate::resource::characters::{AnimationResource, AttackSetResource};
 use bevy::prelude::TypePath;
@@ -32,7 +32,7 @@ impl Default for CharacterCodec {
             attack_set: Maybe(None),
             collider: ColliderCodec {
                 format: ColliderCodec::LATEST_FORMAT,
-                collider: ColliderKindCodec::Capsule(
+                collider: ColliderDataCodec::Capsule(
                     CapsuleCodec::Vertical {
                         radius: 1.25,
                         height: 0.25,

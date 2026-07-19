@@ -1,5 +1,6 @@
+use crate::codec::ColliderCodec;
 use crate::resource::characters::{AnimationResource, AttackResource, CharacterSpriteResource};
-use bevy::prelude::TypePath;
+use bevy::prelude::*;
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +11,7 @@ pub struct AttackCodec {
     pub stamina_cost: usize,
     pub animation: ResourceLocation<AnimationResource>,
     pub particle_sprite: ResourceLocation<CharacterSpriteResource>,
+    pub key_frames: Vec<KeyFrameCodec>,
 }
 
 impl AttackCodec {
@@ -24,8 +26,33 @@ impl Default for AttackCodec {
             stamina_cost: 0,
             animation: "untitled".parse().unwrap(),
             particle_sprite: "untitled".parse().unwrap(),
+            key_frames: Vec::new(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+pub struct KeyFrameCodec {
+    pub start_time: u64,
+    pub end_time: u64,
+    pub hitbox: HitboxCodec,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+pub enum HitboxCodec {
+    Static {
+        collider: ColliderCodec,
+        offset: Vec3,
+    },
+    Interpolated {
+        collider_start: ColliderCodec,
+        collider_end: ColliderCodec,
+        offset_start: Vec3,
+        offset_end: Vec3,
+    },
+    Swept {
+        // TODO
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

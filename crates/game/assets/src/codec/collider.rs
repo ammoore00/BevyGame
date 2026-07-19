@@ -1,41 +1,49 @@
 use bevy::math::Vec3;
 use bevy::prelude::TypePath;
+use physics::{Collider, ColliderKind};
 use serde::{Deserialize, Serialize};
-use physics::Collider;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct ColliderCodec {
     pub format: u8,
-    pub collider: ColliderKindCodec,
+    pub collider: ColliderDataCodec,
 }
-
 impl ColliderCodec {
     pub const LATEST_FORMAT: u8 = 1;
-}
-
-impl ColliderCodec {
+    
     pub fn make_collider(&self, pos: Vec3) -> Collider {
+        match self.collider {
+            ColliderDataCodec::Cuboid { x, y, z } => Collider::cuboid((x, y, z).into(), pos),
+            ColliderDataCodec::ConvexHull(ref points) => Collider::convex_hull(points, pos),
+            ColliderDataCodec::Capsule(capsule) => capsule.make_collider(pos),
+            ColliderDataCodec::Sphere(radius) => Collider::capsule(Vec3::ZERO, Vec3::ZERO, radius, pos),
+        }
+    }
+    
+    pub fn kind(&self) -> ColliderKind {
         match &self.collider {
-            ColliderKindCodec::Cuboid { x, y, z } => Collider::cuboid((*x, *y, *z).into(), pos),
-            ColliderKindCodec::ConvexHull(points) => Collider::convex_hull(points, pos),
-            ColliderKindCodec::Capsule(capsule) => capsule.make_collider(pos),
+            ColliderDataCodec::Cuboid { .. } => ColliderKind::Cuboid,
+            ColliderDataCodec::ConvexHull(_) => ColliderKind::ConvexHull,
+            ColliderDataCodec::Capsule(_) => ColliderKind::Capsule,
+            ColliderDataCodec::Sphere { .. } => ColliderKind::Capsule,
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
-pub enum ColliderKindCodec {
+pub enum ColliderDataCodec {
     Cuboid {
         x: f32,
         y: f32,
         z: f32,
     },
     ConvexHull(Vec<Vec3>),
+    Sphere(f32),
     #[serde(untagged)]
     Capsule(CapsuleCodec),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TypePath)]
 #[serde(untagged)]
 pub enum CapsuleCodec {
     Oriented {

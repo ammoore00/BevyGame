@@ -35,8 +35,15 @@ impl PhysicsData {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ColliderKind {
+    Cuboid,
+    Capsule,
+    ConvexHull,
+}
+
 #[derive(Debug, Clone)]
-pub enum ColliderType {
+pub enum ColliderData {
     Cuboid(Cuboid),
     Capsule(Capsule),
     ConvexHull {
@@ -45,25 +52,25 @@ pub enum ColliderType {
         indices: Box<Vec<[u32; 3]>>,
     },
 }
-impl ColliderType {
+impl ColliderData {
     fn get_shape(&self) -> &dyn Shape {
         match &self {
-            ColliderType::Cuboid(cuboid) => cuboid,
-            ColliderType::Capsule(capsule) => capsule,
-            ColliderType::ConvexHull { shape, .. } => shape,
+            ColliderData::Cuboid(cuboid) => cuboid,
+            ColliderData::Capsule(capsule) => capsule,
+            ColliderData::ConvexHull { shape, .. } => shape,
         }
     }
 }
-impl PartialEq for ColliderType {
+impl PartialEq for ColliderData {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (ColliderType::Cuboid(a), ColliderType::Cuboid(b)) => a == b,
-            (ColliderType::Capsule(a), ColliderType::Capsule(b)) => {
+            (ColliderData::Cuboid(a), ColliderData::Cuboid(b)) => a == b,
+            (ColliderData::Capsule(a), ColliderData::Capsule(b)) => {
                 a.radius == b.radius && a.segment == b.segment
             }
             (
-                ColliderType::ConvexHull { shape: a_shape, .. },
-                ColliderType::ConvexHull { shape: b_shape, .. }
+                ColliderData::ConvexHull { shape: a_shape, .. },
+                ColliderData::ConvexHull { shape: b_shape, .. }
             ) => a_shape == b_shape,
             _ => false,
         }
@@ -107,7 +114,7 @@ fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
 
 #[derive(Component, Debug, Clone, PartialEq)]
 pub struct Collider {
-    collider_type: ColliderType,
+    collider_type: ColliderData,
     position: Pose,
 }
 impl Collider {
@@ -116,7 +123,7 @@ impl Collider {
         let size: Vec3 = Vec3::new(size.x, size.y, size.z);
 
         Self {
-            collider_type: ColliderType::Cuboid(Cuboid::new(size.to_parry())),
+            collider_type: ColliderData::Cuboid(Cuboid::new(size.to_parry())),
             position: Pose::translation(position.x, position.y, position.z),
         }
     }
@@ -127,7 +134,7 @@ impl Collider {
         let end = Vec3::new(end.x, end.y, end.z);
 
         Self {
-            collider_type: ColliderType::Capsule(Capsule::new(start.to_parry(), end.to_parry(), radius)),
+            collider_type: ColliderData::Capsule(Capsule::new(start.to_parry(), end.to_parry(), radius)),
             position: Pose::translation(position.x, position.y, position.z),
         }
     }
@@ -156,7 +163,7 @@ impl Collider {
             .collect();
 
         Self {
-            collider_type: ColliderType::ConvexHull {
+            collider_type: ColliderData::ConvexHull {
                 shape: convex_polyhedron.expect("Failed to create convex hull"),
                 vertices: Box::new(vertices),
                 indices: Box::new(convex_hull.1),
@@ -165,7 +172,7 @@ impl Collider {
         }
     }
 
-    pub fn with_collider(collider_type: ColliderType, position: impl Into<WorldCoords>) -> Self {
+    pub fn with_collider(collider_type: ColliderData, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
         Self {
             collider_type,
@@ -173,7 +180,7 @@ impl Collider {
         }
     }
 
-    pub fn collider_type(&self) -> &ColliderType {
+    pub fn collider_type(&self) -> &ColliderData {
         &self.collider_type
     }
 
@@ -199,19 +206,19 @@ impl Collider {
     /// Returns (min, max)
     pub fn bounds(&self) -> (Vec3, Vec3) {
         let (local_min, local_max) = match &self.collider_type {
-            ColliderType::Cuboid(cuboid) => {
+            ColliderData::Cuboid(cuboid) => {
                 let half_extents = cuboid.half_extents.to_bevy();
 
                 (-half_extents, half_extents)
             }
-            ColliderType::Capsule(capsule) => {
+            ColliderData::Capsule(capsule) => {
                 let a = capsule.segment.a.to_bevy();
                 let b = capsule.segment.b.to_bevy();
                 let r = Vec3::splat(capsule.radius);
 
                 (a.min(b) - r, a.max(b) + r)
             }
-            ColliderType::ConvexHull { vertices, .. } => {
+            ColliderData::ConvexHull { vertices, .. } => {
                 let Some(first_vertex) = vertices.first() else {
                     return (Vec3::ZERO, Vec3::ZERO);
                 };

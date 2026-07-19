@@ -5,13 +5,13 @@ mod math;
 mod movement;
 
 pub use crate::{
-    components::{Collider, PhysicsData},
+    components::{Collider, ColliderKind, PhysicsData},
     movement::{DEFAULT_MAX_SPEED, MovementController},
 };
 
 #[cfg(feature = "dev")]
 pub use crate::{
-    components::{CapsuleData, ColliderType},
+    components::{CapsuleData, ColliderData},
     math::ToBevy,
 };
 

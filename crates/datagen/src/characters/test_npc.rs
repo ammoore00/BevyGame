@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use assets::codec::{ActionStateCodec, CapsuleCodec, ColliderKindCodec, FrameDataCodec};
+use assets::codec::{ActionStateCodec, CapsuleCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HitboxCodec, KeyFrameCodec};
 use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
 use crate::WriteError;
 
@@ -69,18 +69,33 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
 
     let basic_attack_stamina_cost = 20;
 
+    let basic_attack_key_frames = vec![
+        KeyFrameCodec {
+            start_time: 0,
+            end_time: basic_attack_length,
+            hitbox: HitboxCodec::Static {
+                collider: ColliderCodec {
+                    format: ColliderCodec::LATEST_FORMAT,
+                    collider: ColliderDataCodec::Sphere(1.0)
+                },
+                offset: (0., 0., 0.).into(),
+            },
+        }
+    ];
+
     let basic_attack = AttackData::new(
         basic_attack_loc,
         basic_attack_length,
         basic_attack_stamina_cost,
         basic_attack_animation,
-        format!("{}_particle", basic_attack_loc).as_str()
+        format!("{}_particle", basic_attack_loc).as_str(),
+        basic_attack_key_frames,
     );
     attacks.push(basic_attack);
 
     let attack_set = AttackSetData::new(basic_attack_loc, attacks);
 
-    let collider = ColliderKindCodec::Capsule(
+    let collider = ColliderDataCodec::Capsule(
         CapsuleCodec::Vertical {
             height: 1.25,
             radius: 0.25,

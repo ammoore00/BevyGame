@@ -190,6 +190,7 @@ pub enum LoaderError {
 pub trait RonCodec<AssetType>: Into<AssetType> + TypePath + Send + Sync + 'static {}
 impl<T, AssetType> RonCodec<AssetType> for T where T: Into<AssetType> + TypePath + Send + Sync + 'static {}
 
+// TODO: Allow for fallible type conversion using TryFrom instead of From
 #[derive(TypePath)]
 pub struct RonAssetLoader<Codec, AssetType>
 where

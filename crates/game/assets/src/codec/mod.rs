@@ -8,9 +8,9 @@ mod tile;
 
 pub use crate::codec::{
     animation::{AnimationCodec, FrameDataCodec},
-    attack::{AttackCodec, AttackSetCodec},
+    attack::{AttackCodec, AttackSetCodec, KeyFrameCodec, HitboxCodec},
     character::{ActionStateCodec, AllowedStatesCodec, CharacterCodec},
-    collider::{CapsuleCodec, ColliderCodec, ColliderKindCodec},
+    collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec},
     room::RoomCodec,
     sprite::TextureAtlasCodec,
     tile::TileCodec,

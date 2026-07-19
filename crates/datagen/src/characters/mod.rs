@@ -7,7 +7,7 @@ use crate::sprite::TextureAtlasData;
 use crate::{create_dir, write_data, WriteError};
 use data::prelude::*;
 use std::collections::HashMap;
-use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderKindCodec, FrameDataCodec, TextureAtlasCodec};
+use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, KeyFrameCodec, TextureAtlasCodec};
 use assets::resource::characters::{AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
 
 pub fn generate_characters() -> Result<(), WriteError> {
@@ -77,12 +77,12 @@ struct CharacterData {
     #[getset(set_with)]
     animations: HashMap<ActionStateCodec, AnimationData>,
     attack_set: Option<AttackSetData>,
-    collider: ColliderKindCodec,
+    collider: ColliderDataCodec,
 }
 impl CharacterData {
     fn new(
         loc: &str,
-        collider: ColliderKindCodec,
+        collider: ColliderDataCodec,
     ) -> Self {
         Self {
             loc: loc.parse().unwrap(),
@@ -177,6 +177,7 @@ struct AttackData {
     stamina_cost: usize,
     animation: AnimationData,
     particle_sprite: ResourceLocation<CharacterSpriteResource>,
+    key_frames: Vec<KeyFrameCodec>,
 }
 impl From<AttackData> for AttackCodec {
     fn from(value: AttackData) -> Self {
@@ -186,6 +187,7 @@ impl From<AttackData> for AttackCodec {
             stamina_cost: value.stamina_cost,
             animation: value.animation.loc,
             particle_sprite: value.particle_sprite,
+            key_frames: value.key_frames,
         }
     }
 }
@@ -196,6 +198,7 @@ impl AttackData {
         stamina_cost: usize,
         animation: AnimationData,
         particle_sprite: &str,
+        key_frames: Vec<KeyFrameCodec>,
     ) -> Self {
         Self {
             loc: loc.parse().unwrap(),
@@ -203,6 +206,7 @@ impl AttackData {
             stamina_cost,
             animation,
             particle_sprite: particle_sprite.parse().unwrap(),
+            key_frames,
         }
     }
 }
