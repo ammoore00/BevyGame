@@ -87,11 +87,20 @@ impl CurrentAttack {
 
 fn update_attack_key_frames(
     attacking_query: Query<(Entity, &mut CurrentAttack, &WorldPosition, &Children)>,
+    non_attacking_query: Query<&Children, Without<CurrentAttack>>,
     existing_hitbox_query: Query<Entity, With<AttackHitbox>>,
     attack_context: AttackContext,
     time: Res<Time>,
     mut commands: Commands,
 ) {
+    // TODO: Make this less janky
+    for children in non_attacking_query.iter() {
+        let existing_hitboxes = existing_hitbox_query.iter_many(children);
+        for hitbox_entity in existing_hitboxes {
+            commands.entity(hitbox_entity).despawn();
+        }
+    }
+
     for (entity, mut attack, pos, children) in attacking_query {
         let Some(definition) = attack_context.attack_registry.get_asset(&attack.loc) else {
             commands.entity(entity).remove::<CurrentAttack>();
