@@ -2,9 +2,7 @@ use crate::character::stamina::StaminaEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::resource::characters::{AttackContext, AttackProgress, AttackResource, KeyFrame};
 use bevy::prelude::*;
-use common::{
-    AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, marker,
-};
+use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, marker, offset_position_to_facing};
 use data::loc::ResourceLocation;
 
 pub(super) fn plugin(app: &mut App) {
@@ -86,7 +84,7 @@ impl CurrentAttack {
 }
 
 fn update_attack_key_frames(
-    attacking_query: Query<(Entity, &mut CurrentAttack, &WorldPosition, &Children)>,
+    attacking_query: Query<(Entity, &mut CurrentAttack, &WorldPosition, &Facing, &Children)>,
     non_attacking_query: Query<&Children, Without<CurrentAttack>>,
     existing_hitbox_query: Query<Entity, With<AttackHitbox>>,
     attack_context: AttackContext,
@@ -101,7 +99,7 @@ fn update_attack_key_frames(
         }
     }
 
-    for (entity, mut attack, pos, children) in attacking_query {
+    for (entity, mut attack, pos, facing, children) in attacking_query {
         let Some(definition) = attack_context.attack_registry.get_asset(&attack.loc) else {
             commands.entity(entity).remove::<CurrentAttack>();
             error!("Invalid attack definition: {} does not exist!", attack.loc);
@@ -122,7 +120,7 @@ fn update_attack_key_frames(
 
         for key_frame in hitboxes {
             let hitbox_entity = commands
-                .spawn(attack_hitbox(key_frame, pos, attack.progress))
+                .spawn(attack_hitbox(key_frame, pos.0, *facing, attack.progress))
                 .id();
             commands.entity(entity).add_child(hitbox_entity);
         }
@@ -138,7 +136,8 @@ marker!(pub AttackHitbox);
 // TODO: Improve this to not respawn hitboxes every frame
 fn attack_hitbox(
     key_frame: &KeyFrame,
-    pos: &WorldPosition,
+    pos: WorldCoords,
+    facing: Facing,
     attack_progress: AttackProgress,
 ) -> impl Bundle {
     // TODO: Change this to handle the error more gracefully
@@ -147,7 +146,7 @@ fn attack_hitbox(
         .expect("Attack progress outside of frame window");
     let hitbox_data = key_frame.get_current_interpolated_hitbox(frame_progress);
 
-    let pos = pos.0 + *hitbox_data.offset();
+    let pos = offset_position_to_facing(pos, *hitbox_data.offset(), facing);
     let collider_codec = hitbox_data.collider();
 
     let collider = collider_codec.make_collider(pos.0);

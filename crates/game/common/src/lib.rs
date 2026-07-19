@@ -10,8 +10,8 @@ pub mod macros;
 pub mod dev_tools;
 
 pub use crate::{
-    app::{AppSystems, PausableSystems, Pause, InputBlocker, GameInputSystems},
-    character::Facing,
+    app::{AppSystems, GameInputSystems, InputBlocker, PausableSystems, Pause},
+    character::{Facing, offset_position_to_facing},
     coords::{
         SCREEN_Z_SCALE, ScreenCoords, TILE_HEIGHT, TILE_WIDTH, TileCoords, TilePosition,
         WorldCoords, WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,

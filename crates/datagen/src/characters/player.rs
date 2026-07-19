@@ -76,9 +76,9 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
             hitbox: HitboxCodec::Static {
                 collider: ColliderCodec {
                     format: ColliderCodec::LATEST_FORMAT,
-                    collider: ColliderDataCodec::Sphere(1.0)
+                    collider: ColliderDataCodec::Sphere(0.5)
                 },
-                offset: (0., 0., 0.).into(),
+                offset: (1., 0., 1.).into(),
             },
         }
     ];
