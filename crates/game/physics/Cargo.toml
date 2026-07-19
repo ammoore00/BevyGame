@@ -11,3 +11,6 @@ common = { workspace = true }
 
 [lints]
 workspace = true
+
+[features]
+dev = []

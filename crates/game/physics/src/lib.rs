@@ -4,19 +4,16 @@ mod components;
 mod math;
 mod movement;
 
-// TODO: ColliderType and ToBevy are only used in debug, figure out something to do there to remove them
 pub use crate::{
-    components::{
-        Collider, ColliderType, CapsuleData,
-        PhysicsData,
-    },
-    math::ToBevy,
-    movement::{
-        MovementController,
-        DEFAULT_MAX_SPEED,
-    },
+    components::{Collider, PhysicsData},
+    movement::{DEFAULT_MAX_SPEED, MovementController},
 };
 
+#[cfg(feature = "dev")]
+pub use crate::{
+    components::{CapsuleData, ColliderType},
+    math::ToBevy,
+};
 
 pub struct PhysicsPlugin;
 impl Plugin for PhysicsPlugin {

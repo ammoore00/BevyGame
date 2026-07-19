@@ -409,12 +409,7 @@ mod debug_helpers {
 
     fn nav_node_debug_position(coords: &TileCoords, node: &NavNode) -> Vec3 {
         let (min, max) = node.bounds;
-        let local_center = Vec3::new(
-            (min.x + max.x) / 2.0,
-            max.y,
-            (min.z + max.z) / 2.0,
-        );
-
-        coords.0.as_vec3() + local_center
+        let local_offset = Vec3::Y * ((max.y - min.y) - 0.5);
+        coords.0.as_vec3() + local_offset
     }
 }

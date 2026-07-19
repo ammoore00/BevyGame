@@ -1,10 +1,11 @@
 mod helpers;
+mod navigation;
+mod palette;
 mod physics;
 mod ui;
-mod palette;
 
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((physics::plugin, ui::plugin));
+    app.add_plugins((navigation::plugin, physics::plugin, ui::plugin));
 }

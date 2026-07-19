@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 common = { workspace = true, features = ["dev"] }
-physics = { workspace = true }
-runtime = { workspace = true }
+physics = { workspace = true, features = ["dev"] }
+runtime = { workspace = true, features = ["dev"] }
 widgets = { workspace = true }
 
 bevy = { workspace = true }
