@@ -146,12 +146,18 @@ pub fn draw_capsule(
     let mut edges = Vec::new();
     let mut circles = Vec::new();
 
-    // Main capsule axis.
-    edges.push(draw_world_line(a.into(), b.into(), settings, scale));
-
     // Cross-sections perpendicular to the vertical capsule axis.
     circles.append(&mut draw_world_space_circle_projected(a.into(), capsule.radius, settings, scale));
+
+    // If the capsule is a sphere, draw one circle and return
+    if a == b {
+        return (edges, circles);
+    }
+
     circles.append(&mut draw_world_space_circle_projected(b.into(), capsule.radius, settings, scale));
+
+    // Main capsule axis.
+    edges.push(draw_world_line(a.into(), b.into(), settings, scale));
 
     let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
     let vertical = Vec3::Y;

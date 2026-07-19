@@ -8,20 +8,19 @@ use bevy::prelude::*;
 use common::{Facing, GameplaySystems, Scale, WorldPosition};
 use data::prelude::*;
 use data::register_prototype_system;
-use physics::{MovementController, PhysicsData, DEFAULT_MAX_SPEED};
+use physics::{DEFAULT_MAX_SPEED, MovementController, PhysicsData};
 use state::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
 
 // TODO: Remove these pub(crate) declarations in favor of better exports
 pub(crate) mod animation;
+pub(crate) mod attack;
 pub(crate) mod health;
+pub(crate) mod npc;
+pub mod player;
 pub(crate) mod stamina;
 pub(crate) mod state;
-pub(crate) mod npc;
-
-pub mod player;
-mod attack;
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_plugins((
@@ -49,7 +48,9 @@ register_prototype_system!(initialize_characters, CharacterBuilder);
 #[derive(Component, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Character(()); // Private unit field to prevent improper construction
 impl PrototypeFinalizedMarker for Character {
-    fn new(_: PrototypeMarkerToken) -> Self { Self(()) }
+    fn new(_: PrototypeMarkerToken) -> Self {
+        Self(())
+    }
 }
 
 /// Used to temporarily store the location from which to load the characters's data
@@ -133,24 +134,25 @@ impl PrototypeBuilder for CharacterBuilder {
         data_loc: &<Self::Proto as Prototype>::DataLocation,
         position: &QueryItem<'_, '_, <Self::QueryData<'_, '_> as QueryData>::ReadOnly>,
         context: &mut Self::Context<'_, '_>,
-        mut commands: Commands
+        mut commands: Commands,
     ) -> Result<(), BevyError> {
-        let data = context.get_character_data(&data_loc.0).ok_or(BevyError::error("Failed to find characters data"))?;
+        let data = context
+            .get_character_data(&data_loc.0)
+            .ok_or(BevyError::error("Failed to find characters data"))?;
 
         let animation_context = context.animation_context();
         let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_context));
 
         let state_capabilities = data.state_capabilities().clone();
 
-        let animations =
-            data.resolve_animation_handles(context.animation_context());
-        let idle_animation =
-            animations.get(&TypeId::of::<Idle>()).cloned()
-                .expect("Failed to find idle animation for player characters");
+        let animations = data.resolve_animation_handles(context.animation_context());
+        let idle_animation = animations
+            .get(&TypeId::of::<Idle>())
+            .cloned()
+            .expect("Failed to find idle animation for player characters");
 
         let animation_assets = context.animation_context().resolved_assets();
-        let animation_tracker =
-            CharacterAnimationTracker::new(idle_animation, animation_assets);
+        let animation_tracker = CharacterAnimationTracker::new(idle_animation, animation_assets);
         let sprite = animation_tracker.default_sprite(animation_assets);
 
         let collider = data.collider().make_collider(position.as_vec3());
@@ -175,10 +177,13 @@ struct CharacterBuilderContext<'w> {
     #[getset(get = "pub")]
     animation_context: AnimationContext<'w>,
     #[getset(get = "pub")]
-    scale: Res<'w, Scale>
+    scale: Res<'w, Scale>,
 }
 impl CharacterBuilderContext<'_> {
-    pub fn get_character_data(&self, loc: &ResourceLocation<CharacterResource>) -> Option<&CharacterData> {
+    pub fn get_character_data(
+        &self,
+        loc: &ResourceLocation<CharacterResource>,
+    ) -> Option<&CharacterData> {
         self.character_registry.get_asset(loc)
     }
 }

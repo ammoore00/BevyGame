@@ -11,6 +11,7 @@ mod object;
 pub mod debug {
     pub use crate::{
         character::{
+            attack::AttackHitbox,
             npc::ai::pathfinding::{Pathfinder, PathfinderState},
             health::Health,
             player::Player,

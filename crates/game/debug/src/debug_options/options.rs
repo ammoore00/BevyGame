@@ -14,6 +14,7 @@ pub(super) fn plugin(app: &mut App) {
 
     app.init_resource::<CharacterCollisionRes>();
     app.init_resource::<TileCollisionRes>();
+    app.init_resource::<AttackCollisionRes>();
 
     app.init_resource::<UiRenderRes>();
     
@@ -318,6 +319,7 @@ fn physics() -> impl Scene {
         {debug_option_list!(
             debug_option!(CharacterCollision, "Render Character Collision"),
             debug_option!(TileCollision, "Render Tile Collision"),
+            debug_option!(AttackCollision, "Render Attack Collision"),
         )}
     ]
 }
@@ -329,6 +331,10 @@ pub struct CharacterCollision(bool);
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
 #[reflect(Component)]
 pub struct TileCollision(bool);
+
+#[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
+#[reflect(Component)]
+pub struct AttackCollision(bool);
 
 // User Interface
 

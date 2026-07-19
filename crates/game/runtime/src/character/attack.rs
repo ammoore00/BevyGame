@@ -124,7 +124,7 @@ fn update_attack_key_frames(
     }
 }
 
-marker!(AttackHitbox);
+marker!(pub AttackHitbox);
 
 // TODO: Improve this to not respawn hitboxes every frame
 fn attack_hitbox(
@@ -143,5 +143,5 @@ fn attack_hitbox(
 
     let collider = collider_codec.make_collider(pos.0);
 
-    (AttackHitbox, collider)
+    (AttackHitbox, collider, WorldPosition(pos))
 }

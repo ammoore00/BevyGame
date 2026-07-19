@@ -24,3 +24,6 @@ pub const STATIC_COLLIDER_COLOR: Color = Color::srgb(0.90, 0.35, 0.35);
 pub const CONVEX_HULL_COLOR: Color = Color::srgb(0.95, 0.55, 0.30);
 
 pub const COLLIDER_LINE_THICKNESS: f32 = 2.0;
+
+pub const ATTACK_COLLIDER_COLOR: Color = Color::srgb(0.95, 0.25, 0.20);
+pub const ATTACK_COLLIDER_LINE_THICKNESS: f32 = 4.0;
