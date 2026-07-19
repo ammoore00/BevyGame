@@ -56,8 +56,8 @@ fn record_aim_input(
 
         let cursor_position = last_cursor.position - Vec2::from((window.resolution.width(), window.resolution.height())) / 2.0;
 
-        let mut delta = cursor_position - ScreenCoords::from(position.0.clone()).xz();
-        delta.y *= 0.707; // Scale to isometric
+        let mut delta = cursor_position - ScreenCoords::from(position.0).xz();
+        delta.y /= 0.707; // Scale to isometric
         let new_facing = Some(Facing::from(rotate_screen_space_to_facing(delta, false)));
 
         commands.trigger(AimInputEvent::new(player_entity, new_facing));
