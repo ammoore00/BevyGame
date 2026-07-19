@@ -1,6 +1,7 @@
 use bevy::prelude::*;
-use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameplaySystems, PausableSystems, ScreenCoords, WorldPosition};
+use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameInputSystems, GameplaySystems, PausableSystems, ScreenCoords, WorldPosition};
 use input::{InputReader, LastInputMode};
+use input::gamepad::{get_stick_with_deadzone, GamepadStick};
 use runtime::character::player::{AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player};
 use runtime::LevelLoadedSystems;
 
@@ -15,6 +16,7 @@ pub(super) fn plugin(app: &mut App) {
                 .in_set(GameplaySystems)
                 .in_set(PausableSystems)
                 .in_set(LevelLoadedSystems)
+                .in_set(GameInputSystems)
                 .in_set(AppSystems::RecordInput),
         )
     );
@@ -76,16 +78,11 @@ fn record_movement_input(
     let mut toggle_sprint = false;
 
     if let Some(gamepad) = input_reader.gamepad() && **input_reader.last_input_mode() == LastInputMode::Gamepad {
-        let left_stick_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
-        let left_stick_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
-
-        // Apply deadzone
-        if left_stick_x.abs() > 0.1 || left_stick_y.abs() > 0.1 {
-            intent.x += left_stick_x;
-            intent.z -= left_stick_y;
-
-            intent = rotate_screen_space_to_movement(intent);
-        }
+        let left_stick = get_stick_with_deadzone(gamepad, GamepadStick::Left);
+        
+        intent.x += left_stick.x;
+        intent.z -= left_stick.y;
+        intent = rotate_screen_space_to_movement(intent);
 
         if gamepad.just_pressed(GamepadButton::LeftThumb) {
             toggle_sprint = true;

@@ -10,7 +10,7 @@ pub mod macros;
 pub mod dev_tools;
 
 pub use crate::{
-    app::{AppSystems, PausableSystems, Pause},
+    app::{AppSystems, PausableSystems, Pause, InputBlocker, GameInputSystems},
     character::Facing,
     coords::{
         SCREEN_Z_SCALE, ScreenCoords, TILE_HEIGHT, TILE_WIDTH, TileCoords, TilePosition,

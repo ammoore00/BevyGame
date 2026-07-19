@@ -1,4 +1,4 @@
-use crate::gamepad::GamepadRes;
+use crate::gamepad::{get_stick_with_deadzone, GamepadRes, GamepadStick};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use getset::{Getters, MutGetters};
@@ -58,6 +58,8 @@ impl LastInputReader for InputReader<'_, '_> {
         };
 
         gamepad.any_pressed(GamepadButton::all())
+            || get_stick_with_deadzone(gamepad, GamepadStick::Right).length() > 0.
+            || get_stick_with_deadzone(gamepad, GamepadStick::Left).length() > 0.
     }
 
     fn mouse_or_keyboard_used_this_frame(&mut self) -> bool {

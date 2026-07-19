@@ -64,3 +64,30 @@ pub fn gamepad_just_pressed(button: GamepadButton) -> impl SystemCondition<()> {
         },
     )
 }
+
+// TODO: Make this configurable
+//  Also split deadzone per stick and per axis
+pub const DEADZONE: f32 = 0.1;
+
+pub fn get_stick_with_deadzone(gamepad: &Gamepad, stick: GamepadStick) -> Vec2 {
+    let stick = stick.get(gamepad);
+    if stick.length() < DEADZONE {
+        Vec2::ZERO
+    } else {
+        stick
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GamepadStick {
+    Left,
+    Right,
+}
+impl GamepadStick {
+    fn get(&self, gamepad: &Gamepad) -> Vec2 {
+        match self {
+            GamepadStick::Left => gamepad.left_stick(),
+            GamepadStick::Right => gamepad.right_stick(),
+        }
+    }
+}
