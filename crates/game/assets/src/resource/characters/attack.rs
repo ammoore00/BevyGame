@@ -44,6 +44,11 @@ pub struct AttackDefinition {
     #[getset(get = "pub")]
     key_frames: KeyFrameList,
 }
+impl AttackDefinition {
+    pub fn get_progress_increment(&self, duration: Duration) -> AttackProgress {
+        AttackProgress(duration.as_millis() as f32 / self.duration.as_millis() as f32)
+    }
+}
 impl From<AttackCodec> for AttackDefinition {
     fn from(value: AttackCodec) -> Self {
         AttackDefinition {
@@ -242,9 +247,11 @@ impl From<HitboxCodec> for Hitbox {
 }
 
 /// Data used to describe an instantaneous hitbox for a single frame.
-#[derive(Debug, Clone, TypePath)]
+#[derive(Debug, Clone, Getters, TypePath)]
 pub struct HitboxData {
+    #[getset(get = "pub")]
     collider: ColliderCodec,
+    #[getset(get = "pub")]
     offset: WorldCoords,
 }
 

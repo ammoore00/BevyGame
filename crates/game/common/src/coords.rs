@@ -2,7 +2,7 @@ use crate::Scale;
 use bevy::prelude::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
-use std::ops::Deref;
+use std::ops::{AddAssign, Deref};
 
 pub const SCREEN_Z_SCALE: f32 = 2.0;
 
@@ -128,6 +128,17 @@ impl<'de> Deserialize<'de> for TileCoords {
         Ok(TileCoords(IVec3::new(x, y, z)))
     }
 }
+impl std::ops::Add for TileCoords {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+impl AddAssign for TileCoords {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+    }
+}
 
 /// Represents a continuous coordinate in the game world
 ///
@@ -178,6 +189,17 @@ impl Ord for WorldCoords {
 impl PartialOrd for WorldCoords {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+impl std::ops::Add for WorldCoords {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+impl AddAssign for WorldCoords {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
     }
 }
 
@@ -234,6 +256,17 @@ impl Deref for ScreenCoords {
     type Target = Vec3;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+impl std::ops::Add for ScreenCoords {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+impl AddAssign for ScreenCoords {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
     }
 }
 

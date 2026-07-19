@@ -4,4 +4,17 @@
     stamina_cost: 20,
     animation: "base:player/basic_attack",
     particle_sprite: "base:test/basic_attack_particle",
+    key_frames: [
+        (
+            start_time: 0,
+            end_time: 350,
+            hitbox: Static(
+                collider: (
+                    format: 1,
+                    collider: Sphere(1.0),
+                ),
+                offset: (0.0, 0.0, 0.0),
+            ),
+        ),
+    ],
 )
