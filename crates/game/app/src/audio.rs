@@ -34,7 +34,7 @@ pub fn music(handle: impl Into<HandleTemplate<AudioSource>>) -> impl Scene {
 pub struct SoundEffect;
 
 /// A sound effect audio instance.
-pub fn sound_effect(handle: Handle<AudioSource>) -> impl Bundle {
+pub fn _sound_effect(handle: Handle<AudioSource>) -> impl Bundle {
     (AudioPlayer(handle), PlaybackSettings::DESPAWN, SoundEffect)
 }
 

@@ -200,15 +200,11 @@ dependencies = [
  "getrandom 0.4.3",
  "getset",
  "input",
- "parry3d",
- "paste",
- "physics",
  "ron",
  "runtime",
  "serde",
  "settings",
  "thiserror 2.0.18",
- "tracing",
  "widgets",
 ]
 

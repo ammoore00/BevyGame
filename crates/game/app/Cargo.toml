@@ -17,17 +17,12 @@ debug = { workspace = true, optional = true }
 
 bevy = { workspace = true }
 getset = { workspace = true }
-paste = { workspace = true }
 ron = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
-tracing = { workspace = true }
+#tracing = { workspace = true }
 
 crossbeam = "0.8.4"
-
-# TODO: These dependencies are only referenced for debug rendering - remove this as soon as reasonable
-physics = { workspace = true }
-parry3d = { version = "0.28.0", optional = true }
 
 [features]
 dev = [
@@ -35,8 +30,6 @@ dev = [
 
     "common/dev",
     "runtime/dev",
-
-    "parry3d",
 ]
 
 [target.wasm32-unknown-unknown.dependencies]
