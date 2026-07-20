@@ -1,3 +1,4 @@
+use bevy::math::ops::sin_cos;
 use crate::WorldCoords;
 use bevy::prelude::*;
 
@@ -12,6 +13,18 @@ pub enum Facing {
     East = 5,
     NorthEast = 6,
     North = 7,
+}
+impl Facing {
+    pub fn angle(&self) -> f32 {
+        let index = *self as usize;
+
+        // Rotate so that Z is forward and X is sideways
+        let total_offset = std::f32::consts::FRAC_PI_2;
+
+        // Calculate the angle corresponding to the index.
+        // index * (PI/4) gives the angle relative to our offset.
+        (index as f32 * std::f32::consts::FRAC_PI_4) - total_offset
+    }
 }
 impl From<usize> for Facing {
     fn from(index: usize) -> Self {
@@ -52,25 +65,8 @@ impl From<Vec2> for Facing {
 }
 impl From<Facing> for Vec2 {
     fn from(value: Facing) -> Self {
-        // Convert Facing to the 0-7 index used in the logic
-        let index = value as usize;
-
-        // We need to reverse the math done in the From<Vec2> impl.
-        // The original logic included these offsets:
-        // PI (shift) + PI/8 (centering) + 3PI/2 (rotation)
-        let total_offset = std::f32::consts::PI
-            + std::f32::consts::FRAC_PI_8
-            + (std::f32::consts::FRAC_PI_2 * 3.0);
-
-        // Calculate the angle corresponding to the index
-        // index * (PI/4) gives the angle relative to our offset
-        let angle = (index as f32 * std::f32::consts::FRAC_PI_4) - total_offset;
-
-        // Create a unit vector from the angle.
-        // Since your original math used atan2(x, y), we interpret the 
-        // vector as (x, y) = (sin(angle), cos(angle)) 
-        // to match the original atan2(x, y) orientation.
-        Vec2::new(angle.sin(), angle.cos())
+        let (sin, cos) = sin_cos(value.angle());
+        Vec2::new(sin, cos)
     }
 }
 impl From<Facing> for Vec3 {
@@ -80,6 +76,5 @@ impl From<Facing> for Vec3 {
 }
 
 pub fn offset_position_to_facing(pos: WorldCoords, offset: WorldCoords, facing: Facing) -> WorldCoords {
-    let facing_vec = Vec3::from(facing);
-    WorldCoords::from(*pos + (*offset * facing_vec))
+    WorldCoords::from(*pos + offset.rotate_y(facing.angle()))
 }

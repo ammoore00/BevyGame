@@ -78,7 +78,7 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
                     format: ColliderCodec::LATEST_FORMAT,
                     collider: ColliderDataCodec::Sphere(0.5)
                 },
-                offset: (1., 0., 1.).into(),
+                offset: (0., 0., 1.).into(),
             },
         }
     ];

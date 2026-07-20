@@ -136,7 +136,7 @@ marker!(pub AttackHitbox);
 // TODO: Improve this to not respawn hitboxes every frame
 fn attack_hitbox(
     key_frame: &KeyFrame,
-    pos: WorldCoords,
+    character_pos: WorldCoords,
     facing: Facing,
     attack_progress: AttackProgress,
 ) -> impl Bundle {
@@ -146,10 +146,12 @@ fn attack_hitbox(
         .expect("Attack progress outside of frame window");
     let hitbox_data = key_frame.get_current_interpolated_hitbox(frame_progress);
 
-    let pos = offset_position_to_facing(pos, *hitbox_data.offset(), facing);
+    let attack_pos = offset_position_to_facing(character_pos, *hitbox_data.offset(), facing);
     let collider_codec = hitbox_data.collider();
 
-    let collider = collider_codec.make_collider(pos.0);
+    info!("Hitbox offset: {:?}", attack_pos.0 - character_pos.0);
 
-    (AttackHitbox, collider, WorldPosition(pos))
+    let collider = collider_codec.make_collider(attack_pos.0);
+
+    (AttackHitbox, collider, WorldPosition(attack_pos))
 }

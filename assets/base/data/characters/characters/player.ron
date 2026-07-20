@@ -4,8 +4,8 @@
     animations: {
         Idle: "base:player/idle",
         Running: "base:player/running",
-        Walking: "base:player/walking",
         Sprinting: "base:player/sprinting",
+        Walking: "base:player/walking",
     },
     attack_set: "base:player/basic_attack",
     collider: (
