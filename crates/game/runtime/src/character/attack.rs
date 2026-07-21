@@ -4,6 +4,7 @@ use assets::resource::characters::{AttackContext, AttackProgress, AttackResource
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, marker, offset_position_to_facing};
 use data::loc::ResourceLocation;
+use physics::PhysicsData;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_attack);
@@ -153,5 +154,5 @@ fn attack_hitbox(
 
     let collider = collider_codec.make_collider(attack_pos.0);
 
-    (AttackHitbox, collider, WorldPosition(attack_pos))
+    (AttackHitbox, collider, WorldPosition(attack_pos), PhysicsData::Detector)
 }

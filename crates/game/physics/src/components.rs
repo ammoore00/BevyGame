@@ -1,3 +1,5 @@
+use crate::collision::MAX_COLLISION_DISTANCE;
+use crate::math::{ToBevy, ToParry};
 use bevy::prelude::*;
 use common::{WorldCoords, WorldPosition};
 use parry3d::math::Pose;
@@ -5,34 +7,51 @@ use parry3d::query;
 use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
-use crate::math::{ToBevy, ToParry};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);
 }
 
-#[derive(Component, Debug, Clone, Default)]
-pub enum PhysicsData {
-    #[default]
-    Static,
-    Kinematic {
-        displacement: Vec3,
-        grounded: bool,
-        // Used for coyote time
-        time_since_grounded: f32,
-        last_grounded_height: f32,
-    },
+/// Keep the collider position up to date with the world position.
+fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
+    for (mut collider, pos) in query {
+        collider.position = Pose::translation(pos.0.x, pos.0.y, pos.0.z);
+    }
 }
 
+#[derive(Component, Debug, Clone, Default)]
+pub enum PhysicsData {
+    /// Physics objects that do not move and do not check for collisions.
+    #[default]
+    Static,
+    /// Moving physics objects that check for collisions against other physics objects.
+    Kinematic(KinematicData),
+    /// Physics objects that do not cause collisions,
+    /// but do trigger events when they touch other physics objects.
+    Detector,
+}
 impl PhysicsData {
-    pub fn kinematic(displacement: Vec3) -> Self {
-        Self::Kinematic {
-            displacement,
+    pub fn kinematic(next_displacement: Vec3) -> Self {
+        Self::Kinematic(KinematicData {
+            next_displacement,
             grounded: false,
             time_since_grounded: f32::INFINITY,
             last_grounded_height: f32::NAN,
-        }
+        })
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct KinematicData {
+    /// The next displacement for the entity to move on the current frame.
+    /// This may be modified by collision data before being applied to the entity's position.
+    pub next_displacement: Vec3,
+    /// Whether the entity is currently touching the ground.
+    pub grounded: bool,
+    /// The time since the entity last touched the ground.
+    pub time_since_grounded: f32,
+    /// The height of the entity's feet when it last touched the ground.
+    pub last_grounded_height: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -70,7 +89,7 @@ impl PartialEq for ColliderData {
             }
             (
                 ColliderData::ConvexHull { shape: a_shape, .. },
-                ColliderData::ConvexHull { shape: b_shape, .. }
+                ColliderData::ConvexHull { shape: b_shape, .. },
             ) => a_shape == b_shape,
             _ => false,
         }
@@ -98,17 +117,7 @@ impl From<Capsule> for CapsuleData {
 
         let radius = capsule.radius;
 
-        Self {
-            a,
-            b,
-            radius,
-        }
-    }
-}
-
-fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
-    for (mut collider, world_position) in query {
-        collider.position = Pose::translation(world_position.0.x, world_position.0.y, world_position.0.z);
+        Self { a, b, radius }
     }
 }
 
@@ -118,14 +127,30 @@ pub struct Collider {
     position: Pose,
 }
 impl Collider {
+    fn new(collider_type: ColliderData, position: Pose) -> Self {
+        let slf = Self {
+            collider_type,
+            position,
+        };
+
+        if slf.size().max_element() > MAX_COLLISION_DISTANCE {
+            warn!(
+                "Collider size exceeds maximum collision distance! This may result in incorrect collision detection.\nMax: {}, Provided: {}",
+                MAX_COLLISION_DISTANCE,
+                slf.size().max_element()
+            )
+        }
+        slf
+    }
+
     pub fn cuboid(size: Vec3, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
         let size: Vec3 = Vec3::new(size.x, size.y, size.z);
 
-        Self {
-            collider_type: ColliderData::Cuboid(Cuboid::new(size.to_parry())),
-            position: Pose::translation(position.x, position.y, position.z),
-        }
+        Self::new(
+            ColliderData::Cuboid(Cuboid::new(size.to_parry())),
+            Pose::translation(position.x, position.y, position.z),
+        )
     }
 
     pub fn capsule(start: Vec3, end: Vec3, radius: f32, position: impl Into<WorldCoords>) -> Self {
@@ -133,10 +158,10 @@ impl Collider {
         let start = Vec3::new(start.x, start.y, start.z);
         let end = Vec3::new(end.x, end.y, end.z);
 
-        Self {
-            collider_type: ColliderData::Capsule(Capsule::new(start.to_parry(), end.to_parry(), radius)),
-            position: Pose::translation(position.x, position.y, position.z),
-        }
+        Self::new(
+            ColliderData::Capsule(Capsule::new(start.to_parry(), end.to_parry(), radius)),
+            Pose::translation(position.x, position.y, position.z),
+        )
     }
 
     pub fn vertical_capsule(height: f32, radius: f32, position: impl Into<WorldCoords>) -> Self {
@@ -150,7 +175,7 @@ impl Collider {
 
     pub fn convex_hull(vertices: &[Vec3], position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
-        
+
         let vertices = vertices.iter().map(|v| v.to_parry()).collect::<Vec<_>>();
 
         let convex_hull = convex_hull(vertices.as_slice());
@@ -162,29 +187,29 @@ impl Collider {
             .map(|point| Vec3::new(point.x, point.y, point.z))
             .collect();
 
-        Self {
-            collider_type: ColliderData::ConvexHull {
+        Self::new(
+            ColliderData::ConvexHull {
                 shape: convex_polyhedron.expect("Failed to create convex hull"),
                 vertices: Box::new(vertices),
                 indices: Box::new(convex_hull.1),
             },
-            position: Pose::translation(position.x, position.y, position.z),
-        }
+            Pose::translation(position.x, position.y, position.z),
+        )
     }
 
     pub fn with_collider(collider_type: ColliderData, position: impl Into<WorldCoords>) -> Self {
         let position = position.into();
-        Self {
+        Self::new(
             collider_type,
-            position: Pose::translation(position.x, position.y, position.z),
-        }
+            Pose::translation(position.x, position.y, position.z),
+        )
     }
 
     pub fn collider_type(&self) -> &ColliderData {
         &self.collider_type
     }
 
-    pub fn check_collision(&self, other: &Self) -> Option<CollisionEvent> {
+    pub fn check_collision(&self, other: &Self) -> Option<CollisionContact> {
         query::contact(
             &self.position,
             self.collider_type.get_shape(),
@@ -194,7 +219,7 @@ impl Collider {
         )
         .ok()
         .flatten()
-        .map(CollisionEvent::from)
+        .map(CollisionContact::from)
     }
 
     pub fn set_position(&mut self, position: impl Into<WorldCoords>) {
@@ -252,8 +277,8 @@ impl Collider {
 }
 
 #[derive(Debug, Clone)]
-pub struct CollisionEvent(Contact);
-impl CollisionEvent {
+pub struct CollisionContact(Contact);
+impl CollisionContact {
     pub fn _contact_points(&self) -> (Vec3, Vec3) {
         let contact = &self.0;
 
@@ -274,7 +299,7 @@ impl CollisionEvent {
         Vec3::new(self.0.normal2.x, self.0.normal2.y, self.0.normal2.z)
     }
 }
-impl From<Contact> for CollisionEvent {
+impl From<Contact> for CollisionContact {
     fn from(contact: Contact) -> Self {
         Self(contact)
     }

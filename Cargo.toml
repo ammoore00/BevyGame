@@ -93,7 +93,8 @@ dev = [
     "app/dev",
 
     # Improve compile times for dev builds by linking Bevy as a dynamic library.
-    "bevy/dynamic_linking",
+    #TODO: Figure out how to run the debugger with this enabled
+    #"bevy/dynamic_linking",
     # Improve error messages coming from Bevy
     "bevy/track_location",
 

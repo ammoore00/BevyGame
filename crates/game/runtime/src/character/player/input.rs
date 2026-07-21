@@ -7,7 +7,7 @@ use assets::resource::characters::AttackResource;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, WorldPosition};
 use data::prelude::*;
-use physics::{MovementController, PhysicsData};
+use physics::{KinematicData, MovementController, PhysicsData};
 use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
@@ -144,11 +144,11 @@ fn on_jump_input(
         return;
     }
 
-    if let PhysicsData::Kinematic {
+    if let PhysicsData::Kinematic(KinematicData {
         time_since_grounded,
         last_grounded_height,
         ..
-    } = *physics {
+    }) = *physics {
         if time_since_grounded < COYOTE_TIME
             && position.as_vec3().y < last_grounded_height
             && position.as_vec3().y > last_grounded_height - COYOTE_TIME_HEIGHT_THRESHOLD
@@ -157,7 +157,7 @@ fn on_jump_input(
         } else {
             info!("Cannot jump, player is not grounded!");
         }
-    } else { panic!("Player assigned static physics data! This is a bug!") }
+    } else { panic!("Player assigned non-kinematic physics data! This is a bug!") }
 }
 
 #[derive(EntityEvent)]

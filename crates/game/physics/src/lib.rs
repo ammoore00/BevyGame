@@ -1,11 +1,12 @@
 use bevy::prelude::*;
 
+mod collision;
 mod components;
 mod math;
 mod movement;
 
 pub use crate::{
-    components::{Collider, ColliderKind, PhysicsData},
+    components::{Collider, ColliderKind, KinematicData, PhysicsData},
     movement::{DEFAULT_MAX_SPEED, MovementController},
 };
 
@@ -18,6 +19,6 @@ pub use crate::{
 pub struct PhysicsPlugin;
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((components::plugin, movement::plugin));
+        app.add_plugins((collision::plugin, components::plugin, movement::plugin));
     }
 }
