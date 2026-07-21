@@ -150,9 +150,10 @@ fn on_jump_input(
         ..
     }) = *physics {
         if time_since_grounded < COYOTE_TIME
-            && position.as_vec3().y < last_grounded_height
-            && position.as_vec3().y > last_grounded_height - COYOTE_TIME_HEIGHT_THRESHOLD
+            && position.as_vec3().y <= last_grounded_height
+            && position.as_vec3().y >= last_grounded_height - COYOTE_TIME_HEIGHT_THRESHOLD
         {
+            info!("Jumping!");
             controller.intent.y = JUMP_VELOCITY;
         } else {
             info!("Cannot jump, player is not grounded!");

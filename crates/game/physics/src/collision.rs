@@ -52,13 +52,14 @@ fn check_collisions(
     )>,
     mut commands: Commands,
 ) {
+    // Create collections for holding all detected collisions
+    // These will be sent to each entity to process movement for physics collisions,
+    // or to process other events for detectors
+    //
+    // Even if these are empty, they still need to be sent to tell the entity
+    // that it can start to process movement
     let mut physics_collisions = HashMap::<Entity, Vec<_>>::new();
     let mut detector_collisions = HashMap::<Entity, Vec<_>>::new();
-
-    let kinematics = collider_query
-        .iter()
-        .filter(|(_, physics_data, _, _, _)| matches!(physics_data, PhysicsData::Kinematic { .. }));
-    info!("Number of kinematic entities: {}", kinematics.count());
 
     // Sort colliders so that the first in the pair is always kinematic,
     // as only kinematic physics objects check for collisions
@@ -107,7 +108,6 @@ fn check_collisions(
             continue;
         };
 
-        // Exhaustive match to prevent bugs if new physics data types are added
         match *other_physics_data {
             PhysicsData::Detector => {
                 let collision = DetectorCollision {
@@ -153,10 +153,6 @@ fn check_collisions(
     }
 
     for (colliding_entity, physics_collisions) in physics_collisions {
-        info!(
-            "Physics collisions processed for entity: {:?}",
-            colliding_entity
-        );
         commands.trigger(PhysicsCollisionsProcessedEvent {
             entity: colliding_entity,
             physics_collisions,

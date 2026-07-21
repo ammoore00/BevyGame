@@ -150,8 +150,6 @@ fn attack_hitbox(
     let attack_pos = offset_position_to_facing(character_pos, *hitbox_data.offset(), facing);
     let collider_codec = hitbox_data.collider();
 
-    info!("Hitbox offset: {:?}", attack_pos.0 - character_pos.0);
-
     let collider = collider_codec.make_collider(attack_pos.0);
 
     (AttackHitbox, collider, WorldPosition(attack_pos), PhysicsData::Detector)
