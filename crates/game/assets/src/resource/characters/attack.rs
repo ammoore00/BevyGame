@@ -281,7 +281,7 @@ impl InterpolatedHitbox {
         }
     }
 
-    fn get_current_interpolated_hitbox(&self, frame_progress: FrameProgress) -> HitboxData {
+    fn get_current_interpolated_hitbox(&self, _frame_progress: FrameProgress) -> HitboxData {
         todo!()
     }
 }
@@ -291,7 +291,7 @@ pub struct SweptHitbox {
     // TODO: Implement
 }
 impl SweptHitbox {
-    fn get_current_interpolated_hitbox(&self, frame_progress: FrameProgress) -> HitboxData {
+    fn get_current_interpolated_hitbox(&self, _frame_progress: FrameProgress) -> HitboxData {
         todo!()
     }
 }

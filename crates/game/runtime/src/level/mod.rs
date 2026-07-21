@@ -185,7 +185,7 @@ fn add_objects(
 
     let children = &[
         commands.spawn_scene(player).id(),
-        //commands.spawn_scene(test_npc).id(),
+        commands.spawn_scene(test_npc).id(),
     ];
     commands.entity(level).add_children(children);
 

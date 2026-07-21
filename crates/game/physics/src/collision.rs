@@ -110,21 +110,13 @@ fn check_collisions(
 
         match *other_physics_data {
             PhysicsData::Detector => {
-                let collision = DetectorCollision {
-                    other_entity,
-                    contact,
-                };
-
+                let collision = DetectorCollision(contact);
                 detector_collisions
                     .entry(entity)
                     .and_modify(|list| list.push(collision.clone()));
             }
             PhysicsData::Static => {
-                let collision = PhysicsCollision {
-                    other_entity,
-                    contact,
-                };
-
+                let collision = PhysicsCollision(contact);
                 physics_collisions
                     .entry(entity)
                     .and_modify(|list| list.push(collision.clone()));
@@ -132,18 +124,12 @@ fn check_collisions(
             // If the other is kinematic, it needs to deal with the collision as well,
             // so send it to both
             PhysicsData::Kinematic { .. } => {
-                let first_collision = PhysicsCollision {
-                    other_entity,
-                    contact: contact.clone(),
-                };
+                let first_collision = PhysicsCollision(contact.clone());
                 physics_collisions
                     .entry(entity)
                     .and_modify(|list| list.push(first_collision.clone()));
 
-                let second_collision = PhysicsCollision {
-                    other_entity: entity,
-                    contact,
-                };
+                let second_collision = PhysicsCollision(contact);
                 physics_collisions
                     .entry(other_entity)
                     .or_default()
@@ -180,13 +166,7 @@ pub struct DetectorCollisionsProcessedEvent {
 }
 
 #[derive(Debug, Clone)]
-pub struct PhysicsCollision {
-    pub other_entity: Entity,
-    pub contact: CollisionContact,
-}
+pub struct PhysicsCollision(pub CollisionContact);
 
 #[derive(Debug, Clone)]
-pub struct DetectorCollision {
-    pub other_entity: Entity,
-    pub contact: CollisionContact,
-}
+pub struct DetectorCollision(pub CollisionContact);

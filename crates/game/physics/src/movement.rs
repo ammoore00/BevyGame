@@ -152,7 +152,7 @@ fn process_collisions(
         // This includes the displacement offset to apply
         //  and the ground normal if this is a grounded collision
         let collision_response = get_collision_response(
-            &collision.contact,
+            &collision.0,
             kinematic_data,
             collider,
             &all_other_colliders,

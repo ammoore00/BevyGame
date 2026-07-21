@@ -3,7 +3,7 @@ use crate::debug_options::render::helpers::*;
 use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{Scale, TilePosition, WorldPosition, marker, GameState};
+use common::{GameState, Scale, TilePosition, WorldPosition, marker};
 use physics::{Collider, ColliderData};
 use runtime::character::Character;
 use runtime::debug::{AttackHitbox, Tile};
@@ -45,7 +45,16 @@ fn update_character_collision_render(
     }
 
     for (collision, pos) in character_query {
-        render_collider(collision, pos, &scale, commands.reborrow());
+        render_collider(
+            collision,
+            pos,
+            &scale,
+            LineSettings {
+                color: KINEMATIC_COLLIDER_COLOR,
+                thickness: COLLIDER_LINE_THICKNESS,
+            },
+            commands.reborrow(),
+        );
     }
 }
 
@@ -122,10 +131,7 @@ fn spawn_tile_collision_render(
 }
 
 fn tile_collision_bundle() -> impl Bundle {
-    (
-        TileCollisionRender,
-        DespawnOnExit(GameState::Gameplay),
-    )
+    (TileCollisionRender, DespawnOnExit(GameState::Gameplay))
 }
 
 fn cleanup_tile_collision_render(
@@ -158,7 +164,16 @@ fn update_attack_collision_render(
     }
 
     for (collision, pos) in attack_query {
-        render_collider(collision, pos, &scale, commands.reborrow());
+        render_collider(
+            collision,
+            pos,
+            &scale,
+            LineSettings {
+                color: ATTACK_COLLIDER_COLOR,
+                thickness: ATTACK_COLLIDER_LINE_THICKNESS,
+            },
+            commands.reborrow(),
+        );
     }
 }
 
@@ -168,21 +183,14 @@ fn render_collider(
     collision: &Collider,
     pos: &WorldPosition,
     scale: &Scale,
+    settings: LineSettings,
     mut commands: Commands,
 ) {
     match collision.collider_type() {
         ColliderData::Cuboid(_) => todo!(),
         ColliderData::ConvexHull { .. } => todo!(),
         ColliderData::Capsule(capsule) => {
-            let (edges, circles) = draw_capsule(
-                pos.0,
-                *capsule,
-                LineSettings {
-                    color: ATTACK_COLLIDER_COLOR,
-                    thickness: ATTACK_COLLIDER_LINE_THICKNESS,
-                },
-                scale.0,
-            );
+            let (edges, circles) = draw_capsule(pos.0, *capsule, settings, scale.0);
 
             edges.into_iter().for_each(|line| {
                 commands.spawn((CharacterCollisionRender, line));
