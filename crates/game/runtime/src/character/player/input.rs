@@ -2,7 +2,9 @@ use crate::character::attack::AttackEvent;
 use crate::character::player::{AimFacing, Player};
 use crate::character::stamina::Stamina;
 use crate::character::state::{ActionStateTracker, TrySetStateEvent};
-use assets::action_states::{ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking};
+use assets::action_states::{
+    ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking,
+};
 use assets::resource::characters::AttackResource;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, WorldPosition};
@@ -11,10 +13,7 @@ use physics::{KinematicData, MovementController, PhysicsData};
 use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        camera_follow_player.in_set(AppSystems::Respond)
-    );
+    app.add_systems(Update, camera_follow_player.in_set(AppSystems::Respond));
 
     app.add_observer(on_movement_input);
     app.add_observer(on_jump_input);
@@ -36,21 +35,12 @@ pub struct MoveInputEvent {
 fn on_movement_input(
     event: On<MoveInputEvent>,
     mut player_query: Query<
-        (
-            &mut MovementController,
-            &ActionStateTracker,
-        ),
-        (
-            With<Player>,
-            With<ActionStateCapabilities>,
-        )
+        (&mut MovementController, &ActionStateTracker),
+        (With<Player>, With<ActionStateCapabilities>),
     >,
     mut commands: Commands,
 ) {
-    let Ok((
-        mut controller,
-        tracker,
-    )) = player_query.get_mut(event.entity) else {
+    let Ok((mut controller, tracker)) = player_query.get_mut(event.entity) else {
         error!("Failed to get player movement info");
         return;
     };
@@ -77,26 +67,30 @@ fn on_movement_input(
         let should_sprint = (*new_state).type_id() == TypeId::of::<Sprinting>();
 
         // Set the state to the new state, with handling depending on the result
-        let event = TrySetStateEvent::new(event.entity, new_state)
-            .with_callback(move |entity, mut commands, result| {
+        let event = TrySetStateEvent::new(event.entity, new_state).with_callback(
+            move |entity, mut commands, result| {
                 // If the state was not set, do nothing
                 if result.is_err() {
                     return;
                 }
 
                 // If the state was set, update the controller's sprinting state as appropriate
-                commands.entity(entity).queue(
-                    move |mut entity_world: EntityWorldMut| {
+                commands
+                    .entity(entity)
+                    .queue(move |mut entity_world: EntityWorldMut| {
                         if let Some(mut controller) = entity_world.get_mut::<MovementController>() {
                             controller.sprinting = should_sprint;
                         } else {
                             error!("Failed to get MovementController component for player");
                         }
                     });
-            });
+            },
+        );
 
         commands.trigger(event);
     }
+
+    let prev_y = controller.intent.y;
 
     // Update the controller's intent
     if tracker.is_movement() {
@@ -104,6 +98,9 @@ fn on_movement_input(
     } else {
         controller.intent = Vec3::ZERO;
     }
+
+    // Vertical intent (aka jumping) is handled separately, and we don't want to reset it
+    controller.intent.y = prev_y;
 }
 
 #[derive(EntityEvent, derive_new::new)]
@@ -122,43 +119,39 @@ fn on_jump_input(
             &WorldPosition,
             Option<&Idle>,
         ),
-        (
-            With<Player>,
-            With<ActionStateCapabilities>,
-        )
+        (With<Player>, With<ActionStateCapabilities>),
     >,
 ) {
-    let Ok((
-        mut controller,
-        tracker,
-        physics,
-        position,
-        idle,
-    )) = player_query.get_mut(event.entity) else {
+    let Ok((mut controller, tracker, physics, position, idle)) = player_query.get_mut(event.entity)
+    else {
         error!("Failed to get player movement info");
         return;
     };
 
-    if let None = idle && !tracker.is_movement() {
+    if let None = idle
+        && !tracker.is_movement()
+    {
         info!("Cannot jump, player is not in valid state!");
         return;
     }
 
-    if let PhysicsData::Kinematic(KinematicData {
+    let PhysicsData::Kinematic(KinematicData {
         time_since_grounded,
         last_grounded_height,
         ..
-    }) = *physics {
-        if time_since_grounded < COYOTE_TIME
-            && position.as_vec3().y <= last_grounded_height
-            && position.as_vec3().y >= last_grounded_height - COYOTE_TIME_HEIGHT_THRESHOLD
-        {
-            info!("Jumping!");
-            controller.intent.y = JUMP_VELOCITY;
-        } else {
-            info!("Cannot jump, player is not grounded!");
-        }
-    } else { panic!("Player assigned non-kinematic physics data! This is a bug!") }
+    }) = *physics
+    else {
+        panic!("Player assigned non-kinematic physics data! This is a bug!")
+    };
+
+    if time_since_grounded < COYOTE_TIME
+        && position.as_vec3().y <= last_grounded_height
+        && position.as_vec3().y >= last_grounded_height - COYOTE_TIME_HEIGHT_THRESHOLD
+    {
+        controller.intent.y = JUMP_VELOCITY;
+    } else {
+        info!("Cannot jump, player is not grounded!");
+    }
 }
 
 #[derive(EntityEvent)]
@@ -170,34 +163,25 @@ impl AttackInputEvent {
     pub fn new(entity: Entity, attack_loc: impl AsRef<str>) -> Self {
         Self {
             entity,
-            _attack: loc::<AttackResource>(attack_loc.as_ref())
-                .unwrap_or_else(|_| panic!("Failed to parse attack resource location: {}", attack_loc.as_ref())),
+            _attack: loc::<AttackResource>(attack_loc.as_ref()).unwrap_or_else(|_| {
+                panic!(
+                    "Failed to parse attack resource location: {}",
+                    attack_loc.as_ref()
+                )
+            }),
         }
     }
 }
 
 fn on_attack_input(
     event: On<AttackInputEvent>,
-    mut player_query: Query<
-        (
-            Entity,
-            &mut Facing,
-            &Stamina,
-        ),
-        (
-            With<Player>,
-            With<Children>,
-        )
-    >,
+    mut player_query: Query<(Entity, &mut Facing, &Stamina), (With<Player>, With<Children>)>,
     aim_facing_query: Query<(&AimFacing, &ChildOf)>,
     attack_registry: SystemRegistry<AttackResource>,
     mut commands: Commands,
 ) {
-    let (
-        player_entity,
-        mut facing,
-        stamina,
-    ) = player_query.get_mut(event.entity)
+    let (player_entity, mut facing, stamina) = player_query
+        .get_mut(event.entity)
         .expect("Failed to get player entity");
     let (aim_facing, child_of) = aim_facing_query.single().expect("Failed to get aim facing");
 
@@ -267,7 +251,6 @@ fn on_aim_input(
             .expect("Failed to set visibility");
     }
 }
-
 
 fn camera_follow_player(
     player_query: Query<&mut Transform, (With<Player>, Without<Camera2d>)>,

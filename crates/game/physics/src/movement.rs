@@ -64,8 +64,8 @@ impl Default for MovementController {
 
 /// Takes the movement intent from the `MovementController` and applies it as the
 /// intended displacement for the kinematic physics object, scaled based on the frame time
-fn set_displacement_from_intent(time: Res<Time>, query: Query<(&MovementController, &mut PhysicsData)>) {
-    for (controller, mut physics) in query {
+fn set_displacement_from_intent(time: Res<Time>, query: Query<(&mut MovementController, &mut PhysicsData)>) {
+    for (mut controller, mut physics) in query {
         if let PhysicsData::Kinematic(KinematicData {
             ref mut next_displacement,
             ..
@@ -80,6 +80,9 @@ fn set_displacement_from_intent(time: Res<Time>, query: Query<(&MovementControll
             next_displacement.x = intent.x;
             next_displacement.z = intent.z;
             next_displacement.y += intent.y;
+
+            // Reset vertical intent to 0 after impulse has been processed
+            controller.intent.y = 0.0;
         }
     }
 }
