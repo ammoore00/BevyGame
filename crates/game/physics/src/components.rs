@@ -39,7 +39,7 @@ impl PhysicsData {
             last_grounded_height: f32::NAN,
         })
     }
-    
+
     pub fn kind(&self) -> PhysicsKind {
         match self {
             PhysicsData::Static => PhysicsKind::Static,
@@ -314,11 +314,11 @@ impl CollisionContact {
     pub fn normal(&self) -> Vec3 {
         Vec3::new(self.0.normal2.x, self.0.normal2.y, self.0.normal2.z)
     }
-    
+
     pub fn invert_normal(&mut self) {
         self.0.normal2 = -self.0.normal2;
     }
-    
+
     pub fn with_inverted_normal(&self) -> Self {
         Self(Contact {
             normal2: -self.0.normal2,
