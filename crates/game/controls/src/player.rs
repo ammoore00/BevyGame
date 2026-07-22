@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameInputSystems, GameplaySystems, PausableSystems, ScreenCoords, WorldPosition};
 use input::{InputReader, LastInputMode};
 use input::gamepad::{get_stick_with_deadzone, GamepadStick};
-use runtime::character::player::{AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player};
+use runtime::characters::player::{AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player};
 use runtime::LevelLoadedSystems;
 
 // TODO: Remappable controls

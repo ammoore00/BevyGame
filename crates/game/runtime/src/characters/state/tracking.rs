@@ -1,4 +1,4 @@
-use crate::character::Character;
+use crate::characters::Character;
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, ReflectActionState, ReflectMovementActionState, StateTransitionError};
 use bevy::prelude::*;
 use getset::CopyGetters;

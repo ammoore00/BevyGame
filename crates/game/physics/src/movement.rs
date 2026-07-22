@@ -56,11 +56,11 @@ pub const DEFAULT_MAX_SPEED: f32 = 2.0;
 
 pub const CONTROLLER_ACCELERATION_FACTOR: f32 = 20.0;
 
-/// These are the movement parameters for our character's controller.
+/// These are the movement parameters for our characters's controller.
 #[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct MovementController {
-    /// The direction the character wants to move in.
+    /// The direction the characters wants to move in.
     pub intent: Vec3,
     pub sprinting: bool,
     /// Maximum speed in meters per second.

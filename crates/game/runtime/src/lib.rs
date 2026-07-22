@@ -3,14 +3,14 @@ use assets::AssetsPlugin;
 use common::CommonPlugin;
 use physics::PhysicsPlugin;
 
-pub mod character;
+pub mod characters;
 mod level;
 mod particle;
 mod object;
 
 pub mod debug {
     pub use crate::{
-        character::{
+        characters::{
             attack::AttackHitbox,
             npc::ai::pathfinding::{Pathfinder, PathfinderState},
             health::Health,
@@ -36,7 +36,7 @@ impl Plugin for RuntimePlugin {
             CommonPlugin,
             PhysicsPlugin,
 
-            character::plugin,
+            characters::plugin,
             level::plugin,
             particle::plugin,
             object::plugin,

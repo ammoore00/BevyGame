@@ -1,8 +1,8 @@
 //! Player-specific behavior.
 
-use crate::character::health::Health;
-use crate::character::stamina::Stamina;
-use crate::character::CharacterPrototype;
+use crate::characters::health::Health;
+use crate::characters::stamina::Stamina;
+use crate::characters::CharacterPrototype;
 use assets::resource::characters::{CharacterResource, CharacterSpriteResource};
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;

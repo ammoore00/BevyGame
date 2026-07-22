@@ -1,4 +1,4 @@
-use crate::character::state::{ActionStateTracker, TrySetStateEvent};
+use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use crate::level::grid::nav::{NavEdgeKind, TileNavMap};
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
 use bevy::prelude::*;

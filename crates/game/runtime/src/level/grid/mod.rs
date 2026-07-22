@@ -1,4 +1,4 @@
-use crate::character::player::Player;
+use crate::characters::player::Player;
 use crate::object::Shadow;
 use bevy::prelude::*;
 use common::{TileCoords, TilePosition, WorldPosition, SCREEN_Z_SCALE};

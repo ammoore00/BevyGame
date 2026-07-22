@@ -1,4 +1,4 @@
-use crate::character::stamina::StaminaEvent;
+use crate::characters::stamina::StaminaEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::resource::characters::{AttackContext, AttackProgress, AttackResource, KeyFrame};
 use bevy::prelude::*;

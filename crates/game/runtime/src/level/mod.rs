@@ -3,8 +3,8 @@
 pub mod grid;
 pub mod map;
 
-use crate::character::npc::npc_bundle;
-use crate::character::player::player;
+use crate::characters::npc::npc_bundle;
+use crate::characters::player::player;
 use crate::level::grid::nav::NavContext;
 use crate::level::map::{map_scene, NavBakeError};
 use assets::resource::level::{Palette, Palettes};

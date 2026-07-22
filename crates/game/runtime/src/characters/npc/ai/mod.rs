@@ -1,6 +1,6 @@
 pub mod pathfinding;
 
-use crate::character::npc::ai::pathfinding::pathfinder_scene;
+use crate::characters::npc::ai::pathfinding::pathfinder_scene;
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {

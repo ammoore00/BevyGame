@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use common::dev_tools::DebugState;
 use common::{GameState, Scale, TilePosition, WorldPosition, marker};
 use physics::{Collider, ColliderData};
-use runtime::character::Character;
+use runtime::characters::Character;
 use runtime::debug::{AttackHitbox, Tile};
 
 pub(super) fn plugin(app: &mut App) {

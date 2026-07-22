@@ -1,7 +1,7 @@
-use crate::character::attack::AttackEvent;
-use crate::character::player::{AimFacing, Player};
-use crate::character::stamina::Stamina;
-use crate::character::state::{ActionStateTracker, TrySetStateEvent};
+use crate::characters::attack::AttackEvent;
+use crate::characters::player::{AimFacing, Player};
+use crate::characters::stamina::Stamina;
+use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{
     ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking,
 };
