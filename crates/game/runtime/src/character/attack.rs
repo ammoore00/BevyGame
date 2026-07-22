@@ -4,18 +4,20 @@ use assets::resource::characters::{AttackContext, AttackProgress, AttackResource
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, marker, offset_position_to_facing};
 use data::loc::ResourceLocation;
-use physics::PhysicsData;
+use physics::{DetectorCollisionsProcessedMessage, PhysicsData};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(on_attack);
-
     app.add_systems(
         Update,
-        update_attack_key_frames
+        (
+            update_attack_key_frames.in_set(AppSystems::TickTimers),
+            process_attack_hits.in_set(AppSystems::Respond),
+        )
             .in_set(GameplaySystems)
             .in_set(PausableSystems)
-            .in_set(AppSystems::Update),
     );
+
+    app.add_observer(on_attack);
 }
 
 #[derive(EntityEvent, Debug, Clone, Reflect, derive_new::new)]
@@ -132,7 +134,8 @@ fn update_attack_key_frames(
     }
 }
 
-marker!(pub AttackHitbox);
+#[derive(Component, Debug, Clone)]
+pub struct AttackHitbox(KeyFrame);
 
 // TODO: Improve this to not respawn hitboxes every frame
 fn attack_hitbox(
@@ -152,5 +155,21 @@ fn attack_hitbox(
 
     let collider = collider_codec.make_collider(attack_pos.0);
 
-    (AttackHitbox, collider, WorldPosition(attack_pos), PhysicsData::Detector)
+    (AttackHitbox(key_frame.clone()), collider, WorldPosition(attack_pos), PhysicsData::Detector)
+}
+
+fn process_attack_hits(
+    mut reader: MessageReader<DetectorCollisionsProcessedMessage>,
+    attack_hitbox_query: Query<&AttackHitbox>,
+) {
+    for collision_message in reader.read() {
+        for collision in &collision_message.detector_collisions {
+            // Filter detector collisions to only attack hitboxes
+            let Ok(_key_frame) = attack_hitbox_query.get(collision.detector_entity) else {
+                continue;
+            };
+
+            info!("Attack hitbox collision!");
+        }
+    }
 }

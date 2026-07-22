@@ -6,6 +6,7 @@ mod math;
 mod movement;
 
 pub use crate::{
+    collision::{DetectorCollision, DetectorCollisionsProcessedMessage},
     components::{Collider, ColliderKind, KinematicData, PhysicsData},
     movement::{DEFAULT_MAX_SPEED, MovementController},
 };

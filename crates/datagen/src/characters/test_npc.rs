@@ -76,7 +76,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
             hitbox: HitboxCodec::Static {
                 collider: ColliderCodec {
                     format: ColliderCodec::LATEST_FORMAT,
-                    collider: ColliderDataCodec::Sphere(0.5)
+                    collider: ColliderDataCodec::Sphere(1.0)
                 },
                 offset: (0., 0., 1.).into(),
             },

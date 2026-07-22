@@ -12,6 +12,8 @@ pub(super) fn plugin(app: &mut App) {
             .in_set(PausableSystems)
             .in_set(AppSystems::Update),
     );
+
+    app.add_message::<DetectorCollisionsProcessedMessage>();
 }
 
 fn validate_colliders(
@@ -50,6 +52,7 @@ fn check_collisions(
         Option<&WorldPosition>,
         Option<&TilePosition>,
     )>,
+    mut message_writer: MessageWriter<DetectorCollisionsProcessedMessage>,
     mut commands: Commands,
 ) {
     // Create collections for holding all detected collisions
@@ -110,7 +113,9 @@ fn check_collisions(
 
         match *other_physics_data {
             PhysicsData::Detector => {
-                let collision = DetectorCollision { _contact: contact };
+                let collision = DetectorCollision {
+                    detector_entity: other_entity,
+                };
                 detector_collisions
                     .entry(entity)
                     .and_modify(|list| list.push(collision.clone()));
@@ -158,10 +163,10 @@ fn check_collisions(
     }
 
     for (colliding_entity, detector_collisions) in detector_collisions {
-        commands.trigger(DetectorCollisionsProcessedEvent {
+        message_writer.write(DetectorCollisionsProcessedMessage {
             entity: colliding_entity,
-            _detector_collisions: detector_collisions,
-        })
+            detector_collisions,
+        });
     }
 }
 
@@ -171,10 +176,10 @@ pub struct PhysicsCollisionsProcessedEvent {
     pub physics_collisions: Vec<PhysicsCollision>,
 }
 
-#[derive(EntityEvent, Debug, Clone)]
-pub struct DetectorCollisionsProcessedEvent {
+#[derive(Message, Debug, Clone)]
+pub struct DetectorCollisionsProcessedMessage {
     pub entity: Entity,
-    pub _detector_collisions: Vec<DetectorCollision>,
+    pub detector_collisions: Vec<DetectorCollision>,
 }
 
 #[derive(Debug, Clone)]
@@ -185,5 +190,5 @@ pub struct PhysicsCollision {
 
 #[derive(Debug, Clone)]
 pub struct DetectorCollision {
-    pub _contact: CollisionContact,
+    pub detector_entity: Entity,
 }
