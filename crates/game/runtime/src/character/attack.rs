@@ -2,7 +2,7 @@ use crate::character::stamina::StaminaEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::resource::characters::{AttackContext, AttackProgress, AttackResource, KeyFrame};
 use bevy::prelude::*;
-use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, marker, offset_position_to_facing};
+use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, offset_position_to_facing};
 use data::loc::ResourceLocation;
 use physics::{DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData};
 
@@ -165,9 +165,11 @@ fn process_attack_hits(
     for collision_message in reader.read() {
         for collision in &collision_message.detector_collisions {
             // Filter detector collisions to only attack hitboxes
-            let Ok(_key_frame) = attack_hitbox_query.get(collision.detector_entity) else {
+            let Ok(attack_hitbox) = attack_hitbox_query.get(collision.detector_entity) else {
                 continue;
             };
+            
+            let _key_frame = &attack_hitbox.0;
 
             // TODO: Filter self-collisions
         }

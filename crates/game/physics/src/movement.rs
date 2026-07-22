@@ -15,7 +15,7 @@
 
 use crate::ApplyForce;
 use crate::collision::PhysicsCollisionsProcessedMessage;
-use crate::components::{Collider, CollisionContact, KinematicData, PhysicsData};
+use crate::components::{CollisionContact, KinematicData, PhysicsData};
 use crate::forces::{AppliedForces, Force, TargetAxes, TargetVelocity};
 use crate::states::PhysicsPipeline;
 use bevy::prelude::*;
@@ -46,15 +46,15 @@ marker!(pub Gravity);
 marker!(pub MovementIntent);
 marker!(pub PassiveFriction);
 
-const PASSIVE_FRICTION: f32 = 0.05;
+const PASSIVE_FRICTION: f32 = 5.0;
 
 pub const GRAVITY: f32 = 50.0;
-
-pub const STEP_UP_HEIGHT: f32 = 0.3;
 
 pub const MAX_STABLE_SLOPE_ANGLE: f32 = 45.0_f32.to_radians();
 
 pub const DEFAULT_MAX_SPEED: f32 = 2.0;
+
+pub const CONTROLLER_ACCELERATION_FACTOR: f32 = 20.0;
 
 /// These are the movement parameters for our character's controller.
 #[derive(Component, Reflect, Clone)]
@@ -102,6 +102,7 @@ fn apply_controller_intent(query: Query<(Entity, &MovementController)>, mut comm
             Force::TargetVelocity(TargetVelocity {
                 target: intent_velocity,
                 should_steer: false,
+                acceleration: Some(controller.max_speed * CONTROLLER_ACCELERATION_FACTOR),
                 ..Default::default()
             }),
         ));
@@ -313,12 +314,11 @@ fn steer_target_velocities(
 
 fn process_collisions(
     mut message_reader: MessageReader<PhysicsCollisionsProcessedMessage>,
-    mut query: Query<(&mut PhysicsData, &mut WorldPosition, &Collider)>,
-    other_collider_query: Query<(Entity, &Collider), With<PhysicsData>>,
+    mut query: Query<(&mut PhysicsData, &WorldPosition)>,
     time: Res<Time>,
 ) {
     for message in message_reader.read() {
-        let Ok((mut physics, mut pos, collider)) = query.get_mut(message.entity) else {
+        let Ok((mut physics, pos)) = query.get_mut(message.entity) else {
             return error!(
                 "Failed to get physics data for event entity {:?}",
                 message.entity
@@ -333,19 +333,8 @@ fn process_collisions(
         };
 
         for collision in message.physics_collisions.iter() {
-            let all_other_colliders = other_collider_query
-                .iter()
-                .filter(|(other_entity, _)| *other_entity != message.entity)
-                .map(|(_, other_collider)| other_collider);
-
-            let collision_response = get_collision_response(
-                &collision.contact,
-                kinematic_data,
-                collider,
-                all_other_colliders,
-                pos.0,
-                &time,
-            );
+            let collision_response =
+                get_collision_response(&collision.contact, kinematic_data, &time);
 
             kinematic_data.next_velocity += collision_response.velocity_delta;
             if let Some(new_ground_normal) = collision_response.grounded_normal
@@ -381,16 +370,13 @@ struct CollisionResponse {
 fn get_collision_response<'a>(
     collision: &CollisionContact,
     kinematic_data: &KinematicData,
-    collider: &Collider,
-    all_other_colliders: impl Iterator<Item = &'a Collider>,
-    pos: WorldCoords,
     time: &Res<Time>,
 ) -> CollisionResponse {
     let normal = collision.normal();
-    let (grounded_normal, ground_collision) = if normal.y > 0.7 {
-        (Some(normal), true)
+    let grounded_normal = if normal.y > 0.7 {
+        Some(normal)
     } else {
-        (None, false)
+        None
     };
 
     let velocity_along_normal = kinematic_data.next_velocity.dot(normal);
@@ -405,17 +391,6 @@ fn get_collision_response<'a>(
     }
 
     let collision_displacement = -normal * next_displacement;
-    let collision_displacement = if !ground_collision && kinematic_data.grounded {
-        // If this is a horizontal (e.g., wall) collision, try to step up
-        // If we fail to step up, treat the collision as normal
-        if let Some(step_up) = try_step_up(collider, all_other_colliders, pos) {
-            step_up
-        } else {
-            collision_displacement
-        }
-    } else {
-        collision_displacement
-    };
 
     let velocity_delta = collision_displacement / time.delta_secs();
 
@@ -423,31 +398,6 @@ fn get_collision_response<'a>(
         velocity_delta,
         grounded_normal,
     }
-}
-
-/// Try to step up if the collision is against a small lip
-/// and return the displacement to apply if the object is able to step up
-fn try_step_up<'a>(
-    collider: &Collider,
-    mut all_other_colliders: impl Iterator<Item = &'a Collider>,
-    pos: WorldCoords,
-) -> Option<Vec3> {
-    for test_height in 1..=10 {
-        let test_step = (test_height as f32) * (STEP_UP_HEIGHT / 10.0);
-        let test_position = pos.0 + Vec3::Y * test_step;
-
-        let test_collider =
-            Collider::with_collider(collider.collider_type().clone(), test_position);
-
-        let still_colliding = all_other_colliders
-            .any(|other_collider| test_collider.check_collision(&other_collider).is_some());
-
-        if !still_colliding {
-            return Some(Vec3::Y * test_step);
-        }
-    }
-
-    None
 }
 
 /// Update information for tracking grounded state in the kinematics state based on collisions
@@ -512,14 +462,12 @@ fn stabilize_on_slope(ground_normal: Vec3, time: &Time) -> Vec3 {
 /// Apply the final physics displacement to the entity's position
 fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>, time: Res<Time>) {
     for (physics, mut pos) in query {
-        let new_position = if let PhysicsData::Kinematic(KinematicData {
-            next_velocity, ..
-        }) = *physics
-        {
-            pos.as_vec3() + next_velocity * time.delta_secs()
-        } else {
-            return;
-        };
+        let new_position =
+            if let PhysicsData::Kinematic(KinematicData { next_velocity, .. }) = *physics {
+                pos.as_vec3() + next_velocity * time.delta_secs()
+            } else {
+                return;
+            };
         pos.set(new_position);
     }
 }
