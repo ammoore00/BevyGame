@@ -29,7 +29,7 @@ pub(super) fn plugin(app: &mut App) {
                 apply_impulses,
                 apply_controller_intent,
                 apply_gravity,
-                //apply_passive_friction,
+                apply_passive_friction,
                 update_facing_from_movement,
             )
                 .in_set(PhysicsPipeline::ApplyIntent),
@@ -465,7 +465,7 @@ fn update_ground_state(
         kinematic_data.last_grounded_height = pos.y;
         kinematic_data.ground_normal = Some(ground_normal);
 
-        let slope_velocity_adjustment = 0.0;//stabilize_on_slope(ground_normal, time);
+        let slope_velocity_adjustment = stabilize_on_slope(ground_normal, time);
         kinematic_data.next_velocity += slope_velocity_adjustment;
     } else {
         kinematic_data.time_since_grounded += time.delta_secs();
@@ -487,26 +487,26 @@ fn stabilize_on_slope(ground_normal: Vec3, time: &Time) -> Vec3 {
         return Vec3::ZERO;
     }
 
-    // 1) Compute how much gravity moved us this frame (world displacement caused by gravity).
+    // 1) Compute how much gravity moved us this frame (world velocity caused by gravity).
     //    This must match how you apply gravity in apply_gravity (i.e. GRAVITY * delta_time).
     let gravity_frame = Vec3::new(0.0, -GRAVITY, 0.0) * time.delta_secs();
 
-    // 2) Split that gravity displacement into normal and tangential parts relative to the ground.
+    // 2) Split that gravity velocity into normal and tangential parts relative to the ground.
     let gravity_normal_comp = ground_normal * gravity_frame.dot(ground_normal);
     let gravity_tangential = gravity_frame - gravity_normal_comp; // this is the downslope vector gravity would cause
 
-    // 3) Subtract THAT tangential gravity contribution from the final displacement.
+    // 3) Subtract THAT tangential gravity contribution from the final velocity.
     //    This removes the passive sliding caused by gravity this frame while preserving
     //    any non-gravity movement (player input, step push).
-    let mut displacement = -gravity_tangential;
+    let mut velocity = -gravity_tangential;
 
     // 4) Safety: remove penetration into the surface if any remains.
-    let into_surface = displacement.dot(ground_normal);
+    let into_surface = velocity.dot(ground_normal);
     if into_surface < 0.0 {
-        displacement -= ground_normal * into_surface;
+        velocity -= ground_normal * into_surface;
     }
 
-    displacement / time.delta_secs()
+    velocity
 }
 
 /// Apply the final physics displacement to the entity's position
