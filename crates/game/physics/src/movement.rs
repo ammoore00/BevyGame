@@ -15,20 +15,17 @@
 
 use crate::collision::PhysicsCollisionsProcessedEvent;
 use crate::components::{Collider, CollisionContact, KinematicData, PhysicsData};
+use crate::states::PhysicsPipeline;
 use bevy::prelude::*;
-use common::{AppSystems, Facing, PausableSystems, WorldCoords, WorldPosition};
+use common::{Facing, WorldCoords, WorldPosition};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            set_displacement_from_intent,
-            apply_gravity,
-            update_facing_from_movement,
-        )
-            .chain()
-            .in_set(AppSystems::Update)
-            .in_set(PausableSystems),
+            (set_displacement_from_intent, apply_gravity).in_set(PhysicsPipeline::ApplyIntent),
+            update_facing_from_movement.in_set(PhysicsPipeline::Respond),
+        ),
     );
 
     app.add_observer(process_collisions);

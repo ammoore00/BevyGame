@@ -5,12 +5,14 @@ mod components;
 mod forces;
 mod math;
 mod movement;
+mod states;
 
 pub use crate::{
     collision::{DetectorCollision, DetectorCollisionsProcessedMessage},
     components::{Collider, ColliderKind, KinematicData, PhysicsData},
     forces::{ApplyForce, ApplyImpulse, Impulse, RemoveForce},
     movement::{DEFAULT_MAX_SPEED, MovementController},
+    states::DetectorCollisionResponse,
 };
 
 #[cfg(feature = "dev")]
@@ -27,6 +29,7 @@ impl Plugin for PhysicsPlugin {
             components::plugin,
             forces::plugin,
             movement::plugin,
+            states::plugin,
         ));
     }
 }

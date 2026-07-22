@@ -4,17 +4,17 @@ use assets::resource::characters::{AttackContext, AttackProgress, AttackResource
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, marker, offset_position_to_facing};
 use data::loc::ResourceLocation;
-use physics::{DetectorCollisionsProcessedMessage, PhysicsData};
+use physics::{DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            update_attack_key_frames.in_set(AppSystems::TickTimers),
-            process_attack_hits.in_set(AppSystems::Respond),
+            update_attack_key_frames.in_set(AppSystems::TickTimers)
+                .in_set(GameplaySystems)
+                .in_set(PausableSystems),
+            process_attack_hits.in_set(DetectorCollisionResponse),
         )
-            .in_set(GameplaySystems)
-            .in_set(PausableSystems)
     );
 
     app.add_observer(on_attack);

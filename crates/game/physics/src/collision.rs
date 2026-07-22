@@ -1,16 +1,14 @@
 use crate::components::{CollisionContact, PhysicsKind};
+use crate::states::PhysicsPipeline;
 use crate::{Collider, PhysicsData};
 use bevy::prelude::*;
-use common::{AppSystems, GameplaySystems, PausableSystems, TilePosition, WorldPosition};
+use common::{TilePosition, WorldPosition};
 use std::collections::HashMap;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (check_collisions, validate_colliders)
-            .in_set(GameplaySystems)
-            .in_set(PausableSystems)
-            .in_set(AppSystems::Update),
+        (check_collisions, validate_colliders).in_set(PhysicsPipeline::DetectCollisions),
     );
 
     app.add_message::<DetectorCollisionsProcessedMessage>();
