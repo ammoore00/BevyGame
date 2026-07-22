@@ -8,7 +8,8 @@ pub(crate) fn plugin(app: &mut App) {
             (
                 PhysicsPipeline::DetectCollisions,
                 PhysicsPipeline::ApplyIntent,
-                PhysicsPipeline::Respond,
+                PhysicsPipeline::ReactToForces,
+                PhysicsPipeline::RespondToCollisions,
                 PhysicsPipeline::UpdatePositions,
             ).chain(),
             (
@@ -26,7 +27,8 @@ pub(crate) fn plugin(app: &mut App) {
 pub enum PhysicsPipeline {
     DetectCollisions,
     ApplyIntent,
-    Respond,
+    ReactToForces,
+    RespondToCollisions,
     UpdatePositions,
 }
 

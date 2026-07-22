@@ -13,25 +13,43 @@
 //! purposes. If you want to move the player in a smoother way,
 //! consider using a [fixed timestep](https://github.com/bevyengine/bevy/blob/main/examples/movement/physics_in_fixed_timestep.rs).
 
-use crate::collision::PhysicsCollisionsProcessedEvent;
+use crate::ApplyForce;
+use crate::collision::PhysicsCollisionsProcessedMessage;
 use crate::components::{Collider, CollisionContact, KinematicData, PhysicsData};
+use crate::forces::{AppliedForces, Force, TargetAxes, TargetVelocity};
 use crate::states::PhysicsPipeline;
 use bevy::prelude::*;
-use common::{Facing, WorldCoords, WorldPosition};
+use common::{Facing, WorldCoords, WorldPosition, marker};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            (set_displacement_from_intent, apply_gravity).in_set(PhysicsPipeline::ApplyIntent),
-            update_facing_from_movement.in_set(PhysicsPipeline::Respond),
+            (
+                apply_impulses,
+                apply_controller_intent,
+                apply_gravity,
+                //apply_passive_friction,
+                update_facing_from_movement,
+            )
+                .in_set(PhysicsPipeline::ApplyIntent),
+            update_velocity.in_set(PhysicsPipeline::ReactToForces),
+            process_collisions.in_set(PhysicsPipeline::RespondToCollisions),
+            apply_movement.in_set(PhysicsPipeline::UpdatePositions),
         ),
     );
-
-    app.add_observer(process_collisions);
 }
 
-pub const GRAVITY: f32 = 0.5;
+marker!(pub HasGravity);
+
+marker!(pub Gravity);
+marker!(pub MovementIntent);
+marker!(pub PassiveFriction);
+
+const PASSIVE_FRICTION: f32 = 0.05;
+
+pub const GRAVITY: f32 = 50.0;
+
 pub const STEP_UP_HEIGHT: f32 = 0.3;
 
 pub const MAX_STABLE_SLOPE_ANGLE: f32 = 45.0_f32.to_radians();
@@ -59,58 +77,293 @@ impl Default for MovementController {
     }
 }
 
-/// Takes the movement intent from the `MovementController` and applies it as the
-/// intended displacement for the kinematic physics object, scaled based on the frame time
-fn set_displacement_from_intent(
-    time: Res<Time>,
-    query: Query<(&mut MovementController, &mut PhysicsData)>,
-) {
-    for (mut controller, mut physics) in query {
-        if let PhysicsData::Kinematic(KinematicData {
-            ref mut next_displacement,
-            ..
-        }) = *physics
-        {
-            let mut intent = controller.intent * controller.max_speed * time.delta_secs();
+fn apply_impulses(query: Query<&mut PhysicsData>) {
+    for mut physics in query {
+        let PhysicsData::Kinematic(ref mut kinematic_data) = *physics else {
+            continue;
+        };
 
-            if controller.sprinting {
-                intent *= Vec3::new(1.5, 1.0, 1.5);
-            }
-
-            next_displacement.x = intent.x;
-            next_displacement.z = intent.z;
-            next_displacement.y += intent.y;
-
-            // Reset vertical intent to 0 after impulse has been processed
-            controller.intent.y = 0.0;
+        while let Some(impulse) = kinematic_data.impulses.pop_front() {
+            kinematic_data.next_velocity += impulse.0;
         }
     }
 }
 
-/// Applies gravity to the character’s next displacement.
-fn apply_gravity(query: Query<&mut PhysicsData>, time: Res<Time>) {
-    for mut physics in query {
-        if let PhysicsData::Kinematic(KinematicData {
-            ref mut next_displacement,
-            ..
-        }) = *physics
-        {
-            next_displacement.y -= GRAVITY * time.delta_secs();
+fn apply_controller_intent(query: Query<(Entity, &MovementController)>, mut commands: Commands) {
+    for (entity, controller) in query {
+        let mut intent_velocity = controller.intent * controller.max_speed;
+
+        if controller.sprinting {
+            intent_velocity *= Vec3::new(1.5, 1.0, 1.5);
         }
+
+        commands.trigger(ApplyForce::new::<MovementIntent>(
+            entity,
+            Force::TargetVelocity(TargetVelocity {
+                target: intent_velocity,
+                should_steer: false,
+                ..Default::default()
+            }),
+        ));
+    }
+}
+
+fn apply_gravity(query: Query<Entity, With<HasGravity>>, mut commands: Commands) {
+    for entity in query {
+        commands.trigger(ApplyForce::new::<Gravity>(
+            entity,
+            Force::Acceleration(Vec3::NEG_Y * GRAVITY),
+        ));
+    }
+}
+
+fn apply_passive_friction(query: Query<(Entity, &PhysicsData)>, mut commands: Commands) {
+    for (entity, physics) in query {
+        let PhysicsData::Kinematic(_) = physics else {
+            continue;
+        };
+
+        commands.trigger(ApplyForce::new::<PassiveFriction>(
+            entity,
+            Force::TargetVelocity(TargetVelocity {
+                target: Vec3::ZERO,
+                can_slow: true,
+                should_steer: false,
+                zero_crossing: false,
+                acceleration: Some(PASSIVE_FRICTION),
+                axes: TargetAxes::XZ,
+            }),
+        ));
+    }
+}
+
+fn update_velocity(
+    physics_query: Query<(&mut PhysicsData, &AppliedForces)>,
+    forces_query: Query<&Force>,
+    time: Res<Time>,
+) {
+    for (mut physics, forces) in physics_query {
+        let PhysicsData::Kinematic(ref mut kinematic_data) = *physics else {
+            error!("Forces have been applied to non-kinematic entity!");
+            continue;
+        };
+
+        let forces = forces_query.iter_many(forces);
+
+        let mut combined_target_velocities = Vec::new();
+
+        for force in forces {
+            match *force {
+                Force::TargetVelocity(velocity) => {
+                    if velocity.should_steer {
+                        combined_target_velocities.push(velocity);
+                    } else {
+                        apply_component_velocity(kinematic_data, velocity, &time);
+                    }
+                }
+                Force::Acceleration(acceleration) => {
+                    kinematic_data.next_velocity += acceleration * time.delta_secs();
+                }
+            }
+        }
+
+        steer_target_velocities(kinematic_data, combined_target_velocities, &time);
+    }
+}
+
+/// Apply per-component velocity
+fn apply_component_velocity(
+    kinematic_data: &mut KinematicData,
+    velocity: TargetVelocity,
+    time: &Res<Time>,
+) {
+    let apply_axis = |current: &mut f32, target: f32| {
+        // 1. Instant application if acceleration is None
+        let Some(accel_rate) = velocity.acceleration else {
+            *current = target;
+            return;
+        };
+
+        let step = accel_rate * time.delta_secs();
+
+        // 2. Check if moving in the same direction or opposite/stopped
+        let same_direction = (*current * target) > 0.0;
+        let is_overspeed = current.abs() > target.abs();
+
+        // 3. Overspeed protection check
+        if same_direction && is_overspeed && !velocity.can_slow {
+            // Player is moving faster than target in the same direction
+            // (e.g., knocked forward/boosted) and this force shouldn't slow them down.
+            return;
+        }
+
+        // 4. Move velocity toward the target value
+        let difference = target - *current;
+
+        if difference.abs() <= step {
+            // Target reached within this frame
+            *current = target;
+        } else {
+            let next_val = *current + difference.signum() * step;
+
+            // 5. Zero-crossing protection check
+            if !velocity.zero_crossing && (*current * next_val) < 0.0 {
+                // If crossing zero isn't allowed, stop cleanly at 0.0
+                *current = 0.0;
+            } else {
+                *current = next_val;
+            }
+        }
+    };
+
+    if velocity.axes.x {
+        apply_axis(&mut kinematic_data.next_velocity.x, velocity.target.x);
+    }
+    if velocity.axes.y {
+        apply_axis(&mut kinematic_data.next_velocity.y, velocity.target.y);
+    }
+    if velocity.axes.z {
+        apply_axis(&mut kinematic_data.next_velocity.z, velocity.target.z);
+    }
+}
+
+fn steer_target_velocities(
+    kinematic_data: &mut KinematicData,
+    targets: Vec<TargetVelocity>,
+    time: &Res<Time>,
+) {
+    if targets.is_empty() {
+        return;
+    }
+
+    // 1. Accumulate targets and synthesize rules
+    let mut composite_target = Vec3::ZERO;
+    let mut can_slow = false;
+    let mut zero_crossing = false;
+    let mut max_accel: Option<f32> = None;
+
+    for t in targets {
+        composite_target += t.target;
+        can_slow |= t.can_slow;
+        zero_crossing |= t.zero_crossing;
+
+        match (max_accel, t.acceleration) {
+            (None, Some(a)) => max_accel = Some(a),
+            (Some(curr), Some(a)) => max_accel = Some(curr.max(a)),
+            _ => {}
+        }
+    }
+
+    // If all targets are instant (None), apply composite vector immediately
+    let Some(accel_rate) = max_accel else {
+        kinematic_data.next_velocity = composite_target;
+        return;
+    };
+
+    let target_speed = composite_target.length();
+    if target_speed < 1e-6 {
+        // Target is zero: apply standard friction deceleration to zero
+        let step = accel_rate * time.delta_secs();
+        if kinematic_data.next_velocity.length() <= step {
+            kinematic_data.next_velocity = Vec3::ZERO;
+        } else {
+            kinematic_data.next_velocity -= kinematic_data.next_velocity.normalize() * step;
+        }
+        return;
+    }
+
+    let target_dir = composite_target / target_speed;
+    let current_vel = kinematic_data.next_velocity;
+
+    // 2. Project current velocity into Parallel and Perpendicular components
+    let parallel_speed = current_vel.dot(target_dir);
+    let parallel_vel = target_dir * parallel_speed;
+    let perp_vel = current_vel - parallel_vel;
+
+    // 3. Accelerate/Decelerate parallel velocity along the target direction
+    let step = accel_rate * time.delta_secs();
+    let mut new_parallel_speed = parallel_speed;
+
+    if parallel_speed < target_speed {
+        // Moving slower than target: accelerate
+        new_parallel_speed = (parallel_speed + step).min(target_speed);
+    } else if can_slow {
+        // Moving faster than target: decelerate down to target
+        new_parallel_speed = (parallel_speed - step).max(target_speed);
+    }
+
+    // Handle zero crossing for parallel motion if moving in reverse
+    if parallel_speed < 0.0 && !zero_crossing && new_parallel_speed > 0.0 {
+        new_parallel_speed = 0.0;
+    }
+
+    // 4. Scrub perpendicular drift (lateral friction for tighter steering)
+    // Using 1.5x accel_rate gives responsive turns without feeling like a rigid grid
+    let perp_friction_step = step * 1.5;
+    let perp_len = perp_vel.length();
+    let new_perp_vel = if perp_len <= perp_friction_step {
+        Vec3::ZERO
+    } else {
+        perp_vel * ((perp_len - perp_friction_step) / perp_len)
+    };
+
+    // Reconstruct velocity
+    kinematic_data.next_velocity = (target_dir * new_parallel_speed) + new_perp_vel;
+}
+
+fn process_collisions(
+    mut message_reader: MessageReader<PhysicsCollisionsProcessedMessage>,
+    mut query: Query<(&mut PhysicsData, &mut WorldPosition, &Collider)>,
+    other_collider_query: Query<(Entity, &Collider), With<PhysicsData>>,
+    time: Res<Time>,
+) {
+    for message in message_reader.read() {
+        let Ok((mut physics, mut pos, collider)) = query.get_mut(message.entity) else {
+            return error!(
+                "Failed to get physics data for event entity {:?}",
+                message.entity
+            );
+        };
+
+        let mut grounded = false;
+        let mut ground_normal = Vec3::ZERO;
+
+        let PhysicsData::Kinematic(ref mut kinematic_data) = *physics else {
+            return error!("Collision event triggered for non-kinematic physics object!");
+        };
+
+        for collision in message.physics_collisions.iter() {
+            let all_other_colliders = other_collider_query
+                .iter()
+                .filter(|(other_entity, _)| *other_entity != message.entity)
+                .map(|(_, other_collider)| other_collider);
+
+            let collision_response = get_collision_response(
+                &collision.contact,
+                kinematic_data,
+                collider,
+                all_other_colliders,
+                pos.0,
+                &time,
+            );
+
+            kinematic_data.next_velocity += collision_response.velocity_delta;
+            if let Some(new_ground_normal) = collision_response.grounded_normal
+                && new_ground_normal.y > ground_normal.y
+            {
+                ground_normal = new_ground_normal;
+                grounded = true;
+            }
+        }
+
+        update_ground_state(kinematic_data, pos.0, grounded, ground_normal, &time);
     }
 }
 
 /// Update the facing angle for characters based on their intended movement
-fn update_facing_from_movement(query: Query<(&PhysicsData, &mut Facing)>) {
-    for (physics, mut facing) in query {
-        let PhysicsData::Kinematic(KinematicData {
-            next_displacement, ..
-        }) = *physics
-        else {
-            continue;
-        };
-
-        let ground_movement = next_displacement.xz();
+fn update_facing_from_movement(query: Query<(&MovementController, &mut Facing)>) {
+    for (controller, mut facing) in query {
+        let ground_movement = controller.intent.xz();
 
         if ground_movement.length() > 1e-6 {
             *facing = Facing::from(ground_movement);
@@ -118,73 +371,20 @@ fn update_facing_from_movement(query: Query<(&PhysicsData, &mut Facing)>) {
     }
 }
 
-/// Once collisions have been processed for the frame,
-/// update the next displacement intent based on collisions,
-/// then apply the movement to the object's position
-fn process_collisions(
-    event: On<PhysicsCollisionsProcessedEvent>,
-    mut query: Query<(&mut PhysicsData, &mut WorldPosition, &Collider)>,
-    other_collider_query: Query<(Entity, &Collider), With<PhysicsData>>,
-    time: Res<Time>,
-) {
-    let Ok((mut physics, mut pos, collider)) = query.get_mut(event.entity) else {
-        return error!(
-            "Failed to get physics data for event entity {:?}",
-            event.entity
-        );
-    };
-
-    let mut grounded = false;
-    let mut ground_normal = Vec3::ZERO;
-
-    let PhysicsData::Kinematic(ref mut kinematic_data) = *physics else {
-        return error!("Collision event triggered for non-kinematic physics object!");
-    };
-
-    for collision in event.physics_collisions.iter() {
-        let all_other_colliders = other_collider_query
-            .iter()
-            .filter(|(other_entity, _)| *other_entity != event.entity)
-            .map(|(_, other_collider)| other_collider)
-            .collect::<Vec<_>>();
-
-        // Get the collision response from this collision
-        // This includes the displacement offset to apply
-        //  and the ground normal if this is a grounded collision
-        let collision_response = get_collision_response(
-            &collision.contact,
-            kinematic_data,
-            collider,
-            &all_other_colliders,
-            pos.0,
-        );
-
-        kinematic_data.next_displacement += collision_response.displacement_from_collision;
-        if let Some(new_ground_normal) = collision_response.grounded_normal
-            && new_ground_normal.y > ground_normal.y
-        {
-            ground_normal = new_ground_normal;
-            grounded = true;
-        }
-    }
-
-    update_ground_state(kinematic_data, pos.0, grounded, ground_normal, &time);
-    apply_movement(&physics, &mut pos);
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct CollisionResponse {
-    displacement_from_collision: Vec3,
+    velocity_delta: Vec3,
     grounded_normal: Option<Vec3>,
 }
 
 /// Based on the provided collision, determine the response to apply to the displacement
-fn get_collision_response(
+fn get_collision_response<'a>(
     collision: &CollisionContact,
     kinematic_data: &KinematicData,
     collider: &Collider,
-    all_other_colliders: &[&Collider],
+    all_other_colliders: impl Iterator<Item = &'a Collider>,
     pos: WorldCoords,
+    time: &Res<Time>,
 ) -> CollisionResponse {
     let normal = collision.normal();
     let (grounded_normal, ground_collision) = if normal.y > 0.7 {
@@ -193,18 +393,19 @@ fn get_collision_response(
         (None, false)
     };
 
-    let velocity_along_normal = kinematic_data.next_displacement.dot(normal);
+    let velocity_along_normal = kinematic_data.next_velocity.dot(normal);
+    let next_displacement = velocity_along_normal * time.delta_secs();
 
     // If we aren't traveling into the collider at all, then we don't need to offset the displacement
     if velocity_along_normal >= 0.0 {
         return CollisionResponse {
-            displacement_from_collision: Vec3::ZERO,
+            velocity_delta: Vec3::ZERO,
             grounded_normal,
         };
     }
 
-    let collision_displacement = -normal * velocity_along_normal;
-    let displacement_from_collision = if !ground_collision && kinematic_data.grounded {
+    let collision_displacement = -normal * next_displacement;
+    let collision_displacement = if !ground_collision && kinematic_data.grounded {
         // If this is a horizontal (e.g., wall) collision, try to step up
         // If we fail to step up, treat the collision as normal
         if let Some(step_up) = try_step_up(collider, all_other_colliders, pos) {
@@ -216,17 +417,19 @@ fn get_collision_response(
         collision_displacement
     };
 
+    let velocity_delta = collision_displacement / time.delta_secs();
+
     CollisionResponse {
-        displacement_from_collision,
+        velocity_delta,
         grounded_normal,
     }
 }
 
 /// Try to step up if the collision is against a small lip
 /// and return the displacement to apply if the object is able to step up
-fn try_step_up(
+fn try_step_up<'a>(
     collider: &Collider,
-    all_other_colliders: &[&Collider],
+    mut all_other_colliders: impl Iterator<Item = &'a Collider>,
     pos: WorldCoords,
 ) -> Option<Vec3> {
     for test_height in 1..=10 {
@@ -237,8 +440,7 @@ fn try_step_up(
             Collider::with_collider(collider.collider_type().clone(), test_position);
 
         let still_colliding = all_other_colliders
-            .iter()
-            .any(|other_collider| test_collider.check_collision(other_collider).is_some());
+            .any(|other_collider| test_collider.check_collision(&other_collider).is_some());
 
         if !still_colliding {
             return Some(Vec3::Y * test_step);
@@ -261,15 +463,19 @@ fn update_ground_state(
     if kinematic_data.grounded {
         kinematic_data.time_since_grounded = 0.0;
         kinematic_data.last_grounded_height = pos.y;
+        kinematic_data.ground_normal = Some(ground_normal);
 
-        let slope_displacement = stabilize_on_slope(ground_normal, time);
-        kinematic_data.next_displacement += slope_displacement;
+        let slope_velocity_adjustment = 0.0;//stabilize_on_slope(ground_normal, time);
+        kinematic_data.next_velocity += slope_velocity_adjustment;
     } else {
         kinematic_data.time_since_grounded += time.delta_secs();
+        kinematic_data.ground_normal = None;
     }
 }
 
-/// Prevent physics objects from sliding down slopes less than the max stable slope angle
+/// Prevent physics objects from sliding down slopes less than the max stable slope angle.
+///
+/// Returns the adjustment to be made to the velocity to account for slope sliding.
 fn stabilize_on_slope(ground_normal: Vec3, time: &Time) -> Vec3 {
     if ground_normal == Vec3::ZERO {
         return Vec3::ZERO;
@@ -300,18 +506,20 @@ fn stabilize_on_slope(ground_normal: Vec3, time: &Time) -> Vec3 {
         displacement -= ground_normal * into_surface;
     }
 
-    displacement
+    displacement / time.delta_secs()
 }
 
 /// Apply the final physics displacement to the entity's position
-fn apply_movement(physics: &PhysicsData, position: &mut WorldPosition) {
-    let new_position = if let PhysicsData::Kinematic(KinematicData {
-        next_displacement, ..
-    }) = *physics
-    {
-        position.as_vec3() + next_displacement
-    } else {
-        return;
-    };
-    position.set(new_position);
+fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>, time: Res<Time>) {
+    for (physics, mut pos) in query {
+        let new_position = if let PhysicsData::Kinematic(KinematicData {
+            next_velocity, ..
+        }) = *physics
+        {
+            pos.as_vec3() + next_velocity * time.delta_secs()
+        } else {
+            return;
+        };
+        pos.set(new_position);
+    }
 }

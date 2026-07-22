@@ -11,6 +11,7 @@ pub(super) fn plugin(app: &mut App) {
         (check_collisions, validate_colliders).in_set(PhysicsPipeline::DetectCollisions),
     );
 
+    app.add_message::<PhysicsCollisionsProcessedMessage>();
     app.add_message::<DetectorCollisionsProcessedMessage>();
 }
 
@@ -50,8 +51,8 @@ fn check_collisions(
         Option<&WorldPosition>,
         Option<&TilePosition>,
     )>,
-    mut message_writer: MessageWriter<DetectorCollisionsProcessedMessage>,
-    mut commands: Commands,
+    mut physics_message_writer: MessageWriter<PhysicsCollisionsProcessedMessage>,
+    mut detector_message_writer: MessageWriter<DetectorCollisionsProcessedMessage>,
 ) {
     // Create collections for holding all detected collisions
     // These will be sent to each entity to process movement for physics collisions,
@@ -154,22 +155,22 @@ fn check_collisions(
     }
 
     for (colliding_entity, physics_collisions) in physics_collisions {
-        commands.trigger(PhysicsCollisionsProcessedEvent {
+        physics_message_writer.write(PhysicsCollisionsProcessedMessage {
             entity: colliding_entity,
             physics_collisions,
-        })
+        });
     }
 
     for (colliding_entity, detector_collisions) in detector_collisions {
-        message_writer.write(DetectorCollisionsProcessedMessage {
+        detector_message_writer.write(DetectorCollisionsProcessedMessage {
             entity: colliding_entity,
             detector_collisions,
         });
     }
 }
 
-#[derive(EntityEvent, Debug, Clone)]
-pub struct PhysicsCollisionsProcessedEvent {
+#[derive(Message, Debug, Clone)]
+pub struct PhysicsCollisionsProcessedMessage {
     pub entity: Entity,
     pub physics_collisions: Vec<PhysicsCollision>,
 }

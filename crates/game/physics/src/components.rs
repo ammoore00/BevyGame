@@ -7,6 +7,8 @@ use parry3d::query;
 use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
+use std::collections::VecDeque;
+use crate::Impulse;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);
@@ -19,7 +21,7 @@ fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
     }
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Component, Debug, Clone, PartialEq, Default)]
 pub enum PhysicsData {
     /// Physics objects that do not move and do not check for collisions.
     #[default]
@@ -31,12 +33,17 @@ pub enum PhysicsData {
     Detector,
 }
 impl PhysicsData {
-    pub fn kinematic(next_displacement: Vec3) -> Self {
+    pub fn kinematic() -> Self {
         Self::Kinematic(KinematicData {
-            next_displacement,
+            velocity: Vec3::ZERO,
+            next_velocity: Vec3::ZERO,
+
+            impulses: VecDeque::new(),
+
             grounded: false,
             time_since_grounded: f32::INFINITY,
             last_grounded_height: f32::NAN,
+            ground_normal: None,
         })
     }
 
@@ -56,17 +63,25 @@ pub enum PhysicsKind {
     Detector,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct KinematicData {
-    /// The next displacement for the entity to move on the current frame.
-    /// This may be modified by collision data before being applied to the entity's position.
-    pub next_displacement: Vec3,
+    /// The current velocity of this object
+    pub velocity: Vec3,
+    /// The intended next velocity for the entity to move on the current frame.
+    /// This will be modified by forces and collision data before being set as the current velocity.
+    pub next_velocity: Vec3,
+
+    /// The impulses applied to the entity this frame.
+    pub impulses: VecDeque<Impulse>,
+
     /// Whether the entity is currently touching the ground.
     pub grounded: bool,
     /// The time since the entity last touched the ground.
     pub time_since_grounded: f32,
     /// The height of the entity's feet when it last touched the ground.
     pub last_grounded_height: f32,
+    /// The normal of the ground the entity is currently touching, if any.
+    pub ground_normal: Option<Vec3>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

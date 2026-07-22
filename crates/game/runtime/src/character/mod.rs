@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use common::{Facing, GameplaySystems, Scale, WorldPosition};
 use data::prelude::*;
 use data::register_prototype_system;
-use physics::{DEFAULT_MAX_SPEED, MovementController, PhysicsData};
+use physics::{HasGravity, MovementController, PhysicsData, DEFAULT_MAX_SPEED};
 use state::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
@@ -111,7 +111,8 @@ impl CharacterPrototype {
             }
             WorldPosition({props.position})
             CharacterDataLocation({props.data_loc})
-            PhysicsData::kinematic(Vec3::ZERO)
+            PhysicsData::kinematic()
+            HasGravity
             Facing
             state
         ]

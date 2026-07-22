@@ -1,5 +1,6 @@
+use crate::PhysicsData;
 use bevy::prelude::*;
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::slice;
 use std::sync::Arc;
 
 pub(crate) fn plugin(app: &mut App) {
@@ -12,93 +13,26 @@ pub(crate) fn plugin(app: &mut App) {
 /// This will be added to the entity's velocity, then cleared.
 #[derive(EntityEvent, Debug, Clone, Copy, PartialEq, derive_new::new)]
 pub struct ApplyImpulse {
-    entity: Entity,
-    impulse: Impulse,
+    pub entity: Entity,
+    pub impulse: Impulse,
 }
 
-fn on_apply_impulse(impulse: On<ApplyImpulse>, mut query: Query<&mut Velocity>) {
-    if let Ok(velocity) = query.get_mut(impulse.entity).map(Mut::into_inner) {
-        *velocity += impulse.impulse;
+fn on_apply_impulse(impulse_event: On<ApplyImpulse>, mut query: Query<&mut PhysicsData>) {
+    if let Ok(PhysicsData::Kinematic(kinematic_data)) =
+        query.get_mut(impulse_event.entity).map(Mut::into_inner)
+    {
+        kinematic_data.impulses.push_back(impulse_event.impulse);
+    } else {
+        error!("Attempted to apply impulse to non-kinematic entity");
     }
 }
 
 /// A one-time impulse to modify an entity's velocity.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Impulse(Vec3);
+pub struct Impulse(pub Vec3);
 impl From<Vec3> for Impulse {
     fn from(value: Vec3) -> Self {
         Self(value)
-    }
-}
-
-/// An entity's current velocity
-#[derive(Component, Debug, Clone, Copy, PartialEq)]
-pub struct Velocity(Vec3);
-impl From<Vec3> for Velocity {
-    fn from(value: Vec3) -> Self {
-        Self(value)
-    }
-}
-
-impl Add<Impulse> for Velocity {
-    type Output = Self;
-
-    fn add(self, rhs: Impulse) -> Self::Output {
-        Self(self.0 + rhs.0)
-    }
-}
-impl AddAssign<Impulse> for Velocity {
-    fn add_assign(&mut self, rhs: Impulse) {
-        self.0 += rhs.0;
-    }
-}
-impl Sub<Impulse> for Velocity {
-    type Output = Self;
-
-    fn sub(self, rhs: Impulse) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-impl SubAssign<Impulse> for Velocity {
-    fn sub_assign(&mut self, rhs: Impulse) {
-        self.0 -= rhs.0;
-    }
-}
-
-impl<T> Add<T> for Velocity
-where
-    Vec3: Add<T, Output = Vec3>,
-{
-    type Output = Self;
-
-    fn add(self, rhs: T) -> Self::Output {
-        Self(self.0 + rhs)
-    }
-}
-impl<T> AddAssign<T> for Velocity
-where
-    Vec3: AddAssign<T>,
-{
-    fn add_assign(&mut self, rhs: T) {
-        self.0 += rhs;
-    }
-}
-impl<T> Sub<T> for Velocity
-where
-    Vec3: Sub<T, Output = Vec3>,
-{
-    type Output = Self;
-
-    fn sub(self, rhs: T) -> Self::Output {
-        Self(self.0 - rhs)
-    }
-}
-impl<T> SubAssign<T> for Velocity
-where
-    Vec3: SubAssign<T>,
-{
-    fn sub_assign(&mut self, rhs: T) {
-        self.0 -= rhs;
     }
 }
 
@@ -146,10 +80,7 @@ impl RemoveForce {
     {
         let is_marker = Arc::new(|entity_ref: &EntityRef| entity_ref.contains::<T>());
 
-        Self {
-            entity,
-            is_marker,
-        }
+        Self { entity, is_marker }
     }
 }
 
@@ -221,19 +152,76 @@ pub struct ForcedEntity(pub Entity);
 #[derive(Component, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[relationship_target(relationship = ForcedEntity, linked_spawn)]
 pub struct AppliedForces(Vec<Entity>);
+impl<'a> IntoIterator for &'a AppliedForces {
+    type Item = <Self::IntoIter as Iterator>::Item;
+    type IntoIter = slice::Iter<'a, Entity>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
 
 /// Continuous force applied to an entity.
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
 pub enum Force {
     /// A target velocity to apply to an entity
-    Velocity(Vec3),
+    TargetVelocity(TargetVelocity),
     /// A continuous acceleration to apply to an entity
-    Acceleration {
-        /// The magnitude and direction of the acceleration
-        value: Vec3,
-        /// The minimum speed for the acceleration to slow the entity
-        min_speed: f32,
-        /// The maximum speed for the acceleration to speed up the entity
-        max_speed: f32,
-    },
+    Acceleration(Vec3),
+}
+impl Force {
+    pub fn target_velocity(target: Vec3) -> Self {
+        Self::TargetVelocity(TargetVelocity {
+            target,
+            ..default()
+        })
+    }
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+pub struct TargetVelocity {
+    /// The target velocity
+    pub target: Vec3,
+    /// Whether to slow down the object if it is moving faster than the target velocity
+    /// when the current and target velocity components have the same direction.
+    pub can_slow: bool,
+    /// If the velocity has components opposite to the object's current velocity,
+    /// whether it can cause the object's velocity to cross zero.
+    pub zero_crossing: bool,
+    /// The acceleration to apply while reaching the target velocity
+    /// If None, the velocity will be applied instantaneously.
+    pub acceleration: Option<f32>,
+    /// Whether to use vector steering or to apply the velocity directly to components
+    pub should_steer: bool,
+    /// Axes to apply the target velocity on. Defaults to X and Z.
+    pub axes: TargetAxes,
+}
+impl Default for TargetVelocity {
+    fn default() -> Self {
+        Self {
+            target: Vec3::ZERO,
+            can_slow: false,
+            zero_crossing: true,
+            acceleration: None,
+            should_steer: true,
+            axes: TargetAxes::default(),
+        }
+    }
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TargetAxes {
+    pub x: bool,
+    pub y: bool,
+    pub z: bool,
+}
+impl TargetAxes {
+    pub const XZ: TargetAxes = Self { x: true, y: false, z: true };
+    pub const Y: TargetAxes = Self { x: false, y: true, z: false };
+    pub const ALL: TargetAxes = Self { x: true, y: true, z: true };
+}
+impl Default for TargetAxes {
+    fn default() -> Self {
+        Self::XZ
+    }
 }

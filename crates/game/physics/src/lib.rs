@@ -11,7 +11,7 @@ pub use crate::{
     collision::{DetectorCollision, DetectorCollisionsProcessedMessage},
     components::{Collider, ColliderKind, KinematicData, PhysicsData},
     forces::{ApplyForce, ApplyImpulse, Impulse, RemoveForce},
-    movement::{DEFAULT_MAX_SPEED, MovementController},
+    movement::{DEFAULT_MAX_SPEED, HasGravity, MovementController},
     states::DetectorCollisionResponse,
 };
 

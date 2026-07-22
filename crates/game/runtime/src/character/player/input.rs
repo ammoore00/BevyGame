@@ -9,7 +9,7 @@ use assets::resource::characters::AttackResource;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, WorldPosition};
 use data::prelude::*;
-use physics::{KinematicData, MovementController, PhysicsData};
+use physics::{ApplyImpulse, Impulse, KinematicData, MovementController, PhysicsData};
 use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
@@ -23,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 
 const COYOTE_TIME: f32 = 0.2;
 const COYOTE_TIME_HEIGHT_THRESHOLD: f32 = 0.1;
-const JUMP_VELOCITY: f32 = 2.75;
+const JUMP_VELOCITY: f32 = 12.0;
 
 #[derive(EntityEvent, derive_new::new)]
 pub struct MoveInputEvent {
@@ -113,7 +113,7 @@ fn on_jump_input(
     event: On<JumpInputEvent>,
     mut player_query: Query<
         (
-            &mut MovementController,
+            Entity,
             &ActionStateTracker,
             &PhysicsData,
             &WorldPosition,
@@ -121,9 +121,9 @@ fn on_jump_input(
         ),
         (With<Player>, With<ActionStateCapabilities>),
     >,
+    mut commands: Commands,
 ) {
-    let Ok((mut controller, tracker, physics, position, idle)) = player_query.get_mut(event.entity)
-    else {
+    let Ok((entity, tracker, physics, position, idle)) = player_query.get_mut(event.entity) else {
         error!("Failed to get player movement info");
         return;
     };
@@ -148,7 +148,10 @@ fn on_jump_input(
         && position.as_vec3().y <= last_grounded_height
         && position.as_vec3().y >= last_grounded_height - COYOTE_TIME_HEIGHT_THRESHOLD
     {
-        controller.intent.y = JUMP_VELOCITY;
+        commands.trigger(ApplyImpulse {
+            entity,
+            impulse: Impulse::from(Vec3::Y * JUMP_VELOCITY),
+        })
     } else {
         info!("Cannot jump, player is not grounded!");
     }

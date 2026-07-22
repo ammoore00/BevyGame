@@ -169,7 +169,7 @@ fn process_attack_hits(
                 continue;
             };
 
-            info!("Attack hitbox collision!");
+            // TODO: Filter self-collisions
         }
     }
 }
