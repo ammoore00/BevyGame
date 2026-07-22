@@ -1,4 +1,4 @@
-use crate::components::CollisionContact;
+use crate::components::{CollisionContact, PhysicsKind};
 use crate::{Collider, PhysicsData};
 use bevy::prelude::*;
 use common::{AppSystems, GameplaySystems, PausableSystems, TilePosition, WorldPosition};
@@ -110,26 +110,38 @@ fn check_collisions(
 
         match *other_physics_data {
             PhysicsData::Detector => {
-                let collision = DetectorCollision(contact);
+                let collision = DetectorCollision { _contact: contact };
                 detector_collisions
                     .entry(entity)
                     .and_modify(|list| list.push(collision.clone()));
             }
             PhysicsData::Static => {
-                let collision = PhysicsCollision(contact);
+                let collision = PhysicsCollision {
+                    contact,
+                    _kind: PhysicsKind::Static,
+                };
                 physics_collisions
                     .entry(entity)
                     .and_modify(|list| list.push(collision.clone()));
             }
             // If the other is kinematic, it needs to deal with the collision as well,
-            // so send it to both
+            // so send it to both objects
             PhysicsData::Kinematic { .. } => {
-                let first_collision = PhysicsCollision(contact.clone());
+                let first_collision = PhysicsCollision {
+                    contact: contact.clone(),
+                    _kind: PhysicsKind::Kinematic,
+                };
                 physics_collisions
                     .entry(entity)
                     .and_modify(|list| list.push(first_collision.clone()));
 
-                let second_collision = PhysicsCollision(contact);
+                // Collision in the other direction needs an inverted normal vector
+                // since this is opposite to the original contact test
+                let second_contact = contact.with_inverted_normal();
+                let second_collision = PhysicsCollision {
+                    contact: second_contact,
+                    _kind: PhysicsKind::Kinematic,
+                };
                 physics_collisions
                     .entry(other_entity)
                     .or_default()
@@ -148,7 +160,7 @@ fn check_collisions(
     for (colliding_entity, detector_collisions) in detector_collisions {
         commands.trigger(DetectorCollisionsProcessedEvent {
             entity: colliding_entity,
-            detector_collisions,
+            _detector_collisions: detector_collisions,
         })
     }
 }
@@ -162,11 +174,16 @@ pub struct PhysicsCollisionsProcessedEvent {
 #[derive(EntityEvent, Debug, Clone)]
 pub struct DetectorCollisionsProcessedEvent {
     pub entity: Entity,
-    pub detector_collisions: Vec<DetectorCollision>,
+    pub _detector_collisions: Vec<DetectorCollision>,
 }
 
 #[derive(Debug, Clone)]
-pub struct PhysicsCollision(pub CollisionContact);
+pub struct PhysicsCollision {
+    pub contact: CollisionContact,
+    pub _kind: PhysicsKind,
+}
 
 #[derive(Debug, Clone)]
-pub struct DetectorCollision(pub CollisionContact);
+pub struct DetectorCollision {
+    pub _contact: CollisionContact,
+}

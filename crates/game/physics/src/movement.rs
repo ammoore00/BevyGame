@@ -64,7 +64,10 @@ impl Default for MovementController {
 
 /// Takes the movement intent from the `MovementController` and applies it as the
 /// intended displacement for the kinematic physics object, scaled based on the frame time
-fn set_displacement_from_intent(time: Res<Time>, query: Query<(&mut MovementController, &mut PhysicsData)>) {
+fn set_displacement_from_intent(
+    time: Res<Time>,
+    query: Query<(&mut MovementController, &mut PhysicsData)>,
+) {
     for (mut controller, mut physics) in query {
         if let PhysicsData::Kinematic(KinematicData {
             ref mut next_displacement,
@@ -152,12 +155,13 @@ fn process_collisions(
         // This includes the displacement offset to apply
         //  and the ground normal if this is a grounded collision
         let collision_response = get_collision_response(
-            &collision.0,
+            &collision.contact,
             kinematic_data,
             collider,
             &all_other_colliders,
             pos.0,
         );
+
         kinematic_data.next_displacement += collision_response.displacement_from_collision;
         if let Some(new_ground_normal) = collision_response.grounded_normal
             && new_ground_normal.y > ground_normal.y
@@ -171,6 +175,7 @@ fn process_collisions(
     apply_movement(&physics, &mut pos);
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct CollisionResponse {
     displacement_from_collision: Vec3,
     grounded_normal: Option<Vec3>,

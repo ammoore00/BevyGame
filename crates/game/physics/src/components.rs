@@ -19,7 +19,7 @@ fn update_collider_position(query: Query<(&mut Collider, &WorldPosition)>) {
     }
 }
 
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Default)]
 pub enum PhysicsData {
     /// Physics objects that do not move and do not check for collisions.
     #[default]
@@ -39,9 +39,24 @@ impl PhysicsData {
             last_grounded_height: f32::NAN,
         })
     }
+    
+    pub fn kind(&self) -> PhysicsKind {
+        match self {
+            PhysicsData::Static => PhysicsKind::Static,
+            PhysicsData::Kinematic(_) => PhysicsKind::Kinematic,
+            PhysicsData::Detector => PhysicsKind::Detector,
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PhysicsKind {
+    Static,
+    Kinematic,
+    Detector,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct KinematicData {
     /// The next displacement for the entity to move on the current frame.
     /// This may be modified by collision data before being applied to the entity's position.
@@ -96,6 +111,7 @@ impl PartialEq for ColliderData {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CapsuleData {
     pub a: Vec3,
     pub b: Vec3,
@@ -297,6 +313,17 @@ impl CollisionContact {
 
     pub fn normal(&self) -> Vec3 {
         Vec3::new(self.0.normal2.x, self.0.normal2.y, self.0.normal2.z)
+    }
+    
+    pub fn invert_normal(&mut self) {
+        self.0.normal2 = -self.0.normal2;
+    }
+    
+    pub fn with_inverted_normal(&self) -> Self {
+        Self(Contact {
+            normal2: -self.0.normal2,
+            ..self.0
+        })
     }
 }
 impl From<Contact> for CollisionContact {

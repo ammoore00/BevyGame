@@ -258,13 +258,13 @@ pub struct HitboxData {
 #[derive(Debug, Clone, Getters)]
 pub struct InterpolatedHitbox {
     #[getset(get = "pub")]
-    collider_start: ColliderCodec,
+    _collider_start: ColliderCodec,
     #[getset(get = "pub")]
-    collider_end: ColliderCodec,
+    _collider_end: ColliderCodec,
     #[getset(get = "pub")]
-    offset_start: WorldCoords,
+    _offset_start: WorldCoords,
     #[getset(get = "pub")]
-    offset_end: WorldCoords,
+    _offset_end: WorldCoords,
 }
 impl InterpolatedHitbox {
     fn new(
@@ -274,10 +274,10 @@ impl InterpolatedHitbox {
         offset_end: WorldCoords,
     ) -> Self {
         Self {
-            collider_start,
-            collider_end,
-            offset_start,
-            offset_end,
+            _collider_start: collider_start,
+            _collider_end: collider_end,
+            _offset_start: offset_start,
+            _offset_end: offset_end,
         }
     }
 
