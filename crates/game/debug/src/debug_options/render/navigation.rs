@@ -1,5 +1,5 @@
 use crate::debug_options::options::{NavMapEdgesRes, NavMapNodesRes};
-use crate::debug_options::render::helpers::{LineSettings, draw_world_space_circle_projected, draw_world_line};
+use crate::debug_options::render::helpers::{LineSettings, draw_sphere, draw_world_line};
 use crate::debug_options::render::palette::{NAV_EDGE_ARROW_LENGTH, NAV_EDGE_ARROW_WIDTH, NAV_EDGE_END_PADDING, NAV_EDGE_FORWARD_COLOR, NAV_EDGE_LINE_THICKNESS, NAV_EDGE_REVERSE_COLOR, NAV_EDGE_DIRECTIONAL_OFFSET, NAV_NODE_COLOR, NAV_NODE_LINE_THICKNESS, NAV_NODE_RADIUS};
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
@@ -50,7 +50,7 @@ fn spawn_nav_node_render(
     };
 
     for node in nav.debug_node_positions() {
-        draw_world_space_circle_projected(
+        draw_sphere(
             node.into(),
             NAV_NODE_RADIUS,
             LineSettings {

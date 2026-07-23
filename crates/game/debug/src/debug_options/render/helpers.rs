@@ -73,14 +73,14 @@ pub fn draw_world_line(
 
 /// Draw a circle in world space coordinates, but facing the camera
 /// This prevents shenanigans with z ordering by keeping all line segments in the same plane
-pub fn draw_world_space_circle_projected(
+pub fn draw_sphere(
     center: WorldCoords,
     radius: f32,
     settings: LineSettings,
     scale: f32,
 ) -> Vec<LineBundle> {
     let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
-    let vertical = Vec3::Y;
+    let vertical = Vec3::new(-1.0, 1.0, -1.0).normalize();
     let segments = 24;
 
     let mut lines = Vec::new();
@@ -154,14 +154,14 @@ pub fn draw_capsule(
     let mut lines = Vec::new();
 
     // Cross-sections perpendicular to the vertical capsule axis.
-    lines.append(&mut draw_world_space_circle_projected(a.into(), capsule.radius, settings, scale));
+    lines.append(&mut draw_sphere(a.into(), capsule.radius, settings, scale));
 
     // If the capsule is a sphere, draw one circle and return
     if a == b {
         return lines;
     }
 
-    lines.append(&mut draw_world_space_circle_projected(b.into(), capsule.radius, settings, scale));
+    lines.append(&mut draw_sphere(b.into(), capsule.radius, settings, scale));
 
     // Main capsule axis.
     lines.push(draw_world_line(a.into(), b.into(), settings, scale));
