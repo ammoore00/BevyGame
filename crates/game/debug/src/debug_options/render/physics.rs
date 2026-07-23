@@ -3,7 +3,7 @@ use crate::debug_options::render::helpers::*;
 use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{GameState, Scale, TilePosition, WorldPosition, marker};
+use common::{GameState, Scale, TilePosition, WorldPosition, marker, WorldCoords};
 use physics::{Collider, ColliderData};
 use runtime::characters::Character;
 use runtime::debug::{AttackHitbox, Tile};
@@ -47,12 +47,13 @@ fn update_character_collision_render(
     for (collision, pos) in character_query {
         render_collider(
             collision,
-            pos,
+            pos.0,
             &scale,
             LineSettings {
                 color: KINEMATIC_COLLIDER_COLOR,
                 thickness: COLLIDER_LINE_THICKNESS,
             },
+            CharacterCollisionRender,
             commands.reborrow(),
         );
     }
@@ -84,49 +85,18 @@ fn spawn_tile_collision_render(
     scale: Res<Scale>,
     mut commands: Commands,
 ) {
-    for (collision, pos) in tile_query {
-        match collision.collider_type() {
-            ColliderData::Cuboid(cuboid) => {
-                let half_extents = Vec3::new(
-                    cuboid.half_extents.x,
-                    cuboid.half_extents.y,
-                    cuboid.half_extents.z,
-                );
-
-                draw_cuboid(
-                    pos.0.into(),
-                    half_extents,
-                    LineSettings {
-                        color: STATIC_COLLIDER_COLOR,
-                        thickness: COLLIDER_LINE_THICKNESS,
-                    },
-                    scale.0,
-                )
-                .into_iter()
-                .for_each(|line| {
-                    commands.spawn((tile_collision_bundle(), line));
-                });
-            }
-            ColliderData::ConvexHull {
-                vertices, indices, ..
-            } => {
-                draw_convex_hull(
-                    pos.0.into(),
-                    vertices,
-                    indices,
-                    LineSettings {
-                        color: CONVEX_HULL_COLOR,
-                        thickness: COLLIDER_LINE_THICKNESS,
-                    },
-                    scale.0,
-                )
-                .into_iter()
-                .for_each(|line| {
-                    commands.spawn((tile_collision_bundle(), line));
-                });
-            }
-            ColliderData::Capsule(_) => unreachable!("Tiles should not have capsule colliders"),
-        }
+    for (collider, pos) in tile_query {
+        render_collider(
+            collider,
+            pos.0.into(),
+            &scale,
+            LineSettings {
+                color: STATIC_COLLIDER_COLOR,
+                thickness: COLLIDER_LINE_THICKNESS,
+            },
+            TileCollisionRender,
+            commands.reborrow(),
+        )
     }
 }
 
@@ -166,12 +136,13 @@ fn update_attack_collision_render(
     for (collision, pos) in attack_query {
         render_collider(
             collision,
-            pos,
+            pos.0,
             &scale,
             LineSettings {
                 color: ATTACK_COLLIDER_COLOR,
                 thickness: ATTACK_COLLIDER_LINE_THICKNESS,
             },
+            AttackCollisionRender,
             commands.reborrow(),
         );
     }
@@ -181,23 +152,57 @@ fn update_attack_collision_render(
 
 fn render_collider(
     collision: &Collider,
-    pos: &WorldPosition,
+    pos: WorldCoords,
     scale: &Scale,
     settings: LineSettings,
+    marker: impl Component + Copy,
     mut commands: Commands,
 ) {
     match collision.collider_type() {
-        ColliderData::Cuboid(_) => todo!(),
-        ColliderData::ConvexHull { .. } => todo!(),
+        ColliderData::Cuboid(cuboid) => {
+            let half_extents = Vec3::new(
+                cuboid.half_extents.x,
+                cuboid.half_extents.y,
+                cuboid.half_extents.z,
+            );
+
+            draw_cuboid(
+                pos.0.into(),
+                half_extents,
+                LineSettings {
+                    color: STATIC_COLLIDER_COLOR,
+                    thickness: COLLIDER_LINE_THICKNESS,
+                },
+                scale.0,
+            )
+                .into_iter()
+                .for_each(|line| {
+                    commands.spawn((tile_collision_bundle(), line));
+                });
+        }
+        ColliderData::ConvexHull {
+            vertices, indices, ..
+        } => {
+            draw_convex_hull(
+                pos.0.into(),
+                vertices,
+                indices,
+                LineSettings {
+                    color: CONVEX_HULL_COLOR,
+                    thickness: COLLIDER_LINE_THICKNESS,
+                },
+                scale.0,
+            )
+                .into_iter()
+                .for_each(|line| {
+                    commands.spawn((tile_collision_bundle(), line));
+                });
+        }
         ColliderData::Capsule(capsule) => {
-            let (edges, circles) = draw_capsule(pos.0, *capsule, settings, scale.0);
+            let lines = draw_capsule(pos, *capsule, settings, scale.0);
 
-            edges.into_iter().for_each(|line| {
-                commands.spawn((CharacterCollisionRender, line));
-            });
-
-            circles.into_iter().for_each(|circle| {
-                commands.spawn((CharacterCollisionRender, circle));
+            lines.into_iter().for_each(|line| {
+                commands.spawn((marker, line));
             });
         }
     }

@@ -17,12 +17,23 @@ impl Default for LineSettings {
     }
 }
 
+#[derive(Bundle, Debug, Clone)]
+pub struct LineBundle {
+    sprite: Sprite,
+    transform: Transform,
+}
+impl From<(Sprite, Transform)> for LineBundle {
+    fn from((sprite, transform): (Sprite, Transform)) -> Self {
+        Self { sprite, transform }
+    }
+}
+
 /// Draw a simple line in screen space coordinates
 pub fn draw_screen_line(
     a: ScreenCoords,
     b: ScreenCoords,
     settings: LineSettings,
-) -> impl Bundle {
+) -> LineBundle {
     let delta = *b - *a;
     let length = delta.xy().length();
 
@@ -34,7 +45,7 @@ pub fn draw_screen_line(
     let midpoint = (*a + *b) / 2.0;
     let angle = delta.y.atan2(delta.x);
 
-    (
+    LineBundle::from((
         Sprite {
             color: settings.color,
             custom_size: Some(Vec2::new(length, settings.thickness)),
@@ -45,7 +56,7 @@ pub fn draw_screen_line(
             rotation: Quat::from_rotation_z(angle),
             ..default()
         },
-    )
+    ))
 }
 
 /// Draw a simple line in world space coordinates
@@ -54,7 +65,7 @@ pub fn draw_world_line(
     b: WorldCoords,
     settings: LineSettings,
     scale: f32,
-) -> impl Bundle {
+) -> LineBundle {
     let a = project_point(a, scale);
     let b = project_point(b, scale);
     draw_screen_line(a, b, settings)
@@ -67,7 +78,7 @@ pub fn draw_world_space_circle_projected(
     radius: f32,
     settings: LineSettings,
     scale: f32,
-) -> Vec<impl Bundle> {
+) -> Vec<LineBundle> {
     let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
     let vertical = Vec3::Y;
     let segments = 24;
@@ -98,7 +109,7 @@ pub fn draw_cuboid(
     half_extents: Vec3,
     settings: LineSettings,
     scale: f32,
-) -> Vec<impl Bundle> {
+) -> Vec<LineBundle> {
     let min = center.0 - half_extents;
     let max = center.0 + half_extents;
 
@@ -127,9 +138,6 @@ pub fn draw_cuboid(
         .collect()
 }
 
-// TODO: Fix the dual return, as the types are not actually different,
-//  the compiler just doesn't know that
-//  Likely fix is to define a custom `LineBundle` with Sprite and Transform fields
 /// Draw a capsule
 /// Note that two separate collections are returned, as the opaque types are different. 
 pub fn draw_capsule(
@@ -137,27 +145,26 @@ pub fn draw_capsule(
     capsule: impl Into<CapsuleData>,
     settings: LineSettings,
     scale: f32,
-) -> (Vec<impl Bundle>, Vec<impl Bundle>) {
+) -> Vec<LineBundle> {
     let capsule = capsule.into();
 
     let a = position.0 + capsule.a;
     let b = position.0 + capsule.b;
 
-    let mut edges = Vec::new();
-    let mut circles = Vec::new();
+    let mut lines = Vec::new();
 
     // Cross-sections perpendicular to the vertical capsule axis.
-    circles.append(&mut draw_world_space_circle_projected(a.into(), capsule.radius, settings, scale));
+    lines.append(&mut draw_world_space_circle_projected(a.into(), capsule.radius, settings, scale));
 
     // If the capsule is a sphere, draw one circle and return
     if a == b {
-        return (edges, circles);
+        return lines;
     }
 
-    circles.append(&mut draw_world_space_circle_projected(b.into(), capsule.radius, settings, scale));
+    lines.append(&mut draw_world_space_circle_projected(b.into(), capsule.radius, settings, scale));
 
     // Main capsule axis.
-    edges.push(draw_world_line(a.into(), b.into(), settings, scale));
+    lines.push(draw_world_line(a.into(), b.into(), settings, scale));
 
     let horizontal = Vec3::new(1.0, 0.0, -1.0).normalize();
     let vertical = Vec3::Y;
@@ -171,10 +178,10 @@ pub fn draw_capsule(
 
     // Additional side lines to fill out capsule
     for offset in offsets {
-        edges.push(draw_world_line((a + offset).into(), (b + offset).into(), settings, scale));
+        lines.push(draw_world_line((a + offset).into(), (b + offset).into(), settings, scale));
     }
 
-    (edges, circles)
+    lines
 }
 
 /// Draw a convex hull, rendering only the wireframe edges of faces pointing toward the positive axes.
@@ -184,7 +191,7 @@ pub fn draw_convex_hull(
     indices: &[[u32; 3]],
     settings: LineSettings,
     scale: f32,
-) -> Vec<impl Bundle> {
+) -> Vec<LineBundle> {
     let mut unique_edges = HashSet::new();
 
     for &[i0, i1, i2] in indices {
