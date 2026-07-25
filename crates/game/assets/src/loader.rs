@@ -6,7 +6,7 @@ use bevy::reflect::erased_serde::__private::serde::Deserializer;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -187,14 +187,23 @@ pub enum LoaderError {
 }
 
 /// Marker trait for types which can be loaded from a file
-pub trait RonCodec<AssetType>: Into<AssetType> + TypePath + Send + Sync + 'static {}
-impl<T, AssetType> RonCodec<AssetType> for T where T: Into<AssetType> + TypePath + Send + Sync + 'static {}
+pub trait RonCodec<AssetType>: TryInto<AssetType> + TypePath + Send + Sync + 'static
+where
+    <Self as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
+{}
+
+impl<T, AssetType> RonCodec<AssetType> for T
+where
+    T: TryInto<AssetType> + TypePath + Send + Sync + 'static,
+    <T as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
+{}
 
 // TODO: Allow for fallible type conversion using TryFrom instead of From
 #[derive(TypePath)]
 pub struct RonAssetLoader<Codec, AssetType>
 where
     Codec: DeserializeOwned + RonCodec<AssetType>,
+    <Codec as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
     AssetType: Asset + Send + Sync + 'static,
 {
     phantom_data: PhantomData<(Codec, AssetType)>,
@@ -202,6 +211,7 @@ where
 impl<Codec, AssetType> Default for RonAssetLoader<Codec, AssetType>
 where
     Codec: DeserializeOwned + RonCodec<AssetType>,
+    <Codec as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
     AssetType: Asset + Send + Sync + 'static,
 {
     fn default() -> Self {
@@ -213,11 +223,12 @@ where
 impl<Codec, AssetType> AssetLoader for RonAssetLoader<Codec, AssetType>
 where
     Codec: DeserializeOwned + RonCodec<AssetType>,
+    <Codec as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
     AssetType: Asset + Send + Sync + 'static,
 {
     type Asset = AssetType;
     type Settings = ();
-    type Error = RonLoaderError;
+    type Error = RonLoaderError<Codec, AssetType>;
 
     async fn load(
         &self,
@@ -228,7 +239,7 @@ where
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
         let codec = ron::de::from_bytes::<Codec>(&bytes)?;
-        Ok(codec.into())
+        codec.try_into().map_err(RonLoaderError::from_codec_err)
     }
 
     fn extensions(&self) -> &[&str] {
@@ -236,12 +247,45 @@ where
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum RonLoaderError {
+#[derive(thiserror::Error)]
+pub enum RonLoaderError<Codec, AssetType>
+where
+    Codec: DeserializeOwned + RonCodec<AssetType>,
+    <Codec as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
+    AssetType: Asset + Send + Sync + 'static,
+{
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
     #[error("RON parse error: {0}")]
     Ron(#[from] ron::error::SpannedError),
+    #[error("Codec error")]
+    Codec(<Codec as TryInto<AssetType>>::Error),
+}
+impl<Codec, AssetType> RonLoaderError<Codec, AssetType>
+where
+    Codec: DeserializeOwned + RonCodec<AssetType>,
+    <Codec as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
+    AssetType: Asset + Send + Sync + 'static,
+{
+    fn from_codec_err(value: <Codec as TryInto<AssetType>>::Error) -> Self {
+        Self::Codec(value)
+    }
+}
+// Manual implementation of debug trait because derive would require AssetType and Codec
+// to implement Debug, when nothing in the implementation actually requires that
+impl<Codec, AssetType> Debug for RonLoaderError<Codec, AssetType>
+where
+    Codec: DeserializeOwned + RonCodec<AssetType>,
+    <Codec as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
+    AssetType: Asset + Send + Sync + 'static,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Io(err) => err.fmt(f),
+            Self::Ron(err) => err.fmt(f),
+            Self::Codec(err) => err.fmt(f),
+        }
+    }
 }
 
 /// Wrapper around Option<T> to be used as an optional value within a codec
@@ -327,6 +371,7 @@ pub enum _InlineOrResourceLocation<T, Codec>
 where
     T: ResourceKind,
     Codec: RonCodec<T::AssetKind>,
+    <Codec as TryInto<T::AssetKind>>::Error: Debug + Send + Sync + 'static,
 {
     Inline(Codec),
     ResourceLocation(ResourceLocation<T>),
@@ -335,10 +380,11 @@ impl<T, Codec> _InlineOrResourceLocation<T, Codec>
 where
     T: ResourceKind,
     Codec: RonCodec<T::AssetKind>,
+    <Codec as TryInto<T::AssetKind>>::Error: Debug + Send + Sync + 'static,
 {
     pub fn _resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetKind> {
         match self {
-            _InlineOrResourceLocation::Inline(codec) => Some(codec.into()),
+            _InlineOrResourceLocation::Inline(codec) => codec.try_into().ok(),
             _InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(&location).cloned(),
         }
     }

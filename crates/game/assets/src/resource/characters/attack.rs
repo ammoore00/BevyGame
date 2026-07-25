@@ -7,6 +7,7 @@ use common::WorldCoords;
 use data::define_data_resource;
 use data::prelude::*;
 use getset::{CopyGetters, Getters};
+use physics::ColliderKind;
 use std::ops::Deref;
 use std::time::Duration;
 
@@ -49,16 +50,24 @@ impl AttackDefinition {
         AttackProgress(duration.as_millis() as f32 / self.duration.as_millis() as f32)
     }
 }
-impl From<AttackCodec> for AttackDefinition {
-    fn from(value: AttackCodec) -> Self {
-        AttackDefinition {
+impl TryFrom<AttackCodec> for AttackDefinition {
+    type Error = AttackDefinitionError;
+
+    fn try_from(value: AttackCodec) -> Result<Self, AttackDefinitionError> {
+        Ok(AttackDefinition {
             duration: Duration::from_millis(value.duration),
             stamina_cost: value.stamina_cost,
             animation: value.animation,
             particle_sprite: value.particle_sprite,
-            key_frames: KeyFrameList::from_codec(value.key_frames, value.duration),
-        }
+            key_frames: KeyFrameList::try_from_codec(value.key_frames, value.duration)?,
+        })
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum AttackDefinitionError {
+    #[error(transparent)]
+    KeyFrameList(#[from] KeyFrameListError),
 }
 
 #[derive(Debug, Clone, Copy, PartialOrd, PartialEq)]
@@ -137,29 +146,48 @@ impl KeyFrameList {
             .collect()
     }
 
-    fn from_codec(codecs: Vec<KeyFrameCodec>, attack_duration: u64) -> Self {
-        let key_frames = codecs
-            .iter()
-            .map(|codec| {
-                let start = codec.start_time as f32 / attack_duration as f32;
-                let end = codec.end_time as f32 / attack_duration as f32;
-                
-                let start = AttackProgress::new(start);
-                let end = AttackProgress::new(end);
- 
-                KeyFrame {
-                    active_frames: [start, end],
-                    hitbox: codec.hitbox.clone().into(),
-                }
+    fn try_from_codec(
+        codecs: Vec<KeyFrameCodec>,
+        attack_duration: u64,
+    ) -> Result<Self, KeyFrameListError> {
+        let mut key_frames = codecs.iter().map(|codec| {
+            let start = codec.start_time as f32 / attack_duration as f32;
+            let end = codec.end_time as f32 / attack_duration as f32;
+
+            let start = AttackProgress::new(start);
+            let end = AttackProgress::new(end);
+
+            let hitbox = codec.hitbox.clone().try_into()?;
+
+            Ok(KeyFrame {
+                active_frames: [start, end],
+                hitbox,
             })
-            .collect::<Vec<KeyFrame>>();
-        Self::from(key_frames)
+        });
+
+        let key_frames = if let Some(err) = key_frames
+            .find(|result| result.is_err())
+            .map(|result: Result<_, HitboxError>| result.unwrap_err())
+        {
+            return Err(err.into());
+        } else {
+            // Unwrap is safe because we checked for errors above
+            key_frames.map(|result| result.unwrap()).collect::<Vec<_>>()
+        };
+
+        Ok(Self::from(key_frames))
     }
 }
 impl From<Vec<KeyFrame>> for KeyFrameList {
     fn from(key_frames: Vec<KeyFrame>) -> Self {
         Self { key_frames }
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum KeyFrameListError {
+    #[error(transparent)]
+    Hitbox(#[from] HitboxError),
 }
 
 #[derive(Debug, Clone, TypePath)]
@@ -221,9 +249,11 @@ impl Hitbox {
     }
 }
 // TODO: Convert this to use TryFrom once fallible type conversion is supported
-impl From<HitboxCodec> for Hitbox {
-    fn from(value: HitboxCodec) -> Self {
-        match value {
+impl TryFrom<HitboxCodec> for Hitbox {
+    type Error = HitboxError;
+
+    fn try_from(value: HitboxCodec) -> Result<Self, Self::Error> {
+        let hitbox = match value {
             HitboxCodec::Static { collider, offset } => Hitbox::Static(HitboxData {
                 collider,
                 offset: offset.into(),
@@ -233,17 +263,33 @@ impl From<HitboxCodec> for Hitbox {
                 collider_end,
                 offset_start,
                 offset_end,
-            } => Hitbox::Interpolated(InterpolatedHitbox::new(
-                collider_start,
-                collider_end,
-                offset_start.into(),
-                offset_end.into(),
-            )),
+            } => {
+                if collider_start.kind() != collider_end.kind() {
+                    return Err(HitboxError::ColliderMismatch(
+                        collider_start.kind(),
+                        collider_end.kind(),
+                    ));
+                }
+
+                Hitbox::Interpolated(InterpolatedHitbox::new(
+                    collider_start,
+                    collider_end,
+                    offset_start.into(),
+                    offset_end.into(),
+                ))
+            },
             HitboxCodec::Swept { .. } => Hitbox::Swept(SweptHitbox {
                 // TODO
             }),
-        }
+        };
+        Ok(hitbox)
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum HitboxError {
+    #[error("Collider kind mismatch: {0:?}, {1:?}")]
+    ColliderMismatch(ColliderKind, ColliderKind),
 }
 
 /// Data used to describe an instantaneous hitbox for a single frame.
