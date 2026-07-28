@@ -2,9 +2,11 @@ use crate::characters::stamina::StaminaEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::resource::characters::{AttackContext, AttackProgress, AttackResource, KeyFrame};
 use bevy::prelude::*;
-use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition, offset_position_to_facing};
+use common::{offset_position_to_facing, AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition};
 use data::loc::ResourceLocation;
 use physics::{DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData};
+use std::time::Duration;
+use crate::characters::health::{AddIFrames, HealthEvent};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -19,6 +21,9 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_observer(on_attack);
 }
+
+/// The length of time that an attack will prevent the character from taking additional damage.
+pub const ON_HIT_IFRAMES: Duration = Duration::from_millis(250);
 
 #[derive(EntityEvent, Debug, Clone, Reflect, derive_new::new)]
 pub struct AttackEvent {
@@ -161,6 +166,7 @@ fn attack_hitbox(
 fn process_attack_hits(
     mut reader: MessageReader<DetectorCollisionsProcessedMessage>,
     attack_hitbox_query: Query<&AttackHitbox>,
+    mut commands: Commands,
 ) {
     for collision_message in reader.read() {
         for collision in &collision_message.detector_collisions {
@@ -169,7 +175,13 @@ fn process_attack_hits(
                 continue;
             };
             
-            let _key_frame = &attack_hitbox.0;
+            let key_frame = &attack_hitbox.0;
+
+            if !key_frame.disable_on_hit_iframes() {
+                commands.trigger(AddIFrames::new(collision_message.entity, ON_HIT_IFRAMES));
+            }
+
+            commands.trigger(HealthEvent::new(collision_message.entity, *key_frame.health_event()));
 
             // TODO: Filter self-collisions
         }

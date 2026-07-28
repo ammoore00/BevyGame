@@ -7,8 +7,8 @@ mod character;
 pub use {
     animation::{AnimationContext, AnimationData, AnimationRegistry, AnimationResource, FrameData},
     attack::{
-        AttackContext, AttackDefinition, AttackRegistry, AttackResource, AttackSet,
-        AttackSetRegistry, AttackSetResource, AttackProgress, KeyFrame,
+        AttackContext, AttackDefinition, AttackProgress, AttackRegistry, AttackResource, AttackSet,
+        AttackSetRegistry, AttackSetResource, KeyFrame,
     },
     character::{
         CharacterData, CharacterRegistry, CharacterResource, CharacterSpriteRegistry,
@@ -17,9 +17,5 @@ pub use {
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((
-        animation::plugin,
-        attack::plugin,
-        character::plugin,
-    ));
+    app.add_plugins((animation::plugin, attack::plugin, character::plugin));
 }

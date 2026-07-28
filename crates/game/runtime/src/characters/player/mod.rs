@@ -47,7 +47,9 @@ impl Player {
                 @max_speed: {props.max_speed},
                 @data_loc: {loc::<CharacterResource>("player").unwrap()}
             }
-            Health::new(300)
+            @Health {
+                @max_health: 300
+            }
             Stamina::new(200, 200, 1.0)
             Children [
                 #IndicatorRing

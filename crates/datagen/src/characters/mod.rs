@@ -7,7 +7,7 @@ use crate::sprite::TextureAtlasData;
 use crate::{create_dir, write_data, WriteError};
 use data::prelude::*;
 use std::collections::HashMap;
-use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, KeyFrameCodec, TextureAtlasCodec};
+use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, DamageModifierCodec, FrameDataCodec, KeyFrameCodec, TextureAtlasCodec};
 use assets::resource::characters::{AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
 
 pub fn generate_characters() -> Result<(), WriteError> {
@@ -78,6 +78,7 @@ struct CharacterData {
     animations: HashMap<ActionStateCodec, AnimationData>,
     attack_set: Option<AttackSetData>,
     collider: ColliderDataCodec,
+    damage_modifiers: Option<DamageModifierCodec>,
 }
 impl CharacterData {
     fn new(
@@ -90,6 +91,7 @@ impl CharacterData {
             animations: HashMap::new(),
             attack_set: None,
             collider,
+            damage_modifiers: None,
         }
     }
 
@@ -119,6 +121,7 @@ impl From<CharacterData> for CharacterCodec {
             animations,
             attack_set: attack_set.into(),
             collider,
+            damage_modifiers: value.damage_modifiers.into(),
         }
     }
 }

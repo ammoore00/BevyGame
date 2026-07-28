@@ -3,9 +3,9 @@
     allowed_states: Default,
     animations: {
         Running: "base:test/running",
+        Sprinting: "base:test/sprinting",
         Idle: "base:test/idle",
         Walking: "base:test/walking",
-        Sprinting: "base:test/sprinting",
     },
     attack_set: "base:test/basic_attack",
     collider: (

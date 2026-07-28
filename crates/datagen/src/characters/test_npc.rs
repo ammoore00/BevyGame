@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use assets::codec::{ActionStateCodec, CapsuleCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HitboxCodec, KeyFrameCodec};
+use assets::codec::{ActionStateCodec, CapsuleCodec, ColliderCodec, ColliderDataCodec, DamageKind, FrameDataCodec, HealthEventKind, HitboxCodec, KeyFrameCodec};
 use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
 use crate::WriteError;
 
@@ -80,6 +80,9 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
                 },
                 offset: (0., 0., 1.).into(),
             },
+
+            health_event: HealthEventKind::Damage(30, DamageKind::Generic),
+            disable_on_hit_iframes: None.into(),
         }
     ];
 

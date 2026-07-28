@@ -1,4 +1,6 @@
-use crate::codec::{AttackCodec, AttackSetCodec, ColliderCodec, HitboxCodec, KeyFrameCodec};
+use crate::codec::{
+    AttackCodec, AttackSetCodec, ColliderCodec, HealthEventKind, HitboxCodec, KeyFrameCodec,
+};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::resource::characters::{AnimationContext, AnimationResource, CharacterSpriteResource};
 use bevy::ecs::system::SystemParam;
@@ -150,30 +152,28 @@ impl KeyFrameList {
         codecs: Vec<KeyFrameCodec>,
         attack_duration: u64,
     ) -> Result<Self, KeyFrameListError> {
-        let mut key_frames = codecs.iter().map(|codec| {
-            let start = codec.start_time as f32 / attack_duration as f32;
-            let end = codec.end_time as f32 / attack_duration as f32;
+        let key_frames = codecs
+            .iter()
+            .map(|codec| {
+                let start = codec.start_time as f32 / attack_duration as f32;
+                let end = codec.end_time as f32 / attack_duration as f32;
 
-            let start = AttackProgress::new(start);
-            let end = AttackProgress::new(end);
+                let start = AttackProgress::new(start);
+                let end = AttackProgress::new(end);
 
-            let hitbox = codec.hitbox.clone().try_into()?;
+                let hitbox = codec.hitbox.clone().try_into()?;
 
-            Ok(KeyFrame {
-                active_frames: [start, end],
-                hitbox,
+                let disable_on_hit_iframes = codec.disable_on_hit_iframes.unwrap_or(false);
+
+                Ok(KeyFrame {
+                    active_frames: [start, end],
+                    hitbox,
+
+                    health_event: codec.health_event,
+                    disable_on_hit_iframes,
+                })
             })
-        });
-
-        let key_frames = if let Some(err) = key_frames
-            .find(|result| result.is_err())
-            .map(|result: Result<_, HitboxError>| result.unwrap_err())
-        {
-            return Err(err.into());
-        } else {
-            // Unwrap is safe because we checked for errors above
-            key_frames.map(|result| result.unwrap()).collect::<Vec<_>>()
-        };
+            .collect::<Result<Vec<_>, HitboxError>>()?;
 
         Ok(Self::from(key_frames))
     }
@@ -190,12 +190,17 @@ pub enum KeyFrameListError {
     Hitbox(#[from] HitboxError),
 }
 
-#[derive(Debug, Clone, TypePath)]
+#[derive(Debug, Clone, TypePath, Getters)]
 pub struct KeyFrame {
     /// Start and end time as normalized [0, 1] proportional timings
     active_frames: [AttackProgress; 2],
     hitbox: Hitbox,
+
     // TODO: Extra properties like damage, knockback, etc.
+    #[getset(get = "pub")]
+    disable_on_hit_iframes: bool,
+    #[getset(get = "pub")]
+    health_event: HealthEventKind,
 }
 impl KeyFrame {
     /// Get how far along in this keyframe the attack is.
@@ -277,7 +282,7 @@ impl TryFrom<HitboxCodec> for Hitbox {
                     offset_start.into(),
                     offset_end.into(),
                 ))
-            },
+            }
             HitboxCodec::Swept { .. } => Hitbox::Swept(SweptHitbox {
                 // TODO
             }),

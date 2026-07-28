@@ -12,6 +12,7 @@ use physics::{HasGravity, MovementController, PhysicsData, DEFAULT_MAX_SPEED};
 use state::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
+use crate::debug::Health;
 
 // TODO: Remove these pub(crate) declarations in favor of better exports
 pub(crate) mod animation;
@@ -114,6 +115,7 @@ impl CharacterPrototype {
             PhysicsData::kinematic()
             HasGravity
             Facing
+            Health
             state
         ]
     }

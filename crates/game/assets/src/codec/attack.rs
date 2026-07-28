@@ -1,8 +1,10 @@
-use crate::codec::ColliderCodec;
+use crate::codec::{ColliderCodec, HealthEventKind};
 use crate::resource::characters::{AnimationResource, AttackResource, CharacterSpriteResource};
 use bevy::prelude::*;
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
+use maybe_fields::maybe_fields;
+use crate::loader::Maybe;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct AttackCodec {
@@ -31,11 +33,15 @@ impl Default for AttackCodec {
     }
 }
 
+#[maybe_fields]
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct KeyFrameCodec {
     pub start_time: u64,
     pub end_time: u64,
     pub hitbox: HitboxCodec,
+
+    pub health_event: HealthEventKind,
+    pub disable_on_hit_iframes: Maybe<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

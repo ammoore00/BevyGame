@@ -8,6 +8,7 @@ use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
+use crate::codec::DamageModifierCodec;
 
 #[maybe_fields]
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
@@ -17,6 +18,7 @@ pub struct CharacterCodec {
     pub animations: HashMap<ActionStateCodec, ResourceLocation<AnimationResource>>,
     pub attack_set: Maybe<ResourceLocation<AttackSetResource>>,
     pub collider: ColliderCodec,
+    pub damage_modifiers: Maybe<DamageModifierCodec>,
 }
 
 impl CharacterCodec {
@@ -39,6 +41,7 @@ impl Default for CharacterCodec {
                     }
                 )
             },
+            damage_modifiers: Maybe(None),
         }
     }
 }
