@@ -1,22 +1,27 @@
+use std::slice;
+use crate::characters::health::{AddIFrames, HealthEvent};
 use crate::characters::stamina::StaminaEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::resource::characters::{AttackContext, AttackProgress, AttackResource, KeyFrame};
 use bevy::prelude::*;
-use common::{offset_position_to_facing, AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition};
+use common::{
+    AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition,
+    offset_position_to_facing,
+};
 use data::loc::ResourceLocation;
 use physics::{DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData};
 use std::time::Duration;
-use crate::characters::health::{AddIFrames, HealthEvent};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            update_attack_key_frames.in_set(AppSystems::TickTimers)
+            update_attack_key_frames
+                .in_set(AppSystems::TickTimers)
                 .in_set(GameplaySystems)
                 .in_set(PausableSystems),
             process_attack_hits.in_set(DetectorCollisionResponse),
-        )
+        ),
     );
 
     app.add_observer(on_attack);
@@ -92,31 +97,39 @@ impl CurrentAttack {
 }
 
 fn update_attack_key_frames(
-    attacking_query: Query<(Entity, &mut CurrentAttack, &WorldPosition, &Facing, &Children)>,
-    non_attacking_query: Query<&Children, Without<CurrentAttack>>,
+    attacking_query: Query<(
+        Entity,
+        &mut CurrentAttack,
+        &WorldPosition,
+        &Facing,
+        Option<&ActiveHitboxes>,
+    )>,
+    non_attacking_query: Query<&ActiveHitboxes, Without<CurrentAttack>>,
     existing_hitbox_query: Query<Entity, With<AttackHitbox>>,
     attack_context: AttackContext,
     time: Res<Time>,
     mut commands: Commands,
 ) {
     // TODO: Make this less janky
-    for children in non_attacking_query.iter() {
-        let existing_hitboxes = existing_hitbox_query.iter_many(children);
+    for hitboxes in non_attacking_query.iter() {
+        let existing_hitboxes = existing_hitbox_query.iter_many(hitboxes);
         for hitbox_entity in existing_hitboxes {
             commands.entity(hitbox_entity).despawn();
         }
     }
 
-    for (entity, mut attack, pos, facing, children) in attacking_query {
+    for (entity, mut attack, pos, facing, hitboxes) in attacking_query {
         let Some(definition) = attack_context.attack_registry.get_asset(&attack.loc) else {
             commands.entity(entity).remove::<CurrentAttack>();
             error!("Invalid attack definition: {} does not exist!", attack.loc);
             continue;
         };
 
-        let existing_hitboxes = existing_hitbox_query.iter_many(children);
-        for hitbox_entity in existing_hitboxes {
-            commands.entity(hitbox_entity).despawn();
+        if let Some(hitboxes) = hitboxes {
+            let existing_hitboxes = existing_hitbox_query.iter_many(hitboxes);
+            for hitbox_entity in existing_hitboxes {
+                commands.entity(hitbox_entity).despawn();
+            }
         }
 
         let increment = definition.get_progress_increment(time.delta());
@@ -130,7 +143,10 @@ fn update_attack_key_frames(
             let hitbox_entity = commands
                 .spawn(attack_hitbox(key_frame, pos.0, *facing, attack.progress))
                 .id();
-            commands.entity(entity).add_child(hitbox_entity);
+
+            commands
+                .entity(entity)
+                .add_one_related::<HitboxOwner>(hitbox_entity);
         }
 
         if progress == 1.0 {
@@ -139,8 +155,27 @@ fn update_attack_key_frames(
     }
 }
 
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[relationship(relationship_target = ActiveHitboxes)]
+struct HitboxOwner(Entity);
+
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
+#[relationship_target(relationship = HitboxOwner, linked_spawn)]
+struct ActiveHitboxes(Vec<Entity>);
+impl<'a> IntoIterator for &'a ActiveHitboxes {
+    type Item = <Self::IntoIter as Iterator>::Item;
+    type IntoIter = slice::Iter<'a, Entity>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
 #[derive(Component, Debug, Clone)]
-pub struct AttackHitbox(KeyFrame);
+pub struct AttackHitbox {
+    key_frame: KeyFrame,
+    interacted_entities: Vec<Entity>,
+}
 
 // TODO: Improve this to not respawn hitboxes every frame
 fn attack_hitbox(
@@ -160,30 +195,56 @@ fn attack_hitbox(
 
     let collider = collider_codec.make_collider(attack_pos.0);
 
-    (AttackHitbox(key_frame.clone()), collider, WorldPosition(attack_pos), PhysicsData::Detector)
+    (
+        AttackHitbox {
+            key_frame: key_frame.clone(),
+            interacted_entities: Vec::new(),
+        },
+        collider,
+        WorldPosition(attack_pos),
+        PhysicsData::Detector,
+    )
 }
 
 fn process_attack_hits(
     mut reader: MessageReader<DetectorCollisionsProcessedMessage>,
-    attack_hitbox_query: Query<&AttackHitbox>,
+    mut attack_hitbox_query: Query<(&mut AttackHitbox, &HitboxOwner)>,
     mut commands: Commands,
 ) {
     for collision_message in reader.read() {
         for collision in &collision_message.detector_collisions {
             // Filter detector collisions to only attack hitboxes
-            let Ok(attack_hitbox) = attack_hitbox_query.get(collision.detector_entity) else {
+            let Ok((mut attack_hitbox, owner)) =
+                attack_hitbox_query.get_mut(collision.detector_entity)
+            else {
                 continue;
             };
-            
-            let key_frame = &attack_hitbox.0;
+
+            // Do not collide with self or entities that have already been hit
+            if collision_message.entity == owner.0
+                || attack_hitbox
+                .interacted_entities
+                .contains(&collision_message.entity)
+            {
+                continue;
+            }
+
+            attack_hitbox
+                .interacted_entities
+                .push(collision_message.entity);
+
+            let key_frame = &attack_hitbox.key_frame;
 
             if !key_frame.disable_on_hit_iframes() {
                 commands.trigger(AddIFrames::new(collision_message.entity, ON_HIT_IFRAMES));
             }
 
-            commands.trigger(HealthEvent::new(collision_message.entity, *key_frame.health_event()));
+            commands.trigger(HealthEvent::new(
+                collision_message.entity,
+                *key_frame.health_event(),
+            ));
 
-            // TODO: Filter self-collisions
+            info!("Attack hit!");
         }
     }
 }
