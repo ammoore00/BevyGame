@@ -152,10 +152,10 @@ pub fn merge_tile_map(map: &TileMap, other: TileMap, offset: IVec3) -> Result<()
     for (coords, tile_entity) in &*other.read().unwrap() {
         let coords = TileCoords(coords.0 + offset);
         map.write().unwrap()
-            .entry(coords.clone())
+            .entry(coords)
             .and_modify(|_| {
                 overlaps.push(MergeTileCoords {
-                    _coords: coords.clone(),
+                    _coords: coords,
                     _offset: offset,
                 });
             })

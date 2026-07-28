@@ -66,7 +66,7 @@ impl TileNavMap {
         let tile_map = tile_map.read().unwrap();
 
         let tile_info_cache = tile_map.iter()
-            .map(|(coords, tile_entity)| (coords.clone(), tile_info[tile_entity]))
+            .map(|(coords, tile_entity)| (*coords, tile_info[tile_entity]))
             .collect::<BTreeMap<TileCoords, TileNavInfo>>();
         
         // Process nodes
@@ -93,7 +93,7 @@ impl TileNavMap {
                     clearance,
                     bounds: tile_info.collider.bounds(),
                 };
-                slf.add_node(coords.clone(), node);
+                slf.add_node(*coords, node);
             }
         }
         
@@ -121,8 +121,8 @@ impl TileNavMap {
                 {
                     slf.add_edge(
                         NavEdgeKey {
-                            start: coords.clone(),
-                            end: new_coords.clone(),
+                            start: coords,
+                            end: new_coords,
                         },
                         NavEdge::new(
                             NavEdgeKind::Walk,
@@ -142,7 +142,7 @@ impl TileNavMap {
 
     fn add_edge(&mut self, key: NavEdgeKey, edge: NavEdge) {
         self.edges.insert(key.clone(), edge);
-        self.edges_from.entry(key.start.clone()).or_default().push(key);
+        self.edges_from.entry(key.start).or_default().push(key);
     }
 
     pub fn has_node(&self, coords: &TileCoords) -> bool {
@@ -161,8 +161,8 @@ impl TileNavMap {
 
     pub fn _get_edge(&self, start: &TileCoords, end: &TileCoords) -> Option<&NavEdge> {
         let key = NavEdgeKey {
-            start: start.clone(),
-            end: end.clone()
+            start: *start,
+            end: *end
         };
         self.edges.get(&key)
     }

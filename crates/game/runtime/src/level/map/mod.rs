@@ -128,7 +128,7 @@ pub fn spawn_map_grid(
         context.commands.entity(grid_entity).add_child(*tile);
 
         let tile = TileEntity(context.commands.entity(*tile).id());
-        set_tile_location(tile, tile_coords.clone(), &mut context.commands);
+        set_tile_location(tile, *tile_coords, &mut context.commands);
     }
 
     grid_entity

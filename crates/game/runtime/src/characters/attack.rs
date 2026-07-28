@@ -2,11 +2,11 @@ use crate::characters::health::{AddIFrames, HealthEvent};
 use crate::characters::stamina::StaminaEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::resource::characters::{
-    AttackContext, AttackDefinition, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
+    AttackContext, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
 };
 use bevy::prelude::*;
 use common::{
-    AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition,
+    AppSystems, Facing, GameplaySystems, PausableSystems, WorldPosition,
     offset_position_to_facing,
 };
 use data::loc::ResourceLocation;

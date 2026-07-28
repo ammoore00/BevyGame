@@ -78,8 +78,8 @@ pub struct TilePath {
 }
 impl TilePath {
     fn new(path: Vec<WorldCoords>) -> Self {
-        let target = path.last().unwrap().clone();
-        let next_position = path.first().unwrap().clone();
+        let target = *path.last().unwrap();
+        let next_position = *path.first().unwrap();
         Self {
             path,
             target,
@@ -90,7 +90,7 @@ impl TilePath {
 
     fn increment_position(&mut self) {
         self.next_index += 1;
-        self.next_position = self.path.get(self.next_index).cloned();
+        self.next_position = self.path.get(self.next_index).copied();
     }
 
     pub fn get_remaining_path(&self) -> &[WorldCoords] {
@@ -150,12 +150,12 @@ fn update_pathfinder_wander_state(
                 }
             }
             PathfinderState::Searching => {
-                let tile_coords = TileCoords::from(pos.0.clone());
+                let tile_coords = TileCoords::from(pos.0);
                 let tile_coords = *tile_coords - IVec3::Y;
 
                 let target = select_random_wander_target(
                     nav_map,
-                    &tile_coords.into(),
+                    tile_coords.into(),
                     wander.wander_range,
                     rand::rng()
                 );
@@ -166,21 +166,21 @@ fn update_pathfinder_wander_state(
 
                 if let Some(tile_path) = find_path(
                     nav_map,
-                    &tile_coords.into(),
-                    &target.into(),
+                    tile_coords.into(),
+                    target.into(),
                     clearance_half_width,
                     clearance_height,
                 ) {
                     wander.current_time_in_state = Duration::ZERO;
                     let tile_path = PathType::Wander(tile_path);
 
-                    info!("NPC found target: {:?}, starting movement", tile_path.get().next_position.clone());
+                    info!("NPC found target: {:?}, starting movement", tile_path.get().next_position);
                     pathfinder.state = PathfinderState::Moving(tile_path);
                 }
             }
             PathfinderState::Moving(tile_path) => {
                 let tile_path = tile_path.get_mut();
-                let target = tile_path.next_position.clone();
+                let target = tile_path.next_position;
 
                 let Some(target) = target else {
                     error!("Invaliud NPC target, stopping movement");
@@ -267,13 +267,13 @@ fn update_movement_state(
 /// distance of the target from the start is random, bounded by the length.
 fn select_random_wander_target(
     nav_map: &TileNavMap,
-    start: &TileCoords,
+    start: TileCoords,
     distance: u32,
     mut rand: impl Rng,
 ) -> TileCoords {
-    if !nav_map.has_node(start) {
+    if !nav_map.has_node(&start) {
         error!("Invalid start position for wander target selection: {:?}", start);
-        return start.clone();
+        return start;
     }
 
     // Vec instead of HashSet since collection sizes will always be small
@@ -281,25 +281,25 @@ fn select_random_wander_target(
 
     let mut target = start;
     for _ in 0..distance {
-        let Some(edges) = nav_map.get_edges_from_tile(target) else {
+        let Some(edges) = nav_map.get_edges_from_tile(&target) else {
             error!("No valid edges found for wander target selection from {:?}", target);
             continue;
         };
 
         let edges = edges.iter()
-            .filter(|edge| !visited.contains(&edge.0.end()))
+            .filter(|edge| !visited.contains(edge.0.end()))
             .collect::<Vec<_>>();
 
         // If we've backed ourselves into a corner, just return early
         if edges.is_empty() {
-            return target.clone();
+            return target;
         }
 
         let idx = rand.random_range(..edges.len());
-        target = edges[idx].0.end();
+        target = *edges[idx].0.end();
         visited.push(target);
     }
-    target.clone()
+    target
 }
 
 /// Use Theta* pathfinding to find a path from start to target
@@ -311,8 +311,8 @@ fn select_random_wander_target(
 /// Returns `None` if a path cannot be found.
 fn find_path(
     nav_map: &TileNavMap,
-    start: &WorldCoords,
-    target: &WorldCoords,
+    start: WorldCoords,
+    target: WorldCoords,
     clearance_half_width: f32,
     clearance_height: f32,
 ) -> Option<TilePath> {
@@ -322,38 +322,38 @@ fn find_path(
     // The code would return the correct result anyway,
     // but this early guard prevents unnecessary computation
     if start == target {
-        return Some(TilePath::new(vec![start.clone()]));
+        return Some(TilePath::new(vec![start]));
     }
 
     let mut costs = BTreeMap::new();
-    costs.insert(start.clone(), 0);
+    costs.insert(start, 0);
 
     let mut parents = BTreeMap::new();
 
     let mut heap = BinaryHeap::new();
     heap.push(PathfindCoordState {
         cost: 0,
-        heuristic_cost: start.distance(**target) as u32,
-        position: start.clone(),
+        heuristic_cost: start.distance(*target) as u32,
+        position: start,
     });
 
     // Explore frontier using min heap to explore lower cost nodes first
     while let Some(node) = heap.pop() {
         let PathfindCoordState { cost, position, .. } = &node;
-        if position == target {
+        if *position == target {
             let mut position = position;
             let mut path = Vec::new();
 
             while let Some(parent) = parents.get(position) {
-                path.push(position.clone());
+                path.push(*position);
                 position = parent;
             }
 
-            if position != start {
+            if *position != start {
                 error!("Pathfinding failed to find a path from start to target!");
                 return None;
             }
-            path.push(start.clone());
+            path.push(start);
             path.reverse();
 
             return Some(TilePath::new(path));
@@ -408,7 +408,7 @@ fn find_path(
                 )
             };
 
-            let next_heuristic_cost = next_pos.distance(**target) as u32;
+            let next_heuristic_cost = next_pos.distance(*target) as u32;
 
             // If the position isn't tracked yet, default to true.
             // If it is tracked, evaluate if our new cost is cheaper
@@ -416,8 +416,8 @@ fn find_path(
                 .is_none_or(|&prev_cost| next_cost < prev_cost);
 
             if is_cheaper {
-                parents.insert(next_pos.clone(), next_parent.clone());
-                costs.insert(next_pos.clone(), next_cost);
+                parents.insert(next_pos, *next_parent);
+                costs.insert(next_pos, next_cost);
 
                 heap.push(PathfindCoordState {
                     cost: next_cost,

@@ -32,7 +32,7 @@ pub fn build_layout(layout: &RoomLayout, context: &mut RoomBuilderContext) -> Ti
                         context.tile_assets.as_ref(),
                         context.sprite_registry.as_ref(),
                         &tile_type,
-                        coords.clone(),
+                        coords,
                         context.tile_layout.as_ref(),
                     ))
                     .id();

@@ -367,7 +367,7 @@ struct CollisionResponse {
 }
 
 /// Based on the provided collision, determine the response to apply to the displacement
-fn get_collision_response<'a>(
+fn get_collision_response(
     collision: &CollisionContact,
     kinematic_data: &KinematicData,
     time: &Res<Time>,

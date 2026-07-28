@@ -87,7 +87,7 @@ fn update_tile_collision(
     tile_query: Query<(&TilePosition, &mut Collider), With<Tile>>,
 ) {
     for (tile_pos, mut collider) in tile_query {
-        let world_coords = Into::<WorldCoords>::into(tile_pos.0.clone());
+        let world_coords = Into::<WorldCoords>::into(tile_pos.0);
         collider.set_position(world_coords);
     }
 }
