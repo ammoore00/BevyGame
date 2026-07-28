@@ -42,6 +42,8 @@ pub struct KeyFrameCodec {
 
     pub health_event: HealthEventKind,
     pub disable_on_hit_iframes: Maybe<bool>,
+
+    pub exclusion_group: Maybe<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

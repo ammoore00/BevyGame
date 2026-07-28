@@ -1,15 +1,20 @@
-use std::slice;
 use crate::characters::health::{AddIFrames, HealthEvent};
 use crate::characters::stamina::StaminaEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
-use assets::resource::characters::{AttackContext, AttackProgress, AttackResource, KeyFrame};
+use assets::resource::characters::{
+    AttackContext, AttackDefinition, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
+};
 use bevy::prelude::*;
 use common::{
     AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords, WorldPosition,
     offset_position_to_facing,
 };
 use data::loc::ResourceLocation;
-use physics::{Collider, DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData};
+use physics::{
+    Collider, DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData,
+};
+use std::collections::HashMap;
+use std::slice;
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
@@ -71,9 +76,10 @@ fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Comma
         animation.frame_data().clone(),
     );
 
-    commands
-        .entity(event.entity)
-        .insert(CurrentAttack::new(event.attack.clone()));
+    commands.entity(event.entity).insert(CurrentAttack::new(
+        event.attack.clone(),
+        attack.exclusion_groups(),
+    ));
 
     commands.trigger(ParticleSpawnEvent::with_parent(
         particle_sprite,
@@ -89,12 +95,20 @@ fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Comma
 struct CurrentAttack {
     loc: ResourceLocation<AttackResource>,
     progress: AttackProgress,
+    interacted_entities: HashMap<ExclusionGroup, Vec<Entity>>,
 }
 impl CurrentAttack {
-    fn new(definition: ResourceLocation<AttackResource>) -> Self {
+    fn new(
+        definition: ResourceLocation<AttackResource>,
+        exclusion_groups: &[ExclusionGroup],
+    ) -> Self {
         Self {
             loc: definition,
             progress: AttackProgress::new(0.0),
+            interacted_entities: exclusion_groups
+                .iter()
+                .map(|exclusion_group| (exclusion_group.clone(), Vec::new()))
+                .collect(),
         }
     }
 }
@@ -109,12 +123,15 @@ fn update_attack_key_frames(
         Option<&ActiveHitboxes>,
     )>,
     non_attacking_query: Query<&ActiveHitboxes, Without<CurrentAttack>>,
-    mut existing_hitbox_query: Query<(Entity, &mut AttackHitbox, &mut Collider, &mut WorldPosition), Without<CurrentAttack>>,
+    mut existing_hitbox_query: Query<
+        (Entity, &mut AttackHitbox, &mut Collider, &mut WorldPosition),
+        Without<CurrentAttack>,
+    >,
     attack_context: AttackContext,
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    // TODO: Make this less janky
+    // Clean up any potential orphaned hitboxes
     for hitboxes in non_attacking_query.iter() {
         let existing_hitboxes = existing_hitbox_query.iter_many(hitboxes);
         for hitbox_data in existing_hitboxes {
@@ -123,6 +140,7 @@ fn update_attack_key_frames(
     }
 
     for (entity, mut attack, pos, facing, hitboxes) in attacking_query {
+        // Get the definition for the current attack
         let Some(definition) = attack_context.attack_registry.get_asset(&attack.loc) else {
             commands.entity(entity).remove::<CurrentAttack>();
             error!("Invalid attack definition: {} does not exist!", attack.loc);
@@ -133,6 +151,17 @@ fn update_attack_key_frames(
         let progress = (*increment + *attack.progress).min(1.0);
         attack.progress = AttackProgress::new(progress);
 
+        // Despawn hitboxes when attack is complete
+        if progress == 1.0 {
+            let current_hitbox_entities = hitboxes.map(|h| h.0.clone()).unwrap_or_default();
+            for hitbox_entity in current_hitbox_entities {
+                commands.entity(hitbox_entity).despawn();
+            }
+            commands.entity(entity).remove::<CurrentAttack>();
+            continue;
+        }
+
+        // Get current active hitboxes as well as keyframes for the current frame
         let active_key_frames = definition.key_frames().get_active_frames(attack.progress);
         let mut next_hitboxes = Vec::new();
         let current_hitbox_entities = hitboxes.map(|h| h.0.clone()).unwrap_or_default();
@@ -178,7 +207,6 @@ fn update_attack_key_frames(
                     .spawn((
                         AttackHitbox {
                             key_frame: key_frame.clone(),
-                            interacted_entities: Vec::new(),
                         },
                         collider,
                         WorldPosition(attack_pos),
@@ -198,10 +226,6 @@ fn update_attack_key_frames(
             if !next_hitboxes.contains(&hitbox_entity) {
                 commands.entity(hitbox_entity).despawn();
             }
-        }
-
-        if progress == 1.0 {
-            commands.entity(entity).remove::<CurrentAttack>();
         }
     }
 }
@@ -227,41 +251,58 @@ impl<'a> IntoIterator for &'a ActiveHitboxes {
 #[derive(Component, Debug, Clone)]
 pub struct AttackHitbox {
     key_frame: KeyFrame,
-    interacted_entities: Vec<Entity>,
 }
 
 /// Process collision events for attack hitboxes
 fn process_attack_hits(
     mut reader: MessageReader<DetectorCollisionsProcessedMessage>,
-    mut attack_hitbox_query: Query<(&mut AttackHitbox, &HitboxOwner)>,
+    attack_hitbox_query: Query<(&AttackHitbox, &HitboxOwner)>,
+    mut attack_owner_query: Query<&mut CurrentAttack>,
     mut commands: Commands,
 ) {
     for collision_message in reader.read() {
         for collision in &collision_message.detector_collisions {
             // Filter detector collisions to only attack hitboxes
-            let Ok((mut attack_hitbox, owner)) =
-                attack_hitbox_query.get_mut(collision.detector_entity)
+            let Ok((attack_hitbox, owner)) = attack_hitbox_query.get(collision.detector_entity)
             else {
                 continue;
             };
 
-            // Do not collide with self or entities that have already been hit
-            if collision_message.colliding_entity == owner.0
-                || attack_hitbox
-                .interacted_entities
-                .contains(&collision_message.colliding_entity)
-            {
+            let Ok(mut current_attack) = attack_owner_query.get_mut(owner.0) else {
+                error!("Failed to get current attack for hitbox owner!");
+                continue;
+            };
+
+            // Do not collide with self
+            if collision_message.colliding_entity == owner.0 {
                 continue;
             }
 
-            attack_hitbox
-                .interacted_entities
-                .push(collision_message.colliding_entity);
-
             let key_frame = &attack_hitbox.key_frame;
 
+            let Some(interacted_entities) = current_attack
+                .interacted_entities
+                .get_mut(key_frame.exclusion_group())
+            else {
+                error!(
+                    "Unregistered exclusion group {:?} for attack {:?}!",
+                    key_frame.exclusion_group(),
+                    current_attack.loc
+                );
+                continue;
+            };
+
+            // Do not collide with entities that have already been hit
+            if interacted_entities.contains(&collision_message.colliding_entity) {
+                continue;
+            }
+            interacted_entities.push(collision_message.colliding_entity);
+
             if !key_frame.disable_on_hit_iframes() {
-                commands.trigger(AddIFrames::new(collision_message.colliding_entity, ON_HIT_IFRAMES));
+                commands.trigger(AddIFrames::new(
+                    collision_message.colliding_entity,
+                    ON_HIT_IFRAMES,
+                ));
             }
 
             commands.trigger(HealthEvent::new(

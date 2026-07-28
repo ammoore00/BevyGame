@@ -46,6 +46,8 @@ pub struct AttackDefinition {
 
     #[getset(get = "pub")]
     key_frames: KeyFrameList,
+    #[getset(get = "pub")]
+    exclusion_groups: Vec<ExclusionGroup>,
 }
 impl AttackDefinition {
     pub fn get_progress_increment(&self, duration: Duration) -> AttackProgress {
@@ -56,12 +58,17 @@ impl TryFrom<AttackCodec> for AttackDefinition {
     type Error = AttackDefinitionError;
 
     fn try_from(value: AttackCodec) -> Result<Self, AttackDefinitionError> {
+        let key_frames = KeyFrameList::try_from_codec(value.key_frames, value.duration)?;
+        let exclusion_groups = key_frames.get_exclusion_groups();
+        
         Ok(AttackDefinition {
             duration: Duration::from_millis(value.duration),
             stamina_cost: value.stamina_cost,
             animation: value.animation,
             particle_sprite: value.particle_sprite,
-            key_frames: KeyFrameList::try_from_codec(value.key_frames, value.duration)?,
+            
+            key_frames,
+            exclusion_groups,
         })
     }
 }
@@ -147,13 +154,19 @@ impl KeyFrameList {
             .filter(|key_frame| key_frame.current_progress(attack_progress).is_some())
             .collect()
     }
-    
+
     /// Gets the key frame at the given index.
-    /// 
+    ///
     /// This should only be used when storing an index from an existing key frame
     /// for later retrieval and should not be used without prior reference.
     pub fn get_key_frame(&self, index: usize) -> Option<&KeyFrame> {
         self.key_frames.get(index)
+    }
+    
+    fn get_exclusion_groups(&self) -> Vec<ExclusionGroup> {
+        self.key_frames.iter()
+            .map(|key_frame| key_frame.exclusion_group.clone())
+            .collect()
     }
 
     fn try_from_codec(
@@ -174,14 +187,21 @@ impl KeyFrameList {
 
                 let disable_on_hit_iframes = codec.disable_on_hit_iframes.unwrap_or(false);
 
+                let exclusion_group = codec
+                    .exclusion_group
+                    .as_ref()
+                    .map(|group_name| ExclusionGroup::Named(group_name.clone()))
+                    .unwrap_or(ExclusionGroup::Indexed(index));
+
                 Ok(KeyFrame {
                     active_frames: [start, end],
                     hitbox,
 
                     health_event: codec.health_event,
                     disable_on_hit_iframes,
-                    
+
                     index,
+                    exclusion_group,
                 })
             })
             .collect::<Result<Vec<_>, HitboxError>>()?;
@@ -212,10 +232,13 @@ pub struct KeyFrame {
     disable_on_hit_iframes: bool,
     #[getset(get = "pub")]
     health_event: HealthEventKind,
-    
-    /// Unique identifier for this keyframe for the attack definition
+
+    /// Unique identifier within this attack for this keyframe
     #[getset(get = "pub")]
     index: usize,
+    /// Exclusion group for hitboxes which count together
+    #[getset(get = "pub")]
+    exclusion_group: ExclusionGroup,
 }
 impl KeyFrame {
     /// Get how far along in this keyframe the attack is.
@@ -242,6 +265,12 @@ impl KeyFrame {
     pub fn get_current_interpolated_hitbox(&self, frame_progress: FrameProgress) -> HitboxData {
         self.hitbox.get_current_interpolated_hitbox(frame_progress)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, TypePath)]
+pub enum ExclusionGroup {
+    Named(String),
+    Indexed(usize),
 }
 
 #[derive(Debug, Clone, TypePath)]

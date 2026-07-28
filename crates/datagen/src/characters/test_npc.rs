@@ -83,6 +83,8 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
 
             health_event: HealthEventKind::Damage(30, DamageKind::Generic),
             disable_on_hit_iframes: None.into(),
+
+            exclusion_group: None.into(),
         }
     ];
 

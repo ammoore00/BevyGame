@@ -8,7 +8,7 @@ pub use {
     animation::{AnimationContext, AnimationData, AnimationRegistry, AnimationResource, FrameData},
     attack::{
         AttackContext, AttackDefinition, AttackProgress, AttackRegistry, AttackResource, AttackSet,
-        AttackSetRegistry, AttackSetResource, KeyFrame,
+        AttackSetRegistry, AttackSetResource, ExclusionGroup, KeyFrame,
     },
     character::{
         CharacterData, CharacterRegistry, CharacterResource, CharacterSpriteRegistry,
