@@ -11,7 +11,7 @@ pub const TILE_HEIGHT: i32 = 16;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        PreUpdate,
+        FixedPreUpdate,
         (
             convert_world_to_screen_coords,
             convert_tile_to_screen_coords,

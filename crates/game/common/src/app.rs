@@ -14,14 +14,31 @@ pub(super) fn plugin(app: &mut App) {
         )
             .chain(),
     );
+    // Main game loop systems
+    app.configure_sets(
+        FixedUpdate,
+        (
+            AppSystems::PreUpdate,
+            AppSystems::TickTimers,
+            AppSystems::RecordInput,
+            AppSystems::Update,
+            AppSystems::Respond,
+        )
+            .chain(),
+    );
 
     // Set up the `Pause` state.
     app.init_state::<Pause>();
     app.configure_sets(Update, PausableSystems.run_if(in_state(Pause::Unpaused)));
+    app.configure_sets(FixedUpdate, PausableSystems.run_if(in_state(Pause::Unpaused)));
 
     app.init_state::<InputBlocked>();
     app.configure_sets(
         Update,
+        GameInputSystems.run_if(in_state(InputBlocked(false))),
+    );
+    app.configure_sets(
+        FixedUpdate,
         GameInputSystems.run_if(in_state(InputBlocked(false))),
     );
     app.add_systems(Update, block_input.in_set(AppSystems::PreUpdate));

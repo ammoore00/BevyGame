@@ -6,6 +6,10 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         GameplaySystems.run_if(in_state(GameState::Gameplay)),
     );
+    app.configure_sets(
+        FixedUpdate,
+        GameplaySystems.run_if(in_state(GameState::Gameplay)),
+    );
 }
 
 // TODO: Should this be in this crate?

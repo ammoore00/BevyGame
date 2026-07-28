@@ -12,7 +12,7 @@ pub use crate::{
     components::{Collider, ColliderKind, KinematicData, PhysicsData},
     forces::{ApplyForce, ApplyImpulse, Impulse, RemoveForce},
     movement::{DEFAULT_MAX_SPEED, HasGravity, MovementController},
-    states::DetectorCollisionResponse,
+    states::{DetectorCollisionResponse, PhysicsLevelLoadedEvent},
 };
 
 #[cfg(feature = "dev")]

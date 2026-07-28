@@ -23,7 +23,7 @@ use common::{Facing, WorldCoords, WorldPosition, marker};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        Update,
+        FixedUpdate,
         (
             (
                 apply_impulses,
@@ -141,7 +141,7 @@ fn apply_passive_friction(query: Query<(Entity, &PhysicsData)>, mut commands: Co
 fn update_velocity(
     physics_query: Query<(&mut PhysicsData, &AppliedForces)>,
     forces_query: Query<&Force>,
-    time: Res<Time>,
+    time: Res<Time<Fixed>>,
 ) {
     for (mut physics, forces) in physics_query {
         let PhysicsData::Kinematic(ref mut kinematic_data) = *physics else {
@@ -176,7 +176,7 @@ fn update_velocity(
 fn apply_component_velocity(
     kinematic_data: &mut KinematicData,
     velocity: TargetVelocity,
-    time: &Res<Time>,
+    time: &Res<Time<Fixed>>,
 ) {
     let apply_axis = |current: &mut f32, target: f32| {
         // 1. Instant application if acceleration is None
@@ -231,7 +231,7 @@ fn apply_component_velocity(
 fn steer_target_velocities(
     kinematic_data: &mut KinematicData,
     targets: Vec<TargetVelocity>,
-    time: &Res<Time>,
+    time: &Res<Time<Fixed>>,
 ) {
     if targets.is_empty() {
         return;
@@ -315,7 +315,7 @@ fn steer_target_velocities(
 fn process_collisions(
     mut message_reader: MessageReader<PhysicsCollisionsProcessedMessage>,
     mut query: Query<(&mut PhysicsData, &WorldPosition)>,
-    time: Res<Time>,
+    time: Res<Time<Fixed>>,
 ) {
     for message in message_reader.read() {
         let Ok((mut physics, pos)) = query.get_mut(message.colliding_entity) else {
@@ -370,7 +370,7 @@ struct CollisionResponse {
 fn get_collision_response(
     collision: &CollisionContact,
     kinematic_data: &KinematicData,
-    time: &Res<Time>,
+    time: &Res<Time<Fixed>>,
 ) -> CollisionResponse {
     let normal = collision.normal();
     let grounded_normal = if normal.y > 0.7 { Some(normal) } else { None };
@@ -402,7 +402,7 @@ fn update_ground_state(
     pos: WorldCoords,
     grounded: bool,
     ground_normal: Vec3,
-    time: &Time,
+    time: &Time<Fixed>,
 ) {
     kinematic_data.grounded = grounded;
 
@@ -422,7 +422,7 @@ fn update_ground_state(
 /// Prevent physics objects from sliding down slopes less than the max stable slope angle.
 ///
 /// Returns the adjustment to be made to the velocity to account for slope sliding.
-fn stabilize_on_slope(ground_normal: Vec3, time: &Time) -> Vec3 {
+fn stabilize_on_slope(ground_normal: Vec3, time: &Time<Fixed>) -> Vec3 {
     if ground_normal == Vec3::ZERO {
         return Vec3::ZERO;
     }
@@ -456,7 +456,7 @@ fn stabilize_on_slope(ground_normal: Vec3, time: &Time) -> Vec3 {
 }
 
 /// Apply the final physics displacement to the entity's position
-fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>, time: Res<Time>) {
+fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>, time: Res<Time<Fixed>>) {
     for (physics, mut pos) in query {
         let new_position =
             if let PhysicsData::Kinematic(KinematicData { next_velocity, .. }) = *physics {

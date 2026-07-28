@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        Update,
+        FixedUpdate,
         (check_collisions, validate_colliders).in_set(PhysicsPipeline::DetectCollisions),
     );
 

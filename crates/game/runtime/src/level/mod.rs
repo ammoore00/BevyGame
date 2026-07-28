@@ -11,6 +11,7 @@ use assets::resource::level::{Palette, Palettes};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use common::{GameState, marker};
+use physics::PhysicsLevelLoadedEvent;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((grid::plugin, map::plugin));
@@ -28,6 +29,11 @@ pub(super) fn plugin(app: &mut App) {
 
     app.configure_sets(
         Update,
+        LevelLoadedSystems.run_if(in_state(LevelSpawnState::Finished)),
+    );
+
+    app.configure_sets(
+        FixedUpdate,
         LevelLoadedSystems.run_if(in_state(LevelSpawnState::Finished)),
     );
 }
@@ -90,9 +96,14 @@ fn on_spawn_level(
     next_state.set(LevelSpawnState::Uninitialized.next());
 }
 
-fn on_reset_level(_: On<ResetLevelEvent>, mut next_state: ResMut<NextState<LevelSpawnState>>) {
+fn on_reset_level(
+    _: On<ResetLevelEvent>,
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+    mut commands: Commands,
+) {
     info!("Cleaning up level");
     next_state.set(LevelSpawnState::Uninitialized);
+    commands.trigger(PhysicsLevelLoadedEvent(false));
 }
 
 fn construct_level(mut next_state: ResMut<NextState<LevelSpawnState>>, mut commands: Commands) {
@@ -185,9 +196,10 @@ fn add_objects(
 
     next_state.set(LevelSpawnState::AddObjects.next());
 }
-fn finish_level_spawn(mut next_state: ResMut<NextState<LevelSpawnState>>) {
-    info!("Level construction - cleanup");
+fn finish_level_spawn(mut next_state: ResMut<NextState<LevelSpawnState>>, mut commands: Commands) {
+    info!("Level construction - finishing");
     next_state.set(LevelSpawnState::Cleanup.next());
+    commands.trigger(PhysicsLevelLoadedEvent(true));
     info!("Finished constructing level");
 }
 

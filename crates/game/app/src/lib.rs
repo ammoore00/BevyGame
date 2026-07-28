@@ -64,6 +64,8 @@ impl Plugin for AppPlugin {
             screens::plugin,
         ));
 
+        app.insert_resource(Time::<Fixed>::from_hz(240.0));
+
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
 

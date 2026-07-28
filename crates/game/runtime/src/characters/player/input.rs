@@ -13,7 +13,7 @@ use physics::{ApplyImpulse, Impulse, KinematicData, MovementController, PhysicsD
 use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, camera_follow_player.in_set(AppSystems::Respond));
+    app.add_systems(FixedUpdate, camera_follow_player.in_set(AppSystems::Respond));
 
     app.add_observer(on_movement_input);
     app.add_observer(on_jump_input);
