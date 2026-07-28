@@ -30,6 +30,7 @@ pub(super) fn plugin(app: &mut App) {
 /// The length of time that an attack will prevent the character from taking additional damage.
 pub const ON_HIT_IFRAMES: Duration = Duration::from_millis(250);
 
+/// Initiate an attack from the entity to the provided facing
 #[derive(EntityEvent, Debug, Clone, Reflect, derive_new::new)]
 pub struct AttackEvent {
     entity: Entity,
@@ -37,6 +38,7 @@ pub struct AttackEvent {
     attack: ResourceLocation<AttackResource>,
 }
 
+/// Initiate attack in response to an attack event request
 fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Commands) {
     let Some(attack) = context.attack_registry.get_asset(&event.attack) else {
         return error!(
@@ -82,6 +84,7 @@ fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Comma
     commands.trigger(StaminaEvent::new(event.entity, attack.stamina_cost()));
 }
 
+/// Store the current attack definition location, and the current progress value
 #[derive(Component, Debug)]
 struct CurrentAttack {
     loc: ResourceLocation<AttackResource>,
@@ -96,6 +99,7 @@ impl CurrentAttack {
     }
 }
 
+/// Update hitboxes for any ongoing attacks
 fn update_attack_key_frames(
     attacking_query: Query<(
         Entity,
@@ -133,7 +137,9 @@ fn update_attack_key_frames(
         let mut next_hitboxes = Vec::new();
         let current_hitbox_entities = hitboxes.map(|h| h.0.clone()).unwrap_or_default();
 
+        // For each active key frame, modify or create hitboxes as needed
         for key_frame in active_key_frames {
+            // Look for an existing hitbox for this key frame
             let mut found_existing = None;
             for &hitbox_entity in &current_hitbox_entities {
                 if let Ok((_, hitbox, _, _)) = existing_hitbox_query.get(hitbox_entity)
@@ -144,6 +150,7 @@ fn update_attack_key_frames(
                 }
             }
 
+            // Get the hitbox data for the current instant
             let frame_progress = key_frame
                 .current_progress(attack.progress)
                 .expect("Attack progress outside of frame window");
@@ -153,6 +160,7 @@ fn update_attack_key_frames(
             let collider_codec = hitbox_data.collider();
             let collider = collider_codec.make_collider(attack_pos.0);
 
+            // Modify or spawn a new hitbox
             if let Some(hitbox_entity) = found_existing {
                 // Update in-place
                 if let Ok((_, mut hitbox, mut existing_collider, mut existing_pos)) =
@@ -198,10 +206,12 @@ fn update_attack_key_frames(
     }
 }
 
+/// Store the owner of the current attack hitboxes
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[relationship(relationship_target = ActiveHitboxes)]
 struct HitboxOwner(Entity);
 
+/// Store all active attack hitboxes for the entity
 #[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
 #[relationship_target(relationship = HitboxOwner, linked_spawn)]
 struct ActiveHitboxes(Vec<Entity>);
@@ -220,6 +230,7 @@ pub struct AttackHitbox {
     interacted_entities: Vec<Entity>,
 }
 
+/// Process collision events for attack hitboxes
 fn process_attack_hits(
     mut reader: MessageReader<DetectorCollisionsProcessedMessage>,
     mut attack_hitbox_query: Query<(&mut AttackHitbox, &HitboxOwner)>,
