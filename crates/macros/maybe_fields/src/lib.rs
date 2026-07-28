@@ -1,14 +1,8 @@
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{
-    parse_macro_input,
+    Attribute, Fields, GenericArgument, ItemStruct, PathArguments, Type, parse_macro_input,
     parse_quote,
-    Attribute,
-    Fields,
-    GenericArgument,
-    ItemStruct,
-    PathArguments,
-    Type,
 };
 
 #[proc_macro_attribute]
@@ -20,8 +14,8 @@ pub fn maybe_fields(_args: TokenStream, input: TokenStream) -> TokenStream {
             &item,
             "#[maybe_fields] only supports structs with named fields",
         )
-            .to_compile_error()
-            .into();
+        .to_compile_error()
+        .into();
     };
 
     for field in &mut fields.named {
@@ -65,14 +59,17 @@ fn is_maybe_type(ty: &Type) -> bool {
 
 fn has_serde_default(attrs: &[Attribute]) -> bool {
     attrs.iter().any(|attr| {
-        attr.path().is_ident("serde")
-            && attr.meta.to_token_stream().to_string().contains("default")
+        attr.path().is_ident("serde") && attr.meta.to_token_stream().to_string().contains("default")
     })
 }
 
 fn has_serde_skip_serializing_if(attrs: &[Attribute]) -> bool {
     attrs.iter().any(|attr| {
         attr.path().is_ident("serde")
-            && attr.meta.to_token_stream().to_string().contains("skip_serializing_if")
+            && attr
+                .meta
+                .to_token_stream()
+                .to_string()
+                .contains("skip_serializing_if")
     })
 }

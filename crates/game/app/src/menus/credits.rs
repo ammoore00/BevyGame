@@ -92,7 +92,10 @@ fn license() -> impl Scene {
     grid!(
         ["Engine Code", "Mozilla Public License 2.0"],
         ["Assets and Game Content", "All Rights Reserved"],
-        ["Provisions granted for user generated content", "See LICENSE.md for more information"],
+        [
+            "Provisions granted for user generated content",
+            "See LICENSE.md for more information"
+        ],
     )
 }
 

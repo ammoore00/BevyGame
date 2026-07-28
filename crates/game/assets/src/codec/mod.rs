@@ -2,17 +2,17 @@ mod animation;
 mod attack;
 mod character;
 mod collider;
+mod health;
 mod room;
 mod sprite;
 mod tile;
-mod health;
 
 pub use crate::codec::{
     animation::{AnimationCodec, FrameDataCodec},
-    attack::{AttackCodec, AttackSetCodec, KeyFrameCodec, HitboxCodec},
+    attack::{AttackCodec, AttackSetCodec, HitboxCodec, KeyFrameCodec},
     character::{ActionStateCodec, AllowedStatesCodec, CharacterCodec},
     collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec},
-    health::{DamageModifierCodec, DamageModifierKind, ModifierTier, DamageKind, HealthEventKind},
+    health::{DamageKind, DamageModifierCodec, DamageModifierKind, HealthEventKind, ModifierTier},
     room::RoomCodec,
     sprite::TextureAtlasCodec,
     tile::TileCodec,

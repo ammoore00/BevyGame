@@ -1,7 +1,12 @@
-use std::collections::HashMap;
-use assets::codec::{ActionStateCodec, CapsuleCodec, ColliderCodec, ColliderDataCodec, DamageKind, FrameDataCodec, HealthEventKind, HitboxCodec, KeyFrameCodec};
-use crate::characters::{create_character, AnimationData, AttackData, AttackSetData, CharacterData};
 use crate::WriteError;
+use crate::characters::{
+    AnimationData, AttackData, AttackSetData, CharacterData, create_character,
+};
+use assets::codec::{
+    ActionStateCodec, CapsuleCodec, ColliderCodec, ColliderDataCodec, DamageKind, FrameDataCodec,
+    HealthEventKind, HitboxCodec, KeyFrameCodec,
+};
+use std::collections::HashMap;
 
 pub(super) fn generate_player() -> Result<(), WriteError> {
     let mut animation_map = HashMap::new();
@@ -10,7 +15,8 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let idle = AnimationData::new(
         "player/idle",
-        64, 64,
+        64,
+        64,
         FrameDataCodec::FixedInterval {
             num_frames: 12,
             interval: 150,
@@ -20,7 +26,8 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let walking = AnimationData::new(
         "player/walking",
-        64, 64,
+        64,
+        64,
         FrameDataCodec::FixedInterval {
             num_frames: 8,
             interval: 50,
@@ -30,7 +37,8 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let running = AnimationData::new(
         "player/running",
-        64, 64,
+        64,
+        64,
         FrameDataCodec::FixedInterval {
             num_frames: 8,
             interval: 50,
@@ -40,12 +48,14 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let sprinting = AnimationData::new(
         "player/sprinting",
-        64, 64,
+        64,
+        64,
         FrameDataCodec::FixedInterval {
             num_frames: 8,
             interval: 35,
         },
-    ).with_image("player/running");
+    )
+    .with_image("player/running");
     animation_map.insert(ActionStateCodec::Sprinting, sprinting);
 
     // Attacks
@@ -60,7 +70,8 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let basic_attack_animation = AnimationData::new(
         basic_attack_loc,
-        96, 96,
+        96,
+        96,
         FrameDataCodec::FixedInterval {
             num_frames: basic_attack_frames as usize,
             interval: basic_attack_interval,
@@ -69,24 +80,22 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let basic_attack_stamina_cost = 20;
 
-    let basic_attack_key_frames = vec![
-        KeyFrameCodec {
-            start_time: 0,
-            end_time: basic_attack_length,
-            hitbox: HitboxCodec::Static {
-                collider: ColliderCodec {
-                    format: ColliderCodec::LATEST_FORMAT,
-                    collider: ColliderDataCodec::Sphere(1.0)
-                },
-                offset: (0., 0., 1.).into(),
+    let basic_attack_key_frames = vec![KeyFrameCodec {
+        start_time: 0,
+        end_time: basic_attack_length,
+        hitbox: HitboxCodec::Static {
+            collider: ColliderCodec {
+                format: ColliderCodec::LATEST_FORMAT,
+                collider: ColliderDataCodec::Sphere(1.0),
             },
+            offset: (0., 0., 1.).into(),
+        },
 
-            health_event: HealthEventKind::Damage(30, DamageKind::Generic),
-            disable_on_hit_iframes: None.into(),
-            
-            exclusion_group: None.into(),
-        }
-    ];
+        health_event: HealthEventKind::Damage(30, DamageKind::Generic),
+        disable_on_hit_iframes: None.into(),
+
+        exclusion_group: None.into(),
+    }];
 
     let basic_attack = AttackData::new(
         basic_attack_loc,
@@ -100,12 +109,10 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let attack_set = AttackSetData::new(basic_attack_loc, attacks);
 
-    let collider = ColliderDataCodec::Capsule(
-        CapsuleCodec::Vertical {
-            height: 1.25,
-            radius: 0.25,
-        }
-    );
+    let collider = ColliderDataCodec::Capsule(CapsuleCodec::Vertical {
+        height: 1.25,
+        radius: 0.25,
+    });
 
     let data = CharacterData::new("player", collider)
         .with_animations(animation_map)

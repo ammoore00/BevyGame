@@ -181,7 +181,8 @@ impl PartialEq for WorldCoords {
 }
 impl Ord for WorldCoords {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.y.total_cmp(&other.y)
+        self.y
+            .total_cmp(&other.y)
             .then_with(|| self.x.total_cmp(&other.x))
             .then_with(|| self.z.total_cmp(&other.z))
     }

@@ -3,7 +3,7 @@ use crate::debug_options::render::helpers::*;
 use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{GameState, Scale, TilePosition, WorldPosition, marker, WorldCoords};
+use common::{GameState, Scale, TilePosition, WorldCoords, WorldPosition, marker};
 use physics::{Collider, ColliderData};
 use runtime::characters::Character;
 use runtime::debug::{AttackHitbox, Tile};
@@ -175,10 +175,10 @@ fn render_collider(
                 },
                 scale.0,
             )
-                .into_iter()
-                .for_each(|line| {
-                    commands.spawn((tile_collision_bundle(), line));
-                });
+            .into_iter()
+            .for_each(|line| {
+                commands.spawn((tile_collision_bundle(), line));
+            });
         }
         ColliderData::ConvexHull {
             vertices, indices, ..
@@ -193,10 +193,10 @@ fn render_collider(
                 },
                 scale.0,
             )
-                .into_iter()
-                .for_each(|line| {
-                    commands.spawn((tile_collision_bundle(), line));
-                });
+            .into_iter()
+            .for_each(|line| {
+                commands.spawn((tile_collision_bundle(), line));
+            });
         }
         ColliderData::Capsule(capsule) => {
             let lines = draw_capsule(pos, *capsule, settings, scale.0);

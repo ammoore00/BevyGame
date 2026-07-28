@@ -1,12 +1,12 @@
 use crate::codec::RoomCodec;
 use crate::loader::{LoaderJobManager, RonAssetLoader};
+use crate::resource::level::TileResource;
 use bevy::prelude::*;
 use common::TileCoords;
 use data::define_data_resource;
 use data::loc::ResourceLocation;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
-use crate::resource::level::TileResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
@@ -54,11 +54,7 @@ impl From<RoomCodec> for RoomDefinition {
     }
 }
 impl RoomDefinition {
-    pub fn new(
-        room_type: RoomType,
-        connections: Vec<RoomConnection>,
-        layout: RoomLayout,
-    ) -> Self {
+    pub fn new(room_type: RoomType, connections: Vec<RoomConnection>, layout: RoomLayout) -> Self {
         let bounds = *layout.bounds();
 
         Self {
@@ -82,8 +78,16 @@ pub struct RoomConnection {
 }
 
 impl RoomConnection {
-    pub fn new(location: RoomTileCoords, connection_size: ConnectionSize, facing: ConnectionFacing) -> Self {
-        Self { location, connection_size, facing }
+    pub fn new(
+        location: RoomTileCoords,
+        connection_size: ConnectionSize,
+        facing: ConnectionFacing,
+    ) -> Self {
+        Self {
+            location,
+            connection_size,
+            facing,
+        }
     }
 }
 
@@ -119,13 +123,17 @@ pub struct RoomLayout {
 impl RoomLayout {
     pub fn new(
         tile_palette: Vec<ResourceLocation<TileResource>>,
-        tiles: Vec<Vec<Vec<u8>>>
+        tiles: Vec<Vec<Vec<u8>>>,
     ) -> Result<Self, RoomLayoutError> {
-        let bounds = UVec3::new(tiles[0][0].len() as u32, tiles.len() as u32, tiles[0].len() as u32);
+        let bounds = UVec3::new(
+            tiles[0][0].len() as u32,
+            tiles.len() as u32,
+            tiles[0].len() as u32,
+        );
 
-        if tiles.iter().any(|yz| yz.len() != bounds.z as usize
-            || yz.iter().any(|xyz| xyz.len() != bounds.x as usize))
-        {
+        if tiles.iter().any(|yz| {
+            yz.len() != bounds.z as usize || yz.iter().any(|xyz| xyz.len() != bounds.x as usize)
+        }) {
             return Err(RoomLayoutError::MismatchedSize);
         }
 
@@ -133,30 +141,23 @@ impl RoomLayout {
             .into_iter()
             .flat_map(|yz| yz.into_iter())
             .flat_map(|x| x.into_iter())
-            .map(|index: u8| {
-                match index {
-                    0 => None,
-                    _ => {
-                        if index as usize > tile_palette.len() {
-                            return None;
-                        }
-                        Some(tile_palette[index as usize - 1].clone())
-                    },
+            .map(|index: u8| match index {
+                0 => None,
+                _ => {
+                    if index as usize > tile_palette.len() {
+                        return None;
+                    }
+                    Some(tile_palette[index as usize - 1].clone())
                 }
             })
             .collect();
 
-        Ok(Self {
-            bounds,
-            tiles
-        })
+        Ok(Self { bounds, tiles })
     }
 
     pub fn index_of(&self, coords: impl Into<UVec3>) -> usize {
         let coords = coords.into();
-        (coords.x
-            + coords.z * self.bounds.x
-            + coords.y * self.bounds.x * self.bounds.z) as usize
+        (coords.x + coords.z * self.bounds.x + coords.y * self.bounds.x * self.bounds.z) as usize
     }
 }
 

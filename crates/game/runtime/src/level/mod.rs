@@ -6,11 +6,11 @@ pub mod map;
 use crate::characters::npc::npc_bundle;
 use crate::characters::player::player;
 use crate::level::grid::nav::NavContext;
-use crate::level::map::{map_scene, NavBakeError};
+use crate::level::map::{NavBakeError, map_scene};
 use assets::resource::level::{Palette, Palettes};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
-use common::{marker, GameState};
+use common::{GameState, marker};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((grid::plugin, map::plugin));
@@ -26,7 +26,10 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_reset_level);
     app.add_observer(on_level_error);
 
-    app.configure_sets(Update, LevelLoadedSystems.run_if(in_state(LevelSpawnState::Finished)));
+    app.configure_sets(
+        Update,
+        LevelLoadedSystems.run_if(in_state(LevelSpawnState::Finished)),
+    );
 }
 
 /// Systems that should run only after the level has been loaded
@@ -59,11 +62,11 @@ impl LevelSpawnState {
             LevelSpawnState::Finished => {
                 warn!("Attempting to transition from Finished state using next().");
                 LevelSpawnState::Finished
-            },
-            LevelSpawnState::Error=> {
+            }
+            LevelSpawnState::Error => {
                 error!("Attempting to transition from Error state using next().");
                 LevelSpawnState::Error
-            },
+            }
         }
     }
 }
@@ -87,18 +90,12 @@ fn on_spawn_level(
     next_state.set(LevelSpawnState::Uninitialized.next());
 }
 
-fn on_reset_level(
-    _: On<ResetLevelEvent>,
-    mut next_state: ResMut<NextState<LevelSpawnState>>,
-) {
+fn on_reset_level(_: On<ResetLevelEvent>, mut next_state: ResMut<NextState<LevelSpawnState>>) {
     info!("Cleaning up level");
     next_state.set(LevelSpawnState::Uninitialized);
 }
 
-fn construct_level(
-    mut next_state: ResMut<NextState<LevelSpawnState>>,
-    mut commands: Commands,
-) {
+fn construct_level(mut next_state: ResMut<NextState<LevelSpawnState>>, mut commands: Commands) {
     info!("Level construction - init");
 
     let level = bsn![
@@ -131,7 +128,7 @@ fn bake_tiles(
             next_state.set(LevelSpawnState::Error);
             commands.trigger(LevelErrorEvent(err.into()));
             return;
-        },
+        }
     };
 
     let palettes = level_palettes.into_inner();
@@ -173,15 +170,12 @@ fn add_objects(
             next_state.set(LevelSpawnState::Error);
             commands.trigger(LevelErrorEvent(err.into()));
             return;
-        },
+        }
     };
 
     let player = player(Vec3::new(3.0, 1.0, 3.0));
 
-    let test_npc = npc_bundle(
-        "test".parse().unwrap(),
-        Vec3::new(5.0, 1.0, 3.0)
-    );
+    let test_npc = npc_bundle("test".parse().unwrap(), Vec3::new(5.0, 1.0, 3.0));
 
     let children = &[
         commands.spawn_scene(player).id(),
@@ -191,9 +185,7 @@ fn add_objects(
 
     next_state.set(LevelSpawnState::AddObjects.next());
 }
-fn finish_level_spawn(
-    mut next_state: ResMut<NextState<LevelSpawnState>>,
-) {
+fn finish_level_spawn(mut next_state: ResMut<NextState<LevelSpawnState>>) {
     info!("Level construction - cleanup");
     next_state.set(LevelSpawnState::Cleanup.next());
     info!("Finished constructing level");

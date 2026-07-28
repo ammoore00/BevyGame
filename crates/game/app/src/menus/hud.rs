@@ -1,7 +1,7 @@
 use crate::asset_tracking::LoadResource;
 use crate::screens::Screen;
 use bevy::prelude::*;
-use common::{marker, AppSystems, GameplaySystems};
+use common::{AppSystems, GameplaySystems, marker};
 use runtime::debug::{Health, Player, Stamina};
 
 pub(super) fn plugin(app: &mut App) {
@@ -82,13 +82,7 @@ const HEALTH_BAR_PIXEL_VALUE: usize = 10;
 
 // TODO: Update this to not need to query values from runtime directly
 fn update_health_bar(
-    player_query: Query<
-        &Health,
-        (
-            With<Player>,
-            Changed<Health>,
-        )
-    >,
+    player_query: Query<&Health, (With<Player>, Changed<Health>)>,
     health_bar_query: Query<Entity, With<HealthBar>>,
     segment_query: Query<Entity, With<HealthBarSegment>>,
     stat_bar_assets: Res<StatBarAssets>,
@@ -125,13 +119,7 @@ const STAMINA_BAR_PIXEL_VALUE: usize = 10;
 
 // TODO: Update this to not need to query values from runtime directly
 fn update_stamina_bar(
-    player_query: Query<
-        &Stamina,
-        (
-            With<Player>,
-            Changed<Stamina>,
-        )
-    >,
+    player_query: Query<&Stamina, (With<Player>, Changed<Stamina>)>,
     health_bar_query: Query<Entity, With<StaminaBar>>,
     segment_query: Query<Entity, With<StaminaBarSegment>>,
     stat_bar_assets: Res<StatBarAssets>,

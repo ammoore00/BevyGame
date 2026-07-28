@@ -1,8 +1,8 @@
 use crate::level::grid;
 use crate::level::grid::nav::{NavContext, TileNavMap};
-use crate::level::grid::tile::{set_tile_location, TileEntity};
-use crate::level::grid::{grid_bundle, merge_tile_map, Grid};
-use crate::level::map::room::{build_room, RoomBuilderContext};
+use crate::level::grid::tile::{TileEntity, set_tile_location};
+use crate::level::grid::{Grid, grid_bundle, merge_tile_map};
+use crate::level::map::room::{RoomBuilderContext, build_room};
 use assets::resource::level::{MapDataLocation, MapDefinition, MapResource, Palette};
 use bevy::ecs::query::{QueryData, QueryItem, QuerySingleError};
 use bevy::prelude::*;
@@ -14,10 +14,7 @@ use rand::{Rng, RngExt};
 pub mod room;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        initialize_maps
-    );
+    app.add_systems(Update, initialize_maps);
 }
 
 register_prototype_system!(initialize_maps, MapBuilder);
@@ -39,7 +36,9 @@ impl Default for MapProps {
 #[derive(Component, Default, Clone)]
 pub struct Map(());
 impl PrototypeFinalizedMarker for Map {
-    fn new(_: PrototypeMarkerToken) -> Self { Self(()) }
+    fn new(_: PrototypeMarkerToken) -> Self {
+        Self(())
+    }
 }
 
 #[derive(SceneComponent, Default, Clone)]
@@ -72,7 +71,7 @@ impl PrototypeBuilder for MapBuilder {
         loc: &<Self::Proto as Prototype>::DataLocation,
         _: &QueryItem<'_, '_, <Self::QueryData<'_, '_> as QueryData>::ReadOnly>,
         context: &mut Self::Context<'_, '_>,
-        _: Commands
+        _: Commands,
     ) -> Result<(), BevyError> {
         // TODO: Real data handling
         let data = loc.0.as_ref().unwrap();
@@ -116,11 +115,16 @@ pub fn spawn_map_grid(
         let room_tile_map = build_room(&room, context);
 
         let grid_size = grid.size();
-        merge_tile_map(grid.tile_map_mut(), room_tile_map, IVec3::new(grid_size.x as i32, 0, 0))
-            .expect("Failed to merge tile level");
+        merge_tile_map(
+            grid.tile_map_mut(),
+            room_tile_map,
+            IVec3::new(grid_size.x as i32, 0, 0),
+        )
+        .expect("Failed to merge tile level");
     }
 
-    let grid_entity = context.commands
+    let grid_entity = context
+        .commands
         .spawn(grid_bundle(grid.clone(), context.scale.0))
         .id();
 
@@ -134,10 +138,7 @@ pub fn spawn_map_grid(
     grid_entity
 }
 
-pub fn bake_nav(
-    context: NavContext,
-    mut commands: Commands,
-) -> Result<(), NavBakeError> {
+pub fn bake_nav(context: NavContext, mut commands: Commands) -> Result<(), NavBakeError> {
     let (map_entity, children) = context.map.single()?;
 
     let mut tile_map = None;
@@ -152,7 +153,7 @@ pub fn bake_nav(
     let tile_nav_map = TileNavMap::from_map(tile_map, context.nav_query);
     let nav_entity = commands.spawn(tile_nav_map).id();
     commands.entity(map_entity).add_child(nav_entity);
-    
+
     Ok(())
 }
 

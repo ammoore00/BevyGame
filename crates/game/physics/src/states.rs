@@ -11,15 +11,13 @@ pub(crate) fn plugin(app: &mut App) {
                 PhysicsPipeline::ReactToForces,
                 PhysicsPipeline::RespondToCollisions,
                 PhysicsPipeline::UpdatePositions,
-            ).chain(),
-            (
-                PhysicsPipeline::DetectCollisions,
-                DetectorCollisionResponse,
-            ).chain()
+            )
+                .chain(),
+            (PhysicsPipeline::DetectCollisions, DetectorCollisionResponse).chain(),
         )
             .in_set(GameplaySystems)
             .in_set(PausableSystems)
-            .in_set(AppSystems::Update)
+            .in_set(AppSystems::Update),
     );
 }
 

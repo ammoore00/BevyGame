@@ -1,6 +1,6 @@
 mod debug_option;
 
-use proc_macro::{TokenStream};
+use proc_macro::TokenStream;
 use std::error::Error;
 
 #[proc_macro_derive(DebugOption, attributes(enabled))]

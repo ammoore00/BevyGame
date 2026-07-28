@@ -7,16 +7,24 @@ use crate::{asset_tracking::ResourceHandles, screens::Screen};
 use widgets::text;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Screen::Loading(&Screen::Gameplay)), spawn_gameplay_loading_screen.spawn());
+    app.add_systems(
+        OnEnter(Screen::Loading(&Screen::Gameplay)),
+        spawn_gameplay_loading_screen.spawn(),
+    );
     #[cfg(feature = "dev")]
-    app.add_systems(OnEnter(Screen::Loading(&Screen::Editor)), spawn_editor_loading_screen.spawn());
+    app.add_systems(
+        OnEnter(Screen::Loading(&Screen::Editor)),
+        spawn_editor_loading_screen.spawn(),
+    );
 
     app.add_systems(
         Update,
         (
-            enter_gameplay_screen.run_if(in_state(Screen::Loading(&Screen::Gameplay)).and_then(all_assets_loaded)),
+            enter_gameplay_screen
+                .run_if(in_state(Screen::Loading(&Screen::Gameplay)).and_then(all_assets_loaded)),
             #[cfg(feature = "dev")]
-            enter_editor_screen.run_if(in_state(Screen::Loading(&Screen::Editor)).and_then(all_assets_loaded)),
+            enter_editor_screen
+                .run_if(in_state(Screen::Loading(&Screen::Editor)).and_then(all_assets_loaded)),
         ),
     );
 }

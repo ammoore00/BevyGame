@@ -1,5 +1,7 @@
 use crate::dev_tools::editor::window::properties::EditorCodec;
 use crate::screens::Screen;
+use assets::codec::{AnimationCodec, AttackCodec, CharacterCodec};
+use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::tasks::IoTaskPool;
@@ -10,8 +12,6 @@ use getset::Getters;
 use std::any::TypeId;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use assets::codec::{AnimationCodec, AttackCodec, CharacterCodec};
-use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<FileManager>();

@@ -13,29 +13,17 @@ use data::loc::loc;
 pub struct ButtonImpl;
 impl ButtonImpl {
     fn scene(config: ButtonConfigProp) -> impl Scene {
-        let (
-            style,
-            button_children,
-            scene
-        ) = match config.config.make_scene() {
+        let (style, button_children, scene) = match config.config.make_scene() {
             ButtonConfigScene::Styled {
                 button_style,
                 button_children,
                 scene,
-            } => (
-                Box::new(bsn! [button_style]),
-                button_children,
-                scene,
-            ),
+            } => (Box::new(bsn![button_style]), button_children, scene),
             ButtonConfigScene::Background {
                 background,
                 button_children,
-                scene
-            } => (
-                Box::new(bsn! [background]),
-                button_children,
                 scene,
-            ),
+            } => (Box::new(bsn![background]), button_children, scene),
         };
 
         bsn! [
@@ -62,7 +50,7 @@ impl ButtonImpl {
 
 #[derive(Default)]
 pub struct ButtonConfigProp {
-    pub config: ButtonConfig
+    pub config: ButtonConfig,
 }
 
 pub enum ButtonConfig {
@@ -82,7 +70,7 @@ pub enum ButtonConfig {
         color: Color,
         palette: BackgroundInteractionPalette,
         scene: Option<Box<dyn Scene>>,
-    }
+    },
 }
 impl ButtonConfig {
     pub(crate) fn styled(style: ButtonStyle) -> Self {
@@ -90,30 +78,66 @@ impl ButtonConfig {
     }
 
     pub(crate) fn text(text: String, font_size: FontSize, color: Color) -> Self {
-        Self::Text { text, font_size, color, scene: None }
+        Self::Text {
+            text,
+            font_size,
+            color,
+            scene: None,
+        }
     }
 
-    pub(crate) fn text_inline(text: String, font_size: FontSize, color: Color, palette: BackgroundInteractionPalette) -> Self {
-        Self::TextInline { text, font_size, color, palette, scene: None }
+    pub(crate) fn text_inline(
+        text: String,
+        font_size: FontSize,
+        color: Color,
+        palette: BackgroundInteractionPalette,
+    ) -> Self {
+        Self::TextInline {
+            text,
+            font_size,
+            color,
+            palette,
+            scene: None,
+        }
     }
 
     pub(crate) fn with_scene(self, scene: impl Scene) -> Self {
         match self {
-            Self::Styled { style, .. } =>
-                Self::Styled { style, scene: Some(Box::new(scene)) },
-            Self::Text { text, font_size, color, .. } =>
-                Self::Text { text, font_size, color, scene: Some(Box::new(scene)) },
-            Self::TextInline { text, font_size, color, palette, .. } =>
-                Self::TextInline { text, font_size, color, palette, scene: Some(Box::new(scene)) },
+            Self::Styled { style, .. } => Self::Styled {
+                style,
+                scene: Some(Box::new(scene)),
+            },
+            Self::Text {
+                text,
+                font_size,
+                color,
+                ..
+            } => Self::Text {
+                text,
+                font_size,
+                color,
+                scene: Some(Box::new(scene)),
+            },
+            Self::TextInline {
+                text,
+                font_size,
+                color,
+                palette,
+                ..
+            } => Self::TextInline {
+                text,
+                font_size,
+                color,
+                palette,
+                scene: Some(Box::new(scene)),
+            },
         }
     }
 
     pub(crate) fn make_scene(self) -> ButtonConfigScene {
         match self {
             ButtonConfig::Styled { style, scene } => {
-                let style = Box::new(bsn! [
-                    {Self::make_scene_from_style(style)}
-                ]);
+                let style = Box::new(bsn![{ Self::make_scene_from_style(style) }]);
                 ButtonConfigScene::Styled {
                     button_style: style,
                     button_children: Box::new(bsn![]),
@@ -124,14 +148,11 @@ impl ButtonConfig {
                 text,
                 font_size,
                 color,
-                scene
+                scene,
             } => {
-                let button_style = Box::new(bsn! [
-                    {Self::make_scene_from_style(ButtonStyle::Default)}
-                ]);
-                let button_children = Box::new(bsn! [
-                    {text::text(text, font_size, color)}
-                ]);
+                let button_style =
+                    Box::new(bsn![{ Self::make_scene_from_style(ButtonStyle::Default) }]);
+                let button_children = Box::new(bsn![{ text::text(text, font_size, color) }]);
                 ButtonConfigScene::Styled {
                     button_style,
                     button_children,
@@ -143,7 +164,7 @@ impl ButtonConfig {
                 font_size,
                 color,
                 palette,
-                scene
+                scene,
             } => {
                 let background = Box::new(bsn! [
                     BackgroundColor({palette.none})
@@ -153,9 +174,7 @@ impl ButtonConfig {
                         pressed: {palette.pressed},
                     }
                 ]);
-                let button_children = Box::new(bsn! [
-                    {text::text(text, font_size, color)}
-                ]);
+                let button_children = Box::new(bsn![{ text::text(text, font_size, color) }]);
                 ButtonConfigScene::Background {
                     background,
                     button_children,
@@ -195,5 +214,5 @@ pub enum ButtonConfigScene {
         background: Box<dyn Scene>,
         button_children: Box<dyn Scene>,
         scene: Option<Box<dyn Scene>>,
-    }
+    },
 }

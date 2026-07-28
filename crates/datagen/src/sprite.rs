@@ -17,7 +17,7 @@ impl TextureAtlasData {
             offset: None,
         }
     }
-    
+
     pub fn with_padding(self, x: u32, y: u32) -> Self {
         Self {
             padding: Some((x, y)),

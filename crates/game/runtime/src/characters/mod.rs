@@ -1,4 +1,5 @@
 use crate::action_state_scene;
+use crate::debug::Health;
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
 use assets::resource::characters::{AnimationContext, CharacterData, CharacterResource};
@@ -8,11 +9,10 @@ use bevy::prelude::*;
 use common::{Facing, GameplaySystems, Scale, WorldPosition};
 use data::prelude::*;
 use data::register_prototype_system;
-use physics::{HasGravity, MovementController, PhysicsData, DEFAULT_MAX_SPEED};
+use physics::{DEFAULT_MAX_SPEED, HasGravity, MovementController, PhysicsData};
 use state::ActionStateTracker;
 use std::any::TypeId;
 use std::fmt::Debug;
-use crate::debug::Health;
 
 // TODO: Remove these pub(crate) declarations in favor of better exports
 pub(crate) mod animation;

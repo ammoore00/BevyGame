@@ -1,8 +1,8 @@
+use crate::resource::level::palette::Palette;
 use bevy::prelude::*;
-use getset::Getters;
 use data::define_data_resource;
 use data::prelude::ResourceLocation;
-use crate::resource::level::palette::Palette;
+use getset::Getters;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<MapDefinition>();

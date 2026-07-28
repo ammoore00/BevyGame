@@ -1,15 +1,17 @@
+use crate::LevelLoadedSystems;
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use crate::level::grid::nav::{NavEdgeKind, TileNavMap};
 use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
 use bevy::prelude::*;
-use common::{AppSystems, GameplaySystems, PausableSystems, TileCoords, WorldCoords, WorldPosition};
+use common::{
+    AppSystems, GameplaySystems, PausableSystems, TileCoords, WorldCoords, WorldPosition,
+};
 use getset::Getters;
 use physics::{Collider, MovementController};
 use rand::{Rng, RngExt};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
 use std::time::Duration;
-use crate::LevelLoadedSystems;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -56,15 +58,13 @@ pub enum PathType {
 impl PathType {
     pub fn get(&self) -> &TilePath {
         match self {
-            PathType::Wander(path)
-            | PathType::_Target(path) => path
+            PathType::Wander(path) | PathType::_Target(path) => path,
         }
     }
 
     fn get_mut(&mut self) -> &mut TilePath {
         match self {
-            PathType::Wander(path)
-            | PathType::_Target(path) => path
+            PathType::Wander(path) | PathType::_Target(path) => path,
         }
     }
 }
@@ -124,7 +124,12 @@ const TARGET_REACHED_THRESHOLD: f32 = 0.2;
 
 fn update_pathfinder_wander_state(
     time: Res<Time>,
-    pathfinder_query: Query<(&mut Pathfinder, &mut RandomWander, &WorldPosition, &Collider)>,
+    pathfinder_query: Query<(
+        &mut Pathfinder,
+        &mut RandomWander,
+        &WorldPosition,
+        &Collider,
+    )>,
     nav_map_query: Query<&TileNavMap>,
 ) {
     let nav_map = nav_map_query.single();
@@ -133,12 +138,7 @@ fn update_pathfinder_wander_state(
         return;
     };
 
-    for (
-        mut pathfinder,
-        mut wander,
-        pos,
-        collider,
-    ) in pathfinder_query {
+    for (mut pathfinder, mut wander, pos, collider) in pathfinder_query {
         wander.current_time_in_state += time.delta();
 
         match &mut pathfinder.state {
@@ -157,7 +157,7 @@ fn update_pathfinder_wander_state(
                     nav_map,
                     tile_coords.into(),
                     wander.wander_range,
-                    rand::rng()
+                    rand::rng(),
                 );
 
                 let collider_size = collider.size();
@@ -174,7 +174,10 @@ fn update_pathfinder_wander_state(
                     wander.current_time_in_state = Duration::ZERO;
                     let tile_path = PathType::Wander(tile_path);
 
-                    info!("NPC found target: {:?}, starting movement", tile_path.get().next_position);
+                    info!(
+                        "NPC found target: {:?}, starting movement",
+                        tile_path.get().next_position
+                    );
                     pathfinder.state = PathfinderState::Moving(tile_path);
                 }
             }
@@ -208,11 +211,7 @@ fn update_pathfinder_wander_state(
 fn update_movement_intent(
     pathfinder_query: Query<(&Pathfinder, &mut MovementController, &WorldPosition)>,
 ) {
-    for (
-        pathfinder,
-        mut controller,
-        pos
-    ) in pathfinder_query {
+    for (pathfinder, mut controller, pos) in pathfinder_query {
         if let PathfinderState::Moving(target) = &pathfinder.state {
             let delta = **target.get().next_position.as_ref().unwrap() - *pos.0;
             let delta = delta * Vec3::new(1., 0., 1.);
@@ -230,9 +229,7 @@ fn update_movement_intent(
 
 /// Update the action state based on the movement intent
 // TODO: Remove the direct world access here
-fn update_movement_state(
-    world: &mut World
-) {
+fn update_movement_state(world: &mut World) {
     let mut npc_query = world.query_filtered::<Entity, (
         With<MovementController>,
         With<ActionStateTracker>,
@@ -272,7 +269,10 @@ fn select_random_wander_target(
     mut rand: impl Rng,
 ) -> TileCoords {
     if !nav_map.has_node(&start) {
-        error!("Invalid start position for wander target selection: {:?}", start);
+        error!(
+            "Invalid start position for wander target selection: {:?}",
+            start
+        );
         return start;
     }
 
@@ -282,11 +282,15 @@ fn select_random_wander_target(
     let mut target = start;
     for _ in 0..distance {
         let Some(edges) = nav_map.get_edges_from_tile(&target) else {
-            error!("No valid edges found for wander target selection from {:?}", target);
+            error!(
+                "No valid edges found for wander target selection from {:?}",
+                target
+            );
             continue;
         };
 
-        let edges = edges.iter()
+        let edges = edges
+            .iter()
             .filter(|edge| !visited.contains(edge.0.end()))
             .collect::<Vec<_>>();
 
@@ -373,19 +377,15 @@ fn find_path(
 
         for edge in edges {
             // Try to shortcut to the grandparent based on line-of-sight
-            let (
-                next_cost,
-                next_pos,
-                next_parent
-            ) = if let Some(grandparent) = parents.get(position)
+            let (next_cost, next_pos, next_parent) = if let Some(grandparent) =
+                parents.get(position)
                 && edge.1.kind() == NavEdgeKind::Walk
                 && nav_map.has_line_of_sight(
                     &TileCoords::from(grandparent),
                     edge.0.end(),
                     clearance_half_width,
                     clearance_height,
-                )
-            {
+                ) {
                 let next_pos = WorldCoords::from(edge.0.end());
 
                 // Look up how much it actually cost to get to the grandparent
@@ -395,11 +395,7 @@ fn find_path(
                 let walk_cost = edge.1.cost(); // We know this is a walk edge, so just check the cost here to avoid magic numbers
                 let distance_cost = (next_pos.distance(**grandparent) * walk_cost as f32) as u32;
 
-                (
-                    grandparent_cost + distance_cost,
-                    next_pos,
-                    grandparent,
-                )
+                (grandparent_cost + distance_cost, next_pos, grandparent)
             } else {
                 (
                     cost + edge.1.cost(),
@@ -412,7 +408,8 @@ fn find_path(
 
             // If the position isn't tracked yet, default to true.
             // If it is tracked, evaluate if our new cost is cheaper
-            let is_cheaper = costs.get(&next_pos)
+            let is_cheaper = costs
+                .get(&next_pos)
                 .is_none_or(|&prev_cost| next_cost < prev_cost);
 
             if is_cheaper {

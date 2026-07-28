@@ -1,7 +1,7 @@
 pub mod ai;
 
-use crate::characters::npc::ai::ai_scene;
 use crate::characters::CharacterPrototype;
+use crate::characters::npc::ai::ai_scene;
 use assets::resource::characters::CharacterResource;
 use bevy::prelude::*;
 use common::marker;
@@ -11,10 +11,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(ai::plugin);
 }
 
-pub fn npc_bundle(
-    data_loc: ResourceLocation<CharacterResource>,
-    position: Vec3,
-) -> impl Scene {
+pub fn npc_bundle(data_loc: ResourceLocation<CharacterResource>, position: Vec3) -> impl Scene {
     bsn! [
         Npc
         ai_scene()

@@ -1,5 +1,5 @@
-use crate::characters::state::tracking::{ActionStateTracker, TrySetStateEvent};
 use crate::characters::Character;
+use crate::characters::state::tracking::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{Idle, ReflectTimedActionState};
 use bevy::prelude::*;
 use common::AppSystems;
@@ -52,7 +52,9 @@ fn update_timed_state(
                     return;
                 }
 
-                world.commands().trigger(TrySetStateEvent::new(entity, Box::new(Idle)));
+                world
+                    .commands()
+                    .trigger(TrySetStateEvent::new(entity, Box::new(Idle)));
             }
         });
     }

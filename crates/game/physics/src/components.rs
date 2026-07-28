@@ -1,3 +1,4 @@
+use crate::Impulse;
 use crate::collision::MAX_COLLISION_DISTANCE;
 use crate::math::{ToBevy, ToParry};
 use bevy::prelude::*;
@@ -8,7 +9,6 @@ use parry3d::query::Contact;
 use parry3d::shape::{Capsule, ConvexPolyhedron, Cuboid, Shape};
 use parry3d::transformation::convex_hull;
 use std::collections::VecDeque;
-use crate::Impulse;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, update_collider_position);

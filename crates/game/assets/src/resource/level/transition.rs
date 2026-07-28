@@ -33,8 +33,16 @@ impl TransitionRoom {
         }
     }
 
-    pub fn _with_rule(room: ResourceLocation<RoomResource>, weight: f32, rule: TransitionRoomRule) -> Self {
-        Self { room, _weight: weight, _rule: rule }
+    pub fn _with_rule(
+        room: ResourceLocation<RoomResource>,
+        weight: f32,
+        rule: TransitionRoomRule,
+    ) -> Self {
+        Self {
+            room,
+            _weight: weight,
+            _rule: rule,
+        }
     }
 
     pub fn room(&self) -> &ResourceLocation<RoomResource> {

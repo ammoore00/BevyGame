@@ -2,17 +2,13 @@
 
 use bevy::prelude::*;
 
-pub(crate) mod state;
 pub(crate) mod loader;
+pub(crate) mod state;
 
-pub mod codec;
 pub mod action_states;
+pub mod codec;
 pub mod resource;
-pub use crate::{
-    state::{
-        AssetLoadState,
-    },
-};
+pub use crate::state::AssetLoadState;
 
 pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {

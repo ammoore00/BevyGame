@@ -54,7 +54,7 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         font_size: MEDIUM_FONT_SIZE,
                         width: px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
                         height: percent(100.0),
-                        ..default()    
+                        ..default()
                     },
                     file_button_clicked,
                 ),
@@ -64,7 +64,7 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         font_size: MEDIUM_FONT_SIZE,
                         width: px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
                         height: percent(100.0),
-                        ..default()    
+                        ..default()
                     },
                     edit_button_clicked,
                 ),
@@ -74,7 +74,7 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         font_size: MEDIUM_FONT_SIZE,
                         width: px(MENU_BUTTON_PER_CHAR_WIDTH * 4 + MENU_BUTTON_PADDING),
                         height: percent(100.0),
-                        ..default()    
+                        ..default()
                     },
                     view_button_clicked,
                 ),
@@ -84,7 +84,7 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         font_size: MEDIUM_FONT_SIZE,
                         width: px(MENU_BUTTON_PER_CHAR_WIDTH * 5 + MENU_BUTTON_PADDING),
                         height: percent(100.0),
-                        ..default()    
+                        ..default()
                     },
                     tools_button_clicked,
                 ),
@@ -94,7 +94,7 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         font_size: MEDIUM_FONT_SIZE,
                         width: px(MENU_BUTTON_PER_CHAR_WIDTH * 6 + MENU_BUTTON_PADDING),
                         height: percent(100.0),
-                        ..default()    
+                        ..default()
                     },
                     window_button_clicked,
                 ),
@@ -103,22 +103,12 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
     ]
 }
 
-fn file_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
+fn file_button_clicked(_: On<Pointer<Click>>) {}
 
-fn edit_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
+fn edit_button_clicked(_: On<Pointer<Click>>) {}
 
-fn view_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
+fn view_button_clicked(_: On<Pointer<Click>>) {}
 
-fn tools_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
+fn tools_button_clicked(_: On<Pointer<Click>>) {}
 
-fn window_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
+fn window_button_clicked(_: On<Pointer<Click>>) {}

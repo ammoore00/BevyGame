@@ -1,8 +1,8 @@
-use crate::gamepad::{get_stick_with_deadzone, GamepadRes, GamepadStick};
+use crate::gamepad::{GamepadRes, GamepadStick, get_stick_with_deadzone};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use getset::{Getters, MutGetters};
 use common::AppSystems;
+use getset::{Getters, MutGetters};
 
 pub mod gamepad;
 pub mod mouse;

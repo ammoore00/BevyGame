@@ -72,7 +72,9 @@ impl TryFrom<UiBackgroundStyle> for UiBackgroundImage {
         match value {
             UiBackgroundStyle::Main => Ok(UiBackgroundImage::Main),
             UiBackgroundStyle::Panel => Ok(UiBackgroundImage::Panel),
-            UiBackgroundStyle::Transparent => Err("Transparent background style cannot be converted to UiBackgroundImage".to_string()),
+            UiBackgroundStyle::Transparent => Err(
+                "Transparent background style cannot be converted to UiBackgroundImage".to_string(),
+            ),
         }
     }
 }
@@ -86,22 +88,14 @@ impl UiBackgroundImage {
         match self {
             UiBackgroundImage::Main => TextureSlicer {
                 border: BorderRect::all(8.0),
-                center_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
-                sides_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
+                center_scale_mode: SliceScaleMode::Tile { stretch_value: 1.0 },
+                sides_scale_mode: SliceScaleMode::Tile { stretch_value: 1.0 },
                 max_corner_scale: 2.0,
             },
             UiBackgroundImage::Panel => TextureSlicer {
                 border: BorderRect::all(4.0),
-                center_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
-                sides_scale_mode: SliceScaleMode::Tile {
-                    stretch_value: 1.0,
-                },
+                center_scale_mode: SliceScaleMode::Tile { stretch_value: 1.0 },
+                sides_scale_mode: SliceScaleMode::Tile { stretch_value: 1.0 },
                 max_corner_scale: 2.0,
             },
         }
@@ -109,8 +103,16 @@ impl UiBackgroundImage {
 
     fn make_layout(&self) -> TextureAtlasLayout {
         match self {
-            UiBackgroundImage::Main => TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None),
-            UiBackgroundImage::Panel => TextureAtlasLayout::from_grid(UVec2::splat(24), 4, 4, Some(UVec2::splat(8)), Some(UVec2::splat(4))),
+            UiBackgroundImage::Main => {
+                TextureAtlasLayout::from_grid(UVec2::splat(32), 4, 4, None, None)
+            }
+            UiBackgroundImage::Panel => TextureAtlasLayout::from_grid(
+                UVec2::splat(24),
+                4,
+                4,
+                Some(UVec2::splat(8)),
+                Some(UVec2::splat(4)),
+            ),
         }
     }
 

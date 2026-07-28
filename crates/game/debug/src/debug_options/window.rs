@@ -1,5 +1,5 @@
-use crate::debug_options::options::global_debug;
 use crate::debug_options::DebugOptionsWindowOpen;
+use crate::debug_options::options::global_debug;
 use crate::window;
 use bevy::prelude::*;
 use common::marker;

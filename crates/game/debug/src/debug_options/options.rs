@@ -6,7 +6,7 @@ use common::marker;
 use std::marker::PhantomData;
 use widgets::button::ButtonWithTextOptions;
 use widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE, TINY_FONT_SIZE};
-use widgets::theme::palette::{BackgroundInteractionPalette, BUTTON_TEXT};
+use widgets::theme::palette::{BUTTON_TEXT, BackgroundInteractionPalette};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<NavMapNodesRes>();
@@ -17,7 +17,7 @@ pub(super) fn plugin(app: &mut App) {
     app.init_resource::<AttackCollisionRes>();
 
     app.init_resource::<UiRenderRes>();
-    
+
     app.add_observer(on_debug_window_initialized);
 }
 
@@ -116,10 +116,12 @@ marker!(DebugButton);
 #[derive(SceneComponent, Debug, Clone, Copy, Default)]
 #[scene(DebugButtonProps)]
 struct DebugEntry<T>(PhantomData<T>)
-where T: DebugOption<Mutability = Mutable> + Unpin;
+where
+    T: DebugOption<Mutability = Mutable> + Unpin;
 
 impl<T> DebugEntry<T>
-where T: DebugOption<Mutability = Mutable> + Unpin
+where
+    T: DebugOption<Mutability = Mutable> + Unpin,
 {
     fn scene(props: DebugButtonProps) -> impl Scene {
         bsn! [
@@ -174,7 +176,7 @@ fn debug_option_button<T: DebugOption<Mutability = Mutable>>(text: impl AsRef<st
         text,
         options,
         palette,
-        on_debug_option_button_pressed::<T>
+        on_debug_option_button_pressed::<T>,
     );
 
     bsn! [
@@ -193,10 +195,7 @@ struct CheckDebugState(Entity);
 
 fn on_debug_option_button_spawned<T: DebugOption<Mutability = Mutable>>(
     event: On<CheckDebugState>,
-    button_query: Query<
-        (Entity, &ChildOf, &Children),
-        With<DebugButton>,
-    >,
+    button_query: Query<(Entity, &ChildOf, &Children), With<DebugButton>>,
     text_query: Query<(Entity, &mut Text)>,
     ui_state_query: Query<&mut T, With<Children>>,
     debug_state: Res<T::Res>,
@@ -207,7 +206,8 @@ fn on_debug_option_button_spawned<T: DebugOption<Mutability = Mutable>>(
         DebugUiState::False
     };
 
-    let result = set_debug_ui_state::<T>(event.0, button_query, text_query, ui_state_query, new_state);
+    let result =
+        set_debug_ui_state::<T>(event.0, button_query, text_query, ui_state_query, new_state);
 
     if let Err(err) = result {
         error!("{}", err);
@@ -216,20 +216,23 @@ fn on_debug_option_button_spawned<T: DebugOption<Mutability = Mutable>>(
 
 fn on_debug_option_button_pressed<T: DebugOption<Mutability = Mutable>>(
     event: On<Pointer<Click>>,
-    button_query: Query<
-        (Entity, &ChildOf, &Children),
-        With<DebugButton>,
-    >,
+    button_query: Query<(Entity, &ChildOf, &Children), With<DebugButton>>,
     text_query: Query<(Entity, &mut Text)>,
     ui_state_query: Query<&mut T, With<Children>>,
     debug_state: ResMut<T::Res>,
 ) {
-    let result = set_debug_ui_state::<T>(event.entity, button_query, text_query, ui_state_query, DebugUiState::Toggle);
+    let result = set_debug_ui_state::<T>(
+        event.entity,
+        button_query,
+        text_query,
+        ui_state_query,
+        DebugUiState::Toggle,
+    );
 
     match result {
         Ok(new_state) => {
             debug_state.into_inner().set(new_state);
-        },
+        }
         Err(err) => {
             error!("{}", err);
         }
@@ -238,10 +241,7 @@ fn on_debug_option_button_pressed<T: DebugOption<Mutability = Mutable>>(
 
 fn set_debug_ui_state<T: DebugOption<Mutability = Mutable>>(
     entity: Entity,
-    mut button_query: Query<
-        (Entity, &ChildOf, &Children),
-        With<DebugButton>,
-    >,
+    mut button_query: Query<(Entity, &ChildOf, &Children), With<DebugButton>>,
     mut text_query: Query<(Entity, &mut Text)>,
     mut ui_state_query: Query<&mut T, With<Children>>,
     new_state: DebugUiState,
@@ -250,7 +250,8 @@ fn set_debug_ui_state<T: DebugOption<Mutability = Mutable>>(
         return Err("Failed to get button from event".into());
     };
 
-    let Some(mut button_text) = text_query.iter_mut()
+    let Some(mut button_text) = text_query
+        .iter_mut()
         .find(|(entity, _)| button_children.contains(entity))
         .map(|(_, text)| text)
     else {

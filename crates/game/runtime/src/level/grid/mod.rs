@@ -1,18 +1,15 @@
 use crate::characters::player::Player;
 use crate::object::Shadow;
 use bevy::prelude::*;
-use common::{TileCoords, TilePosition, WorldPosition, SCREEN_Z_SCALE};
+use common::{SCREEN_Z_SCALE, TileCoords, TilePosition, WorldPosition};
 use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
 
-pub mod tile;
 pub mod nav;
+pub mod tile;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((
-        nav::plugin,
-        tile::plugin
-    ));
+    app.add_plugins((nav::plugin, tile::plugin));
 
     app.add_systems(
         PreUpdate,
@@ -146,12 +143,17 @@ pub fn tile_map() -> TileMap {
 /// The error returns a list of overlapping tiles so that the caller may handle the overlap
 /// and try again. Note that the overlaps are relative to the original grid. To get coordinates
 /// relative to the other grid, subtract the offset from the returned coordinates.
-pub fn merge_tile_map(map: &TileMap, other: TileMap, offset: IVec3) -> Result<(), TileMapMergeError> {
+pub fn merge_tile_map(
+    map: &TileMap,
+    other: TileMap,
+    offset: IVec3,
+) -> Result<(), TileMapMergeError> {
     let mut overlaps = Vec::new();
 
     for (coords, tile_entity) in &*other.read().unwrap() {
         let coords = TileCoords(coords.0 + offset);
-        map.write().unwrap()
+        map.write()
+            .unwrap()
             .entry(coords)
             .and_modify(|_| {
                 overlaps.push(MergeTileCoords {
@@ -172,7 +174,7 @@ pub fn merge_tile_map(map: &TileMap, other: TileMap, offset: IVec3) -> Result<()
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum TileMapMergeError {
     #[error("New grid overlaps with existing grid")]
-    OverlapsExistingGrid(Vec<MergeTileCoords>)
+    OverlapsExistingGrid(Vec<MergeTileCoords>),
 }
 
 #[derive(Debug, Clone)]

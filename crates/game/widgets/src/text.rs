@@ -6,11 +6,7 @@ pub const SMALL_FONT_SIZE: FontSize = FontSize::Px(20.0);
 pub const MEDIUM_FONT_SIZE: FontSize = FontSize::Px(24.0);
 pub const LARGE_FONT_SIZE: FontSize = FontSize::Px(40.0);
 
-pub fn text(
-    text: impl Into<String>,
-    size: impl Into<FontSize>,
-    color: Color,
-) -> impl Scene {
+pub fn text(text: impl Into<String>, size: impl Into<FontSize>, color: Color) -> impl Scene {
     bsn! [
         #Text
         Text(text)

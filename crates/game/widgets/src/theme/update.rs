@@ -1,14 +1,22 @@
-use bevy::input_focus::{InputFocus, InputFocusVisible};
-use bevy::prelude::*;
 use crate::button::ButtonImpl;
 use crate::theme::palette::{BackgroundInteractionPalette, SpriteInteractionPalette};
+use bevy::input_focus::{InputFocus, InputFocusVisible};
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            (apply_gamepad_sprite_interaction_palette, apply_sprite_interaction_palette).chain(),
-            (apply_gamepad_background_interaction_palette, apply_background_interaction_palette).chain(),
+            (
+                apply_gamepad_sprite_interaction_palette,
+                apply_sprite_interaction_palette,
+            )
+                .chain(),
+            (
+                apply_gamepad_background_interaction_palette,
+                apply_background_interaction_palette,
+            )
+                .chain(),
         ),
     );
 
@@ -48,7 +56,12 @@ fn apply_sprite_interaction_palette(
 fn apply_gamepad_sprite_interaction_palette(
     input_focus: Res<InputFocus>,
     input_focus_visible: Res<InputFocusVisible>,
-    mut palette_query: Query<(Entity, &Interaction, &SpriteInteractionPalette, &mut ImageNode)>,
+    mut palette_query: Query<(
+        Entity,
+        &Interaction,
+        &SpriteInteractionPalette,
+        &mut ImageNode,
+    )>,
     button_query: Query<(Entity, &Children), With<ButtonImpl>>,
 ) {
     // For everything with a background color palette
@@ -79,7 +92,11 @@ fn apply_gamepad_sprite_interaction_palette(
 
 fn apply_background_interaction_palette(
     mut palette_query: Query<
-        (&Interaction, &BackgroundInteractionPalette, &mut BackgroundColor),
+        (
+            &Interaction,
+            &BackgroundInteractionPalette,
+            &mut BackgroundColor,
+        ),
         Changed<Interaction>,
     >,
     input_focus_visible: Res<InputFocusVisible>,
@@ -109,7 +126,12 @@ fn apply_background_interaction_palette(
 fn apply_gamepad_background_interaction_palette(
     input_focus: Res<InputFocus>,
     input_focus_visible: Res<InputFocusVisible>,
-    mut palette_query: Query<(Entity, &Interaction, &BackgroundInteractionPalette, &mut BackgroundColor)>,
+    mut palette_query: Query<(
+        Entity,
+        &Interaction,
+        &BackgroundInteractionPalette,
+        &mut BackgroundColor,
+    )>,
     button_query: Query<(Entity, &Children), With<ButtonImpl>>,
 ) {
     // For everything with a background color palette

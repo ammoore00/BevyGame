@@ -9,11 +9,11 @@ use runtime::{ResetLevelEvent, SpawnLevelEvent};
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(Screen::Gameplay),
-        (set_game_state, spawn_level).chain()
+        (set_game_state, spawn_level).chain(),
     );
     app.add_systems(
         OnExit(Screen::Gameplay),
-        (reset_level, set_menu_state).chain()
+        (reset_level, set_menu_state).chain(),
     );
 
     // Toggle pause on key press.
@@ -30,17 +30,11 @@ pub(super) fn plugin(app: &mut App) {
                 ),
             close_menu
                 .in_set(GameplaySystems)
-                .run_if(
-                    not(in_state(Menu::None))
-                    .and_then(input_just_pressed(KeyCode::KeyP)),
-                ),
+                .run_if(not(in_state(Menu::None)).and_then(input_just_pressed(KeyCode::KeyP))),
         ),
     );
     app.add_systems(OnExit(Screen::Gameplay), (close_menu, unpause));
-    app.add_systems(
-        OnEnter(Menu::None),
-        unpause.in_set(GameplaySystems),
-    );
+    app.add_systems(OnEnter(Menu::None), unpause.in_set(GameplaySystems));
 }
 
 fn spawn_level(mut commands: Commands) {

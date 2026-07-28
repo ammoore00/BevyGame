@@ -1,7 +1,7 @@
 use crate::window;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
-use common::{marker, GameState, Pause};
+use common::{GameState, Pause, marker};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_state::<CommandsWindowOpen>();
@@ -19,7 +19,10 @@ pub(super) fn plugin(app: &mut App) {
             .run_if(in_state(GameState::Gameplay)),
     );
 
-    app.add_systems(OnEnter(CommandsWindowOpen(true)), spawn_command_window.spawn());
+    app.add_systems(
+        OnEnter(CommandsWindowOpen(true)),
+        spawn_command_window.spawn(),
+    );
 }
 
 marker!(CommandsWindow);

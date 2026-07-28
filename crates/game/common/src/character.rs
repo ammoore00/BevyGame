@@ -1,5 +1,5 @@
-use bevy::math::ops::sin_cos;
 use crate::WorldCoords;
+use bevy::math::ops::sin_cos;
 use bevy::prelude::*;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
@@ -75,6 +75,10 @@ impl From<Facing> for Vec3 {
     }
 }
 
-pub fn offset_position_to_facing(pos: WorldCoords, offset: WorldCoords, facing: Facing) -> WorldCoords {
+pub fn offset_position_to_facing(
+    pos: WorldCoords,
+    offset: WorldCoords,
+    facing: Facing,
+) -> WorldCoords {
     WorldCoords::from(*pos + offset.rotate_y(facing.angle()))
 }

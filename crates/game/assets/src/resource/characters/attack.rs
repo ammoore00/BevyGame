@@ -60,13 +60,13 @@ impl TryFrom<AttackCodec> for AttackDefinition {
     fn try_from(value: AttackCodec) -> Result<Self, AttackDefinitionError> {
         let key_frames = KeyFrameList::try_from_codec(value.key_frames, value.duration)?;
         let exclusion_groups = key_frames.get_exclusion_groups();
-        
+
         Ok(AttackDefinition {
             duration: Duration::from_millis(value.duration),
             stamina_cost: value.stamina_cost,
             animation: value.animation,
             particle_sprite: value.particle_sprite,
-            
+
             key_frames,
             exclusion_groups,
         })
@@ -162,9 +162,10 @@ impl KeyFrameList {
     pub fn get_key_frame(&self, index: usize) -> Option<&KeyFrame> {
         self.key_frames.get(index)
     }
-    
+
     fn get_exclusion_groups(&self) -> Vec<ExclusionGroup> {
-        self.key_frames.iter()
+        self.key_frames
+            .iter()
             .map(|key_frame| key_frame.exclusion_group.clone())
             .collect()
     }

@@ -2,10 +2,7 @@
 
 use crate::screens::Screen;
 use assets::resource::UiSpriteResource;
-use bevy::{
-    input::common_conditions::input_just_pressed,
-    prelude::*,
-};
+use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use common::AppSystems;
 use data::prelude::loc;
 

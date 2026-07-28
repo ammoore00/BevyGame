@@ -1,7 +1,7 @@
+use bevy::asset::Asset;
+use bevy::prelude::Reflect;
 use std::fmt::Debug;
 use std::hash::Hash;
-use bevy::prelude::Reflect;
-use bevy::asset::Asset;
 
 pub trait ResourceKind:
     Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static

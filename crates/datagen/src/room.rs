@@ -1,20 +1,20 @@
+use crate::{WriteError, create_dir, write_data};
 use assets::codec::RoomCodec;
-use assets::resource::level::{ConnectionFacing, ConnectionSize, RoomConnection, RoomResource, TileResource};
+use assets::resource::level::{
+    ConnectionFacing, ConnectionSize, RoomConnection, RoomResource, TileResource,
+};
 use data::prelude::*;
-use crate::{create_dir, write_data, WriteError};
 
 pub fn generate_rooms() -> Result<(), WriteError> {
     create_dir(RoomResource::ROOT_DIR)?;
-    
+
     create_room_data(basic_room("grass"))?;
     create_room_data(basic_room("planks"))?;
-    
+
     Ok(())
 }
 
-fn create_room_data(
-    room_data: RoomData,
-) -> Result<(), WriteError> {
+fn create_room_data(room_data: RoomData) -> Result<(), WriteError> {
     let loc = room_data.loc.clone();
     let codec = RoomCodec::from(room_data);
     write_data(loc, &codec)
@@ -34,12 +34,22 @@ impl RoomData {
         tiles: Vec<Vec<Vec<u8>>>,
         connections: Vec<RoomConnection>,
     ) -> Self {
-        Self { loc: loc.parse().unwrap(), tile_palette, tiles, connections }
+        Self {
+            loc: loc.parse().unwrap(),
+            tile_palette,
+            tiles,
+            connections,
+        }
     }
 }
 impl From<RoomData> for RoomCodec {
     fn from(data: RoomData) -> Self {
-        RoomCodec::new(LATEST_FORMAT, data.tile_palette, data.tiles, data.connections)
+        RoomCodec::new(
+            LATEST_FORMAT,
+            data.tile_palette,
+            data.tiles,
+            data.connections,
+        )
     }
 }
 
@@ -55,8 +65,7 @@ fn basic_room(tile: &str) -> RoomData {
 
     for x in 0..SIZE {
         for z in 0..SIZE {
-            if (x == 0 || x == SIZE - 1
-                || z == 0 || z == SIZE - 1)
+            if (x == 0 || x == SIZE - 1 || z == 0 || z == SIZE - 1)
                 && x != HALF_SIZE
                 && z != HALF_SIZE
             {
@@ -72,25 +81,25 @@ fn basic_room(tile: &str) -> RoomData {
         RoomConnection::new(
             [HALF_SIZE as i32, 0, 0].into(),
             ConnectionSize::Small,
-            ConnectionFacing::North
+            ConnectionFacing::North,
         ),
         RoomConnection::new(
             [SIZE as i32, 0, HALF_SIZE as i32].into(),
             ConnectionSize::Small,
-            ConnectionFacing::East
+            ConnectionFacing::East,
         ),
         RoomConnection::new(
             [HALF_SIZE as i32, 0, SIZE as i32].into(),
             ConnectionSize::Small,
-            ConnectionFacing::South
+            ConnectionFacing::South,
         ),
         RoomConnection::new(
             [0, 0, HALF_SIZE as i32].into(),
             ConnectionSize::Small,
-            ConnectionFacing::West
+            ConnectionFacing::West,
         ),
     ];
-    
+
     let loc = format!("basic_{}", tile);
     RoomData::new(
         loc.as_str(),

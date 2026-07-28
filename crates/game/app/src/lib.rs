@@ -6,8 +6,8 @@
 #[cfg(feature = "dev")]
 use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
-use bevy::{asset::AssetMetaCheck, prelude::*};
 use bevy::window::ExitCondition;
+use bevy::{asset::AssetMetaCheck, prelude::*};
 use controls::ControlsPlugin;
 use debug::DebugPlugin;
 use input::InputPlugin;
@@ -43,7 +43,8 @@ impl Plugin for AppPlugin {
                         title: "Bevy Game 2d".to_string(),
                         fit_canvas_to_parent: true,
                         ..default()
-                    }.into(),
+                    }
+                    .into(),
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
@@ -57,7 +58,6 @@ impl Plugin for AppPlugin {
             InputPlugin,
             RuntimePlugin,
             WidgetsPlugin,
-
             asset_tracking::plugin,
             audio::plugin,
             menus::plugin,
@@ -70,12 +70,7 @@ impl Plugin for AppPlugin {
         #[cfg(feature = "dev")]
         {
             info!("Dev tools enabled");
-            app.add_plugins((
-                FeathersPlugins,
-                DebugPlugin,
-
-                dev_tools::plugin
-            ));
+            app.add_plugins((FeathersPlugins, DebugPlugin, dev_tools::plugin));
         }
     }
 }

@@ -1,7 +1,7 @@
+use crate::resource::level::{RoomConnection, TileResource};
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::resource::level::{RoomConnection, TileResource};
 
 #[derive(Serialize, Deserialize, TypePath)]
 pub struct RoomCodec {

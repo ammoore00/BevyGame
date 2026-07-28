@@ -216,9 +216,21 @@ pub struct TargetAxes {
     pub z: bool,
 }
 impl TargetAxes {
-    pub const XZ: TargetAxes = Self { x: true, y: false, z: true };
-    pub const Y: TargetAxes = Self { x: false, y: true, z: false };
-    pub const ALL: TargetAxes = Self { x: true, y: true, z: true };
+    pub const XZ: TargetAxes = Self {
+        x: true,
+        y: false,
+        z: true,
+    };
+    pub const Y: TargetAxes = Self {
+        x: false,
+        y: true,
+        z: false,
+    };
+    pub const ALL: TargetAxes = Self {
+        x: true,
+        y: true,
+        z: true,
+    };
 }
 impl Default for TargetAxes {
     fn default() -> Self {

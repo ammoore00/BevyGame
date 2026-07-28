@@ -1,32 +1,27 @@
-use bevy::prelude::*;
 use assets::AssetsPlugin;
+use bevy::prelude::*;
 use common::CommonPlugin;
 use physics::PhysicsPlugin;
 
 pub mod characters;
 mod level;
-mod particle;
 mod object;
+mod particle;
 
 pub mod debug {
     pub use crate::{
         characters::{
             attack::AttackHitbox,
-            npc::ai::pathfinding::{Pathfinder, PathfinderState},
             health::Health,
+            npc::ai::pathfinding::{Pathfinder, PathfinderState},
             player::Player,
             stamina::Stamina,
         },
-        level::grid::{
-            nav::TileNavMap,
-            tile::Tile,
-        },
+        level::grid::{nav::TileNavMap, tile::Tile},
     };
 }
 
-pub use crate::{
-    level::{LevelLoadedSystems, SpawnLevelEvent, ResetLevelEvent},
-};
+pub use crate::level::{LevelLoadedSystems, ResetLevelEvent, SpawnLevelEvent};
 
 pub struct RuntimePlugin;
 impl Plugin for RuntimePlugin {
@@ -35,7 +30,6 @@ impl Plugin for RuntimePlugin {
             AssetsPlugin,
             CommonPlugin,
             PhysicsPlugin,
-
             characters::plugin,
             level::plugin,
             particle::plugin,

@@ -1,9 +1,13 @@
 use crate::debug_options::options::{NavMapEdgesRes, NavMapNodesRes};
 use crate::debug_options::render::helpers::{LineSettings, draw_sphere, draw_world_line};
-use crate::debug_options::render::palette::{NAV_EDGE_ARROW_LENGTH, NAV_EDGE_ARROW_WIDTH, NAV_EDGE_END_PADDING, NAV_EDGE_FORWARD_COLOR, NAV_EDGE_LINE_THICKNESS, NAV_EDGE_REVERSE_COLOR, NAV_EDGE_DIRECTIONAL_OFFSET, NAV_NODE_COLOR, NAV_NODE_LINE_THICKNESS, NAV_NODE_RADIUS};
+use crate::debug_options::render::palette::{
+    NAV_EDGE_ARROW_LENGTH, NAV_EDGE_ARROW_WIDTH, NAV_EDGE_DIRECTIONAL_OFFSET, NAV_EDGE_END_PADDING,
+    NAV_EDGE_FORWARD_COLOR, NAV_EDGE_LINE_THICKNESS, NAV_EDGE_REVERSE_COLOR, NAV_NODE_COLOR,
+    NAV_NODE_LINE_THICKNESS, NAV_NODE_RADIUS,
+};
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{GameState, Scale, marker, WorldCoords};
+use common::{GameState, Scale, WorldCoords, marker};
 use runtime::debug::TileNavMap;
 
 pub(super) fn plugin(app: &mut App) {
@@ -146,7 +150,12 @@ fn spawn_nav_edge_render(
         // 1. Draw the main segment
         commands.spawn((
             nav_edge_bundle(),
-            draw_world_line(WorldCoords(start_adj), WorldCoords(end_adj), settings, line_scale),
+            draw_world_line(
+                WorldCoords(start_adj),
+                WorldCoords(end_adj),
+                settings,
+                line_scale,
+            ),
         ));
 
         let arrow_tip = end_adj;
@@ -157,13 +166,23 @@ fn spawn_nav_edge_render(
         // 2. Draw the left arrowhead line
         commands.spawn((
             nav_edge_bundle(),
-            draw_world_line(WorldCoords(arrow_tip), WorldCoords(arrow_left), settings, line_scale),
+            draw_world_line(
+                WorldCoords(arrow_tip),
+                WorldCoords(arrow_left),
+                settings,
+                line_scale,
+            ),
         ));
 
         // 3. Draw the right arrowhead line
         commands.spawn((
             nav_edge_bundle(),
-            draw_world_line(WorldCoords(arrow_tip), WorldCoords(arrow_right), settings, line_scale),
+            draw_world_line(
+                WorldCoords(arrow_tip),
+                WorldCoords(arrow_right),
+                settings,
+                line_scale,
+            ),
         ));
     }
 }

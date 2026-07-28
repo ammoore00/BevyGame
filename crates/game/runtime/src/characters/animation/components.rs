@@ -1,9 +1,9 @@
+use assets::resource::characters::AnimationData;
 use bevy::prelude::*;
 use common::Facing;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::time::Duration;
-use assets::resource::characters::AnimationData;
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {
@@ -17,10 +17,7 @@ pub struct CharacterAnimationTracker {
 }
 
 impl CharacterAnimationTracker {
-    pub fn new(
-        default: Handle<AnimationData>,
-        assets: &Assets<AnimationData>,
-    ) -> Self {
+    pub fn new(default: Handle<AnimationData>, assets: &Assets<AnimationData>) -> Self {
         let frame_data = assets.get(default.id()).unwrap().frame_data();
         let interval = frame_data.frame_duration(0).unwrap();
 
@@ -52,19 +49,34 @@ impl CharacterAnimationTracker {
         let animation = assets.get(self.current_animation.id()).unwrap();
 
         self.frame = (self.frame + 1) % animation.frame_data().num_frames();
-        self.timer.set_duration(animation.frame_data().frame_duration(self.frame).unwrap());
+        self.timer
+            .set_duration(animation.frame_data().frame_duration(self.frame).unwrap());
     }
 
     fn get_image(&self, assets: &Assets<AnimationData>) -> Handle<Image> {
-        assets.get(self.current_animation.id()).unwrap().image().clone()
+        assets
+            .get(self.current_animation.id())
+            .unwrap()
+            .image()
+            .clone()
     }
 
     fn get_atlas(&self, assets: &Assets<AnimationData>) -> TextureAtlas {
-        assets.get(self.current_animation.id()).unwrap().atlas().clone()
+        assets
+            .get(self.current_animation.id())
+            .unwrap()
+            .atlas()
+            .clone()
     }
 
     pub(crate) fn get_atlas_index(&self, assets: &Assets<AnimationData>) -> usize {
-        self.frame + self.facing as usize * assets.get(self.current_animation.id()).unwrap().frame_data().num_frames()
+        self.frame
+            + self.facing as usize
+                * assets
+                    .get(self.current_animation.id())
+                    .unwrap()
+                    .frame_data()
+                    .num_frames()
     }
 }
 

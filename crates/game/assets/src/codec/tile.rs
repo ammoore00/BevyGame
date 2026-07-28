@@ -1,9 +1,9 @@
 use crate::loader::Maybe;
+use crate::resource::level::{TileShape, TileSpriteResource};
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
-use crate::resource::level::{TileShape, TileSpriteResource};
 
 #[maybe_fields]
 #[derive(Serialize, Deserialize, TypePath, derive_new::new)]

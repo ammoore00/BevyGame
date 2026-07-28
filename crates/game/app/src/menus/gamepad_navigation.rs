@@ -154,7 +154,7 @@ fn navigate(
             // on both successful and unsuccessful navigation attempts
             Ok(entity) => {
                 println!("Navigated {direction:?} successfully. {entity} is now focused.");
-                
+
                 // TODO: Fix this once audio is its own crate
                 //if let Some(ref interaction_assets) = interaction_assets { commands.spawn(sound_effect(interaction_assets.hover.clone())); }
             }
@@ -202,13 +202,12 @@ fn interact_with_focused_button(
                 count: 1,
             };
 
-            commands.trigger(
-                Pointer::<Click>::new(
-                    PointerId::Mouse,
-                    placeholder_location,
-                    event,
-                    child
-                ));
+            commands.trigger(Pointer::<Click>::new(
+                PointerId::Mouse,
+                placeholder_location,
+                event,
+                child,
+            ));
 
             if let Ok((mut image, palette)) = button_query.get_mut(child) {
                 image.texture_atlas.as_mut().unwrap().index = palette.pressed;

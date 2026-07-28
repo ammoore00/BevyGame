@@ -4,7 +4,7 @@ use quote::{format_ident, quote};
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use syn::spanned::Spanned;
-use syn::{parse_macro_input, DeriveInput, Fields, FieldsNamed, FieldsUnnamed, Type};
+use syn::{DeriveInput, Fields, FieldsNamed, FieldsUnnamed, Type, parse_macro_input};
 
 pub fn derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -17,7 +17,9 @@ pub fn derive(input: TokenStream) -> TokenStream {
     let field_access = match data.fields {
         Fields::Named(ref fields) => named_fields(&input, fields),
         Fields::Unnamed(ref fields) => unnamed_fields(&input, fields),
-        Fields::Unit => return compile_error_spanned(&input.ident, DebugOptionDeriveErrorKind::NoField),
+        Fields::Unit => {
+            return compile_error_spanned(&input.ident, DebugOptionDeriveErrorKind::NoField);
+        }
     };
 
     let field_access = match field_access {
@@ -59,7 +61,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-fn named_fields(input: &DeriveInput, fields: &FieldsNamed) -> Result<proc_macro2::TokenStream, DebugOptionDeriveError> {
+fn named_fields(
+    input: &DeriveInput,
+    fields: &FieldsNamed,
+) -> Result<proc_macro2::TokenStream, DebugOptionDeriveError> {
     // Look for a bool field called "enabled"
     if let Some(field) = fields
         .named
@@ -67,7 +72,10 @@ fn named_fields(input: &DeriveInput, fields: &FieldsNamed) -> Result<proc_macro2
         .find(|f| f.ident.as_ref().unwrap() == "enabled")
     {
         if !is_bool(&field.ty) {
-            return Err(DebugOptionDeriveError::new(field.span(), DebugOptionDeriveErrorKind::FieldNotBool));
+            return Err(DebugOptionDeriveError::new(
+                field.span(),
+                DebugOptionDeriveErrorKind::FieldNotBool,
+            ));
         }
         let ident = field.ident.as_ref().unwrap();
         Ok(quote!(#ident))
@@ -80,26 +88,41 @@ fn named_fields(input: &DeriveInput, fields: &FieldsNamed) -> Result<proc_macro2
             .collect();
 
         match enabled_fields.len() {
-            0 => Err(DebugOptionDeriveError::new(input.ident.span(), DebugOptionDeriveErrorKind::MissingEnabledAttr)),
+            0 => Err(DebugOptionDeriveError::new(
+                input.ident.span(),
+                DebugOptionDeriveErrorKind::MissingEnabledAttr,
+            )),
             1 => {
                 let field = enabled_fields[0];
                 if !is_bool(&field.ty) {
-                    return Err(DebugOptionDeriveError::new(field.span(), DebugOptionDeriveErrorKind::FieldNotBool));
+                    return Err(DebugOptionDeriveError::new(
+                        field.span(),
+                        DebugOptionDeriveErrorKind::FieldNotBool,
+                    ));
                 }
                 let ident = field.ident.as_ref().unwrap();
                 Ok(quote!(#ident))
             }
-            _ => Err(DebugOptionDeriveError::new(input.ident.span(), DebugOptionDeriveErrorKind::MultipleEnabledAttrs)),
+            _ => Err(DebugOptionDeriveError::new(
+                input.ident.span(),
+                DebugOptionDeriveErrorKind::MultipleEnabledAttrs,
+            )),
         }
     }
 }
 
-fn unnamed_fields(input: &DeriveInput, fields: &FieldsUnnamed) -> Result<proc_macro2::TokenStream, DebugOptionDeriveError> {
+fn unnamed_fields(
+    input: &DeriveInput,
+    fields: &FieldsUnnamed,
+) -> Result<proc_macro2::TokenStream, DebugOptionDeriveError> {
     // Tuple struct with only one field
     if fields.unnamed.len() == 1 {
         let field = fields.unnamed.first().unwrap();
         if !is_bool(&field.ty) {
-            return Err(DebugOptionDeriveError::new(field.span(), DebugOptionDeriveErrorKind::FieldNotBool));
+            return Err(DebugOptionDeriveError::new(
+                field.span(),
+                DebugOptionDeriveErrorKind::FieldNotBool,
+            ));
         }
         Ok(quote!(0))
     } else {
@@ -112,16 +135,25 @@ fn unnamed_fields(input: &DeriveInput, fields: &FieldsUnnamed) -> Result<proc_ma
             .collect();
 
         match enabled_fields.len() {
-            0 => Err(DebugOptionDeriveError::new(input.ident.span(), DebugOptionDeriveErrorKind::MissingEnabledAttr)),
+            0 => Err(DebugOptionDeriveError::new(
+                input.ident.span(),
+                DebugOptionDeriveErrorKind::MissingEnabledAttr,
+            )),
             1 => {
                 let (idx, field) = enabled_fields[0];
                 if !is_bool(&field.ty) {
-                    return Err(DebugOptionDeriveError::new(field.span(), DebugOptionDeriveErrorKind::FieldNotBool));
+                    return Err(DebugOptionDeriveError::new(
+                        field.span(),
+                        DebugOptionDeriveErrorKind::FieldNotBool,
+                    ));
                 }
                 let index = syn::Index::from(idx);
                 Ok(quote!(#index))
             }
-            _ => Err(DebugOptionDeriveError::new(input.ident.span(), DebugOptionDeriveErrorKind::MultipleEnabledAttrs)),
+            _ => Err(DebugOptionDeriveError::new(
+                input.ident.span(),
+                DebugOptionDeriveErrorKind::MultipleEnabledAttrs,
+            )),
         }
     }
 }
@@ -165,7 +197,9 @@ enum DebugOptionDeriveErrorKind {
     NoField,
     #[error("Target `enabled` field must be of type `bool`")]
     FieldNotBool,
-    #[error("Could not automatically locate field. Please add the `#[enabled]` attribute to a boolean field.")]
+    #[error(
+        "Could not automatically locate field. Please add the `#[enabled]` attribute to a boolean field."
+    )]
     MissingEnabledAttr,
     #[error("Multiple `#[enabled]` attributes found. Please remove all but one.")]
     MultipleEnabledAttrs,

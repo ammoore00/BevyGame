@@ -10,16 +10,18 @@ pub struct ColliderCodec {
 }
 impl ColliderCodec {
     pub const LATEST_FORMAT: u8 = 1;
-    
+
     pub fn make_collider(&self, pos: Vec3) -> Collider {
         match self.collider {
             ColliderDataCodec::Cuboid { x, y, z } => Collider::cuboid((x, y, z).into(), pos),
             ColliderDataCodec::ConvexHull(ref points) => Collider::convex_hull(points, pos),
             ColliderDataCodec::Capsule(capsule) => capsule.make_collider(pos),
-            ColliderDataCodec::Sphere(radius) => Collider::capsule(Vec3::ZERO, Vec3::ZERO, radius, pos),
+            ColliderDataCodec::Sphere(radius) => {
+                Collider::capsule(Vec3::ZERO, Vec3::ZERO, radius, pos)
+            }
         }
     }
-    
+
     pub fn kind(&self) -> ColliderKind {
         match &self.collider {
             ColliderDataCodec::Cuboid { .. } => ColliderKind::Cuboid,
@@ -46,15 +48,8 @@ pub enum ColliderDataCodec {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, TypePath)]
 #[serde(untagged)]
 pub enum CapsuleCodec {
-    Oriented {
-        start: Vec3,
-        end: Vec3,
-        radius: f32,
-    },
-    Vertical {
-        height: f32,
-        radius: f32,
-    },
+    Oriented { start: Vec3, end: Vec3, radius: f32 },
+    Vertical { height: f32, radius: f32 },
 }
 
 impl CapsuleCodec {

@@ -13,8 +13,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         go_back.run_if(in_state(Menu::Settings).and_then(
-            input_just_pressed(KeyCode::Escape)
-                .or_else(gamepad_just_pressed(GamepadButton::East)),
+            input_just_pressed(KeyCode::Escape).or_else(gamepad_just_pressed(GamepadButton::East)),
         )),
     );
 
@@ -42,10 +41,7 @@ fn _settings_grid(
     directional_nav_map: ResMut<DirectionalNavigationMap>,
     commands: &mut Commands,
 ) -> Entity {
-    let volume_widget = _global_volume_widget(
-        directional_nav_map,
-        commands,
-    );
+    let volume_widget = _global_volume_widget(directional_nav_map, commands);
 
     let ui_root = commands
         .spawn((
@@ -57,13 +53,15 @@ fn _settings_grid(
                 grid_template_columns: RepeatedGridTrack::px(2, 400.0),
                 ..default()
             },
-            children![(
-                //widget_old::label_old("Master Volume", &ui_resources.font_builder),
-                Node {
-                    justify_self: JustifySelf::End,
-                    ..default()
-                }
-            ),],
+            children![
+                (
+                    //widget_old::label_old("Master Volume", &ui_resources.font_builder),
+                    Node {
+                        justify_self: JustifySelf::End,
+                        ..default()
+                    }
+                ),
+            ],
         ))
         .id();
 
@@ -87,7 +85,7 @@ fn _global_volume_widget(
         .id();
 
     let minus_button = commands
-        .spawn(())//widget_old::button_small(ui_resources, "-", _lower_global_volume))
+        .spawn(()) //widget_old::button_small(ui_resources, "-", _lower_global_volume))
         .id();
     commands.entity(ui_root).add_child(minus_button);
 
@@ -105,7 +103,7 @@ fn _global_volume_widget(
     commands.entity(ui_root).add_child(current_volume_display);
 
     let plus_button = commands
-        .spawn(())//widget_old::button_small(ui_resources, "+", _raise_global_volume))
+        .spawn(()) //widget_old::button_small(ui_resources, "+", _raise_global_volume))
         .id();
     commands.entity(ui_root).add_child(plus_button);
 

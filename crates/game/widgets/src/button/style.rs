@@ -1,12 +1,9 @@
-use bevy::prelude::*;
 use crate::button::scene::ButtonImpl;
 use crate::theme::palette::SpriteInteractionPalette;
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        update_button_style
-    );
+    app.add_systems(Update, update_button_style);
 }
 
 #[derive(Component, Debug, Clone, Copy, Default)]
@@ -42,46 +39,28 @@ impl ButtonStyle {
 
     pub(crate) fn get_indices(&self) -> (usize, usize, usize) {
         match self {
-            ButtonStyle::Default => (
-                Self::idx(0, 0),
-                Self::idx(0, 1),
-                Self::idx(0, 2)
-            ),
-            ButtonStyle::ArrowRight => (
-                Self::idx(1, 0),
-                Self::idx(1, 1),
-                Self::idx(1, 2)
-            ),
-            ButtonStyle::ArrowDown => (
-                Self::idx(4, 0),
-                Self::idx(4, 1),
-                Self::idx(4, 2)
-            ),
-            ButtonStyle::Back => (
-                Self::idx(7, 0),
-                Self::idx(7, 1),
-                Self::idx(7, 2)
-            ),
+            ButtonStyle::Default => (Self::idx(0, 0), Self::idx(0, 1), Self::idx(0, 2)),
+            ButtonStyle::ArrowRight => (Self::idx(1, 0), Self::idx(1, 1), Self::idx(1, 2)),
+            ButtonStyle::ArrowDown => (Self::idx(4, 0), Self::idx(4, 1), Self::idx(4, 2)),
+            ButtonStyle::Back => (Self::idx(7, 0), Self::idx(7, 1), Self::idx(7, 2)),
         }
     }
 
     pub(crate) fn make_palette_scene(self) -> impl Scene {
         let indices = self.get_indices();
-        bsn! [
-            SpriteInteractionPalette {
-                none: {indices.0},
-                hovered: {indices.1},
-                pressed: {indices.2},
-            }
-        ]
+        bsn![SpriteInteractionPalette {
+            none: { indices.0 },
+            hovered: { indices.1 },
+            pressed: { indices.2 },
+        }]
     }
 
     pub(crate) fn get_palette(&self) -> SpriteInteractionPalette {
         let indices = self.get_indices();
         SpriteInteractionPalette {
-            none: {indices.0},
-            hovered: {indices.1},
-            pressed: {indices.2},
+            none: { indices.0 },
+            hovered: { indices.1 },
+            pressed: { indices.2 },
         }
     }
 
@@ -104,10 +83,7 @@ fn update_button_style(
             &mut ImageNode,
             &mut SpriteInteractionPalette,
         ),
-        (
-            With<ButtonImpl>,
-            Changed<ButtonStyle>
-        ),
+        (With<ButtonImpl>, Changed<ButtonStyle>),
     >,
 ) {
     for (style, interaction, mut image_node, mut interaction_palette) in &mut button_query {
@@ -138,10 +114,7 @@ fn apply_button_style(
     };
 
     image_node.image_mode = NodeImageMode::Sliced(style.make_slicer());
-    image_node.texture_atlas = Some(TextureAtlas {
-        layout,
-        index,
-    });
+    image_node.texture_atlas = Some(TextureAtlas { layout, index });
 
     *interaction_palette = palette;
 }

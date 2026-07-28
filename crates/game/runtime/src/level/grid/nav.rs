@@ -8,8 +8,7 @@ use getset::{CopyGetters, Getters};
 use physics::Collider;
 use std::collections::BTreeMap;
 
-pub(super) fn plugin(_app: &mut App) {
-}
+pub(super) fn plugin(_app: &mut App) {}
 
 // Type aliasing done here to allow for conversion without requiring explicit deconstruction,
 // nor requiring the caller to care about internal query type information
@@ -28,7 +27,7 @@ struct TileNavInfo<'a> {
     // Entity included in struct to preserve the entity reference while still
     // allowing conversion from a tuple using From<TileNavQueryParam>
     entity: Entity,
-    collider: &'a Collider
+    collider: &'a Collider,
 }
 impl<'s> From<TileNavQueryParam<'s>> for TileNavInfo<'s> {
     fn from((entity, collider): TileNavQueryParam<'s>) -> Self {
@@ -51,42 +50,43 @@ pub struct TileNavMap {
     edges_from: BTreeMap<TileCoords, Vec<NavEdgeKey>>,
 }
 impl TileNavMap {
-    pub fn from_map(
-        tile_map: TileMap,
-        tile_nav_query: TileNavQuery,
-    ) -> Self {
+    pub fn from_map(tile_map: TileMap, tile_nav_query: TileNavQuery) -> Self {
         // Cache tile info
         let mut slf = Self::default();
 
-        let tile_info = tile_nav_query.into_iter()
+        let tile_info = tile_nav_query
+            .into_iter()
             .map(TileNavInfo::from)
             .map(|info| (info.entity, info))
             .collect::<BTreeMap<Entity, TileNavInfo>>();
 
         let tile_map = tile_map.read().unwrap();
 
-        let tile_info_cache = tile_map.iter()
+        let tile_info_cache = tile_map
+            .iter()
             .map(|(coords, tile_entity)| (*coords, tile_info[tile_entity]))
             .collect::<BTreeMap<TileCoords, TileNavInfo>>();
-        
+
         // Process nodes
         for (coords, tile_info) in tile_info_cache.iter() {
             let mut clearance = MAX_CLEARANCE as f32;
             let (_, current_max) = tile_info.collider.bounds();
-            
+
             for height in 1..=MAX_CLEARANCE {
                 let check_coord = **coords + IVec3::new(0, height as i32, 0);
-                
+
                 if let Some(next_tile_info) = tile_info_cache.get(&check_coord.into()) {
                     let (next_min, _) = next_tile_info.collider.bounds();
 
                     clearance = next_min.y - current_max.y;
-                    if clearance < 1.0 { clearance = 0.0; }
-                    
+                    if clearance < 1.0 {
+                        clearance = 0.0;
+                    }
+
                     break;
                 }
             }
-            
+
             if clearance > 0.0 {
                 let node = NavNode {
                     kind: NavNodeKind::Ground,
@@ -96,7 +96,7 @@ impl TileNavMap {
                 slf.add_node(*coords, node);
             }
         }
-        
+
         // Cloned here since we will need mutable access to _self
         let nodes = slf.nodes.clone();
         let directions = [
@@ -105,13 +105,13 @@ impl TileNavMap {
             IVec3::new(-1, 0, 0),
             IVec3::new(0, 0, -1),
         ];
-        
+
         // Populate ground tile edges
         for (coords, node) in nodes {
             if node.kind != NavNodeKind::Ground {
                 continue;
             }
-            
+
             for dir in directions {
                 let new_coords = TileCoords::from(*coords + dir);
                 if let Some(new_node) = slf.nodes.get(&new_coords)
@@ -124,10 +124,7 @@ impl TileNavMap {
                             start: coords,
                             end: new_coords,
                         },
-                        NavEdge::new(
-                            NavEdgeKind::Walk,
-                            node.clearance.min(new_node.clearance)
-                        ),
+                        NavEdge::new(NavEdgeKind::Walk, node.clearance.min(new_node.clearance)),
                     );
                 }
             }
@@ -150,19 +147,19 @@ impl TileNavMap {
     }
 
     pub fn get_edges_from_tile(&self, coords: &TileCoords) -> Option<Vec<(&NavEdgeKey, &NavEdge)>> {
-        let edges =
-            self.edges_from
-                .get(coords)?
-                .iter()
-                .map(|key| (key, &self.edges[key]))
-                .collect();
+        let edges = self
+            .edges_from
+            .get(coords)?
+            .iter()
+            .map(|key| (key, &self.edges[key]))
+            .collect();
         Some(edges)
     }
 
     pub fn _get_edge(&self, start: &TileCoords, end: &TileCoords) -> Option<&NavEdge> {
         let key = NavEdgeKey {
             start: *start,
-            end: *end
+            end: *end,
         };
         self.edges.get(&key)
     }
@@ -204,11 +201,7 @@ impl TileNavMap {
             && self.validate_coords_for_path(&right_coords, clearance_height)
     }
 
-    fn validate_coords_for_path(
-        &self,
-        coords: &[TileCoords],
-        clearance_height: f32,
-    ) -> bool {
+    fn validate_coords_for_path(&self, coords: &[TileCoords], clearance_height: f32) -> bool {
         coords.iter().all(|coord| {
             if !self.has_node(coord) {
                 return false;
@@ -219,10 +212,7 @@ impl TileNavMap {
     }
 
     /// Finds all tiles intersected by the ray between two points
-    fn get_intersecting_coords(
-        start: &WorldCoords,
-        end: &WorldCoords,
-    ) -> Vec<TileCoords> {
+    fn get_intersecting_coords(start: &WorldCoords, end: &WorldCoords) -> Vec<TileCoords> {
         let mut intersections = Vec::new();
 
         // Store the start and end positions as points along our path
@@ -276,7 +266,9 @@ impl TileNavMap {
         intersections.sort_by(|a, b| {
             let dist_a = a.distance_squared(start_point);
             let dist_b = b.distance_squared(start_point);
-            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+            dist_a
+                .partial_cmp(&dist_b)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
 
         // --- 4. Convert segments to unique TileCoords ---
@@ -333,7 +325,10 @@ pub struct NavEdgeKey {
 }
 impl From<(TileCoords, TileCoords)> for NavEdgeKey {
     fn from(value: (TileCoords, TileCoords)) -> Self {
-        Self { start: value.0, end: value.1 }
+        Self {
+            start: value.0,
+            end: value.1,
+        }
     }
 }
 impl From<NavEdgeKey> for (TileCoords, TileCoords) {
@@ -393,17 +388,15 @@ mod debug_helpers {
         }
 
         pub fn debug_edge_segments(&self) -> impl Iterator<Item = (Vec3, Vec3)> + '_ {
-            self.edges
-                .keys()
-                .filter_map(|key| {
-                    let start = self.nodes.get(&key.start)?;
-                    let end = self.nodes.get(&key.end)?;
+            self.edges.keys().filter_map(|key| {
+                let start = self.nodes.get(&key.start)?;
+                let end = self.nodes.get(&key.end)?;
 
-                    Some((
-                        nav_node_debug_position(&key.start, start),
-                        nav_node_debug_position(&key.end, end),
-                    ))
-                })
+                Some((
+                    nav_node_debug_position(&key.start, start),
+                    nav_node_debug_position(&key.end, end),
+                ))
+            })
         }
     }
 

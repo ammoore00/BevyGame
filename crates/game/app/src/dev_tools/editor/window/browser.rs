@@ -1,20 +1,22 @@
-use crate::dev_tools::editor::file_manager::{EditorResourceKind, FileKind, FileManager, FileTaskChannelSet};
+use crate::dev_tools::editor::file_manager::{
+    EditorResourceKind, FileKind, FileManager, FileTaskChannelSet,
+};
 use crate::screens::Screen;
+use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use common::marker;
 use data::loc::AnyResourceLocation;
 use data::prelude::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
-use common::marker;
-use widgets::{button, text};
 use widgets::button::{ButtonStyle, ButtonWithTextOptions};
 use widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
 use widgets::theme::palette::{BackgroundInteractionPalette, HEADER_TEXT};
+use widgets::{button, text};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -42,7 +44,7 @@ pub(super) fn plugin(app: &mut App) {
             render_menu_items,
         )
             .chain()
-            .run_if(in_state(Screen::Editor))
+            .run_if(in_state(Screen::Editor)),
     );
 }
 
@@ -80,7 +82,11 @@ pub(super) fn spawn_file_browser() -> impl Scene {
 
 #[derive(Component, Debug, Clone, Copy)]
 struct Collapsed(bool);
-impl Default for Collapsed { fn default() -> Self { Self(true) } }
+impl Default for Collapsed {
+    fn default() -> Self {
+        Self(true)
+    }
+}
 
 fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> impl Scene {
     bsn! [
@@ -161,11 +167,13 @@ struct MenuContentsUntypedMarker;
 
 #[derive(Component, Debug)]
 struct MenuContents<T: MenuContentsKind> {
-    _phantom_data: PhantomData<T>
+    _phantom_data: PhantomData<T>,
 }
 impl<T: MenuContentsKind> MenuContents<T> {
     fn new() -> Self {
-        Self { _phantom_data: PhantomData }
+        Self {
+            _phantom_data: PhantomData,
+        }
     }
 }
 
@@ -182,20 +190,10 @@ const CONTENT_PADDING: f32 = 1.;
 
 /// Check the collapsed state of the menu entity and spawn or despawn the content entity as needed
 fn spawn_collapsible_menu_contents<ContentKind>(
-    menu_query: Query<
-        (
-            Entity,
-            &Collapsed
-        ),
-        With<ContentKind>
-    >,
-    contents_query: Query<
-        Entity,
-        With<MenuContents<ContentKind>>
-    >,
+    menu_query: Query<(Entity, &Collapsed), With<ContentKind>>,
+    contents_query: Query<Entity, With<MenuContents<ContentKind>>>,
     mut commands: Commands,
-)
-where
+) where
     ContentKind: MenuContentsKind,
 {
     let Ok((menu, collapsed)) = menu_query.single() else {
@@ -211,26 +209,30 @@ where
         }
         Err(QuerySingleError::NoEntities(_)) => {
             if !collapsed.0 {
-                let contents = commands.spawn((
-                    MenuContentsUntypedMarker,
-                    MenuContents::<ContentKind>::new(),
-                    MenuContentsUninitialized,
-                    Node {
-                        width: percent(100),
-                        padding: UiRect::px(
-                            CONTENT_START_PADDING,
-                            CONTENT_PADDING,
-                            CONTENT_PADDING,
-                            CONTENT_PADDING,
-                        ),
+                let contents = commands
+                    .spawn((
+                        MenuContentsUntypedMarker,
+                        MenuContents::<ContentKind>::new(),
+                        MenuContentsUninitialized,
+                        Node {
+                            width: percent(100),
+                            padding: UiRect::px(
+                                CONTENT_START_PADDING,
+                                CONTENT_PADDING,
+                                CONTENT_PADDING,
+                                CONTENT_PADDING,
+                            ),
 
-                        ..Default::default()
-                    },
-                )).id();
+                            ..Default::default()
+                        },
+                    ))
+                    .id();
                 commands.entity(menu).add_child(contents);
             }
         }
-        Err(QuerySingleError::MultipleEntities(_)) => error!("Multiple entities found for menu contents"),
+        Err(QuerySingleError::MultipleEntities(_)) => {
+            error!("Multiple entities found for menu contents")
+        }
     }
 }
 
@@ -242,20 +244,16 @@ trait MenuRegistryAccessor<T: ResourceKind>: SystemParam {
 impl<'w, T: ResourceKind> MenuRegistryAccessor<T> for SystemRegistry<'w, T> {
     type AssetKind = T::AssetKind;
     fn iter(&self) -> impl Iterator<Item = (ResourceLocation<T>, Handle<Self::AssetKind>)> {
-        self.registry().iter()
+        self.registry()
+            .iter()
             .map(|(location, handle)| (location.clone(), handle.clone()))
     }
 }
 
-fn update_menu_contents_from_registry<
-    ContentKind: MenuContentsKind,
-> (
+fn update_menu_contents_from_registry<ContentKind: MenuContentsKind>(
     contents_query: Query<
-        (
-            Entity,
-            Option<&MenuContentsUninitialized>,
-        ),
-        With<MenuContents<ContentKind>>
+        (Entity, Option<&MenuContentsUninitialized>),
+        With<MenuContents<ContentKind>>,
     >,
     registry: SystemRegistry<ContentKind::ResourceKind>,
     commands: Commands,
@@ -267,16 +265,12 @@ fn update_menu_contents_from_registry<
 /// and adds them to the list in a hierarchical folder structure
 fn update_menu_contents_inner<ContentKind, Registry, Resource>(
     contents_query: Query<
-        (
-            Entity,
-            Option<&MenuContentsUninitialized>,
-        ),
-        With<MenuContents<ContentKind>>
+        (Entity, Option<&MenuContentsUninitialized>),
+        With<MenuContents<ContentKind>>,
     >,
     registry: Registry,
     mut commands: Commands,
-)
-where
+) where
     ContentKind: MenuContentsKind,
     Registry: MenuRegistryAccessor<Resource>,
     Resource: EditorResourceKind,
@@ -296,12 +290,18 @@ where
             return;
         }
     };
-    
+
     let file_kind = FileKind::from_resource_kind::<Resource>();
-    
+
     if uninitialized.is_some() {
         for (loc, _) in registry.iter() {
-            let item = commands.spawn(UninitializedMenuItem(loc.as_local_path().to_path_buf(), loc.into(), file_kind)).id();
+            let item = commands
+                .spawn(UninitializedMenuItem(
+                    loc.as_local_path().to_path_buf(),
+                    loc.into(),
+                    file_kind,
+                ))
+                .id();
             commands.entity(contents).add_child(item);
         }
     }
@@ -327,25 +327,14 @@ impl MenuItem {
 /// Process menu items marked as uninitialized and populate their children
 fn update_menu_items(
     // Query for the item itself which we want to update
-    items_query: Query<(
-        Entity,
-        &UninitializedMenuItem,
-        &ChildOf,
-    )>,
+    items_query: Query<(Entity, &UninitializedMenuItem, &ChildOf)>,
     // Query for getting the parent of the item
     parent_query: Query<
-        (
-            Entity,
-            &Children,
-            Option<&MenuContentsUninitialized>,
-        ),
-        Or<(With<MenuItem>, With<MenuContentsUntypedMarker>)>
+        (Entity, &Children, Option<&MenuContentsUninitialized>),
+        Or<(With<MenuItem>, With<MenuContentsUntypedMarker>)>,
     >,
     // Query for getting the siblings of the item
-    sibling_query: Query<(
-        Entity,
-        &MenuItem,
-    )>,
+    sibling_query: Query<(Entity, &MenuItem)>,
     mut commands: Commands,
 ) {
     // Only process one item per frame in order to prevent duplicate items
@@ -354,7 +343,7 @@ fn update_menu_items(
         let path = item.0.clone();
         let loc = item.1.clone();
         let file_kind = item.2;
-        
+
         let mut components = path.components().peekable();
         let Some(component) = components.next() else {
             error!("Cannot create empty path");
@@ -374,23 +363,27 @@ fn update_menu_items(
         };
 
         if menu_uninitialized.is_some() {
-            commands.entity(parent_entity).remove::<MenuContentsUninitialized>();
-            commands.entity(parent_entity).insert(MenuContentsProcessing);
+            commands
+                .entity(parent_entity)
+                .remove::<MenuContentsUninitialized>();
+            commands
+                .entity(parent_entity)
+                .insert(MenuContentsProcessing);
         }
 
-        let mut siblings = sibling_query.iter()
+        let mut siblings = sibling_query
+            .iter()
             .filter(|(sibling_entity, _)| siblings.contains(sibling_entity));
 
         // Check if the current component is the last one, and thus we are at the final file
         let is_last = components.peek().is_none();
 
         // See if an item already exists for this component
-        let existing = siblings.find(|(_, sibling_item)| {
-            match (sibling_item, is_last) {
-                (MenuItem::Folder(name), false)
-                | (MenuItem::File(name, _, _), true) => component == name,
-                _ => false
+        let existing = siblings.find(|(_, sibling_item)| match (sibling_item, is_last) {
+            (MenuItem::Folder(name), false) | (MenuItem::File(name, _, _), true) => {
+                component == name
             }
+            _ => false,
         });
 
         match (is_last, existing) {
@@ -398,28 +391,42 @@ fn update_menu_items(
             // If it already exists, despawn the uninitialized item
             (true, Some(_)) => {
                 commands.entity(item_entity).despawn();
-            },
+            }
             // Otherwise, replace the uninitialized reference with an item
             (true, None) => {
-                commands.entity(item_entity).remove::<UninitializedMenuItem>();
-                commands.entity(item_entity).insert(MenuItem::File(component.to_string(), loc, file_kind));
-            },
+                commands
+                    .entity(item_entity)
+                    .remove::<UninitializedMenuItem>();
+                commands.entity(item_entity).insert(MenuItem::File(
+                    component.to_string(),
+                    loc,
+                    file_kind,
+                ));
+            }
             //If we are still in a directory:
             // If the child already exists, despawn the uninitialized entity,
             // then add a new uninitialized one under the existing match
             (false, Some((existing, _))) => {
                 commands.entity(item_entity).despawn();
-                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc, file_kind)).id();
+                let child = commands
+                    .spawn(UninitializedMenuItem(remaining_path, loc, file_kind))
+                    .id();
                 commands.entity(existing).add_child(child);
-            },
+            }
             // Otherwise, replace the uninitialized reference with a folder,
             // then add an uninitialized child entity
             (false, None) => {
-                commands.entity(item_entity).remove::<UninitializedMenuItem>();
-                commands.entity(item_entity).insert(MenuItem::Folder(component.to_string()));
-                let child = commands.spawn(UninitializedMenuItem(remaining_path, loc, file_kind)).id();
+                commands
+                    .entity(item_entity)
+                    .remove::<UninitializedMenuItem>();
+                commands
+                    .entity(item_entity)
+                    .insert(MenuItem::Folder(component.to_string()));
+                let child = commands
+                    .spawn(UninitializedMenuItem(remaining_path, loc, file_kind))
+                    .id();
                 commands.entity(item_entity).add_child(child);
-            },
+            }
         }
     }
 }
@@ -429,11 +436,8 @@ fn finalize_menu_items(
     // Find if there are any items marked as uninitialized
     uninitialized_query: Query<(), With<UninitializedMenuItem>>,
     // Query children of menu tree roots
-    menu_query: Query<
-        Entity,
-        With<MenuContentsProcessing>
-    >,
-    mut commands: Commands
+    menu_query: Query<Entity, With<MenuContentsProcessing>>,
+    mut commands: Commands,
 ) {
     // Wait until all components are initialized
     if !uninitialized_query.is_empty() {
@@ -455,19 +459,10 @@ const BROWSER_BUTTON_MARGIN: f32 = 12.;
 
 fn render_menu_items(
     // Only process rendering information if everything is done processing
-    processing_query: Query<(), Or<(
-        With<UninitializedMenuItem>,
-        With<MenuContentsProcessing>
-    )>>,
+    processing_query: Query<(), Or<(With<UninitializedMenuItem>, With<MenuContentsProcessing>)>>,
     // Query menu items which do not already have a layout component
-    item_query: Query<
-        (
-            Entity,
-            &MenuItem,
-        ),
-        Without<Node>
-    >,
-    mut commands: Commands
+    item_query: Query<(Entity, &MenuItem), Without<Node>>,
+    mut commands: Commands,
 ) {
     // Wait until all components are initialized
     if !processing_query.is_empty() {
@@ -543,9 +538,7 @@ fn render_menu_items(
     }
 }
 
-fn folder_button_clicked(
-    _: On<Pointer<Click>>,
-) {}
+fn folder_button_clicked(_: On<Pointer<Click>>) {}
 
 fn file_button_clicked(
     event: On<Pointer<Click>>,
@@ -558,17 +551,17 @@ fn file_button_clicked(
         error!("Failed to get menu item entity");
         return;
     };
-    
+
     let Ok(menu_item) = file_query.get(menu_item) else {
         error!("Failed to get menu item component from entity");
         return;
     };
-    
+
     let MenuItem::File(_, loc, file_kind) = menu_item else {
         error!("Menu item was not a file!");
         return;
     };
-    
+
     match event.button {
         PointerButton::Primary => file_manager.open(loc.clone(), *file_kind, true, &channel_set),
         PointerButton::Secondary => {}

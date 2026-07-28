@@ -41,13 +41,8 @@ impl Default for AnimationCodec {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum FrameDataCodec {
-    FixedInterval {
-        num_frames: usize,
-        interval: u64,
-    },
-    Distinct {
-        intervals: Vec<u64>,
-    }
+    FixedInterval { num_frames: usize, interval: u64 },
+    Distinct { intervals: Vec<u64> },
 }
 
 impl FrameDataCodec {

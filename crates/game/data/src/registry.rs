@@ -1,8 +1,8 @@
+use crate::loc::ResourceLocation;
+use crate::resource::ResourceKind;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet};
-use crate::loc::ResourceLocation;
-use crate::resource::ResourceKind;
 // TODO: Change registry to dynamically register loaded resource instead of loading them all at once
 //       to support new BSN inline asset definitions
 
@@ -61,7 +61,9 @@ impl<T: ResourceKind> ResourceRegistry<T> {
         self.registry.iter()
     }
 
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&ResourceLocation<T>, &mut Handle<T::AssetKind>)> {
+    pub fn iter_mut(
+        &mut self,
+    ) -> impl Iterator<Item = (&ResourceLocation<T>, &mut Handle<T::AssetKind>)> {
         self.registry.iter_mut()
     }
 }
@@ -92,18 +94,27 @@ macro_rules! registry_impl {
     ) => {
         impl<T: $bound> $system_param<'_, $type_param> {
             #[allow(unused)]
-            pub fn $handle_fn(&self, id: &ResourceLocation<$type_param>) -> Option<Handle<$type_param::AssetKind>> {
+            pub fn $handle_fn(
+                &self,
+                id: &ResourceLocation<$type_param>,
+            ) -> Option<Handle<$type_param::AssetKind>> {
                 self.registry.registry.get(&id).cloned()
             }
 
             #[allow(unused)]
-            pub fn $asset_fn(&self, id: &ResourceLocation<$type_param>) -> Option<&$type_param::AssetKind> {
+            pub fn $asset_fn(
+                &self,
+                id: &ResourceLocation<$type_param>,
+            ) -> Option<&$type_param::AssetKind> {
                 let handle = self.$handle_fn(id);
                 handle.and_then(|handle| self.$asset_from_handle_fn(handle))
             }
 
             #[allow(unused)]
-            pub fn $asset_from_handle_fn(&self, handle: Handle<$type_param::AssetKind>) -> Option<&$type_param::AssetKind> {
+            pub fn $asset_from_handle_fn(
+                &self,
+                handle: Handle<$type_param::AssetKind>,
+            ) -> Option<&$type_param::AssetKind> {
                 self.assets.get(handle.id())
             }
         }
@@ -140,12 +151,7 @@ registry_impl!(
     }
 );
 impl<T: ResourceKind> SystemRegistryMut<'_, T> {
-    pub fn split(
-        &mut self,
-    ) -> (
-        &mut ResourceRegistry<T>,
-        &mut Assets<T::AssetKind>,
-    ) {
+    pub fn split(&mut self) -> (&mut ResourceRegistry<T>, &mut Assets<T::AssetKind>) {
         (&mut self.registry, &mut self.assets)
     }
 }

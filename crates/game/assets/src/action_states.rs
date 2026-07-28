@@ -79,14 +79,18 @@ pub trait TimedActionState: ActionState {
 #[reflect(Component, ActionState)]
 pub struct Idle;
 impl ActionStateMarker for Idle {
-    fn is_movement() -> bool { false }
+    fn is_movement() -> bool {
+        false
+    }
 }
 
 #[derive(Component, Debug, Clone, Reflect, Default)]
 #[reflect(Component, ActionState, MovementActionState)]
 pub struct Walking;
 impl ActionStateMarker for Walking {
-    fn is_movement() -> bool { true }
+    fn is_movement() -> bool {
+        true
+    }
 }
 impl MovementActionState for Walking {}
 
@@ -94,7 +98,9 @@ impl MovementActionState for Walking {}
 #[reflect(Component, ActionState, MovementActionState)]
 pub struct Running;
 impl ActionStateMarker for Running {
-    fn is_movement() -> bool { true }
+    fn is_movement() -> bool {
+        true
+    }
 }
 impl MovementActionState for Running {}
 
@@ -102,7 +108,9 @@ impl MovementActionState for Running {}
 #[reflect(Component, ActionState, MovementActionState)]
 pub struct Sprinting;
 impl ActionStateMarker for Sprinting {
-    fn is_movement() -> bool { true }
+    fn is_movement() -> bool {
+        true
+    }
 }
 impl MovementActionState for Sprinting {}
 
@@ -123,7 +131,9 @@ impl Attacking {
     }
 }
 impl ActionStateMarker for Attacking {
-    fn is_movement() -> bool { false }
+    fn is_movement() -> bool {
+        false
+    }
 }
 impl TimedActionState for Attacking {
     fn time_left(&self) -> f32 {
@@ -262,7 +272,8 @@ impl StateMatcher {
     }
 }
 
-type StateTransitionFn = dyn for<'a> Fn(&'a dyn ActionState, &'a dyn ActionState) -> bool + Send + Sync;
+type StateTransitionFn =
+    dyn for<'a> Fn(&'a dyn ActionState, &'a dyn ActionState) -> bool + Send + Sync;
 
 #[derive(Clone)]
 pub enum StateTransitionChecker {
@@ -327,9 +338,7 @@ pub struct ActionStateCapabilities {
     transition_graph: HashMap<(TypeId, TypeId), StateTransitionRule>,
 }
 impl ActionStateCapabilities {
-    pub fn new(
-        allowed_states: Vec<TypeId>,
-    ) -> Self {
+    pub fn new(allowed_states: Vec<TypeId>) -> Self {
         let mut transition_graph = HashMap::new();
 
         // Populate transition graph

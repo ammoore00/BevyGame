@@ -1,9 +1,9 @@
+use crate::loader::LoaderJobManager;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use data::define_resource;
 use data::loc::ResourceLocation;
 use data::prelude::{ResourceFileType, ResourceRegistry};
-use crate::loader::LoaderJobManager;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<FontResource>();
@@ -18,9 +18,11 @@ pub(super) fn plugin(app: &mut App) {
             alias: "bold_pixels".to_string(),
         },
     )
-        .expect("Failed to load font");
+    .expect("Failed to load font");
 
-    app.insert_resource(DefaultFont("bold_pixels".parse().expect("Failed to parse default font")));
+    app.insert_resource(DefaultFont(
+        "bold_pixels".parse().expect("Failed to parse default font"),
+    ));
 }
 
 define_resource!(Font, "font", Font, ResourceFileType::Font);
@@ -31,7 +33,7 @@ struct DefaultFont(ResourceLocation<FontResource>);
 #[derive(SystemParam)]
 pub struct FontBuilder<'w> {
     default_font: Res<'w, DefaultFont>,
-    font_registry: Res<'w, ResourceRegistry<FontResource>>
+    font_registry: Res<'w, ResourceRegistry<FontResource>>,
 }
 
 impl<'w> FontBuilder<'w> {
@@ -44,12 +46,15 @@ impl<'w> FontBuilder<'w> {
     }
 
     /// Create text with the given size and font, using a resource location
-    pub fn with_font(&self, font_size: FontSize, font: ResourceLocation<FontResource>) -> Option<TextFont> {
-        font.get(self.font_registry.as_ref())
-            .map(|font| TextFont {
-                font: FontSource::from(font),
-                font_size,
-                ..default()
-            })
+    pub fn with_font(
+        &self,
+        font_size: FontSize,
+        font: ResourceLocation<FontResource>,
+    ) -> Option<TextFont> {
+        font.get(self.font_registry.as_ref()).map(|font| TextFont {
+            font: FontSource::from(font),
+            font_size,
+            ..default()
+        })
     }
 }

@@ -2,7 +2,10 @@ use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_state::<GameState>();
-    app.configure_sets(Update, GameplaySystems.run_if(in_state(GameState::Gameplay)));
+    app.configure_sets(
+        Update,
+        GameplaySystems.run_if(in_state(GameState::Gameplay)),
+    );
 }
 
 // TODO: Should this be in this crate?

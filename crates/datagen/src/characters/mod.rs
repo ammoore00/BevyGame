@@ -4,11 +4,18 @@ mod test_npc;
 use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
-use crate::{create_dir, write_data, WriteError};
+use crate::{WriteError, create_dir, write_data};
+use assets::codec::{
+    ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec,
+    CharacterCodec, ColliderCodec, ColliderDataCodec, DamageModifierCodec, FrameDataCodec,
+    KeyFrameCodec, TextureAtlasCodec,
+};
+use assets::resource::characters::{
+    AnimationResource, AttackResource, AttackSetResource, CharacterResource,
+    CharacterSpriteResource,
+};
 use data::prelude::*;
 use std::collections::HashMap;
-use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, DamageModifierCodec, FrameDataCodec, KeyFrameCodec, TextureAtlasCodec};
-use assets::resource::characters::{AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
 
 pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(CharacterResource::ROOT_DIR)?;
@@ -22,9 +29,7 @@ pub fn generate_characters() -> Result<(), WriteError> {
     Ok(())
 }
 
-fn create_character(
-    character_data: CharacterData,
-) -> Result<(), WriteError> {
+fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
     let attack_set = character_data.attack_set.clone();
 
     let animations = character_data.animations.clone();
@@ -32,7 +37,9 @@ fn create_character(
 
     if let Some(attack_set) = attack_set {
         // Add attack animations to the list of animations which need to be registered
-        let mut attack_animations = attack_set.attacks.iter()
+        let mut attack_animations = attack_set
+            .attacks
+            .iter()
             .map(|attack_data| attack_data.animation.clone())
             .collect::<Vec<_>>();
         animations_list.append(&mut attack_animations);
@@ -81,10 +88,7 @@ struct CharacterData {
     damage_modifiers: Option<DamageModifierCodec>,
 }
 impl CharacterData {
-    fn new(
-        loc: &str,
-        collider: ColliderDataCodec,
-    ) -> Self {
+    fn new(loc: &str, collider: ColliderDataCodec) -> Self {
         Self {
             loc: loc.parse().unwrap(),
             allowed_states: AllowedStatesCodec::default(),
@@ -106,7 +110,9 @@ impl From<CharacterData> for CharacterCodec {
     fn from(value: CharacterData) -> Self {
         let attack_set = value.attack_set.map(|attack_set| attack_set.loc);
 
-        let animations = value.animations.into_iter()
+        let animations = value
+            .animations
+            .into_iter()
             .map(|(action, animation)| (action, animation.loc))
             .collect();
 
@@ -134,24 +140,14 @@ struct AnimationData {
     frame_data: FrameDataCodec,
 }
 impl AnimationData {
-    fn new(
-        loc: &str,
-        width: u32,
-        height: u32,
-        frame_data: FrameDataCodec,
-    ) -> Self {
-        let atlas = TextureAtlasData::new(
-            width,
-            height,
-            frame_data.num_frames(),
-            ANIMATION_ROWS,
-        );
+    fn new(loc: &str, width: u32, height: u32, frame_data: FrameDataCodec) -> Self {
+        let atlas = TextureAtlasData::new(width, height, frame_data.num_frames(), ANIMATION_ROWS);
 
         Self {
             loc: loc.parse().unwrap(),
             image: loc.parse().unwrap(),
             atlas: atlas.into(),
-            frame_data
+            frame_data,
         }
     }
 
@@ -221,9 +217,7 @@ struct AttackSetData {
 }
 impl From<AttackSetData> for AttackSetCodec {
     fn from(value: AttackSetData) -> Self {
-        let attacks = value.attacks.into_iter()
-            .map(|attack| attack.loc)
-            .collect();
+        let attacks = value.attacks.into_iter().map(|attack| attack.loc).collect();
 
         Self {
             format: LATEST_ATTACK_SET_FORMAT,

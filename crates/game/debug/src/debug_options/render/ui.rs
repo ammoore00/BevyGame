@@ -3,7 +3,10 @@ use bevy::prelude::*;
 use common::dev_tools::DebugState;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, set_ui_render.run_if(resource_changed::<UiRenderRes>));
+    app.add_systems(
+        Update,
+        set_ui_render.run_if(resource_changed::<UiRenderRes>),
+    );
 }
 
 fn set_ui_render(

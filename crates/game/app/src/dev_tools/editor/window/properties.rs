@@ -1,19 +1,18 @@
-use crate::dev_tools::editor::file_manager::{EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager};
+use crate::dev_tools::editor::file_manager::{
+    EditorFile, EditorFileComponent, EditorFileContent, EditorResourceKind, FileKind, FileManager,
+};
 use crate::screens::Screen;
-use bevy::ecs::query::QuerySingleError;
-use bevy::prelude::*;
-use serde::de::DeserializeOwned;
 use assets::codec::{AnimationCodec, AttackCodec, CharacterCodec};
 use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
+use bevy::ecs::query::QuerySingleError;
+use bevy::prelude::*;
 use common::marker;
+use serde::de::DeserializeOwned;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            update_properties_view,
-        )
-            .run_if(in_state(Screen::Editor))
+        (update_properties_view,).run_if(in_state(Screen::Editor)),
     );
 }
 
@@ -32,37 +31,24 @@ pub(super) fn spawn_details_screen() -> impl Scene {
 }
 
 fn update_properties_view(
-    parent_query: Query<
-        Entity,
-        With<PropertiesScreen>
-    >,
+    parent_query: Query<Entity, With<PropertiesScreen>>,
     // Query for the current properties screen
-    properties_query: Query<(
-        Entity,
-        &PropertiesInner
-    )>,
-    file_query: Query<(
-        &EditorFileComponent,
-        &EditorFileContent,
-    )>,
+    properties_query: Query<(Entity, &PropertiesInner)>,
+    file_query: Query<(&EditorFileComponent, &EditorFileContent)>,
     file_manager: Res<FileManager>,
     mut commands: Commands,
 ) {
     // Get the current properties view
     let properties = match properties_query.single() {
-        Ok((entity, inner)) => {
-            Some((entity, inner))
-        },
-        Err(QuerySingleError::NoEntities(_)) => {
-            None
-        },
+        Ok((entity, inner)) => Some((entity, inner)),
+        Err(QuerySingleError::NoEntities(_)) => None,
         Err(QuerySingleError::MultipleEntities(err)) => {
             error!("Found multiple properties entities: {err}\nDespawning all entities.");
             for (entity, _) in properties_query.iter() {
                 commands.entity(entity).despawn();
             }
             return;
-        },
+        }
     };
 
     // If there is no active file, despawn the properties entity if it exists
@@ -73,32 +59,42 @@ fn update_properties_view(
         return;
     };
 
-    let should_spawn = if let Some((properties_entity, PropertiesInner(active_file_in_properties))) = properties {
-        // If there is an active file, and it does not match the current properties screen,
-        // despawn it and flag that we should spawn a new properties editor
-        if active_file_in_properties != active_file {
-            commands.entity(properties_entity).despawn();
-            info!("Despawning properties editor for file: {}", active_file_in_properties.loc());
-            info!("Spawning new properties editor for file: {}", active_file.loc());
-            true
+    let should_spawn =
+        if let Some((properties_entity, PropertiesInner(active_file_in_properties))) = properties {
+            // If there is an active file, and it does not match the current properties screen,
+            // despawn it and flag that we should spawn a new properties editor
+            if active_file_in_properties != active_file {
+                commands.entity(properties_entity).despawn();
+                info!(
+                    "Despawning properties editor for file: {}",
+                    active_file_in_properties.loc()
+                );
+                info!(
+                    "Spawning new properties editor for file: {}",
+                    active_file.loc()
+                );
+                true
+            }
+            // If the properties screen matches the active file, do not spawn a new properties editor
+            else {
+                false
+            }
         }
-        // If the properties screen matches the active file, do not spawn a new properties editor
+        // If there is an active file, but no properties screen, flag that we should spawn a new properties editor
         else {
-            false
-        }
-    }
-    // If there is an active file, but no properties screen, flag that we should spawn a new properties editor
-    else {
-        info!("No editor exists, spawning new properties editor for file: {}", active_file.loc());
-        true
-    };
+            info!(
+                "No editor exists, spawning new properties editor for file: {}",
+                active_file.loc()
+            );
+            true
+        };
 
     if should_spawn {
         info!("Attempting to spawn editor for file: {}", active_file.loc());
 
-        let content = file_query.into_iter().find(|(file, _)| {
-            &file.0 == active_file
-        });
+        let content = file_query
+            .into_iter()
+            .find(|(file, _)| &file.0 == active_file);
 
         if let Some((_, content)) = content {
             let Ok(parent) = parent_query.single() else {
@@ -106,11 +102,11 @@ fn update_properties_view(
                 return;
             };
 
-            info!("Spawning new properties editor for file: {}", active_file.loc());
-            let properties = active_file.spawn_properties_editor(
-                content,
-                commands.reborrow(),
+            info!(
+                "Spawning new properties editor for file: {}",
+                active_file.loc()
             );
+            let properties = active_file.spawn_properties_editor(content, commands.reborrow());
 
             commands.entity(parent).add_child(properties);
         }
@@ -142,25 +138,28 @@ impl EditorFile {
         );
 
         match self.kind() {
-            FileKind::Character => commands.spawn((
-                self.properties_bundle::<CharacterCodec>(content.get_character_codec()),
-                shared_bundle,
-            )).id(),
-            FileKind::Animation => commands.spawn((
-                self.properties_bundle::<AnimationCodec>(content.get_animation_codec()),
-                shared_bundle,
-            )).id(),
-            FileKind::Attack => commands.spawn((
-                self.properties_bundle::<AttackCodec>(content.get_attack_codec()),
-                shared_bundle,
-            )).id(),
+            FileKind::Character => commands
+                .spawn((
+                    self.properties_bundle::<CharacterCodec>(content.get_character_codec()),
+                    shared_bundle,
+                ))
+                .id(),
+            FileKind::Animation => commands
+                .spawn((
+                    self.properties_bundle::<AnimationCodec>(content.get_animation_codec()),
+                    shared_bundle,
+                ))
+                .id(),
+            FileKind::Attack => commands
+                .spawn((
+                    self.properties_bundle::<AttackCodec>(content.get_attack_codec()),
+                    shared_bundle,
+                ))
+                .id(),
         }
     }
 
-    fn properties_bundle<Codec: EditorCodec>(
-        &self,
-        content: Codec,
-    ) -> impl Bundle {
+    fn properties_bundle<Codec: EditorCodec>(&self, content: Codec) -> impl Bundle {
         content.properties_bundle()
     }
 }

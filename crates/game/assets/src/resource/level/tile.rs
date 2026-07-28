@@ -1,11 +1,11 @@
 use crate::codec::TileCodec;
+use crate::loader::{LoaderJobManager, RonAssetLoader};
+use crate::state::AssetSystems;
 use bevy::prelude::*;
 use data::prelude::*;
 use data::{define_data_resource, define_sprite_resource};
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
-use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::state::AssetSystems;
 
 pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();
@@ -15,16 +15,15 @@ pub(in crate::resource) fn plugin(app: &mut App) {
 
     app.add_systems(
         Startup,
-        populate_tile_assets.in_set(AssetSystems::PopulateAssetRefs)
+        populate_tile_assets.in_set(AssetSystems::PopulateAssetRefs),
     );
 }
 
-static TILE_SPRITE_LAYOUT: LazyLock<TextureAtlasLayout> = LazyLock::new(|| TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None));
+static TILE_SPRITE_LAYOUT: LazyLock<TextureAtlasLayout> = LazyLock::new(|| {
+    TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 8, Some(UVec2::splat(1)), None)
+});
 
-fn populate_tile_assets(
-    asset_server: Res<AssetServer>,
-    mut commands: Commands,
-) {
+fn populate_tile_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
     let tile_assets = TileLayout {
         layout: asset_server.add(TILE_SPRITE_LAYOUT.clone()),
     };
@@ -95,15 +94,13 @@ impl PartialEq for TileShape {
             (TileShape::Bridge(a), TileShape::Bridge(b)) => a == b,
             (TileShape::Other(a), TileShape::Other(b)) => {
                 let sorted = |v: &[Vec3]| -> Vec<[f32; 3]> {
-                    let mut s: Vec<[f32; 3]> = v.iter()
-                        .map(|v| [v.x, v.y, v.z])
-                        .collect();
+                    let mut s: Vec<[f32; 3]> = v.iter().map(|v| [v.x, v.y, v.z]).collect();
 
-                    s.sort_by(
-                        |a, b| a[0].total_cmp(&b[0])
+                    s.sort_by(|a, b| {
+                        a[0].total_cmp(&b[0])
                             .then(a[1].total_cmp(&b[1]))
                             .then(a[2].total_cmp(&b[2]))
-                    );
+                    });
 
                     s
                 };
@@ -115,7 +112,7 @@ impl PartialEq for TileShape {
                 b.dedup();
 
                 a.len() == b.len() && sorted(&a) == sorted(&b)
-            },
+            }
             _ => false,
         }
     }

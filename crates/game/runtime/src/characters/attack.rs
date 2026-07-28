@@ -6,8 +6,7 @@ use assets::resource::characters::{
 };
 use bevy::prelude::*;
 use common::{
-    AppSystems, Facing, GameplaySystems, PausableSystems, WorldPosition,
-    offset_position_to_facing,
+    AppSystems, Facing, GameplaySystems, PausableSystems, WorldPosition, offset_position_to_facing,
 };
 use data::loc::ResourceLocation;
 use physics::{

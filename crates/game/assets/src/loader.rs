@@ -1,8 +1,9 @@
-use data::prelude::*;
+use crate::state::{AssetLoadState, AssetSystems};
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
 use bevy::reflect::erased_serde::__private::serde::Deserializer;
+use data::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,27 +12,21 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
 use walkdir::WalkDir;
-use crate::state::{AssetLoadState, AssetSystems};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        Startup,
-        (
-            load_assets.in_set(AssetSystems::LoadAssets),
-        )
-    );
+    app.add_systems(Startup, (load_assets.in_set(AssetSystems::LoadAssets),));
 
     app.add_systems(
         Update,
-        advance_from_loading_to_resolving
-            .run_if(in_state(AssetLoadState::Loading)),
+        advance_from_loading_to_resolving.run_if(in_state(AssetLoadState::Loading)),
     );
 }
 
 fn load_assets(world: &mut World) {
     let loader = world.resource::<GameAssetLoader>();
     let jobs = loader.loader_jobs.clone();
-    jobs.iter().for_each(|job| job.load(world).expect("Failed to load resource"));
+    jobs.iter()
+        .for_each(|job| job.load(world).expect("Failed to load resource"));
 }
 
 fn advance_from_loading_to_resolving(world: &mut World) {
@@ -62,8 +57,7 @@ impl GameAssetLoader {
     }
 
     pub fn _all_jobs_loaded(&self, world: &World) -> bool {
-        self.loader_jobs.iter()
-            .all(|job| job.is_loaded(world))
+        self.loader_jobs.iter().all(|job| job.is_loaded(world))
     }
 }
 
@@ -127,7 +121,11 @@ impl LoaderJobManager for App {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file())
                 .map(|e| e.path().strip_prefix("./assets").unwrap().to_path_buf())
-                .filter(|path| path.strip_prefix(namespace).unwrap().starts_with(T::ROOT_DIR))
+                .filter(|path| {
+                    path.strip_prefix(namespace)
+                        .unwrap()
+                        .starts_with(T::ROOT_DIR)
+                })
                 .filter_map(|path| ResourceLocation::from_path(path).ok())
                 .for_each(|location| manifest.push(location));
         }
@@ -147,7 +145,9 @@ struct LoaderJob<T: ResourceKind> {
 }
 impl<T: ResourceKind> Default for LoaderJob<T> {
     fn default() -> Self {
-        Self { phantom_data: Default::default() }
+        Self {
+            phantom_data: Default::default(),
+        }
     }
 }
 impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
@@ -166,7 +166,9 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
         });
 
         let mut registry = world.resource_mut::<ResourceRegistry<T>>();
-        assets.into_iter().for_each(|(loc, asset)| registry.register_asset(loc, asset));
+        assets
+            .into_iter()
+            .for_each(|(loc, asset)| registry.register_asset(loc, asset));
 
         Ok(())
     }
@@ -183,20 +185,21 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
-pub enum LoaderError {
-}
+pub enum LoaderError {}
 
 /// Marker trait for types which can be loaded from a file
 pub trait RonCodec<AssetType>: TryInto<AssetType> + TypePath + Send + Sync + 'static
 where
     <Self as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
-{}
+{
+}
 
 impl<T, AssetType> RonCodec<AssetType> for T
 where
     T: TryInto<AssetType> + TypePath + Send + Sync + 'static,
     <T as TryInto<AssetType>>::Error: Debug + Send + Sync + 'static,
-{}
+{
+}
 
 // TODO: Allow for fallible type conversion using TryFrom instead of From
 #[derive(TypePath)]
@@ -323,11 +326,11 @@ impl<T: Serialize> Serialize for Maybe<T> {
 }
 impl<'de, T> Deserialize<'de> for Maybe<T>
 where
-    T: Deserialize<'de> + Serialize
+    T: Deserialize<'de> + Serialize,
 {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
-        D: Deserializer<'de>
+        D: Deserializer<'de>,
     {
         let result = T::deserialize(deserializer);
         let opt = Some(result?);
@@ -385,7 +388,9 @@ where
     pub fn _resolve(self, registry: &SystemRegistry<T>) -> Option<T::AssetKind> {
         match self {
             _InlineOrResourceLocation::Inline(codec) => codec.try_into().ok(),
-            _InlineOrResourceLocation::ResourceLocation(location) => registry.get_asset(&location).cloned(),
+            _InlineOrResourceLocation::ResourceLocation(location) => {
+                registry.get_asset(&location).cloned()
+            }
         }
     }
 }

@@ -1,5 +1,8 @@
 use crate::characters::Character;
-use assets::action_states::{ActionState, ActionStateCapabilities, Idle, ReflectActionState, ReflectMovementActionState, StateTransitionError};
+use assets::action_states::{
+    ActionState, ActionStateCapabilities, Idle, ReflectActionState, ReflectMovementActionState,
+    StateTransitionError,
+};
 use bevy::prelude::*;
 use getset::CopyGetters;
 use std::any::TypeId;
@@ -50,15 +53,10 @@ pub fn get_state(
     tracker: &ActionStateTracker,
     world: &World,
 ) -> Option<Box<dyn ActionState>> {
-    get_state_properties(entity, tracker, world)
-        .map(|props| props.state)
+    get_state_properties(entity, tracker, world).map(|props| props.state)
 }
 
-pub fn _is_in_movement_state(
-    entity: Entity,
-    tracker: &ActionStateTracker,
-    world: &World,
-) -> bool {
+pub fn _is_in_movement_state(entity: Entity, tracker: &ActionStateTracker, world: &World) -> bool {
     get_state_properties(entity, tracker, world)
         .map(|props| props._is_movement)
         .unwrap_or(false)
@@ -73,7 +71,7 @@ fn get_state_properties(
     entity: Entity,
     tracker: &ActionStateTracker,
     world: &World,
-) -> Option<StateProperties>  {
+) -> Option<StateProperties> {
     let type_registry = world.resource::<AppTypeRegistry>().clone();
     let type_registry = type_registry.read();
 
@@ -85,9 +83,12 @@ fn get_state_properties(
         && let Some(reflect_data) = reflect_component.reflect(entity)
         && let Some(state) = reflect_state.get(reflect_data)
     {
-        let is_movement = if let Some(reflect_movement_state) = reg.data::<ReflectMovementActionState>() {
-            reflect_movement_state.get(reflect_data).is_some()
-        } else { false };
+        let is_movement =
+            if let Some(reflect_movement_state) = reg.data::<ReflectMovementActionState>() {
+                reflect_movement_state.get(reflect_data).is_some()
+            } else {
+                false
+            };
 
         Some(StateProperties {
             state: state.box_clone(),
@@ -110,7 +111,6 @@ pub enum SetStateError {
     StateUpdate,
 }
 
-
 /// Trigger to attempt to set the state of the provided entity to the new state.
 ///
 /// Entity must have the following components:
@@ -131,22 +131,31 @@ pub struct TrySetStateEvent {
 }
 impl TrySetStateEvent {
     pub fn new(entity: Entity, state: Box<dyn ActionState>) -> Self {
-        Self { entity, state, callback: None }
+        Self {
+            entity,
+            state,
+            callback: None,
+        }
     }
 
     pub fn with_callback<Callback: StateEventCallback + 'static>(self, callback: Callback) -> Self {
-        Self { callback: Some(Arc::new(Box::new(callback))), ..self }
+        Self {
+            callback: Some(Arc::new(Box::new(callback))),
+            ..self
+        }
     }
 }
 
-pub trait StateEventCallback: Fn(Entity, Commands, Result<(), SetStateError>) + Send + Sync + 'static {}
-impl<T> StateEventCallback for T
-where T: Fn(Entity, Commands, Result<(), SetStateError>) + Send + Sync + 'static {}
+pub trait StateEventCallback:
+    Fn(Entity, Commands, Result<(), SetStateError>) + Send + Sync + 'static
+{
+}
+impl<T> StateEventCallback for T where
+    T: Fn(Entity, Commands, Result<(), SetStateError>) + Send + Sync + 'static
+{
+}
 
-pub fn on_state_change(
-    event: On<TrySetStateEvent>,
-    mut commands: Commands
-) {
+pub fn on_state_change(event: On<TrySetStateEvent>, mut commands: Commands) {
     let entity = event.entity;
     let new_state = event.state.box_clone();
     let callback = event.callback.clone();
@@ -154,13 +163,8 @@ pub fn on_state_change(
     // Use the queue to get full World access after the observer logic
     commands.queue(move |world: &mut World| {
         // Query the world to get the components necessary to set the state
-        let mut entity_query = world.query_filtered::<
-            (
-                &ActionStateTracker,
-                &ActionStateCapabilities,
-            ),
-            With<Character>,
-        >();
+        let mut entity_query = world
+            .query_filtered::<(&ActionStateTracker, &ActionStateCapabilities), With<Character>>();
         let (tracker, capabilities) = match entity_query.get(world, entity) {
             Ok((tracker, capabilities)) => (tracker, capabilities),
             Err(err) => {
@@ -182,7 +186,7 @@ pub fn on_state_change(
         };
 
         // Validate if the transition is allowed
-        if let Err(err) =  capabilities.can_transition(prev_state.as_ref(), new_state.as_ref()) {
+        if let Err(err) = capabilities.can_transition(prev_state.as_ref(), new_state.as_ref()) {
             if let Some(callback) = callback {
                 callback(entity, world.commands(), Err(err.into()));
             }

@@ -1,6 +1,6 @@
+use crate::{WriteError, create_dir, write_data};
 use assets::codec::TileCodec;
 use assets::resource::level::{TileFacing, TileResource, TileShape};
-use crate::{create_dir, write_data, WriteError};
 use data::prelude::*;
 
 const LATEST_FORMAT: u8 = 1;
@@ -40,46 +40,80 @@ pub fn generate_tiles() -> Result<(), WriteError> {
 
     create_tile_data(TileData::new(GRASS, GRASS_SPRITE_SHEET, 0))?;
     create_tile_data(TileData::new(GRASS_LAYER, GRASS_SPRITE_SHEET, 2))?;
-    create_tile_data(TileData::new(GRASS_STAIRS_TOP_LEFT, GRASS_SPRITE_SHEET, 24)
-        .with_shape(TileShape::Stairs(TileFacing::NegX)))?;
-    create_tile_data(TileData::new(GRASS_STAIRS_TOP_RIGHT, GRASS_SPRITE_SHEET, 25)
-        .with_shape(TileShape::Stairs(TileFacing::NegZ)))?;
-    create_tile_data(TileData::new(GRASS_STAIRS_BOTTOM_LEFT, GRASS_SPRITE_SHEET, 26)
-        .with_shape(TileShape::Stairs(TileFacing::PosX)))?;
-    create_tile_data(TileData::new(GRASS_STAIRS_BOTTOM_RIGHT, GRASS_SPRITE_SHEET, 27)
-        .with_shape(TileShape::Stairs(TileFacing::PosZ)))?;
+    create_tile_data(
+        TileData::new(GRASS_STAIRS_TOP_LEFT, GRASS_SPRITE_SHEET, 24)
+            .with_shape(TileShape::Stairs(TileFacing::NegX)),
+    )?;
+    create_tile_data(
+        TileData::new(GRASS_STAIRS_TOP_RIGHT, GRASS_SPRITE_SHEET, 25)
+            .with_shape(TileShape::Stairs(TileFacing::NegZ)),
+    )?;
+    create_tile_data(
+        TileData::new(GRASS_STAIRS_BOTTOM_LEFT, GRASS_SPRITE_SHEET, 26)
+            .with_shape(TileShape::Stairs(TileFacing::PosX)),
+    )?;
+    create_tile_data(
+        TileData::new(GRASS_STAIRS_BOTTOM_RIGHT, GRASS_SPRITE_SHEET, 27)
+            .with_shape(TileShape::Stairs(TileFacing::PosZ)),
+    )?;
 
     create_tile_data(TileData::new(DIRT, DIRT_SPRITE_SHEET, 1))?;
     create_tile_data(TileData::new(DIRT_LAYER, DIRT_SPRITE_SHEET, 3))?;
 
     create_tile_data(TileData::new(PLANKS, PLANKS_SPRITE_SHEET, 0))?;
     create_tile_data(TileData::new(PLANKS_LAYER, PLANKS_SPRITE_SHEET, 2))?;
-    create_tile_data(TileData::new(PLANKS_STAIRS_TOP_LEFT, PLANKS_SPRITE_SHEET, 24)
-        .with_shape(TileShape::Stairs(TileFacing::NegX)))?;
-    create_tile_data(TileData::new(PLANKS_STAIRS_TOP_RIGHT, PLANKS_SPRITE_SHEET, 25)
-        .with_shape(TileShape::Stairs(TileFacing::NegZ)))?;
-    create_tile_data(TileData::new(PLANKS_STAIRS_BOTTOM_LEFT, PLANKS_SPRITE_SHEET, 26)
-        .with_shape(TileShape::Stairs(TileFacing::PosX)))?;
-    create_tile_data(TileData::new(PLANKS_STAIRS_BOTTOM_RIGHT, PLANKS_SPRITE_SHEET, 27)
-        .with_shape(TileShape::Stairs(TileFacing::PosZ)))?;
+    create_tile_data(
+        TileData::new(PLANKS_STAIRS_TOP_LEFT, PLANKS_SPRITE_SHEET, 24)
+            .with_shape(TileShape::Stairs(TileFacing::NegX)),
+    )?;
+    create_tile_data(
+        TileData::new(PLANKS_STAIRS_TOP_RIGHT, PLANKS_SPRITE_SHEET, 25)
+            .with_shape(TileShape::Stairs(TileFacing::NegZ)),
+    )?;
+    create_tile_data(
+        TileData::new(PLANKS_STAIRS_BOTTOM_LEFT, PLANKS_SPRITE_SHEET, 26)
+            .with_shape(TileShape::Stairs(TileFacing::PosX)),
+    )?;
+    create_tile_data(
+        TileData::new(PLANKS_STAIRS_BOTTOM_RIGHT, PLANKS_SPRITE_SHEET, 27)
+            .with_shape(TileShape::Stairs(TileFacing::PosZ)),
+    )?;
 
     create_tile_data(TileData::new(LIGHT_PLANKS, LIGHT_PLANKS_SPRITE_SHEET, 0))?;
-    create_tile_data(TileData::new(LIGHT_PLANKS_LAYER, LIGHT_PLANKS_SPRITE_SHEET, 2))?;
-    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_TOP_LEFT, LIGHT_PLANKS_SPRITE_SHEET, 24)
-        .with_shape(TileShape::Stairs(TileFacing::NegX)))?;
-    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_TOP_RIGHT, LIGHT_PLANKS_SPRITE_SHEET, 25)
-        .with_shape(TileShape::Stairs(TileFacing::NegZ)))?;
-    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_BOTTOM_LEFT, LIGHT_PLANKS_SPRITE_SHEET, 26)
-        .with_shape(TileShape::Stairs(TileFacing::PosX)))?;
-    create_tile_data(TileData::new(LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT, LIGHT_PLANKS_SPRITE_SHEET, 27)
-        .with_shape(TileShape::Stairs(TileFacing::PosZ)))?;
+    create_tile_data(TileData::new(
+        LIGHT_PLANKS_LAYER,
+        LIGHT_PLANKS_SPRITE_SHEET,
+        2,
+    ))?;
+    create_tile_data(
+        TileData::new(LIGHT_PLANKS_STAIRS_TOP_LEFT, LIGHT_PLANKS_SPRITE_SHEET, 24)
+            .with_shape(TileShape::Stairs(TileFacing::NegX)),
+    )?;
+    create_tile_data(
+        TileData::new(LIGHT_PLANKS_STAIRS_TOP_RIGHT, LIGHT_PLANKS_SPRITE_SHEET, 25)
+            .with_shape(TileShape::Stairs(TileFacing::NegZ)),
+    )?;
+    create_tile_data(
+        TileData::new(
+            LIGHT_PLANKS_STAIRS_BOTTOM_LEFT,
+            LIGHT_PLANKS_SPRITE_SHEET,
+            26,
+        )
+        .with_shape(TileShape::Stairs(TileFacing::PosX)),
+    )?;
+    create_tile_data(
+        TileData::new(
+            LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT,
+            LIGHT_PLANKS_SPRITE_SHEET,
+            27,
+        )
+        .with_shape(TileShape::Stairs(TileFacing::PosZ)),
+    )?;
 
     Ok(())
 }
 
-fn create_tile_data(
-    tile_data: TileData,
-) -> Result<(), WriteError> {
+fn create_tile_data(tile_data: TileData) -> Result<(), WriteError> {
     let loc: ResourceLocation<TileResource> = tile_data.loc.parse().unwrap();
     let codec = TileCodec::from(tile_data);
     write_data(loc, &codec)
@@ -110,6 +144,11 @@ impl TileData {
 }
 impl From<TileData> for TileCodec {
     fn from(data: TileData) -> Self {
-        TileCodec::new(LATEST_FORMAT, data.sprite_sheet.parse().unwrap(), data.index, data.shape.into())
+        TileCodec::new(
+            LATEST_FORMAT,
+            data.sprite_sheet.parse().unwrap(),
+            data.index,
+            data.shape.into(),
+        )
     }
 }

@@ -1,10 +1,10 @@
 use crate::codec::{ColliderCodec, HealthEventKind};
+use crate::loader::Maybe;
 use crate::resource::characters::{AnimationResource, AttackResource, CharacterSpriteResource};
 use bevy::prelude::*;
 use data::prelude::*;
-use serde::{Deserialize, Serialize};
 use maybe_fields::maybe_fields;
-use crate::loader::Maybe;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct AttackCodec {

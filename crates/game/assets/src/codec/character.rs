@@ -1,4 +1,7 @@
-use crate::action_states::{Attacking, Idle, Running, Sprinting, Walking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING};
+use crate::action_states::{
+    Attacking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING, Idle, Running, Sprinting, Walking,
+};
+use crate::codec::DamageModifierCodec;
 use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec};
 use crate::loader::Maybe;
 use crate::resource::characters::{AnimationResource, AttackSetResource};
@@ -8,7 +11,6 @@ use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
-use crate::codec::DamageModifierCodec;
 
 #[maybe_fields]
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
@@ -34,12 +36,10 @@ impl Default for CharacterCodec {
             attack_set: Maybe(None),
             collider: ColliderCodec {
                 format: ColliderCodec::LATEST_FORMAT,
-                collider: ColliderDataCodec::Capsule(
-                    CapsuleCodec::Vertical {
-                        radius: 1.25,
-                        height: 0.25,
-                    }
-                )
+                collider: ColliderDataCodec::Capsule(CapsuleCodec::Vertical {
+                    radius: 1.25,
+                    height: 0.25,
+                }),
             },
             damage_modifiers: Maybe(None),
         }
@@ -60,7 +60,10 @@ impl AllowedStatesCodec {
         match self {
             AllowedStatesCodec::Default => DEFAULT_STATES.clone(),
             AllowedStatesCodec::Passive => DEFAULT_STATES_NON_ATTACKING.clone(),
-            AllowedStatesCodec::Custom(states) => states.into_iter().map(|state| state.into_type_id()).collect(),
+            AllowedStatesCodec::Custom(states) => states
+                .into_iter()
+                .map(|state| state.into_type_id())
+                .collect(),
         }
     }
 }

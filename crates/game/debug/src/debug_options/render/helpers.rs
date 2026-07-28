@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use bevy::prelude::*;
 use common::{ScreenCoords, WorldCoords};
 use physics::CapsuleData;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy)]
 pub struct LineSettings {
@@ -29,11 +29,7 @@ impl From<(Sprite, Transform)> for LineBundle {
 }
 
 /// Draw a simple line in screen space coordinates
-pub fn draw_screen_line(
-    a: ScreenCoords,
-    b: ScreenCoords,
-    settings: LineSettings,
-) -> LineBundle {
+pub fn draw_screen_line(a: ScreenCoords, b: ScreenCoords, settings: LineSettings) -> LineBundle {
     let delta = *b - *a;
     let length = delta.xy().length();
 
@@ -93,9 +89,8 @@ pub fn draw_sphere(
             + horizontal * start_angle.cos() * radius
             + vertical * start_angle.sin() * radius;
 
-        let end = center.0
-            + horizontal * end_angle.cos() * radius
-            + vertical * end_angle.sin() * radius;
+        let end =
+            center.0 + horizontal * end_angle.cos() * radius + vertical * end_angle.sin() * radius;
 
         lines.push(draw_world_line(start.into(), end.into(), settings, scale));
     }
@@ -126,20 +121,30 @@ pub fn draw_cuboid(
 
     let edges = [
         // +x face (right)
-        (1, 2), (2, 6), (6, 5), (5, 1),
+        (1, 2),
+        (2, 6),
+        (6, 5),
+        (5, 1),
         // +y face (top)
-        (4, 5), (5, 6), (6, 7), (7, 4),
+        (4, 5),
+        (5, 6),
+        (6, 7),
+        (7, 4),
         // +z face (front)
-        (2, 3), (3, 7), (7, 6), (6, 2),
+        (2, 3),
+        (3, 7),
+        (7, 6),
+        (6, 2),
     ];
 
-    edges.iter()
+    edges
+        .iter()
         .map(|(a, b)| draw_world_line(corners[*a], corners[*b], settings, scale))
         .collect()
 }
 
 /// Draw a capsule
-/// Note that two separate collections are returned, as the opaque types are different. 
+/// Note that two separate collections are returned, as the opaque types are different.
 pub fn draw_capsule(
     position: WorldCoords,
     capsule: impl Into<CapsuleData>,
@@ -178,7 +183,12 @@ pub fn draw_capsule(
 
     // Additional side lines to fill out capsule
     for offset in offsets {
-        lines.push(draw_world_line((a + offset).into(), (b + offset).into(), settings, scale));
+        lines.push(draw_world_line(
+            (a + offset).into(),
+            (b + offset).into(),
+            settings,
+            scale,
+        ));
     }
 
     lines

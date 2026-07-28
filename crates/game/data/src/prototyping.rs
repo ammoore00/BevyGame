@@ -1,8 +1,8 @@
+use crate::loc::ResourceLocation;
 use crate::resource::ResourceKind;
 use bevy::ecs::query::QueryItem;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use crate::loc::ResourceLocation;
 
 /// Used to prevent construction of marker outside of proper systems
 pub struct PrototypeMarkerToken(());
@@ -32,7 +32,11 @@ pub trait PrototypeBuilder {
     fn build(
         entity: Entity,
         loc: &<Self::Proto as Prototype>::DataLocation,
-        extra_data: &QueryItem<'_, '_, <Self::QueryData<'_, '_> as bevy::ecs::query::QueryData>::ReadOnly>,
+        extra_data: &QueryItem<
+            '_,
+            '_,
+            <Self::QueryData<'_, '_> as bevy::ecs::query::QueryData>::ReadOnly,
+        >,
         context: &mut Self::Context<'_, '_>,
         commands: Commands,
     ) -> Result<(), BevyError>;
@@ -42,16 +46,16 @@ pub trait PrototypeBuilder {
 /// It is marked `pub` or `pub(crate)` so the macro can call it, but because it hides the
 /// token instantiation inside, no external module can exploit it.
 #[doc(hidden)]
-pub fn finalize_prototype<B: PrototypeBuilder>(
-    entity: Entity,
-    mut commands: Commands,
-) {
-    commands.entity(entity)
+pub fn finalize_prototype<B: PrototypeBuilder>(entity: Entity, mut commands: Commands) {
+    commands
+        .entity(entity)
         .remove::<(
             <B as PrototypeBuilder>::Proto,
-            <<B as PrototypeBuilder>::Proto as Prototype>::DataLocation
+            <<B as PrototypeBuilder>::Proto as Prototype>::DataLocation,
         )>()
-        .insert(<<B as PrototypeBuilder>::Proto as Prototype>::Marker::new(PrototypeMarkerToken(())));
+        .insert(<<B as PrototypeBuilder>::Proto as Prototype>::Marker::new(
+            PrototypeMarkerToken(()),
+        ));
 }
 
 #[macro_export]

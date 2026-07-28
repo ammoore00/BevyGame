@@ -1,8 +1,10 @@
-use assets::resource::level::{TileAsset, TileLayout, TileRegistry, TileResource, TileShape, TileSpriteRegistry};
+use assets::resource::level::{
+    TileAsset, TileLayout, TileRegistry, TileResource, TileShape, TileSpriteRegistry,
+};
 use bevy::image::TextureAtlas;
 use bevy::math::Vec3;
 use bevy::prelude::*;
-use common::{marker, ScreenCoords, TileCoords, TilePosition, WorldCoords};
+use common::{ScreenCoords, TileCoords, TilePosition, WorldCoords, marker};
 use data::prelude::*;
 use physics::{Collider, PhysicsData};
 use std::fmt::Debug;
@@ -11,10 +13,7 @@ use std::ops::{Add, AddAssign};
 mod collision;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        update_tile_collision
-    );
+    app.add_systems(Update, update_tile_collision);
 }
 
 pub fn tile(
@@ -28,13 +27,22 @@ pub fn tile(
     tile_layout: &TileLayout,
 ) -> impl Bundle {
     // TODO: Add proper error handling here
-    let tile = tile_registry.get(tile_id)
+    let tile = tile_registry
+        .get(tile_id)
         .unwrap_or_else(|| panic!("Failed to find tile '{}' in registry!", tile_id));
     let tile = tile_assets.get(tile).unwrap();
 
-    let sprite_sheet = sprite_registry.get(tile.sprite_sheet())
+    let sprite_sheet = sprite_registry
+        .get(tile.sprite_sheet())
         .cloned()
-        .unwrap_or_else(|| panic!("Failed to retrieve sprite sheet '{}' for tile '{}'. Full sprite sheet path: {}", tile.sprite_sheet(), tile_id, tile.sprite_sheet().as_path().to_string_lossy()));
+        .unwrap_or_else(|| {
+            panic!(
+                "Failed to retrieve sprite sheet '{}' for tile '{}'. Full sprite sheet path: {}",
+                tile.sprite_sheet(),
+                tile_id,
+                tile.sprite_sheet().as_path().to_string_lossy()
+            )
+        });
     let layout = tile_layout.layout().clone();
 
     let edge_indices = Vec::new();
@@ -78,14 +86,16 @@ marker!(pub Tile);
 pub struct TileEntity(pub Entity);
 
 pub fn set_tile_location(
-    tile: TileEntity, tile_coords: impl Into<TileCoords> + Clone, commands: &mut Commands
+    tile: TileEntity,
+    tile_coords: impl Into<TileCoords> + Clone,
+    commands: &mut Commands,
 ) {
-    commands.entity(tile.0).insert(TilePosition(tile_coords.clone().into()));
+    commands
+        .entity(tile.0)
+        .insert(TilePosition(tile_coords.clone().into()));
 }
 
-fn update_tile_collision(
-    tile_query: Query<(&TilePosition, &mut Collider), With<Tile>>,
-) {
+fn update_tile_collision(tile_query: Query<(&TilePosition, &mut Collider), With<Tile>>) {
     for (tile_pos, mut collider) in tile_query {
         let world_coords = Into::<WorldCoords>::into(tile_pos.0);
         collider.set_position(world_coords);

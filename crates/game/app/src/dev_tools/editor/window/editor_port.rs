@@ -2,22 +2,18 @@ use crate::dev_tools::editor::file_manager::{EditorFile, FileManager};
 use crate::dev_tools::editor::window::BACKGROUND_BLEED;
 use crate::screens::Screen;
 use bevy::prelude::*;
-use std::collections::HashSet;
 use common::marker;
+use std::collections::HashSet;
 use widgets::background::UiBackgroundStyle;
 use widgets::button;
 use widgets::button::ButtonWithTextOptions;
-use widgets::text::{text, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
+use widgets::text::{LARGE_FONT_SIZE, SMALL_FONT_SIZE, text};
 use widgets::theme::palette::BUTTON_TEXT;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            update_file_tab_buttons,
-            update_editor_port_content,
-        )
-            .run_if(in_state(Screen::Editor))
+        (update_file_tab_buttons, update_editor_port_content).run_if(in_state(Screen::Editor)),
     );
 }
 
@@ -91,17 +87,8 @@ const FILE_TABS_BUTTON_PADDING: usize = 10;
 struct FileTabButton(EditorFile);
 
 fn update_file_tab_buttons(
-    file_tabs_query: Query<
-        (
-            Entity,
-            Option<&Children>
-        ),
-        With<FileTabs>
-    >,
-    file_button_query: Query<(
-        Entity,
-        &FileTabButton
-    )>,
+    file_tabs_query: Query<(Entity, Option<&Children>), With<FileTabs>>,
+    file_button_query: Query<(Entity, &FileTabButton)>,
     file_manager: Res<FileManager>,
     mut commands: Commands,
 ) {
@@ -139,18 +126,19 @@ fn update_file_tab_buttons(
         let label = open_file.loc().id().to_string();
         let label_len = label.len();
 
-        let file_button = commands.spawn_scene(bsn! [
-                button::with_text_ext(
-                    label,
-                    ButtonWithTextOptions {
-                        font_size: SMALL_FONT_SIZE,
-                        width: px(FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING),
-                        height: percent(100.0),
-                        ..default()    
-                    },
-                    on_file_button_clicked
-                )
-            ])
+        let file_button = commands
+            .spawn_scene(bsn![button::with_text_ext(
+                label,
+                ButtonWithTextOptions {
+                    font_size: SMALL_FONT_SIZE,
+                    width: px(
+                        FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING
+                    ),
+                    height: percent(100.0),
+                    ..default()
+                },
+                on_file_button_clicked
+            )])
             .insert(FileTabButton(open_file.clone()))
             .id();
         commands.entity(file_tabs).add_child(file_button);
@@ -169,22 +157,21 @@ fn on_file_button_clicked(
 
     match event.button {
         PointerButton::Primary => {
-            file_manager.set_active_file(&file_button.0).unwrap_or_else(|err| {
-                error!("Failed to set active file: {:?}", err);
-            });
+            file_manager
+                .set_active_file(&file_button.0)
+                .unwrap_or_else(|err| {
+                    error!("Failed to set active file: {:?}", err);
+                });
 
             info!("Set active file to: {}", file_button.0.loc());
         }
-        PointerButton::Secondary => {},
+        PointerButton::Secondary => {}
         PointerButton::Middle => file_manager.close(&file_button.0),
     }
 }
 
 fn update_editor_port_content(
-    mut content_query: Query<
-        &mut Text,
-        With<EditorPortContent>
-    >,
+    mut content_query: Query<&mut Text, With<EditorPortContent>>,
     file_manager: Res<FileManager>,
 ) {
     let Ok(mut text) = content_query.single_mut() else {
@@ -192,7 +179,8 @@ fn update_editor_port_content(
         return;
     };
 
-    let display = file_manager.active_file()
+    let display = file_manager
+        .active_file()
         .map(|file| format!("Active file: {}\nFile type: {:?}", file.loc(), file.kind()))
         .unwrap_or("No active file".to_string());
 

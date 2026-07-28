@@ -1,15 +1,12 @@
 use bevy::prelude::*;
 
-mod update;
 mod tracking;
+mod update;
 
 pub use tracking::{ActionStateTracker, TrySetStateEvent};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((
-        tracking::plugin,
-        update::plugin,
-    ));
+    app.add_plugins((tracking::plugin, update::plugin));
 }
 
 #[macro_export]

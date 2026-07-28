@@ -81,18 +81,18 @@ impl Default for DamageModifiers {
 impl From<DamageModifierCodec> for DamageModifiers {
     fn from(codec: DamageModifierCodec) -> Self {
         let mut map = codec.modifiers;
-        
+
         for kind in DamageKind::iter() {
             map.entry(kind).or_default();
         }
-        
+
         Self(map)
     }
 }
 
 fn on_health_event(
     event: On<HealthEvent>,
-    mut query: Query<(&mut Health, Option<&DamageModifiers>, Option<&IFrames>)>
+    mut query: Query<(&mut Health, Option<&DamageModifiers>, Option<&IFrames>)>,
 ) {
     if let Ok((mut health, modifiers, iframes)) = query.get_mut(event.entity) {
         match event.event_type {
@@ -100,13 +100,18 @@ fn on_health_event(
                 health.current += amount.min(health.max - health.current)
             }
             HealthEventKind::Damage(amount, damage_type) => {
-                if let Some(iframes) = iframes && !iframes.duration.is_zero() {
+                if let Some(iframes) = iframes
+                    && !iframes.duration.is_zero()
+                {
                     // TODO: Fix iframes
                     //return;
                 }
 
                 let modifier = if let Some(modifiers) = modifiers {
-                    modifiers.0.get(&damage_type).unwrap_or(&DamageModifierKind::None)
+                    modifiers
+                        .0
+                        .get(&damage_type)
+                        .unwrap_or(&DamageModifierKind::None)
                 } else {
                     &DamageModifierKind::None
                 };
@@ -167,10 +172,7 @@ struct IFrames {
     duration: Duration,
 }
 
-fn update_iframes(
-    query: Query<&mut IFrames>,
-    time: Res<Time>,
-) {
+fn update_iframes(query: Query<&mut IFrames>, time: Res<Time>) {
     for mut iframes in query {
         if !iframes.duration.is_zero() {
             // Prevent panic from underflow

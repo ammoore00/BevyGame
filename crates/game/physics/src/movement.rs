@@ -373,11 +373,7 @@ fn get_collision_response(
     time: &Res<Time>,
 ) -> CollisionResponse {
     let normal = collision.normal();
-    let grounded_normal = if normal.y > 0.7 {
-        Some(normal)
-    } else {
-        None
-    };
+    let grounded_normal = if normal.y > 0.7 { Some(normal) } else { None };
 
     let velocity_along_normal = kinematic_data.next_velocity.dot(normal);
     let next_displacement = velocity_along_normal * time.delta_secs();

@@ -1,9 +1,14 @@
 use bevy::prelude::*;
-use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameInputSystems, GameplaySystems, PausableSystems, ScreenCoords, WorldPosition};
+use common::{
+    AppSystems, Facing, GameInputSystems, GameplaySystems, PausableSystems, ScreenCoords,
+    WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
+};
+use input::gamepad::{GamepadStick, get_stick_with_deadzone};
 use input::{InputReader, LastInputMode};
-use input::gamepad::{get_stick_with_deadzone, GamepadStick};
-use runtime::characters::player::{AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player};
 use runtime::LevelLoadedSystems;
+use runtime::characters::player::{
+    AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player,
+};
 
 // TODO: Remappable controls
 // TODO: Split keyboard and gamepad input checks into separate systems
@@ -11,40 +16,42 @@ use runtime::LevelLoadedSystems;
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            (record_aim_input, record_movement_input, record_jump_input, record_attack_input)
-                .in_set(GameplaySystems)
-                .in_set(PausableSystems)
-                .in_set(LevelLoadedSystems)
-                .in_set(GameInputSystems)
-                .in_set(AppSystems::RecordInput),
+        ((
+            record_aim_input,
+            record_movement_input,
+            record_jump_input,
+            record_attack_input,
         )
+            .in_set(GameplaySystems)
+            .in_set(PausableSystems)
+            .in_set(LevelLoadedSystems)
+            .in_set(GameInputSystems)
+            .in_set(AppSystems::RecordInput),),
     );
 }
 
 fn record_aim_input(
-    player_query: Query<
-        (
-            Entity,
-            &WorldPosition,
-        ),
-        With<Player>,
-    >,
-    window:Query<&Window>,
+    player_query: Query<(Entity, &WorldPosition), With<Player>>,
+    window: Query<&Window>,
     mut input_reader: InputReader,
     mut commands: Commands,
 ) {
     let (player_entity, position) = player_query.single().expect("Failed to find player entity");
     let window = window.single().expect("Failed to find window");
 
-    if let Some(gamepad) = input_reader.gamepad() && **input_reader.last_input_mode() == LastInputMode::Gamepad {
+    if let Some(gamepad) = input_reader.gamepad()
+        && **input_reader.last_input_mode() == LastInputMode::Gamepad
+    {
         let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap_or(0.0);
         let right_stick_y = gamepad.get(GamepadAxis::RightStickY).unwrap_or(0.0);
 
         // Apply deadzone
         let new_facing = if right_stick_x.abs() > 0.1 || right_stick_y.abs() > 0.1 {
             let aim_direction = Vec2::new(right_stick_x, right_stick_y);
-            Some(Facing::from(rotate_screen_space_to_facing(aim_direction, true)))
+            Some(Facing::from(rotate_screen_space_to_facing(
+                aim_direction,
+                true,
+            )))
         } else {
             None
         };
@@ -56,7 +63,8 @@ fn record_aim_input(
             return;
         };
 
-        let cursor_position = last_cursor.position - Vec2::from((window.resolution.width(), window.resolution.height())) / 2.0;
+        let cursor_position = last_cursor.position
+            - Vec2::from((window.resolution.width(), window.resolution.height())) / 2.0;
 
         let mut delta = cursor_position - ScreenCoords::from(position.0).xz();
         delta.y /= 0.707; // Scale to isometric
@@ -71,15 +79,16 @@ fn record_movement_input(
     input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let player_entity = player_query.single()
-        .expect("Failed to find player entity");
+    let player_entity = player_query.single().expect("Failed to find player entity");
 
     let mut intent = Vec3::ZERO;
     let mut toggle_sprint = false;
 
-    if let Some(gamepad) = input_reader.gamepad() && **input_reader.last_input_mode() == LastInputMode::Gamepad {
+    if let Some(gamepad) = input_reader.gamepad()
+        && **input_reader.last_input_mode() == LastInputMode::Gamepad
+    {
         let left_stick = get_stick_with_deadzone(gamepad, GamepadStick::Left);
-        
+
         intent.x += left_stick.x;
         intent.z -= left_stick.y;
         intent = rotate_screen_space_to_movement(intent);
@@ -122,8 +131,7 @@ fn record_jump_input(
     input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let player_entity = player_query.single()
-        .expect("Failed to find player entity");
+    let player_entity = player_query.single().expect("Failed to find player entity");
 
     let jump = if let Some(gamepad) = input_reader.gamepad()
         && **input_reader.last_input_mode() == LastInputMode::Gamepad
@@ -131,7 +139,8 @@ fn record_jump_input(
     {
         true
     } else {
-        input_reader.keyboard().just_pressed(KeyCode::Space) && **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
+        input_reader.keyboard().just_pressed(KeyCode::Space)
+            && **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
     };
 
     if jump {
@@ -144,8 +153,7 @@ fn record_attack_input(
     input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let player_entity = player_query.single()
-        .expect("Failed to find player entity");
+    let player_entity = player_query.single().expect("Failed to find player entity");
 
     let attack = if let Some(gamepad) = input_reader.gamepad()
         && **input_reader.last_input_mode() == LastInputMode::Gamepad
@@ -153,7 +161,8 @@ fn record_attack_input(
     {
         true
     } else {
-        input_reader.mouse_buttons().just_pressed(MouseButton::Left) && **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
+        input_reader.mouse_buttons().just_pressed(MouseButton::Left)
+            && **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
     };
 
     if attack {

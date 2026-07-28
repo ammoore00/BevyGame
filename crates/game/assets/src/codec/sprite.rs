@@ -22,6 +22,12 @@ impl TextureAtlasCodec {
 
 impl From<TextureAtlasCodec> for TextureAtlasLayout {
     fn from(codec: TextureAtlasCodec) -> Self {
-        TextureAtlasLayout::from_grid(codec.size, codec.columns, codec.rows, codec.padding.into(), codec.offset.into())
+        TextureAtlasLayout::from_grid(
+            codec.size,
+            codec.columns,
+            codec.rows,
+            codec.padding.into(),
+            codec.offset.into(),
+        )
     }
 }

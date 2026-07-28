@@ -1,27 +1,22 @@
 use crate::dev_tools::editor::window::browser::spawn_file_browser;
 use crate::dev_tools::editor::window::editor_port::spawn_editor_port;
-use crate::dev_tools::editor::window::menu_bar::{spawn_menu_bar, MENU_BAR_TOTAL_HEIGHT};
+use crate::dev_tools::editor::window::menu_bar::{MENU_BAR_TOTAL_HEIGHT, spawn_menu_bar};
 use crate::dev_tools::editor::window::properties::spawn_details_screen;
 use crate::screens::Screen;
 use bevy::prelude::*;
 use common::marker;
 use widgets::background::UiBackgroundStyle;
 
-mod menu_bar;
 mod browser;
 mod editor_port;
+mod menu_bar;
 pub(super) mod properties;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((
-        browser::plugin,
-        properties::plugin,
-        editor_port::plugin,
-    ));
+    app.add_plugins((browser::plugin, properties::plugin, editor_port::plugin));
 
     app.add_systems(OnEnter(Screen::Editor), spawn_editor.spawn());
 }
-
 
 marker!(EditorUiRoot);
 marker!(EditorContentRoot);

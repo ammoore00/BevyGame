@@ -5,7 +5,7 @@ use bevy::prelude;
 use bevy::prelude::Reflect;
 use getset::Getters;
 use regex::Regex;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::fmt::Display;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -336,6 +336,8 @@ pub enum ResourceLocationParseError {
     Empty,
 }
 
-pub fn loc<T: ResourceKind>(s: &str) -> prelude::Result<ResourceLocation<T>, ResourceLocationParseError> {
+pub fn loc<T: ResourceKind>(
+    s: &str,
+) -> prelude::Result<ResourceLocation<T>, ResourceLocationParseError> {
     ResourceLocation::<T>::from_str(s)
 }

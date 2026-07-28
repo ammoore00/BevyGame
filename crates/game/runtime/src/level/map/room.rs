@@ -1,15 +1,15 @@
 use crate::level::grid;
-use crate::level::grid::tile::tile;
 use crate::level::grid::TileMap;
-use assets::resource::level::{RoomDefinition, RoomLayout, RoomRegistry, TileAsset, TileLayout, TileRegistry, TileSpriteRegistry};
+use crate::level::grid::tile::tile;
+use assets::resource::level::{
+    RoomDefinition, RoomLayout, RoomRegistry, TileAsset, TileLayout, TileRegistry,
+    TileSpriteRegistry,
+};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::{Scale, TileCoords};
 
-pub fn build_room(
-    room: &RoomDefinition,
-    builder_context: &mut RoomBuilderContext,
-) -> TileMap {
+pub fn build_room(room: &RoomDefinition, builder_context: &mut RoomBuilderContext) -> TileMap {
     build_layout(room.layout(), builder_context)
 }
 
@@ -37,10 +37,7 @@ pub fn build_layout(layout: &RoomLayout, context: &mut RoomBuilderContext) -> Ti
                     ))
                     .id();
 
-                tile_map
-                    .write()
-                    .unwrap()
-                    .insert(coords, tile);
+                tile_map.write().unwrap().insert(coords, tile);
             }
         }
     }
