@@ -147,6 +147,14 @@ impl KeyFrameList {
             .filter(|key_frame| key_frame.current_progress(attack_progress).is_some())
             .collect()
     }
+    
+    /// Gets the key frame at the given index.
+    /// 
+    /// This should only be used when storing an index from an existing key frame
+    /// for later retrieval and should not be used without prior reference.
+    pub fn get_key_frame(&self, index: usize) -> Option<&KeyFrame> {
+        self.key_frames.get(index)
+    }
 
     fn try_from_codec(
         codecs: Vec<KeyFrameCodec>,
@@ -154,7 +162,8 @@ impl KeyFrameList {
     ) -> Result<Self, KeyFrameListError> {
         let key_frames = codecs
             .iter()
-            .map(|codec| {
+            .enumerate()
+            .map(|(index, codec)| {
                 let start = codec.start_time as f32 / attack_duration as f32;
                 let end = codec.end_time as f32 / attack_duration as f32;
 
@@ -171,6 +180,8 @@ impl KeyFrameList {
 
                     health_event: codec.health_event,
                     disable_on_hit_iframes,
+                    
+                    index,
                 })
             })
             .collect::<Result<Vec<_>, HitboxError>>()?;
@@ -201,6 +212,10 @@ pub struct KeyFrame {
     disable_on_hit_iframes: bool,
     #[getset(get = "pub")]
     health_event: HealthEventKind,
+    
+    /// Unique identifier for this keyframe for the attack definition
+    #[getset(get = "pub")]
+    index: usize,
 }
 impl KeyFrame {
     /// Get how far along in this keyframe the attack is.

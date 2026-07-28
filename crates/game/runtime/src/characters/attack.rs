@@ -9,7 +9,7 @@ use common::{
     offset_position_to_facing,
 };
 use data::loc::ResourceLocation;
-use physics::{DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData};
+use physics::{Collider, DetectorCollisionResponse, DetectorCollisionsProcessedMessage, PhysicsData};
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
@@ -105,7 +105,7 @@ fn update_attack_key_frames(
         Option<&ActiveHitboxes>,
     )>,
     non_attacking_query: Query<&ActiveHitboxes, Without<CurrentAttack>>,
-    existing_hitbox_query: Query<Entity, With<AttackHitbox>>,
+    mut existing_hitbox_query: Query<(Entity, &mut AttackHitbox, &mut Collider, &mut WorldPosition), Without<CurrentAttack>>,
     attack_context: AttackContext,
     time: Res<Time>,
     mut commands: Commands,
@@ -113,8 +113,8 @@ fn update_attack_key_frames(
     // TODO: Make this less janky
     for hitboxes in non_attacking_query.iter() {
         let existing_hitboxes = existing_hitbox_query.iter_many(hitboxes);
-        for hitbox_entity in existing_hitboxes {
-            commands.entity(hitbox_entity).despawn();
+        for hitbox_data in existing_hitboxes {
+            commands.entity(hitbox_data.0).despawn();
         }
     }
 
@@ -125,28 +125,71 @@ fn update_attack_key_frames(
             continue;
         };
 
-        if let Some(hitboxes) = hitboxes {
-            let existing_hitboxes = existing_hitbox_query.iter_many(hitboxes);
-            for hitbox_entity in existing_hitboxes {
-                commands.entity(hitbox_entity).despawn();
-            }
-        }
-
         let increment = definition.get_progress_increment(time.delta());
-
         let progress = (*increment + *attack.progress).min(1.0);
         attack.progress = AttackProgress::new(progress);
 
-        let hitboxes = definition.key_frames().get_active_frames(attack.progress);
+        let active_key_frames = definition.key_frames().get_active_frames(attack.progress);
+        let mut next_hitboxes = Vec::new();
+        let current_hitbox_entities = hitboxes.map(|h| h.0.clone()).unwrap_or_default();
 
-        for key_frame in hitboxes {
-            let hitbox_entity = commands
-                .spawn(attack_hitbox(key_frame, pos.0, *facing, attack.progress))
-                .id();
+        for key_frame in active_key_frames {
+            let mut found_existing = None;
+            for &hitbox_entity in &current_hitbox_entities {
+                if let Ok((_, hitbox, _, _)) = existing_hitbox_query.get(hitbox_entity)
+                    && hitbox.key_frame.index() == key_frame.index()
+                {
+                    found_existing = Some(hitbox_entity);
+                    break;
+                }
+            }
 
-            commands
-                .entity(entity)
-                .add_one_related::<HitboxOwner>(hitbox_entity);
+            let frame_progress = key_frame
+                .current_progress(attack.progress)
+                .expect("Attack progress outside of frame window");
+            let hitbox_data = key_frame.get_current_interpolated_hitbox(frame_progress);
+
+            let attack_pos = offset_position_to_facing(pos.0, *hitbox_data.offset(), *facing);
+            let collider_codec = hitbox_data.collider();
+            let collider = collider_codec.make_collider(attack_pos.0);
+
+            if let Some(hitbox_entity) = found_existing {
+                // Update in-place
+                if let Ok((_, mut hitbox, mut existing_collider, mut existing_pos)) =
+                    existing_hitbox_query.get_mut(hitbox_entity)
+                {
+                    // Refresh the stored keyframe (though the index is the same, duration progress changed)
+                    hitbox.key_frame = key_frame.clone();
+                    *existing_collider = collider;
+                    *existing_pos = WorldPosition(attack_pos);
+                }
+                next_hitboxes.push(hitbox_entity);
+            } else {
+                // Spawn a new hitbox
+                let new_hitbox_entity = commands
+                    .spawn((
+                        AttackHitbox {
+                            key_frame: key_frame.clone(),
+                            interacted_entities: Vec::new(),
+                        },
+                        collider,
+                        WorldPosition(attack_pos),
+                        PhysicsData::Detector,
+                    ))
+                    .id();
+
+                commands
+                    .entity(entity)
+                    .add_one_related::<HitboxOwner>(new_hitbox_entity);
+                next_hitboxes.push(new_hitbox_entity);
+            }
+        }
+
+        // Despawn any hitboxes that are no longer active
+        for &hitbox_entity in &current_hitbox_entities {
+            if !next_hitboxes.contains(&hitbox_entity) {
+                commands.entity(hitbox_entity).despawn();
+            }
         }
 
         if progress == 1.0 {
@@ -175,35 +218,6 @@ impl<'a> IntoIterator for &'a ActiveHitboxes {
 pub struct AttackHitbox {
     key_frame: KeyFrame,
     interacted_entities: Vec<Entity>,
-}
-
-// TODO: Improve this to not respawn hitboxes every frame
-fn attack_hitbox(
-    key_frame: &KeyFrame,
-    character_pos: WorldCoords,
-    facing: Facing,
-    attack_progress: AttackProgress,
-) -> impl Bundle {
-    // TODO: Change this to handle the error more gracefully
-    let frame_progress = key_frame
-        .current_progress(attack_progress)
-        .expect("Attack progress outside of frame window");
-    let hitbox_data = key_frame.get_current_interpolated_hitbox(frame_progress);
-
-    let attack_pos = offset_position_to_facing(character_pos, *hitbox_data.offset(), facing);
-    let collider_codec = hitbox_data.collider();
-
-    let collider = collider_codec.make_collider(attack_pos.0);
-
-    (
-        AttackHitbox {
-            key_frame: key_frame.clone(),
-            interacted_entities: Vec::new(),
-        },
-        collider,
-        WorldPosition(attack_pos),
-        PhysicsData::Detector,
-    )
 }
 
 fn process_attack_hits(
