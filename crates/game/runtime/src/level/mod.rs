@@ -136,7 +136,6 @@ fn bake_tiles(
         Ok(level) => level,
         Err(err) => {
             error!("Error getting level entity while baking tiles: {:?}", err);
-            next_state.set(LevelSpawnState::Error);
             commands.trigger(LevelErrorEvent(err.into()));
             return;
         }
@@ -178,7 +177,6 @@ fn add_objects(
         Ok(level) => level,
         Err(err) => {
             error!("Error getting level entity while adding objects: {:?}", err);
-            next_state.set(LevelSpawnState::Error);
             commands.trigger(LevelErrorEvent(err.into()));
             return;
         }
@@ -203,8 +201,14 @@ fn finish_level_spawn(mut next_state: ResMut<NextState<LevelSpawnState>>, mut co
     info!("Finished constructing level");
 }
 
-fn on_level_error(event: On<LevelErrorEvent>) {
+fn on_level_error(
+    event: On<LevelErrorEvent>,
+    mut next_state: ResMut<NextState<LevelSpawnState>>,
+) {
     error!("Error encountered while building level: {:?}", event.0);
+
+    next_state.set(LevelSpawnState::Error);
+
     todo!()
 }
 
