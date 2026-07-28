@@ -318,10 +318,10 @@ fn process_collisions(
     time: Res<Time>,
 ) {
     for message in message_reader.read() {
-        let Ok((mut physics, pos)) = query.get_mut(message.entity) else {
+        let Ok((mut physics, pos)) = query.get_mut(message.colliding_entity) else {
             return error!(
                 "Failed to get physics data for event entity {:?}",
-                message.entity
+                message.colliding_entity
             );
         };
 

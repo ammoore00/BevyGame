@@ -69,14 +69,12 @@ fn check_collisions(
         collider_query
             .iter_combinations::<2>()
             .filter_map(|[first, second]| match (first.1, second.1) {
-                (PhysicsData::Kinematic { .. }, PhysicsData::Kinematic { .. }) => {
-                    Some([first, second])
-                }
                 (PhysicsData::Kinematic { .. }, _) => Some([first, second]),
                 (_, PhysicsData::Kinematic { .. }) => Some([second, first]),
                 _ => None,
             });
 
+    // The first object is always kinematic, and therefore also must have a WorldPosition component
     for [
         (entity, _, collider, pos, _),
         (other_entity, other_physics_data, other_collider, other_pos, other_tile_pos),
@@ -111,59 +109,60 @@ fn check_collisions(
         };
 
         match *other_physics_data {
-            PhysicsData::Detector => {
-                let collision = DetectorCollision {
-                    detector_entity: other_entity,
-                };
-                detector_collisions
-                    .entry(entity)
-                    .and_modify(|list| list.push(collision.clone()));
-            }
             PhysicsData::Static => {
                 let collision = PhysicsCollision {
                     contact,
-                    _kind: PhysicsKind::Static,
+                    _other_kind: PhysicsKind::Static,
                 };
                 physics_collisions
                     .entry(entity)
-                    .and_modify(|list| list.push(collision.clone()));
+                    .and_modify(|list| list.push(collision));
             }
             // If the other is kinematic, it needs to deal with the collision as well,
             // so send it to both objects
             PhysicsData::Kinematic { .. } => {
                 let first_collision = PhysicsCollision {
                     contact: contact.clone(),
-                    _kind: PhysicsKind::Kinematic,
+                    _other_kind: PhysicsKind::Kinematic,
                 };
                 physics_collisions
                     .entry(entity)
-                    .and_modify(|list| list.push(first_collision.clone()));
+                    .and_modify(|list| list.push(first_collision));
 
                 // Collision in the other direction needs an inverted normal vector
                 // since this is opposite to the original contact test
                 let second_contact = contact.with_inverted_normal();
                 let second_collision = PhysicsCollision {
                     contact: second_contact,
-                    _kind: PhysicsKind::Kinematic,
+                    _other_kind: PhysicsKind::Kinematic,
                 };
                 physics_collisions
                     .entry(other_entity)
                     .or_default()
-                    .push(second_collision.clone())
+                    .push(second_collision)
+            }
+            // Detector collisions are handled separately with their own message
+            PhysicsData::Detector => {
+                let collision = DetectorCollision {
+                    detector_entity: other_entity,
+                };
+                detector_collisions
+                    .entry(entity)
+                    .and_modify(|list| list.push(collision));
             }
         }
     }
 
     for (colliding_entity, physics_collisions) in physics_collisions {
         physics_message_writer.write(PhysicsCollisionsProcessedMessage {
-            entity: colliding_entity,
+            colliding_entity,
             physics_collisions,
         });
     }
 
     for (colliding_entity, detector_collisions) in detector_collisions {
         detector_message_writer.write(DetectorCollisionsProcessedMessage {
-            entity: colliding_entity,
+            colliding_entity,
             detector_collisions,
         });
     }
@@ -171,23 +170,23 @@ fn check_collisions(
 
 #[derive(Message, Debug, Clone)]
 pub struct PhysicsCollisionsProcessedMessage {
-    pub entity: Entity,
+    pub colliding_entity: Entity,
     pub physics_collisions: Vec<PhysicsCollision>,
 }
 
 #[derive(Message, Debug, Clone)]
 pub struct DetectorCollisionsProcessedMessage {
-    pub entity: Entity,
+    pub colliding_entity: Entity,
     pub detector_collisions: Vec<DetectorCollision>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicsCollision {
     pub contact: CollisionContact,
-    pub _kind: PhysicsKind,
+    pub _other_kind: PhysicsKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DetectorCollision {
     pub detector_entity: Entity,
 }

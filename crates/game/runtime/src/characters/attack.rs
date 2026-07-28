@@ -221,26 +221,26 @@ fn process_attack_hits(
             };
 
             // Do not collide with self or entities that have already been hit
-            if collision_message.entity == owner.0
+            if collision_message.colliding_entity == owner.0
                 || attack_hitbox
                 .interacted_entities
-                .contains(&collision_message.entity)
+                .contains(&collision_message.colliding_entity)
             {
                 continue;
             }
 
             attack_hitbox
                 .interacted_entities
-                .push(collision_message.entity);
+                .push(collision_message.colliding_entity);
 
             let key_frame = &attack_hitbox.key_frame;
 
             if !key_frame.disable_on_hit_iframes() {
-                commands.trigger(AddIFrames::new(collision_message.entity, ON_HIT_IFRAMES));
+                commands.trigger(AddIFrames::new(collision_message.colliding_entity, ON_HIT_IFRAMES));
             }
 
             commands.trigger(HealthEvent::new(
-                collision_message.entity,
+                collision_message.colliding_entity,
                 *key_frame.health_event(),
             ));
 
