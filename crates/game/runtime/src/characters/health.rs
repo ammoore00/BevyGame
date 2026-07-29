@@ -146,18 +146,6 @@ impl AddIFrames {
             mode: IFrameMode::default(),
         }
     }
-
-    pub fn _new_with_mode(entity: Entity, duration: Duration, mode: IFrameMode) -> Self {
-        Self {
-            entity,
-            duration,
-            mode,
-        }
-    }
-
-    pub fn _with_mode(self, mode: IFrameMode) -> Self {
-        Self { mode, ..self }
-    }
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -181,12 +169,8 @@ struct IFrames {
 fn update_iframes(query: Query<&mut IFrames>, time: Res<Time>) {
     for mut iframes in query {
         if !iframes.duration.is_zero() {
-            // Prevent panic from underflow
-            if iframes.duration < time.delta() {
-                iframes.duration = Duration::ZERO;
-            } else {
-                iframes.duration -= time.delta();
-            }
+            let current = iframes.duration;
+            iframes.duration -= time.delta().min(current);
         }
     }
 }
