@@ -4,6 +4,7 @@ use common::AppSystems;
 use std::collections::HashMap;
 use std::time::Duration;
 use strum::IntoEnumIterator;
+use crate::characters::DeathEvent;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_iframes.in_set(AppSystems::TickTimers));
@@ -92,9 +93,10 @@ impl From<DamageModifierCodec> for DamageModifiers {
 
 fn on_health_event(
     event: On<HealthEvent>,
-    mut query: Query<(&mut Health, Option<&DamageModifiers>, Option<&IFrames>)>,
+    mut query: Query<(Entity, &mut Health, Option<&DamageModifiers>, Option<&IFrames>)>,
+    mut commands: Commands,
 ) {
-    if let Ok((mut health, modifiers, iframes)) = query.get_mut(event.entity) {
+    if let Ok((entity, mut health, modifiers, iframes)) = query.get_mut(event.entity) {
         match event.event_type {
             HealthEventKind::Heal(amount) => {
                 health.current += amount.min(health.max - health.current)
@@ -122,6 +124,10 @@ fn on_health_event(
             HealthEventKind::FullHeal => health.current = health.max,
             HealthEventKind::InstantDeath => health.current = 0,
             HealthEventKind::None => {}
+        }
+
+        if health.current == 0 {
+            commands.trigger(DeathEvent { entity });
         }
     }
 }

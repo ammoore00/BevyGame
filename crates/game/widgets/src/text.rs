@@ -1,6 +1,6 @@
 use crate::theme::palette::{HEADER_TEXT, LABEL_TEXT};
 use bevy::prelude::*;
-use common::{convert_world_to_screen_coords, Scale, ScreenCoords, WorldCoords, WorldPosition};
+use common::{convert_world_to_screen_coords, Scale, WorldCoords};
 
 pub const TINY_FONT_SIZE: FontSize = FontSize::Px(16.0);
 pub const SMALL_FONT_SIZE: FontSize = FontSize::Px(20.0);

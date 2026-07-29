@@ -1,12 +1,12 @@
 use crate::action_state_scene;
-use crate::debug::Health;
+use crate::debug::{Health, Player};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
 use assets::resource::characters::{AnimationContext, CharacterData, CharacterResource};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use common::{Facing, GameplaySystems, Scale, WorldPosition};
+use common::{marker, Facing, GameplaySystems, Scale, WorldPosition};
 use data::prelude::*;
 use data::register_prototype_system;
 use physics::{DEFAULT_MAX_SPEED, HasGravity, MovementController, PhysicsData};
@@ -34,7 +34,10 @@ pub(crate) fn plugin(app: &mut App) {
         state::plugin,
     ));
 
+    app.add_systems(PreUpdate, remove_dead_entities);
     app.add_systems(Update, initialize_characters.in_set(GameplaySystems));
+
+    app.add_observer(on_death);
 }
 
 register_prototype_system!(initialize_characters, CharacterBuilder);
@@ -188,5 +191,39 @@ impl CharacterBuilderContext<'_> {
         loc: &ResourceLocation<CharacterResource>,
     ) -> Option<&CharacterData> {
         self.character_registry.get_asset(loc)
+    }
+}
+
+marker!(pub Dead);
+
+#[derive(EntityEvent, Debug, Clone)]
+pub struct DeathEvent {
+    entity: Entity,
+}
+
+fn on_death(
+    event: On<DeathEvent>,
+    query: Query<Option<&Player>, With<Character>>,
+    mut commands: Commands
+) {
+    let Ok(player) = query.get(event.entity) else {
+        error!("Failed to get death event entity");
+        return;
+    };
+
+    if let Some(_player) = player {
+        // TODO: Player death
+    } else {
+        // TODO: Make this more sophisticated
+        commands.entity(event.entity).insert(Dead);
+    }
+}
+
+fn remove_dead_entities(
+    query: Query<Entity, With<Dead>>,
+    mut commands: Commands,
+) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }
