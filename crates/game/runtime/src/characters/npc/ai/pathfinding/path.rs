@@ -1,45 +1,28 @@
-use crate::LevelLoadedSystems;
-use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
-use crate::level::grid::nav::{NavEdgeKind, TileNavMap};
-use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
-use bevy::prelude::*;
-use common::{
-    AppSystems, GameplaySystems, PausableSystems, TileCoords, WorldCoords, WorldPosition,
-};
-use getset::Getters;
-use physics::{Collider, MovementController};
-use rand::{Rng, RngExt};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
-use std::time::Duration;
+use bevy::prelude::*;
+use getset::Getters;
+use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
+use common::{TileCoords, WorldCoords, WorldPosition};
+use physics::MovementController;
+use crate::characters::npc::ai::pathfinding::PathfindingSystems;
+use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
+use crate::debug::TileNavMap;
+use crate::level::grid::nav::NavEdgeKind;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            update_pathfinder_wander_state,
-            update_movement_intent,
-            update_movement_state,
-        )
+        (update_movement_intent, update_movement_state)
             .chain()
-            .in_set(GameplaySystems)
-            .in_set(PausableSystems)
-            .in_set(LevelLoadedSystems)
-            .in_set(AppSystems::Update),
+            .in_set(PathfindingSystems::Execute),
     );
-}
-
-pub(super) fn pathfinder_scene() -> impl Scene {
-    bsn! [
-        Pathfinder
-        RandomWander
-    ]
 }
 
 #[derive(Component, Debug, Clone, Default, Getters)]
 pub struct Pathfinder {
     #[getset(get = "pub")]
-    state: PathfinderState,
+    pub(super) state: PathfinderState,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -62,7 +45,7 @@ impl PathType {
         }
     }
 
-    fn get_mut(&mut self) -> &mut TilePath {
+    pub(super) fn get_mut(&mut self) -> &mut TilePath {
         match self {
             PathType::Wander(path) | PathType::_Target(path) => path,
         }
@@ -71,13 +54,13 @@ impl PathType {
 
 #[derive(Debug, Clone, Getters)]
 pub struct TilePath {
-    path: Vec<WorldCoords>,
-    target: WorldCoords,
-    next_position: Option<WorldCoords>,
-    next_index: usize,
+    pub(super) path: Vec<WorldCoords>,
+    pub(super) target: WorldCoords,
+    pub(super) next_position: Option<WorldCoords>,
+    pub(super) next_index: usize,
 }
 impl TilePath {
-    fn new(path: Vec<WorldCoords>) -> Self {
+    pub(super) fn new(path: Vec<WorldCoords>) -> Self {
         let target = *path.last().unwrap();
         let next_position = *path.first().unwrap();
         Self {
@@ -88,122 +71,13 @@ impl TilePath {
         }
     }
 
-    fn increment_position(&mut self) {
+    pub(super) fn increment_position(&mut self) {
         self.next_index += 1;
         self.next_position = self.path.get(self.next_index).copied();
     }
 
-    pub fn get_remaining_path(&self) -> &[WorldCoords] {
+    pub fn _get_remaining_path(&self) -> &[WorldCoords] {
         &self.path[self.next_index..]
-    }
-}
-
-const DEFAULT_WANDER_RANGE: u32 = 5;
-const DEFAULT_MAX_IDLE_TIME: u64 = 1;
-const DEFAULT_MAX_MOVEMENT_TIME: u64 = 10;
-
-#[derive(Component, Debug, Clone, Copy, Hash, PartialEq, Eq)]
-struct RandomWander {
-    wander_range: u32,
-    max_idle_time: Duration,
-    max_movement_time: Duration,
-    current_time_in_state: Duration,
-}
-impl Default for RandomWander {
-    fn default() -> Self {
-        Self {
-            wander_range: DEFAULT_WANDER_RANGE,
-            max_idle_time: Duration::from_secs(DEFAULT_MAX_IDLE_TIME),
-            max_movement_time: Duration::from_secs(DEFAULT_MAX_MOVEMENT_TIME),
-            current_time_in_state: Duration::ZERO,
-        }
-    }
-}
-
-const TARGET_REACHED_THRESHOLD: f32 = 0.2;
-
-fn update_pathfinder_wander_state(
-    time: Res<Time>,
-    pathfinder_query: Query<(
-        &mut Pathfinder,
-        &mut RandomWander,
-        &WorldPosition,
-        &Collider,
-    )>,
-    nav_map_query: Query<&TileNavMap>,
-) {
-    let nav_map = nav_map_query.single();
-    let Ok(nav_map) = nav_map else {
-        error!("Failed to get nav level!: {:?}", nav_map.err().unwrap());
-        return;
-    };
-
-    for (mut pathfinder, mut wander, pos, collider) in pathfinder_query {
-        wander.current_time_in_state += time.delta();
-
-        match &mut pathfinder.state {
-            PathfinderState::Idle => {
-                if wander.current_time_in_state >= wander.max_idle_time {
-                    wander.current_time_in_state = Duration::ZERO;
-                    pathfinder.state = PathfinderState::Searching;
-                    info!("NPC started searching");
-                }
-            }
-            PathfinderState::Searching => {
-                let tile_coords = TileCoords::from(pos.0);
-                let tile_coords = *tile_coords - IVec3::Y;
-
-                let target = select_random_wander_target(
-                    nav_map,
-                    tile_coords.into(),
-                    wander.wander_range,
-                    rand::rng(),
-                );
-
-                let collider_size = collider.size();
-                let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
-                let clearance_height = collider_size.y;
-
-                if let Some(tile_path) = find_path(
-                    nav_map,
-                    tile_coords.into(),
-                    target.into(),
-                    clearance_half_width,
-                    clearance_height,
-                ) {
-                    wander.current_time_in_state = Duration::ZERO;
-                    let tile_path = PathType::Wander(tile_path);
-
-                    info!(
-                        "NPC found target: {:?}, starting movement",
-                        tile_path.get().next_position
-                    );
-                    pathfinder.state = PathfinderState::Moving(tile_path);
-                }
-            }
-            PathfinderState::Moving(tile_path) => {
-                let tile_path = tile_path.get_mut();
-                let target = tile_path.next_position;
-
-                let Some(target) = target else {
-                    error!("Invaliud NPC target, stopping movement");
-                    pathfinder.state = PathfinderState::Idle;
-                    continue;
-                };
-
-                let distance = target.distance(*pos.0 - Vec3::Y);
-
-                if distance <= TARGET_REACHED_THRESHOLD {
-                    if target == tile_path.target {
-                        wander.current_time_in_state = Duration::ZERO;
-                        pathfinder.state = PathfinderState::Idle;
-                        info!("NPC reached target! Stopping movement");
-                    } else {
-                        tile_path.increment_position();
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -258,54 +132,6 @@ fn update_movement_state(world: &mut World) {
     }
 }
 
-/// Selects a random wander target starting from the given coordinates using a random walk
-///
-/// This guarantees that the target is pathable. Even though the walk length is fixed, the actual
-/// distance of the target from the start is random, bounded by the length.
-fn select_random_wander_target(
-    nav_map: &TileNavMap,
-    start: TileCoords,
-    distance: u32,
-    mut rand: impl Rng,
-) -> TileCoords {
-    if !nav_map.has_node(&start) {
-        error!(
-            "Invalid start position for wander target selection: {:?}",
-            start
-        );
-        return start;
-    }
-
-    // Vec instead of HashSet since collection sizes will always be small
-    let mut visited = vec![start];
-
-    let mut target = start;
-    for _ in 0..distance {
-        let Some(edges) = nav_map.get_edges_from_tile(&target) else {
-            error!(
-                "No valid edges found for wander target selection from {:?}",
-                target
-            );
-            continue;
-        };
-
-        let edges = edges
-            .iter()
-            .filter(|edge| !visited.contains(edge.0.end()))
-            .collect::<Vec<_>>();
-
-        // If we've backed ourselves into a corner, just return early
-        if edges.is_empty() {
-            return target;
-        }
-
-        let idx = rand.random_range(..edges.len());
-        target = *edges[idx].0.end();
-        visited.push(target);
-    }
-    target
-}
-
 /// Use Theta* pathfinding to find a path from start to target
 ///
 /// See [here](https://web.archive.org/web/20100916211209/http://aigamedev.com/open/tutorials/theta-star-any-angle-paths/)
@@ -313,7 +139,7 @@ fn select_random_wander_target(
 /// for more information on Theta* pathfinding.
 ///
 /// Returns `None` if a path cannot be found.
-fn find_path(
+pub fn find_path(
     nav_map: &TileNavMap,
     start: WorldCoords,
     target: WorldCoords,
@@ -381,11 +207,11 @@ fn find_path(
                 parents.get(position)
                 && edge.1.kind() == NavEdgeKind::Walk
                 && nav_map.has_line_of_sight(
-                    &TileCoords::from(grandparent),
-                    edge.0.end(),
-                    clearance_half_width,
-                    clearance_height,
-                ) {
+                &TileCoords::from(grandparent),
+                edge.0.end(),
+                clearance_half_width,
+                clearance_height,
+            ) {
                 let next_pos = WorldCoords::from(edge.0.end());
 
                 // Look up how much it actually cost to get to the grandparent

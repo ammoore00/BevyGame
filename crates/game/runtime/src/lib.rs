@@ -13,7 +13,6 @@ pub mod debug {
         characters::{
             attack::AttackHitbox,
             health::Health,
-            npc::ai::pathfinding::{Pathfinder, PathfinderState},
             player::Player,
             stamina::Stamina,
         },
