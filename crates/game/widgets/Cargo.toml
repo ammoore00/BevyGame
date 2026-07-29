@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 assets = { workspace = true }
+common = { workspace = true }
 data = { workspace = true }
 
 bevy = { workspace = true }

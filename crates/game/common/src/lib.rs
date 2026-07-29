@@ -14,7 +14,8 @@ pub use crate::{
     character::{Facing, offset_position_to_facing},
     coords::{
         SCREEN_Z_SCALE, ScreenCoords, TILE_HEIGHT, TILE_WIDTH, TileCoords, TilePosition,
-        WorldCoords, WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
+        WorldCoords, WorldPosition, convert_world_to_screen_coords, rotate_screen_space_to_facing,
+        rotate_screen_space_to_movement,
     },
     game_states::{GameState, GameplaySystems},
 };

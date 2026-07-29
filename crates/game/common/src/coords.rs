@@ -13,8 +13,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         FixedPreUpdate,
         (
-            convert_world_to_screen_coords,
-            convert_tile_to_screen_coords,
+            convert_world_to_screen_coords_system,
+            convert_tile_to_screen_coords_system,
         ),
     );
 }
@@ -32,21 +32,30 @@ impl WorldPosition {
     }
 }
 
-pub fn convert_world_to_screen_coords(
-    scale: Res<Scale>,
+fn convert_world_to_screen_coords_system(
     mut query: Query<(&WorldPosition, &mut Transform), Changed<WorldPosition>>,
+    scale: Res<Scale>,
 ) {
     for (world_position, mut transform) in query.iter_mut() {
-        let screen_coords = ScreenCoords::from(&world_position.0);
-        transform.translation = *screen_coords;
-        transform.translation.x *= scale.0;
-        transform.translation.y *= scale.0;
+        transform.translation = convert_world_to_screen_coords(*scale, world_position.0).0;
     }
+}
+
+pub fn convert_world_to_screen_coords(
+    scale: Scale,
+    pos: WorldCoords,
+) -> ScreenCoords {
+    let mut screen_coords = ScreenCoords::from(pos);
+
+    screen_coords.0.x *= scale.0;
+    screen_coords.0.y *= scale.0;
+
+    screen_coords
 }
 
 #[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct TilePosition(pub TileCoords);
-pub fn convert_tile_to_screen_coords(
+pub fn convert_tile_to_screen_coords_system(
     mut query: Query<(&TilePosition, &mut Transform), Changed<TilePosition>>,
 ) {
     for (tile_position, mut transform) in query.iter_mut() {

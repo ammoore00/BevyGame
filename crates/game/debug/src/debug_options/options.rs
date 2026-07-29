@@ -16,6 +16,8 @@ pub(super) fn plugin(app: &mut App) {
     app.init_resource::<TileCollisionRes>();
     app.init_resource::<AttackCollisionRes>();
 
+    app.init_resource::<CharacterHealthRes>();
+
     app.init_resource::<UiRenderRes>();
 
     app.add_observer(on_debug_window_initialized);
@@ -50,6 +52,7 @@ pub(super) fn global_debug() -> impl Scene {
             ),
             navigation(),
             physics(),
+            entities(),
             ui(),
         ]
     ]
@@ -336,6 +339,22 @@ pub struct TileCollision(bool);
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
 #[reflect(Component)]
 pub struct AttackCollision(bool);
+
+// Entity Info
+
+fn entities() -> impl Scene {
+    bsn! [
+        #EntityDebug
+        debug_category("Entity Info")
+        {debug_option_list!(
+            debug_option!(CharacterHealth, "Display Character Health"),
+        )}
+    ]
+}
+
+#[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
+#[reflect(Component)]
+pub struct CharacterHealth(bool);
 
 // User Interface
 

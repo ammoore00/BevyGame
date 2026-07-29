@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use common::{ScreenCoords, WorldCoords};
+use common::{ScreenCoords, WorldCoords, WorldPosition};
 use physics::CapsuleData;
 use std::collections::HashSet;
 
