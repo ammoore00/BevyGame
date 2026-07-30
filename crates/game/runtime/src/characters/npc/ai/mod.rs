@@ -8,5 +8,15 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 pub(super) fn ai_scene() -> impl Scene {
-    bsn![pathfinder_scene()]
+    bsn! [
+        pathfinder_scene()
+        AiState
+    ]
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum AiState {
+    #[default]
+    Wander,
+    _Attack,
 }

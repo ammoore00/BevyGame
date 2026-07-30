@@ -1,28 +1,39 @@
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BinaryHeap};
-use bevy::prelude::*;
-use getset::Getters;
-use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
-use common::{TileCoords, WorldCoords, WorldPosition};
-use physics::MovementController;
+use crate::characters::npc::ai::AiState;
 use crate::characters::npc::ai::pathfinding::PathfindingSystems;
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use crate::debug::TileNavMap;
 use crate::level::grid::nav::NavEdgeKind;
+use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
+use bevy::prelude::*;
+use common::{TileCoords, WorldCoords, WorldPosition};
+use getset::Getters;
+use physics::MovementController;
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, BinaryHeap};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (update_movement_intent, update_movement_state)
-            .chain()
-            .in_set(PathfindingSystems::Execute),
+        (
+            (update_movement_intent, update_movement_state)
+                .chain()
+                .in_set(PathfindingSystems::Execute),
+            update_pathfinder_prev_state.in_set(PathfindingSystems::Cleanup),
+        ),
     );
+}
+
+fn update_pathfinder_prev_state(mut query: Query<(&mut Pathfinder, &AiState)>) {
+    for (mut pathfinder, ai_state) in query.iter_mut() {
+        pathfinder.prev_ai_state = Some(*ai_state);
+    }
 }
 
 #[derive(Component, Debug, Clone, Default, Getters)]
 pub struct Pathfinder {
     #[getset(get = "pub")]
     pub(super) state: PathfinderState,
+    pub(super) prev_ai_state: Option<AiState>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -207,11 +218,11 @@ pub fn find_path(
                 parents.get(position)
                 && edge.1.kind() == NavEdgeKind::Walk
                 && nav_map.has_line_of_sight(
-                &TileCoords::from(grandparent),
-                edge.0.end(),
-                clearance_half_width,
-                clearance_height,
-            ) {
+                    &TileCoords::from(grandparent),
+                    edge.0.end(),
+                    clearance_half_width,
+                    clearance_height,
+                ) {
                 let next_pos = WorldCoords::from(edge.0.end());
 
                 // Look up how much it actually cost to get to the grandparent

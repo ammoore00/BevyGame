@@ -1,8 +1,10 @@
+use crate::characters::npc::ai::AiState;
 use crate::characters::npc::ai::pathfinding::PathfindingSystems;
 use crate::characters::npc::ai::pathfinding::path::{
     PathType, Pathfinder, PathfinderState, find_path,
 };
 use crate::debug::TileNavMap;
+use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::{TileCoords, WorldPosition};
 use physics::Collider;
@@ -40,85 +42,106 @@ impl Default for RandomWander {
 
 const TARGET_REACHED_THRESHOLD: f32 = 0.2;
 
+#[derive(QueryData)]
+#[query_data(mutable)]
+pub struct PathfinderWanderQuery {
+    pub pathfinder: &'static mut Pathfinder,
+    pub wander: &'static mut RandomWander,
+    pub pos: &'static WorldPosition,
+    pub collider: &'static Collider,
+    pub ai_state: &'static AiState,
+}
+
 fn update_pathfinder_wander_state(
-    time: Res<Time>,
-    pathfinder_query: Query<(
-        &mut Pathfinder,
-        &mut RandomWander,
-        &WorldPosition,
-        &Collider,
-    )>,
+    mut pathfinder_query: Query<PathfinderWanderQuery>,
     nav_map_query: Query<&TileNavMap>,
+    time: Res<Time>,
 ) {
     let nav_map = nav_map_query.single();
     let Ok(nav_map) = nav_map else {
-        error!("Failed to get nav level!: {:?}", nav_map.err().unwrap());
+        error!("Failed to get nav map!: {:?}", nav_map.err().unwrap());
         return;
     };
 
-    for (mut pathfinder, mut wander, pos, collider) in pathfinder_query {
-        wander.current_time_in_state += time.delta();
+    for mut data in pathfinder_query.iter_mut() {
+        if *data.ai_state == AiState::Wander {
+            update_wander_data(data, nav_map, *time);
+        } else if data.pathfinder.prev_ai_state == Some(AiState::Wander) {
+            data.pathfinder.state = PathfinderState::Idle;
+        }
+    }
+}
 
-        match &mut pathfinder.state {
-            PathfinderState::Idle => {
-                if wander.current_time_in_state >= wander.max_idle_time {
-                    wander.current_time_in_state = Duration::ZERO;
-                    pathfinder.state = PathfinderState::Searching;
-                    info!("NPC started searching");
-                }
+fn update_wander_data(data: PathfinderWanderQueryItem, nav_map: &TileNavMap, time: Time) {
+    let PathfinderWanderQueryItem {
+        mut pathfinder,
+        mut wander,
+        pos,
+        collider,
+        ..
+    } = data;
+
+    wander.current_time_in_state += time.delta();
+
+    match &mut pathfinder.state {
+        PathfinderState::Idle => {
+            if wander.current_time_in_state >= wander.max_idle_time {
+                wander.current_time_in_state = Duration::ZERO;
+                pathfinder.state = PathfinderState::Searching;
+                info!("NPC started searching");
             }
-            PathfinderState::Searching => {
-                let tile_coords = TileCoords::from(pos.0);
-                let tile_coords = *tile_coords - IVec3::Y;
+        }
+        PathfinderState::Searching => {
+            let tile_coords = TileCoords::from(pos.0);
+            let tile_coords = *tile_coords - IVec3::Y;
 
-                let target = select_random_wander_target(
-                    nav_map,
-                    tile_coords.into(),
-                    wander.wander_range,
-                    rand::rng(),
+            let target = select_random_wander_target(
+                nav_map,
+                tile_coords.into(),
+                wander.wander_range,
+                rand::rng(),
+            );
+
+            let collider_size = collider.size();
+            let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
+            let clearance_height = collider_size.y;
+
+            if let Some(tile_path) = find_path(
+                nav_map,
+                tile_coords.into(),
+                target.into(),
+                clearance_half_width,
+                clearance_height,
+            ) {
+                wander.current_time_in_state = Duration::ZERO;
+                let tile_path = PathType::Wander(tile_path);
+
+                info!(
+                    "NPC found target: {:?}, starting movement",
+                    tile_path.get().next_position
                 );
-
-                let collider_size = collider.size();
-                let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
-                let clearance_height = collider_size.y;
-
-                if let Some(tile_path) = find_path(
-                    nav_map,
-                    tile_coords.into(),
-                    target.into(),
-                    clearance_half_width,
-                    clearance_height,
-                ) {
-                    wander.current_time_in_state = Duration::ZERO;
-                    let tile_path = PathType::Wander(tile_path);
-
-                    info!(
-                        "NPC found target: {:?}, starting movement",
-                        tile_path.get().next_position
-                    );
-                    pathfinder.state = PathfinderState::Moving(tile_path);
-                }
+                pathfinder.state = PathfinderState::Moving(tile_path);
             }
-            PathfinderState::Moving(tile_path) => {
-                let tile_path = tile_path.get_mut();
-                let target = tile_path.next_position;
+        }
+        PathfinderState::Moving(tile_path) => {
+            let tile_path = tile_path.get_mut();
+            let target = tile_path.next_position;
 
-                let Some(target) = target else {
-                    error!("Invaliud NPC target, stopping movement");
+            let Some(target) = target else {
+                error!("Invalid NPC target, stopping movement");
+                pathfinder.state = PathfinderState::Idle;
+                return;
+            };
+
+            let distance = target.distance(*pos.0 - Vec3::Y);
+
+            if distance <= TARGET_REACHED_THRESHOLD {
+                if target == tile_path.target {
+                    wander.current_time_in_state = Duration::ZERO;
                     pathfinder.state = PathfinderState::Idle;
-                    continue;
-                };
-
-                let distance = target.distance(*pos.0 - Vec3::Y);
-
-                if distance <= TARGET_REACHED_THRESHOLD {
-                    if target == tile_path.target {
-                        wander.current_time_in_state = Duration::ZERO;
-                        pathfinder.state = PathfinderState::Idle;
-                        info!("NPC reached target! Stopping movement");
-                    } else {
-                        tile_path.increment_position();
-                    }
+                    info!("NPC reached target! Stopping movement");
+                } else {
+                    tile_path.increment_position();
                 }
             }
         }
