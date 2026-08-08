@@ -1,5 +1,4 @@
-use crate::characters::npc::ai::AiState;
-use crate::characters::npc::ai::pathfinding::PathfindingSystems;
+use crate::characters::npc::ai::AiSystems;
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use crate::debug::TileNavMap;
 use crate::level::grid::nav::NavEdgeKind;
@@ -14,26 +13,16 @@ use std::collections::{BTreeMap, BinaryHeap};
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            (update_movement_intent, update_movement_state)
-                .chain()
-                .in_set(PathfindingSystems::Execute),
-            update_pathfinder_prev_state.in_set(PathfindingSystems::Cleanup),
-        ),
+        (update_movement_intent, update_movement_state)
+            .chain()
+            .in_set(AiSystems::Execute),
     );
-}
-
-fn update_pathfinder_prev_state(mut query: Query<(&mut Pathfinder, &AiState)>) {
-    for (mut pathfinder, ai_state) in query.iter_mut() {
-        pathfinder.prev_ai_state = Some(*ai_state);
-    }
 }
 
 #[derive(Component, Debug, Clone, Default, Getters)]
 pub struct Pathfinder {
     #[getset(get = "pub")]
     pub(super) state: PathfinderState,
-    pub(super) prev_ai_state: Option<AiState>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -41,24 +30,28 @@ pub enum PathfinderState {
     #[default]
     Idle,
     Searching,
-    Moving(PathType),
+    Moving(Path),
 }
 
 #[derive(Debug, Clone)]
-pub enum PathType {
+pub enum Path {
     Wander(TilePath),
-    _Target(TilePath),
+    Target {
+        path: TilePath,
+        target: Entity,
+        last_target_pos: WorldCoords,
+    },
 }
-impl PathType {
-    pub fn get(&self) -> &TilePath {
+impl Path {
+    pub fn get_path(&self) -> &TilePath {
         match self {
-            PathType::Wander(path) | PathType::_Target(path) => path,
+            Path::Wander(path) | Path::Target { path, .. } => path,
         }
     }
 
-    pub(super) fn get_mut(&mut self) -> &mut TilePath {
+    pub(super) fn get_path_mut(&mut self) -> &mut TilePath {
         match self {
-            PathType::Wander(path) | PathType::_Target(path) => path,
+            Path::Wander(path) | Path::Target { path, .. } => path,
         }
     }
 }
@@ -98,7 +91,7 @@ fn update_movement_intent(
 ) {
     for (pathfinder, mut controller, pos) in pathfinder_query {
         if let PathfinderState::Moving(target) = &pathfinder.state {
-            let delta = **target.get().next_position.as_ref().unwrap() - *pos.0;
+            let delta = **target.get_path().next_position.as_ref().unwrap() - *pos.0;
             let delta = delta * Vec3::new(1., 0., 1.);
 
             if delta.length() < 0.01 {

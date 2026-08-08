@@ -1,20 +1,18 @@
-use crate::characters::npc::ai::AiState;
-use crate::characters::npc::ai::pathfinding::PathfindingSystems;
-use crate::characters::npc::ai::pathfinding::path::{
-    PathType, Pathfinder, PathfinderState, find_path,
+use crate::characters::npc::ai::pathfinding::path::{Path, PathfinderState, find_path};
+use crate::characters::npc::ai::pathfinding::{
+    PathfinderQuery, PathfinderQueryItem, TARGET_REACHED_THRESHOLD,
 };
+use crate::characters::npc::ai::{AiStateKind, AiSystems};
 use crate::debug::TileNavMap;
-use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-use common::{TileCoords, WorldPosition};
-use physics::Collider;
+use common::TileCoords;
 use rand::{Rng, RngExt};
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (update_pathfinder_wander_state,).in_set(PathfindingSystems::Find),
+        update_pathfinder_wander_state.in_set(AiSystems::Calculate),
     );
 }
 
@@ -40,20 +38,8 @@ impl Default for RandomWander {
     }
 }
 
-const TARGET_REACHED_THRESHOLD: f32 = 0.2;
-
-#[derive(QueryData)]
-#[query_data(mutable)]
-pub struct PathfinderWanderQuery {
-    pub pathfinder: &'static mut Pathfinder,
-    pub wander: &'static mut RandomWander,
-    pub pos: &'static WorldPosition,
-    pub collider: &'static Collider,
-    pub ai_state: &'static AiState,
-}
-
 fn update_pathfinder_wander_state(
-    mut pathfinder_query: Query<PathfinderWanderQuery>,
+    mut pathfinder_query: Query<(PathfinderQuery, &mut RandomWander)>,
     nav_map_query: Query<&TileNavMap>,
     time: Res<Time>,
 ) {
@@ -63,30 +49,34 @@ fn update_pathfinder_wander_state(
         return;
     };
 
-    for mut data in pathfinder_query.iter_mut() {
-        if *data.ai_state == AiState::Wander {
-            update_wander_data(data, nav_map, *time);
-        } else if data.pathfinder.prev_ai_state == Some(AiState::Wander) {
-            data.pathfinder.state = PathfinderState::Idle;
+    for (mut pathfinder, mut wander_state) in pathfinder_query.iter_mut() {
+        if pathfinder.ai_state.current == AiStateKind::Wander {
+            update_wander_path(pathfinder, &mut wander_state, nav_map, *time);
+        } else if pathfinder.ai_state.prev == AiStateKind::Wander {
+            pathfinder.pathfinder.state = PathfinderState::Idle;
         }
     }
 }
 
-fn update_wander_data(data: PathfinderWanderQueryItem, nav_map: &TileNavMap, time: Time) {
-    let PathfinderWanderQueryItem {
+fn update_wander_path(
+    data: PathfinderQueryItem,
+    wander_state: &mut RandomWander,
+    nav_map: &TileNavMap,
+    time: Time,
+) {
+    let PathfinderQueryItem {
         mut pathfinder,
-        mut wander,
         pos,
         collider,
         ..
     } = data;
 
-    wander.current_time_in_state += time.delta();
+    wander_state.current_time_in_state += time.delta();
 
     match &mut pathfinder.state {
         PathfinderState::Idle => {
-            if wander.current_time_in_state >= wander.max_idle_time {
-                wander.current_time_in_state = Duration::ZERO;
+            if wander_state.current_time_in_state >= wander_state.max_idle_time {
+                wander_state.current_time_in_state = Duration::ZERO;
                 pathfinder.state = PathfinderState::Searching;
                 info!("NPC started searching");
             }
@@ -98,7 +88,7 @@ fn update_wander_data(data: PathfinderWanderQueryItem, nav_map: &TileNavMap, tim
             let target = select_random_wander_target(
                 nav_map,
                 tile_coords.into(),
-                wander.wander_range,
+                wander_state.wander_range,
                 rand::rng(),
             );
 
@@ -113,18 +103,18 @@ fn update_wander_data(data: PathfinderWanderQueryItem, nav_map: &TileNavMap, tim
                 clearance_half_width,
                 clearance_height,
             ) {
-                wander.current_time_in_state = Duration::ZERO;
-                let tile_path = PathType::Wander(tile_path);
+                wander_state.current_time_in_state = Duration::ZERO;
+                let tile_path = Path::Wander(tile_path);
 
                 info!(
                     "NPC found target: {:?}, starting movement",
-                    tile_path.get().next_position
+                    tile_path.get_path().next_position
                 );
                 pathfinder.state = PathfinderState::Moving(tile_path);
             }
         }
         PathfinderState::Moving(tile_path) => {
-            let tile_path = tile_path.get_mut();
+            let tile_path = tile_path.get_path_mut();
             let target = tile_path.next_position;
 
             let Some(target) = target else {
@@ -137,7 +127,7 @@ fn update_wander_data(data: PathfinderWanderQueryItem, nav_map: &TileNavMap, tim
 
             if distance <= TARGET_REACHED_THRESHOLD {
                 if target == tile_path.target {
-                    wander.current_time_in_state = Duration::ZERO;
+                    wander_state.current_time_in_state = Duration::ZERO;
                     pathfinder.state = PathfinderState::Idle;
                     info!("NPC reached target! Stopping movement");
                 } else {
