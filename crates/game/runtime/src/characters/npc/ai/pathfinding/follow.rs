@@ -1,6 +1,6 @@
 use crate::characters::npc::ai::AiState;
 use crate::characters::npc::ai::pathfinding::TARGET_REACHED_THRESHOLD;
-use crate::characters::npc::ai::pathfinding::path::Pathfinder;
+use crate::characters::npc::ai::pathfinding::pathfinder::Pathfinder;
 use bevy::prelude::*;
 use common::WorldPosition;
 use std::time::Duration;

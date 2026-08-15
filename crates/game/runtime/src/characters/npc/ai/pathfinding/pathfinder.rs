@@ -1,69 +1,83 @@
 use crate::characters::npc::ai::AiSystems;
-use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use crate::debug::TileNavMap;
 use crate::level::grid::nav::NavEdgeKind;
-use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
+use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
-use common::{TileCoords, WorldCoords, WorldPosition};
+use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
+use common::{TileCoords, WorldCoords, marker};
 use getset::Getters;
-use physics::MovementController;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
+use std::fmt::Debug;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (update_movement_intent, update_movement_state)
-            .chain()
-            .in_set(AiSystems::Execute),
+        (process_pathfind_requests, collect_pathfind_requests).in_set(AiSystems::Calculate),
     );
 }
 
-#[derive(Component, Debug, Clone, Default, Getters)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pathfinder {
-    #[getset(get = "pub")]
-    pub(super) state: PathfinderState,
+    pub state: PathfinderState,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PathfinderState {
     #[default]
     Idle,
-    Searching,
-    Moving(Path),
+    Moving,
 }
 
-#[derive(Debug, Clone)]
-pub enum Path {
-    Wander(TilePath),
-    Target {
-        path: TilePath,
-        target: Entity,
-        last_target_pos: WorldCoords,
-    },
+#[derive(Component, Debug, Clone, Copy, PartialEq, Getters)]
+pub struct PathfindRequest {
+    #[getset(get = "pub")]
+    start: WorldCoords,
+    #[getset(get = "pub")]
+    target: WorldCoords,
+    #[getset(get = "pub")]
+    clearance_half_width: f32,
+    #[getset(get = "pub")]
+    clearance_height: f32,
+
+    request_id: Uuid,
 }
-impl Path {
-    pub fn get_path(&self) -> &TilePath {
-        match self {
-            Path::Wander(path) | Path::Target { path, .. } => path,
+impl PathfindRequest {
+    pub fn new(start: WorldCoords, target: WorldCoords, clearance_half_width: f32, clearance_height: f32) -> Self {
+        Self {
+            start,
+            target,
+            clearance_half_width,
+            clearance_height,
+            request_id: Uuid::new_v4(),
         }
     }
+}
 
-    pub(super) fn get_path_mut(&mut self) -> &mut TilePath {
-        match self {
-            Path::Wander(path) | Path::Target { path, .. } => path,
-        }
+#[derive(Component)]
+pub struct PathfindPending {
+    request: PathfindRequest,
+    task: Task<Option<Waypoints>>,
+    task_cancel_token: PathfindCancelToken,
+}
+impl Debug for PathfindPending {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PathfindPending")
+            .field("request", &self.request)
+            .finish()
     }
 }
 
-#[derive(Debug, Clone, Getters)]
-pub struct TilePath {
+#[derive(Component, Debug, Clone, Getters)]
+pub struct Waypoints {
     pub(super) path: Vec<WorldCoords>,
     pub(super) target: WorldCoords,
     pub(super) next_position: Option<WorldCoords>,
     pub(super) next_index: usize,
 }
-impl TilePath {
+impl Waypoints {
     pub(super) fn new(path: Vec<WorldCoords>) -> Self {
         let target = *path.last().unwrap();
         let next_position = *path.first().unwrap();
@@ -85,54 +99,85 @@ impl TilePath {
     }
 }
 
-/// Update the movement controller based on what the pathfinder wants
-fn update_movement_intent(
-    pathfinder_query: Query<(&Pathfinder, &mut MovementController, &WorldPosition)>,
+/// Dispatch async tasks to find paths for pending requests.
+fn process_pathfind_requests(
+    requests_query: Query<(Entity, &PathfindRequest), (With<Pathfinder>, Without<PathfindPending>)>,
+    nav_map_query: Query<&TileNavMap>,
+    mut commands: Commands,
 ) {
-    for (pathfinder, mut controller, pos) in pathfinder_query {
-        if let PathfinderState::Moving(target) = &pathfinder.state {
-            let delta = **target.get_path().next_position.as_ref().unwrap() - *pos.0;
-            let delta = delta * Vec3::new(1., 0., 1.);
+    let nav_map = nav_map_query.single();
+    let Ok(nav_map) = nav_map else {
+        error!("Failed to get nav map!: {:?}", nav_map.err().unwrap());
+        return;
+    };
 
-            if delta.length() < 0.01 {
-                controller.intent = Vec3::ZERO;
+    let task_pool = AsyncComputeTaskPool::get();
+
+    for (entity, request) in requests_query {
+        let nav_map = nav_map.clone();
+        let request = *request;
+
+        let task_cancel_token = PathfindCancelToken::new();
+        let cloned_token = task_cancel_token.clone();
+
+        let task =
+            task_pool.spawn(async move { find_path(&nav_map, &request, &cloned_token) });
+
+        commands.entity(entity).insert(PathfindPending {
+            request,
+            task,
+            task_cancel_token,
+        });
+    }
+}
+
+// TODO: Improve cancellation logic to protect against rapid repathing locking out pathfinder
+/// Process pending requests and attach a waypoint component for finished paths
+fn collect_pathfind_requests(
+    requests_query: Query<(Entity, &mut PathfindPending, &PathfindRequest), With<Pathfinder>>,
+    mut commands: Commands,
+) {
+    for (entity, mut pathfind_pending, request) in requests_query {
+        let request_valid = pathfind_pending.request.request_id == request.request_id;
+        if !request_valid {
+            pathfind_pending.task_cancel_token.cancel();
+        }
+        
+        let mut entity_commands = commands.entity(entity);
+        entity_commands.remove::<PathfindPending>();
+        
+        let Some(result) = block_on(poll_once(&mut pathfind_pending.task)) else {
+            continue;
+        };
+
+        if request_valid {
+            entity_commands.remove::<PathfindRequest>();
+            if let Some(waypoints) = result {
+                entity_commands.insert(waypoints);
             } else {
-                controller.intent = delta.normalize();
+                info!("No path found for entity {:?}", entity);
             }
-        } else {
-            controller.intent = Vec3::ZERO;
         }
     }
 }
 
-/// Update the action state based on the movement intent
-// TODO: Remove the direct world access here
-fn update_movement_state(world: &mut World) {
-    let mut npc_query = world.query_filtered::<Entity, (
-        With<MovementController>,
-        With<ActionStateTracker>,
-        With<Pathfinder>,
-        With<ActionStateCapabilities>,
-    )>();
-    let npc_query: Vec<_> = npc_query.iter(world).collect();
-
-    for entity in npc_query {
-        let controller = world.get::<MovementController>(entity).unwrap();
-
-        let new_state: Box<dyn ActionState> = if controller.intent.length() > 0.7 {
-            Box::new(Running)
-        } else if controller.intent.length() > 0.01 {
-            Box::new(Walking)
-        } else {
-            Box::new(Idle)
-        };
-
-        let state = world.get::<ActionStateTracker>(entity).unwrap();
-        if (*new_state).type_id() == state.state_type_id() {
-            continue;
+#[derive(Clone)]
+pub struct PathfindCancelToken {
+    cancelled: Arc<AtomicBool>,
+}
+impl PathfindCancelToken {
+    pub fn new() -> Self {
+        Self {
+            cancelled: Arc::new(AtomicBool::new(false)),
         }
+    }
 
-        world.trigger(TrySetStateEvent::new(entity, new_state));
+    pub fn cancel(&self) {
+        self.cancelled.store(true, AtomicOrdering::Relaxed);
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(AtomicOrdering::Relaxed)
     }
 }
 
@@ -145,36 +190,38 @@ fn update_movement_state(world: &mut World) {
 /// Returns `None` if a path cannot be found.
 pub fn find_path(
     nav_map: &TileNavMap,
-    start: WorldCoords,
-    target: WorldCoords,
-    clearance_half_width: f32,
-    clearance_height: f32,
-) -> Option<TilePath> {
-    // TODO: account movement capabilities, add search timeout
+    request: &PathfindRequest,
+    cancel_token: &PathfindCancelToken,
+) -> Option<Waypoints> {
+    // TODO: account movement capabilities, add search timeout, add LoS caching
 
     // Sanity check
     // The code would return the correct result anyway,
     // but this early guard prevents unnecessary computation
-    if start == target {
-        return Some(TilePath::new(vec![start]));
+    if request.start == request.target {
+        return Some(Waypoints::new(vec![request.start]));
     }
 
     let mut costs = BTreeMap::new();
-    costs.insert(start, 0);
+    costs.insert(request.start, 0);
 
     let mut parents = BTreeMap::new();
 
     let mut heap = BinaryHeap::new();
     heap.push(PathfindCoordState {
         cost: 0,
-        heuristic_cost: start.distance(*target) as u32,
-        position: start,
+        heuristic_cost: request.start.distance(*request.target) as u32,
+        position: request.start,
     });
 
     // Explore frontier using min heap to explore lower cost nodes first
     while let Some(node) = heap.pop() {
+        if cancel_token.is_cancelled() {
+            return None;
+        }
+
         let PathfindCoordState { cost, position, .. } = &node;
-        if *position == target {
+        if *position == request.target {
             let mut position = position;
             let mut path = Vec::new();
 
@@ -183,14 +230,14 @@ pub fn find_path(
                 position = parent;
             }
 
-            if *position != start {
+            if *position != request.start {
                 error!("Pathfinding failed to find a path from start to target!");
                 return None;
             }
-            path.push(start);
+            path.push(request.start);
             path.reverse();
 
-            return Some(TilePath::new(path));
+            return Some(Waypoints::new(path));
         }
 
         // If we already found a better path here, skip this node
@@ -213,8 +260,8 @@ pub fn find_path(
                 && nav_map.has_line_of_sight(
                     &TileCoords::from(grandparent),
                     edge.0.end(),
-                    clearance_half_width,
-                    clearance_height,
+                    request.clearance_half_width,
+                    request.clearance_height,
                 ) {
                 let next_pos = WorldCoords::from(edge.0.end());
 
@@ -234,7 +281,7 @@ pub fn find_path(
                 )
             };
 
-            let next_heuristic_cost = next_pos.distance(*target) as u32;
+            let next_heuristic_cost = next_pos.distance(*request.target) as u32;
 
             // If the position isn't tracked yet, default to true.
             // If it is tracked, evaluate if our new cost is cheaper

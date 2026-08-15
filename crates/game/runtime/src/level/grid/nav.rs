@@ -7,6 +7,7 @@ use common::{TileCoords, WorldCoords};
 use getset::{CopyGetters, Getters};
 use physics::Collider;
 use std::collections::BTreeMap;
+use std::sync::{Arc, RwLock};
 
 pub(super) fn plugin(_app: &mut App) {}
 
@@ -40,14 +41,14 @@ const MAX_CLEARANCE: u32 = 5;
 const MAX_STEP_UP: f32 = 0.2;
 const MAX_STEP_DOWN: f32 = 0.5;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub struct TileNavMap {
     /// Nodes used for pathfinding
-    nodes: BTreeMap<TileCoords, NavNode>,
+    nodes: Arc<RwLock<BTreeMap<TileCoords, NavNode>>>,
     /// Directed graph of node connections
-    edges: BTreeMap<NavEdgeKey, NavEdge>,
+    edges: Arc<RwLock<BTreeMap<NavEdgeKey, NavEdge>>>,
     /// Map from a node to outgoing edges
-    edges_from: BTreeMap<TileCoords, Vec<NavEdgeKey>>,
+    edges_from: Arc<RwLock<BTreeMap<TileCoords, Vec<NavEdgeKey>>>>,
 }
 impl TileNavMap {
     pub fn from_map(tile_map: TileMap, tile_nav_query: TileNavQuery) -> Self {
@@ -107,21 +108,23 @@ impl TileNavMap {
         ];
 
         // Populate ground tile edges
-        for (coords, node) in nodes {
+        for (coords, node) in nodes.read().unwrap().iter() {
             if node.kind != NavNodeKind::Ground {
                 continue;
             }
 
             for dir in directions {
-                let new_coords = TileCoords::from(*coords + dir);
-                if let Some(new_node) = slf.nodes.get(&new_coords)
+                let new_coords = TileCoords::from(**coords + dir);
+                let new_node = nodes.read().unwrap().get(&new_coords).cloned();
+
+                if let Some(new_node) = new_node
                     && new_node.kind == NavNodeKind::Ground
                     && new_node.bounds.1.y - node.bounds.1.y <= MAX_STEP_UP
                     && node.bounds.1.y - new_node.bounds.1.y <= MAX_STEP_DOWN
                 {
                     slf.add_edge(
                         NavEdgeKey {
-                            start: coords,
+                            start: *coords,
                             end: new_coords,
                         },
                         NavEdge::new(NavEdgeKind::Walk, node.clearance.min(new_node.clearance)),
@@ -134,34 +137,41 @@ impl TileNavMap {
     }
 
     fn add_node(&mut self, coords: TileCoords, node: NavNode) {
-        self.nodes.insert(coords, node);
+        self.nodes.write().unwrap().insert(coords, node);
     }
 
     fn add_edge(&mut self, key: NavEdgeKey, edge: NavEdge) {
-        self.edges.insert(key.clone(), edge);
-        self.edges_from.entry(key.start).or_default().push(key);
+        self.edges.write().unwrap().insert(key.clone(), edge);
+        self.edges_from
+            .write()
+            .unwrap()
+            .entry(key.start)
+            .or_default()
+            .push(key);
     }
 
     pub fn has_node(&self, coords: &TileCoords) -> bool {
-        self.nodes.contains_key(coords)
+        self.nodes.read().unwrap().contains_key(coords)
     }
 
-    pub fn get_edges_from_tile(&self, coords: &TileCoords) -> Option<Vec<(&NavEdgeKey, &NavEdge)>> {
+    pub fn get_edges_from_tile(&self, coords: &TileCoords) -> Option<Vec<(NavEdgeKey, NavEdge)>> {
         let edges = self
             .edges_from
+            .read()
+            .unwrap()
             .get(coords)?
             .iter()
-            .map(|key| (key, &self.edges[key]))
+            .map(|key| (key.clone(), self.edges.read().unwrap()[key].clone()))
             .collect();
         Some(edges)
     }
 
-    pub fn _get_edge(&self, start: &TileCoords, end: &TileCoords) -> Option<&NavEdge> {
+    pub fn _get_edge(&self, start: &TileCoords, end: &TileCoords) -> Option<NavEdge> {
         let key = NavEdgeKey {
             start: *start,
             end: *end,
         };
-        self.edges.get(&key)
+        self.edges.read().unwrap().get(&key).cloned()
     }
 
     /// Check for line-of-sight between two tiles with the given clearance.
@@ -206,7 +216,8 @@ impl TileNavMap {
             if !self.has_node(coord) {
                 return false;
             }
-            let node = self.nodes.get(coord).unwrap();
+            let nodes = self.nodes.read().unwrap();
+            let node = nodes.get(coord).unwrap();
             node.kind == NavNodeKind::Ground && node.clearance >= clearance_height
         })
     }
@@ -381,22 +392,32 @@ mod debug_helpers {
     use super::*;
 
     impl TileNavMap {
-        pub fn debug_node_positions(&self) -> impl Iterator<Item = Vec3> + '_ {
+        pub fn debug_node_positions(&self) -> Vec<Vec3> {
             self.nodes
+                .read()
+                .unwrap()
                 .iter()
                 .map(|(coords, node)| nav_node_debug_position(coords, node))
+                .collect()
         }
 
-        pub fn debug_edge_segments(&self) -> impl Iterator<Item = (Vec3, Vec3)> + '_ {
-            self.edges.keys().filter_map(|key| {
-                let start = self.nodes.get(&key.start)?;
-                let end = self.nodes.get(&key.end)?;
+        pub fn debug_edge_segments(&self) -> Vec<(Vec3, Vec3)> {
+            self.edges
+                .read()
+                .unwrap()
+                .keys()
+                .filter_map(|key| {
+                    let nodes = self.nodes.read().unwrap();
 
-                Some((
-                    nav_node_debug_position(&key.start, start),
-                    nav_node_debug_position(&key.end, end),
-                ))
-            })
+                    let start = nodes.get(&key.start)?;
+                    let end = nodes.get(&key.end)?;
+
+                    Some((
+                        nav_node_debug_position(&key.start, start),
+                        nav_node_debug_position(&key.end, end),
+                    ))
+                })
+                .collect()
         }
     }
 

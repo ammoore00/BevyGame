@@ -1,4 +1,4 @@
-use crate::characters::npc::ai::pathfinding::path::{Path, PathfinderState, find_path};
+use crate::characters::npc::ai::pathfinding::pathfinder::{find_path, PathfindRequest, PathfinderState, Waypoints};
 use crate::characters::npc::ai::pathfinding::{
     PathfinderQuery, PathfinderQueryItem, TARGET_REACHED_THRESHOLD,
 };
@@ -8,6 +8,7 @@ use bevy::prelude::*;
 use common::TileCoords;
 use rand::{Rng, RngExt};
 use std::time::Duration;
+use bevy::asset::uuid::Uuid;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -42,6 +43,7 @@ fn update_pathfinder_wander_state(
     mut pathfinder_query: Query<(PathfinderQuery, &mut RandomWander)>,
     nav_map_query: Query<&TileNavMap>,
     time: Res<Time>,
+    mut commands: Commands,
 ) {
     let nav_map = nav_map_query.single();
     let Ok(nav_map) = nav_map else {
@@ -51,21 +53,28 @@ fn update_pathfinder_wander_state(
 
     for (mut pathfinder, mut wander_state) in pathfinder_query.iter_mut() {
         if pathfinder.ai_state.current == AiStateKind::Wander {
-            update_wander_path(pathfinder, &mut wander_state, nav_map, *time);
+            update_wander_path(pathfinder, &mut wander_state, nav_map, *time, commands.reborrow());
         } else if pathfinder.ai_state.prev == AiStateKind::Wander {
             pathfinder.pathfinder.state = PathfinderState::Idle;
         }
     }
 }
 
+// TODO: Some of this behavior should be generic pathfinding behavior
 fn update_wander_path(
     data: PathfinderQueryItem,
     wander_state: &mut RandomWander,
     nav_map: &TileNavMap,
     time: Time,
+    mut commands: Commands,
 ) {
     let PathfinderQueryItem {
+        entity,
         mut pathfinder,
+
+        pending_task,
+        waypoints,
+
         pos,
         collider,
         ..
@@ -73,67 +82,73 @@ fn update_wander_path(
 
     wander_state.current_time_in_state += time.delta();
 
-    match &mut pathfinder.state {
-        PathfinderState::Idle => {
-            if wander_state.current_time_in_state >= wander_state.max_idle_time {
-                wander_state.current_time_in_state = Duration::ZERO;
-                pathfinder.state = PathfinderState::Searching;
-                info!("NPC started searching");
-            }
-        }
-        PathfinderState::Searching => {
-            let tile_coords = TileCoords::from(pos.0);
-            let tile_coords = *tile_coords - IVec3::Y;
+    match (pathfinder.state, pending_task, waypoints) {
+        // If we have a path, move towards it
+        (_, _, Some(mut waypoints)) => {
+            let target = waypoints.next_position;
+            pathfinder.state = PathfinderState::Moving;
 
-            let target = select_random_wander_target(
-                nav_map,
-                tile_coords.into(),
-                wander_state.wander_range,
-                rand::rng(),
-            );
-
-            let collider_size = collider.size();
-            let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
-            let clearance_height = collider_size.y;
-
-            if let Some(tile_path) = find_path(
-                nav_map,
-                tile_coords.into(),
-                target.into(),
-                clearance_half_width,
-                clearance_height,
-            ) {
-                wander_state.current_time_in_state = Duration::ZERO;
-                let tile_path = Path::Wander(tile_path);
-
-                info!(
-                    "NPC found target: {:?}, starting movement",
-                    tile_path.get_path().next_position
-                );
-                pathfinder.state = PathfinderState::Moving(tile_path);
-            }
-        }
-        PathfinderState::Moving(tile_path) => {
-            let tile_path = tile_path.get_path_mut();
-            let target = tile_path.next_position;
-
+            // If the path is invalid, clear it
             let Some(target) = target else {
-                error!("Invalid NPC target, stopping movement");
+                commands.entity(entity).remove::<Waypoints>();
+                wander_state.current_time_in_state = Duration::ZERO;
                 pathfinder.state = PathfinderState::Idle;
+                error!("Invalid NPC target, stopping movement");
                 return;
             };
 
             let distance = target.distance(*pos.0 - Vec3::Y);
 
+            // If we are within the threshold of the next waypoint
             if distance <= TARGET_REACHED_THRESHOLD {
-                if target == tile_path.target {
+                // If it is the last waypoint, clear the path
+                if target == waypoints.target {
+                    commands.entity(entity).remove::<Waypoints>();
                     wander_state.current_time_in_state = Duration::ZERO;
                     pathfinder.state = PathfinderState::Idle;
                     info!("NPC reached target! Stopping movement");
                 } else {
-                    tile_path.increment_position();
+                    // Otherwise, increment the path to the next waypoint
+                    waypoints.increment_position();
                 }
             }
+        }
+        // If we are idle with no pending task and no current path,
+        //  we should check against the idle timer
+        //  then request a new path
+        (PathfinderState::Idle, None, None) => {
+            if wander_state.current_time_in_state >= wander_state.max_idle_time {
+                wander_state.current_time_in_state = Duration::ZERO;
+
+                let tile_coords = TileCoords::from(pos.0);
+                let tile_coords = *tile_coords - IVec3::Y;
+
+                let target = select_random_wander_target(
+                    nav_map,
+                    tile_coords.into(),
+                    wander_state.wander_range,
+                    rand::rng(),
+                );
+
+                let collider_size = collider.size();
+                let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
+                let clearance_height = collider_size.y;
+
+                let request = PathfindRequest::new(tile_coords.into(), target.into(), clearance_half_width, clearance_height);
+                commands.entity(entity).insert(request);
+
+                info!("NPC started searching");
+            }
+        }
+        // If we are idle, don't have a path, but do have a queued pathfinding request, continue waiting
+        (PathfinderState::Idle, Some(_), None) => {
+            info!("NPC still searching for path")
+        }
+        // If we are somehow in the moving state but don't have a path, set the state to idle
+        (PathfinderState::Moving, _, None) => {
+            wander_state.current_time_in_state = Duration::ZERO;
+            pathfinder.state = PathfinderState::Idle;
+            info!("NPC has no target, setting to idle!");
         }
     }
 }
