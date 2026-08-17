@@ -1,6 +1,6 @@
 use crate::characters::npc::ai::AiState;
 use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindPending, Pathfinder, Waypoints};
-use crate::characters::npc::ai::pathfinding::wander::RandomWander;
+use crate::characters::npc::ai::pathfinding::wander::WanderData;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::WorldPosition;
@@ -23,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 pub(super) fn pathfinder_scene() -> impl Scene {
     bsn! [
         Pathfinder
-        RandomWander
+        WanderData
     ]
 }
 

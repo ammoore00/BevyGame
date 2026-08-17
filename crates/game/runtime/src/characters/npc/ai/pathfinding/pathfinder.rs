@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BinaryHeap};
 use std::fmt::Debug;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
+use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -22,12 +23,17 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pathfinder {
     pub state: PathfinderState,
+    pub time_in_state: Duration,
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PathfinderState {
+    /// Pathfinder is idle and open to new requests
     #[default]
     Idle,
+    /// Pathfinder is currently dispatching to its current pathfinding strategy
+    Dispatch,
+    /// Pathfinder has a path and is moving towards it
     Moving,
 }
 
