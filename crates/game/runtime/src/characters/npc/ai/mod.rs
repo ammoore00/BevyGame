@@ -45,7 +45,7 @@ pub struct AiState {
 pub enum AiStateKind {
     #[default]
     Wander,
-    Follow,
+    _Follow,
 }
 
 fn update_prev_state(query: Query<&mut AiState>) {

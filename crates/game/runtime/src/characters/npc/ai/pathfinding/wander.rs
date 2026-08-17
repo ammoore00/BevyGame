@@ -1,4 +1,4 @@
-use crate::characters::npc::ai::pathfinding::pathfinder::{find_path, PathfindRequest, PathfinderState, Waypoints};
+use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindRequest, PathfinderState, Waypoints};
 use crate::characters::npc::ai::pathfinding::{
     PathfinderQuery, PathfinderQueryItem, TARGET_REACHED_THRESHOLD,
 };
@@ -8,7 +8,6 @@ use bevy::prelude::*;
 use common::TileCoords;
 use rand::{Rng, RngExt};
 use std::time::Duration;
-use bevy::asset::uuid::Uuid;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

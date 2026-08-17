@@ -4,7 +4,7 @@ use crate::level::grid::nav::NavEdgeKind;
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
-use common::{TileCoords, WorldCoords, marker};
+use common::{TileCoords, WorldCoords};
 use getset::Getters;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
