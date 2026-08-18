@@ -1,4 +1,4 @@
-use crate::characters::npc::ai::pathfinding::{PathfinderQuery, PathfinderQueryItem, PathfinderSystems};
+use crate::characters::npc::ai::pathfinding::{PathfinderQuery, PathfinderSystems};
 use crate::debug::TileNavMap;
 use bevy::prelude::*;
 use common::TileCoords;
@@ -48,25 +48,15 @@ fn wander_dispatch(
     };
 
     for (pathfinder_data, wander_data) in pathfinder_query {
-        let PathfinderQueryItem {
-            entity,
-
-            pathfinder,
-
-            pos,
-            collider,
-            ..
-        } = pathfinder_data;
-
-        if pathfinder.state() != PathfinderState::Dispatch {
+        if pathfinder_data.pathfinder.state() != PathfinderState::Dispatch {
             continue;
         }
 
-        if pathfinder.time_in_state() < wander_data.max_idle_time {
+        if pathfinder_data.pathfinder.time_in_state() < wander_data.max_idle_time {
             continue;
         }
 
-        let tile_coords = TileCoords::from(pos.0);
+        let tile_coords = TileCoords::from(pathfinder_data.pos.0);
         let tile_coords = *tile_coords - IVec3::Y;
 
         let target = select_random_wander_target(
@@ -76,12 +66,12 @@ fn wander_dispatch(
             rand::rng(),
         );
 
-        let collider_size = collider.size();
+        let collider_size = pathfinder_data.collider.size();
         let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
         let clearance_height = collider_size.y;
 
         let request = PathfindRequest::new(tile_coords.into(), target.into(), clearance_half_width, clearance_height);
-        commands.entity(entity).insert(request);
+        commands.entity(pathfinder_data.entity).insert(request);
 
         info!("NPC started searching");
     }
