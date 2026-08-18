@@ -1,14 +1,17 @@
-use crate::characters::npc::ai::AiSystems;
+use crate::characters::npc::ai::pathfinding::{
+    PathfinderQuery, PathfinderQueryItem, PathfinderSystems, TARGET_REACHED_THRESHOLD,
+};
 use crate::debug::TileNavMap;
 use crate::level::grid::nav::NavEdgeKind;
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
 use common::{TileCoords, WorldCoords};
-use getset::Getters;
+use getset::{CopyGetters, Getters};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
 use std::fmt::Debug;
+use std::ops::AddAssign;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 use std::time::Duration;
@@ -16,14 +19,33 @@ use std::time::Duration;
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (process_pathfind_requests, collect_pathfind_requests).in_set(AiSystems::Calculate),
+        (
+            update_pathfinder_state.in_set(PathfinderSystems::Update),
+            (process_pathfind_requests, collect_pathfind_requests)
+                .in_set(PathfinderSystems::Collect),
+        ),
     );
 }
 
-#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash, CopyGetters)]
 pub struct Pathfinder {
-    pub state: PathfinderState,
-    pub time_in_state: Duration,
+    #[getset(get_copy = "pub")]
+    state: PathfinderState,
+    #[getset(get_copy = "pub")]
+    time_in_state: Duration,
+}
+impl Pathfinder {
+    pub fn set_state(&mut self, state: PathfinderState) {
+        self.state = state;
+        self.time_in_state = Duration::ZERO;
+    }
+
+    pub fn increment_timer<T>(&mut self, delta: T)
+    where
+        Duration: AddAssign<T>,
+    {
+        self.time_in_state.add_assign(delta);
+    }
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -31,7 +53,9 @@ pub enum PathfinderState {
     /// Pathfinder is idle and open to new requests
     #[default]
     Idle,
-    /// Pathfinder is currently dispatching to its current pathfinding strategy
+    /// Pathfinder is currently searching for a path
+    Searching,
+    /// Pathfinder is ready for a new path
     Dispatch,
     /// Pathfinder has a path and is moving towards it
     Moving,
@@ -51,7 +75,12 @@ pub struct PathfindRequest {
     request_id: Uuid,
 }
 impl PathfindRequest {
-    pub fn new(start: WorldCoords, target: WorldCoords, clearance_half_width: f32, clearance_height: f32) -> Self {
+    pub fn new(
+        start: WorldCoords,
+        target: WorldCoords,
+        clearance_half_width: f32,
+        clearance_height: f32,
+    ) -> Self {
         Self {
             start,
             target,
@@ -105,9 +134,98 @@ impl Waypoints {
     }
 }
 
+/// Updates pathfinder state and signals for pathing dispatch
+fn update_pathfinder_state(
+    mut pathfinder_query: Query<PathfinderQuery>,
+    time: Res<Time>,
+    mut commands: Commands,
+) {
+    for data in pathfinder_query.iter_mut() {
+        let PathfinderQueryItem {
+            entity,
+            mut pathfinder,
+
+            pending_task,
+            waypoints,
+
+            pos,
+            ..
+        } = data;
+
+        pathfinder.increment_timer(time.delta());
+
+        // If we have a path, move towards it and return
+        if let Some(mut waypoints) = waypoints {
+            let target = waypoints.next_position;
+
+            // If the path is invalid, clear it
+            let Some(target) = target else {
+                commands.entity(entity).remove::<Waypoints>();
+                pathfinder.set_state(PathfinderState::Idle);
+                error!("Invalid NPC target, stopping movement");
+                return;
+            };
+
+            let distance = target.distance(*pos.0 - Vec3::Y);
+
+            // If we are within the threshold of the next waypoint
+            if distance <= TARGET_REACHED_THRESHOLD {
+                // If it is the last waypoint, clear the path
+                if target == waypoints.target {
+                    commands.entity(entity).remove::<Waypoints>();
+                    pathfinder.set_state(PathfinderState::Idle);
+                    info!("NPC reached target! Stopping movement");
+                } else {
+                    // Otherwise, increment the path to the next waypoint
+                    waypoints.increment_position();
+                }
+            }
+
+            pathfinder.set_state(PathfinderState::Moving);
+
+            return;
+        }
+
+        // If we don't have a path, check the current pathfinder state and any pending pathfind requests
+        match pathfinder.state() {
+            // If we are idle with no pending task and no current path,
+            //  we should check against the idle timer
+            //  then request a new path
+            PathfinderState::Idle => {
+                // If we somehow got into the idle state while searching, something went wrong
+                // Log the error and correct the state
+                if pending_task.is_some() {
+                    error!("NPC in Idle pathfind state while executing pathfinding request!");
+                    pathfinder.set_state(PathfinderState::Searching);
+                    return;
+                }
+
+                pathfinder.set_state(PathfinderState::Dispatch);
+            }
+            // Dispatch is handled on a per-pathfinding strategy basis, so no extra logic is necessary
+            // besides a check for erroneous state
+            PathfinderState::Dispatch => {
+                if pending_task.is_some() {
+                    pathfinder.set_state(PathfinderState::Searching);
+                    error!("NPC in Dispatch pathfind state while executing pathfinding request!");
+                }
+            }
+            // If we are still waiting for a path, do nothing
+            PathfinderState::Searching => {
+                info!("NPC still searching!");
+            }
+            // If we are somehow in the moving state but don't have a path, set the state to idle
+            PathfinderState::Moving => {
+                pathfinder.set_state(PathfinderState::Idle);
+                info!("NPC has no path, setting to idle!");
+            }
+        }
+    }
+}
+
 /// Dispatch async tasks to find paths for pending requests.
 fn process_pathfind_requests(
-    requests_query: Query<(Entity, &PathfindRequest), (With<Pathfinder>, Without<PathfindPending>)>,
+    requests_query: Query<(Entity, &mut Pathfinder, &PathfindRequest), Without<PathfindPending>>,
     nav_map_query: Query<&TileNavMap>,
     mut commands: Commands,
 ) {
@@ -119,21 +237,22 @@ fn process_pathfind_requests(
 
     let task_pool = AsyncComputeTaskPool::get();
 
-    for (entity, request) in requests_query {
+    for (entity, mut pathfinder, request) in requests_query {
         let nav_map = nav_map.clone();
         let request = *request;
 
         let task_cancel_token = PathfindCancelToken::new();
         let cloned_token = task_cancel_token.clone();
 
-        let task =
-            task_pool.spawn(async move { find_path(&nav_map, &request, &cloned_token) });
+        let task = task_pool.spawn(async move { find_path(&nav_map, &request, &cloned_token) });
 
         commands.entity(entity).insert(PathfindPending {
             request,
             task,
             task_cancel_token,
         });
+
+        pathfinder.set_state(PathfinderState::Searching);
     }
 }
 
@@ -148,10 +267,10 @@ fn collect_pathfind_requests(
         if !request_valid {
             pathfind_pending.task_cancel_token.cancel();
         }
-        
+
         let mut entity_commands = commands.entity(entity);
         entity_commands.remove::<PathfindPending>();
-        
+
         let Some(result) = block_on(poll_once(&mut pathfind_pending.task)) else {
             continue;
         };

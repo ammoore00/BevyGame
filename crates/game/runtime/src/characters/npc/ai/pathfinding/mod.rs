@@ -1,6 +1,6 @@
-use crate::characters::npc::ai::AiState;
 use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindPending, Pathfinder, Waypoints};
-use crate::characters::npc::ai::pathfinding::wander::WanderData;
+use crate::characters::npc::ai::pathfinding::wander::{WanderData, Wandering};
+use crate::characters::npc::ai::{AiState, AiSystems};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::WorldPosition;
@@ -18,12 +18,34 @@ pub(super) fn plugin(app: &mut App) {
         pathfinder::plugin,
         wander::plugin,
     ));
+
+    app.configure_sets(
+        Update,
+        (
+            PathfinderSystems::Update,
+            PathfinderSystems::Dispatch,
+            PathfinderSystems::Collect,
+        )
+            .chain()
+            .in_set(AiSystems::Calculate),
+    );
+}
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum PathfinderSystems {
+    /// Update pathfinding state
+    Update,
+    /// Execute dispatched pathfinding
+    Dispatch,
+    /// Collect any generate requests
+    Collect,
 }
 
 pub(super) fn pathfinder_scene() -> impl Scene {
     bsn! [
         Pathfinder
         WanderData
+        Wandering
     ]
 }
 
