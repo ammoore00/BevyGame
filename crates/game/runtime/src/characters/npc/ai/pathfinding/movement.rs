@@ -1,10 +1,10 @@
-use bevy::prelude::*;
-use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
-use common::WorldPosition;
-use physics::MovementController;
 use crate::characters::npc::ai::AiSystems;
 use crate::characters::npc::ai::pathfinding::pathfinder::{Pathfinder, Waypoints};
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
+use assets::action_states::{ActionState, ActionStateCapabilities, Idle, Running, Walking};
+use bevy::prelude::*;
+use common::WorldPosition;
+use physics::MovementController;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -17,7 +17,10 @@ pub(super) fn plugin(app: &mut App) {
 
 /// Update the movement controller based on what the pathfinder wants
 fn update_movement_intent(
-    pathfinder_query: Query<(&mut MovementController, &WorldPosition, Option<&Waypoints>), With<Pathfinder>>,
+    pathfinder_query: Query<
+        (&mut MovementController, &WorldPosition, Option<&Waypoints>),
+        With<Pathfinder>,
+    >,
 ) {
     for (mut controller, pos, waypoints) in pathfinder_query {
         if let Some(waypoints) = waypoints {
@@ -37,19 +40,14 @@ fn update_movement_intent(
 }
 
 /// Update the action state based on the movement intent
-// TODO: Remove the direct world access here
-fn update_movement_state(world: &mut World) {
-    let mut npc_query = world.query_filtered::<Entity, (
-        With<MovementController>,
-        With<ActionStateTracker>,
-        With<Pathfinder>,
-        With<ActionStateCapabilities>,
-    )>();
-    let npc_query: Vec<_> = npc_query.iter(world).collect();
-
-    for entity in npc_query {
-        let controller = world.get::<MovementController>(entity).unwrap();
-
+fn update_movement_state(
+    npc_query: Query<
+        (Entity, &MovementController, &ActionStateTracker),
+        (With<Pathfinder>, With<ActionStateCapabilities>),
+    >,
+    mut commands: Commands,
+) {
+    for (entity, controller, state) in &npc_query {
         let new_state: Box<dyn ActionState> = if controller.intent.length() > 0.7 {
             Box::new(Running)
         } else if controller.intent.length() > 0.01 {
@@ -58,11 +56,10 @@ fn update_movement_state(world: &mut World) {
             Box::new(Idle)
         };
 
-        let state = world.get::<ActionStateTracker>(entity).unwrap();
         if (*new_state).type_id() == state.state_type_id() {
             continue;
         }
 
-        world.trigger(TrySetStateEvent::new(entity, new_state));
+        commands.trigger(TrySetStateEvent::new(entity, new_state));
     }
 }
