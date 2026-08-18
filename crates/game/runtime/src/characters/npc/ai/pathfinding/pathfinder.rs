@@ -1,5 +1,5 @@
 use crate::characters::npc::ai::pathfinding::{
-    PathfinderQuery, PathfinderQueryItem, PathfinderSystems,
+    PathfinderData, PathfinderDataItem, PathfinderSystems,
 };
 use crate::debug::TileNavMap;
 use crate::level::LEVEL_LOADED;
@@ -121,7 +121,7 @@ pub struct CancelPathing(pub Entity);
 
 fn on_cancel_pathing(
     event: On<CancelPathing>,
-    mut pending_pathfind_query: Query<PathfinderQuery>,
+    mut pending_pathfind_query: Query<PathfinderData>,
     mut commands: Commands,
 ) {
     let Ok(mut data) = pending_pathfind_query.get_mut(event.0) else {
@@ -170,12 +170,12 @@ impl Waypoints {
 
 /// Updates pathfinder state and signals for pathing dispatch
 fn update_pathfinder_state(
-    mut pathfinder_query: Query<PathfinderQuery>,
+    mut pathfinder_query: Query<PathfinderData>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
     for data in pathfinder_query.iter_mut() {
-        let PathfinderQueryItem {
+        let PathfinderDataItem {
             entity,
             mut pathfinder,
 

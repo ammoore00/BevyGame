@@ -49,7 +49,7 @@ pub(super) fn pathfinder_scene() -> impl Scene {
 
 #[derive(QueryData)]
 #[query_data(mutable)]
-pub struct PathfinderQuery {
+pub struct PathfinderData {
     pub entity: Entity,
 
     pub pathfinder: &'static mut Pathfinder,

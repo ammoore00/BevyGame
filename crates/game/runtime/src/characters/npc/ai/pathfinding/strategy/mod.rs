@@ -12,10 +12,10 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 trait PathfindStrategyRegistry {
-    fn register_pathfind_strategy<T: PathfindStrategy + Component + Copy>(&mut self);
+    fn register_pathfind_strategy<T: PathfindStrategy + Component>(&mut self);
 }
 impl PathfindStrategyRegistry for App {
-    fn register_pathfind_strategy<T: PathfindStrategy + Component + Copy>(&mut self) {
+    fn register_pathfind_strategy<T: PathfindStrategy + Component>(&mut self) {
         self.add_observer(on_pathfind_strategy_added::<T>);
         self.add_observer(on_pathfind_strategy_removed::<T>);
 
@@ -35,6 +35,8 @@ fn on_pathfind_strategy_added<T: PathfindStrategy + Component>(
     event: On<Add, T>,
     mut message_writer: MessageWriter<RemoveOtherStrategies<T>>,
 ) {
+    // Conversion from event to messages used here to allow for exclusive world access,
+    // which is necessary for reflection but isn't allowed in the observer system
     message_writer.write(RemoveOtherStrategies::new(event.entity));
 }
 
@@ -45,13 +47,18 @@ fn on_pathfind_strategy_removed<T: PathfindStrategy + Component>(
     commands.entity(event.entity).trigger(CancelPathing);
 }
 
-#[derive(Message, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_new::new)]
+#[derive(Message, Debug, PartialEq, Eq, Hash, derive_new::new)]
 struct RemoveOtherStrategies<T: PathfindStrategy + Component> {
     entity: Entity,
     _phantom_data: PhantomData<T>,
 }
+// Manual implementations so that T doesn't need to be Clone or Copy
+impl <T: PathfindStrategy + Component> Clone for RemoveOtherStrategies<T> {
+    fn clone(&self) -> Self { *self }
+}
+impl <T: PathfindStrategy + Component> Copy for RemoveOtherStrategies<T> {}
 
-fn process_strategy_messages<T: PathfindStrategy + Component + Copy>(
+fn process_strategy_messages<T: PathfindStrategy + Component>(
     world: &mut World,
     message_reader: &mut SystemState<MessageReader<RemoveOtherStrategies<T>>>,
 ) {
@@ -65,6 +72,7 @@ fn process_strategy_messages<T: PathfindStrategy + Component + Copy>(
     }
 }
 
+/// Use reflection to find any existing `PathfindStrategy` components on the entity that do not match the type T and remove them
 fn remove_existing_strategies<T: PathfindStrategy + Component>(entity: Entity, world: &mut World) {
     let new_component_id = world.register_component::<T>();
 

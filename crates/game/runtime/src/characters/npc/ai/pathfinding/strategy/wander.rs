@@ -2,7 +2,7 @@ use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindRequest, Pathf
 use crate::characters::npc::ai::pathfinding::strategy::{
     PathfindStrategy, PathfindStrategyRegistry, ReflectPathfindStrategy,
 };
-use crate::characters::npc::ai::pathfinding::{PathfinderQuery, PathfinderSystems};
+use crate::characters::npc::ai::pathfinding::{PathfinderData, PathfinderSystems};
 use crate::debug::TileNavMap;
 use bevy::prelude::*;
 use common::TileCoords;
@@ -44,7 +44,7 @@ impl Default for WanderData {
 }
 
 fn wander_dispatch(
-    pathfinder_query: Query<(PathfinderQuery, &WanderData), With<Wandering>>,
+    pathfinder_query: Query<(PathfinderData, &WanderData), With<Wandering>>,
     nav_map_query: Query<&TileNavMap>,
     mut commands: Commands,
 ) {
