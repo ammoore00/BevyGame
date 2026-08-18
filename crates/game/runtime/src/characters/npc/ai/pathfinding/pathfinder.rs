@@ -1,7 +1,8 @@
 use crate::characters::npc::ai::pathfinding::{
-    PathfinderQuery, PathfinderQueryItem, PathfinderSystems, TARGET_REACHED_THRESHOLD,
+    PathfinderQuery, PathfinderQueryItem, PathfinderSystems,
 };
 use crate::debug::TileNavMap;
+use crate::level::LEVEL_LOADED;
 use crate::level::grid::nav::NavEdgeKind;
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
@@ -25,7 +26,11 @@ pub(super) fn plugin(app: &mut App) {
                 .in_set(PathfinderSystems::Collect),
         ),
     );
+
+    app.add_observer(on_cancel_pathing.run_if(in_state(LEVEL_LOADED)));
 }
+
+pub const TARGET_REACHED_THRESHOLD: f32 = 0.2;
 
 #[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash, CopyGetters)]
 pub struct Pathfinder {
@@ -97,11 +102,40 @@ pub struct PathfindPending {
     task: Task<Option<Waypoints>>,
     task_cancel_token: PathfindCancelToken,
 }
+impl PathfindPending {
+    pub fn cancel(&mut self) {
+        self.task_cancel_token.cancel();
+    }
+}
 impl Debug for PathfindPending {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PathfindPending")
             .field("request", &self.request)
             .finish()
+    }
+}
+
+/// Cancel the current path, including any pending pathfinding requests and tasks.
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CancelPathing(pub Entity);
+
+fn on_cancel_pathing(
+    event: On<CancelPathing>,
+    mut pending_pathfind_query: Query<PathfinderQuery>,
+    mut commands: Commands,
+) {
+    let Ok(mut data) = pending_pathfind_query.get_mut(event.0) else {
+        error!("Cannot cancel pathfinding for an entity without a pathfinder!");
+        return;
+    };
+
+    data.pathfinder.set_state(PathfinderState::Idle);
+    commands
+        .entity(event.0)
+        .remove::<(Waypoints, PathfindRequest)>();
+
+    if let Some(mut pending) = data.pending_task {
+        pending.cancel();
     }
 }
 

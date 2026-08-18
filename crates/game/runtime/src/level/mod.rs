@@ -38,6 +38,8 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
+pub const LEVEL_LOADED: LevelSpawnState = LevelSpawnState::Finished;
+
 /// Systems that should run only after the level has been loaded
 #[derive(SystemSet, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct LevelLoadedSystems;

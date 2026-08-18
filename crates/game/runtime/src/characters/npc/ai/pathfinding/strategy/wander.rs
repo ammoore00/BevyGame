@@ -1,21 +1,28 @@
+use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindRequest, PathfinderState};
+use crate::characters::npc::ai::pathfinding::strategy::{
+    PathfindStrategy, PathfindStrategyRegistry, ReflectPathfindStrategy,
+};
 use crate::characters::npc::ai::pathfinding::{PathfinderQuery, PathfinderSystems};
 use crate::debug::TileNavMap;
 use bevy::prelude::*;
 use common::TileCoords;
 use rand::{Rng, RngExt};
 use std::time::Duration;
-use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindRequest, PathfinderState};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, wander_dispatch.in_set(PathfinderSystems::Dispatch));
+
+    app.register_pathfind_strategy::<Wandering>();
 }
 
 const DEFAULT_WANDER_RANGE: u32 = 5;
 const DEFAULT_MAX_IDLE_TIME: u64 = 1;
 const DEFAULT_MAX_MOVEMENT_TIME: u64 = 10;
 
-#[derive(Component, Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
+#[derive(Component, Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Reflect)]
+#[reflect(PathfindStrategy)]
 pub struct Wandering;
+impl PathfindStrategy for Wandering {}
 
 /// Stores information about what behavior the NPC should use while wandering.
 ///
@@ -70,7 +77,12 @@ fn wander_dispatch(
         let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
         let clearance_height = collider_size.y;
 
-        let request = PathfindRequest::new(tile_coords.into(), target.into(), clearance_half_width, clearance_height);
+        let request = PathfindRequest::new(
+            tile_coords.into(),
+            target.into(),
+            clearance_half_width,
+            clearance_height,
+        );
         commands.entity(pathfinder_data.entity).insert(request);
 
         info!("NPC started searching");
