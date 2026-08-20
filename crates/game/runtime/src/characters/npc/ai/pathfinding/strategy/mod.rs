@@ -110,3 +110,70 @@ fn remove_existing_strategies<T: PathfindStrategy + Component>(entity: Entity, w
         world.entity_mut(entity).remove_by_id(comp_id);
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[derive(Component, Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Reflect)]
+    #[reflect(PathfindStrategy)]
+    pub struct TestStrategy;
+    impl PathfindStrategy for TestStrategy {}
+
+    #[derive(Component, Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Reflect)]
+    #[reflect(PathfindStrategy)]
+    pub struct TestStrategyTwo;
+    impl PathfindStrategy for TestStrategyTwo {}
+
+    fn app() -> App {
+        let mut app = App::new();
+
+        app.register_pathfind_strategy::<TestStrategy>();
+        app.register_pathfind_strategy::<TestStrategyTwo>();
+
+        app
+    }
+
+    #[test]
+    fn test_add_strategies() {
+        // GIVEN
+        // A pathfinder without a current active strategy
+        let mut app = app();
+        let entity = app.world_mut().spawn(()).id();
+
+        // WHEN
+        // We add a new one
+        app.world_mut().entity_mut(entity).insert(TestStrategy);
+
+        // And then run systems
+        app.update();
+
+        // THEN
+        // The new one should be added
+        assert!(app.world().entity(entity).get::<TestStrategy>().is_some());
+        // And the other strategy should not be added
+        assert!(app.world().entity(entity).get::<TestStrategyTwo>().is_none());
+    }
+
+    #[test]
+    fn test_remove_existing_strategies() {
+        // GIVEN
+        // A pathfinder with a current active strategy
+        let mut app = app();
+        let entity = app.world_mut().spawn(TestStrategy).id();
+        app.update();
+
+        // WHEN
+        // We add a different one
+        app.world_mut().entity_mut(entity).insert(TestStrategyTwo);
+
+        // And then run systems
+        app.update();
+
+        // THEN
+        // The new one should be added
+        assert!(app.world().entity(entity).get::<TestStrategyTwo>().is_some());
+        // And the old one should be removed
+        assert!(app.world().entity(entity).get::<TestStrategy>().is_none());
+    }
+}
