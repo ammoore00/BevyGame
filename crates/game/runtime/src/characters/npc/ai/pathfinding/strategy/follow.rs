@@ -1,6 +1,4 @@
-use crate::characters::npc::ai::pathfinding::pathfinder::{
-    PathfinderState, TARGET_REACHED_THRESHOLD,
-};
+use crate::characters::npc::ai::pathfinding::pathfinder::{CancelPathing, PathfinderState, TARGET_REACHED_THRESHOLD};
 use crate::characters::npc::ai::pathfinding::strategy::{
     PathfindStrategy, PathfindStrategyRegistry, ReflectPathfindStrategy,
 };
@@ -63,20 +61,18 @@ struct FollowerState {
 impl FollowerState {
     fn should_re_path(&self) -> bool {
         self.re_path_flag
-            || self
-                .re_path_timer
-                .as_ref()
-                .is_some_and(|timer| timer.is_finished())
     }
 
-    fn on_re_path(&mut self) {
-        // If this was a manual re-path, reset the timer
-        // Otherwise, the timer will reset itself
-        if self.re_path_flag
-            && let Some(timer) = self.re_path_timer.as_mut()
-        {
+    /// Call for a re-path the next time the pathfinder is checked
+    fn trigger_re_path(&mut self) {
+        if let Some(timer) = self.re_path_timer.as_mut() {
             timer.reset()
         }
+        self.re_path_flag = true;
+    }
+
+    /// Clear the flag once a re-path has been performed
+    fn on_re_path(&mut self) {
         self.re_path_flag = false;
     }
 }
@@ -131,6 +127,10 @@ fn update_follower_state(pathfinder_query: Query<(&FollowerData, &mut FollowerSt
             // Trigger an immediate re-path since we won't have any path yet
             follower_state.re_path_flag = true;
         }
+
+        if follower_state.re_path_timer.as_ref().unwrap().is_finished() {
+            follower_state.trigger_re_path();
+        }
     }
 }
 
@@ -168,13 +168,18 @@ pub struct GainedTarget {
 
 fn on_gained_target(
     event: On<GainedTarget>,
-    follower_query: Query<
-        (PathfinderData, &mut FollowerState),
+    mut follower_query: Query<
+        &mut FollowerState,
         (With<Following>, With<FollowerData>),
     >,
-    target_query: Query<&WorldPosition>,
 ) {
-    todo!()
+    let Ok(mut follower_state) = follower_query.get_mut(event.entity) else {
+        error!("Cannot gain target without appropriate follower data!");
+        return;
+    };
+
+    follower_state.target = Some(event.target);
+    follower_state.trigger_re_path();
 }
 
 #[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -184,10 +189,17 @@ pub struct LostTarget {
 
 fn on_lost_target(
     event: On<LostTarget>,
-    follower_query: Query<
-        (PathfinderData, &mut FollowerState),
+    mut follower_query: Query<
+        (Entity, &mut FollowerState),
         (With<Following>, With<FollowerData>),
     >,
+    mut commands: Commands,
 ) {
-    todo!()
+    let Ok((entity, mut follower_state)) = follower_query.get_mut(event.entity) else {
+        error!("Cannot gain target without appropriate follower data!");
+        return;
+    };
+
+    follower_state.target = None;
+    commands.entity(entity).trigger(CancelPathing);
 }
