@@ -3,7 +3,6 @@ use crate::characters::npc::ai::pathfinding::pathfinder::CancelPathing;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use std::any::TypeId;
-use std::collections::HashMap;
 use std::marker::PhantomData;
 
 pub mod follow;
@@ -159,7 +158,7 @@ mod test {
         // GIVEN
         // A pathfinder without a current active strategy
         let mut app = app();
-        let entity = app.world_mut().spawn(()).id();
+        let entity = app.world_mut().spawn_empty().id();
 
         // WHEN
         // We add a new one
@@ -212,7 +211,7 @@ mod test {
         // GIVEN
         // A pathfinder
         let mut app = app();
-        let entity = app.world_mut().spawn(()).id();
+        let entity = app.world_mut().spawn_empty().id();
 
         // WHEN
         // We try to add multiple strategies within the same frame

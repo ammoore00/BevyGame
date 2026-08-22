@@ -1,4 +1,6 @@
-use crate::characters::npc::ai::pathfinding::pathfinder::{CancelPathing, PathfinderState, TARGET_REACHED_THRESHOLD};
+use crate::characters::npc::ai::pathfinding::pathfinder::{
+    CancelPathing, PathfinderState, TARGET_REACHED_THRESHOLD,
+};
 use crate::characters::npc::ai::pathfinding::strategy::{
     PathfindStrategy, PathfindStrategyRegistry, ReflectPathfindStrategy,
 };
@@ -6,8 +8,10 @@ use crate::characters::npc::ai::pathfinding::{PathfinderData, PathfinderSystems}
 use crate::debug::TileNavMap;
 use crate::level::LEVEL_LOADED;
 use bevy::prelude::*;
-use common::WorldPosition;
 use std::time::Duration;
+
+#[cfg(test)]
+use crate::characters::npc::ai::pathfinding::strategy::follow::test::GainLoseTargetError;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -168,18 +172,26 @@ pub struct GainedTarget {
 
 fn on_gained_target(
     event: On<GainedTarget>,
-    mut follower_query: Query<
-        &mut FollowerState,
-        (With<Following>, With<FollowerData>),
-    >,
+    mut follower_query: Query<&mut FollowerState, (With<Following>, With<FollowerData>)>,
+    #[cfg(test)] mut commands: Commands,
 ) {
     let Ok(mut follower_state) = follower_query.get_mut(event.entity) else {
-        error!("Cannot gain target without appropriate follower data!");
+        let err =
+            "Cannot gain target without appropriate follower data and while in follower state!";
+
+        #[cfg(test)]
+        commands
+            .entity(event.entity)
+            .insert(GainLoseTargetError(err.to_string()));
+
+        error!(err);
         return;
     };
 
-    follower_state.target = Some(event.target);
-    follower_state.trigger_re_path();
+    if follower_state.target != Some(event.target) {
+        follower_state.target = Some(event.target);
+        follower_state.trigger_re_path();
+    }
 }
 
 #[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -189,17 +201,318 @@ pub struct LostTarget {
 
 fn on_lost_target(
     event: On<LostTarget>,
-    mut follower_query: Query<
-        (Entity, &mut FollowerState),
-        (With<Following>, With<FollowerData>),
-    >,
+    mut follower_query: Query<(Entity, &mut FollowerState), With<Following>>,
     mut commands: Commands,
 ) {
     let Ok((entity, mut follower_state)) = follower_query.get_mut(event.entity) else {
-        error!("Cannot gain target without appropriate follower data!");
+        let err = "Cannot lose target if not in following state!";
+
+        #[cfg(test)]
+        commands
+            .entity(event.entity)
+            .insert(GainLoseTargetError(err.to_string()));
+
+        error!(err);
         return;
     };
 
     follower_state.target = None;
     commands.entity(entity).trigger(CancelPathing);
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    mod follow_state {
+        use super::*;
+    }
+
+    pub use target_events::GainLoseTargetError;
+
+    mod target_events {
+        use super::*;
+        use bevy::scene::ScenePlugin;
+
+        #[derive(Component, Debug, Clone, thiserror::Error)]
+        #[error("{}", .0)]
+        pub struct GainLoseTargetError(pub String);
+
+        struct TargetTestFixture {
+            app: App,
+            follower: Entity,
+            target: Option<Entity>,
+        }
+
+        fn setup_targets(has_target: bool) -> TargetTestFixture {
+            let mut app = App::new();
+            app.add_plugins(AssetPlugin::default());
+            app.add_plugins(ScenePlugin);
+
+            app.add_observer(on_following_added);
+            app.add_observer(on_following_removed);
+
+            app.add_observer(on_gained_target);
+            app.add_observer(on_lost_target);
+
+            let target = if has_target {
+                Some(app.world_mut().spawn_empty().id())
+            } else {
+                None
+            };
+
+            let follower = app
+                .world_mut()
+                .spawn_scene(bsn![
+                    FollowerData
+                    @Following {
+                        @target
+                    }
+                ])
+                .unwrap()
+                .id();
+
+            TargetTestFixture {
+                app,
+                follower,
+                target,
+            }
+        }
+
+        mod gain_target {
+            use super::*;
+
+            #[test]
+            fn gain_target() {
+                // GIVEN
+                // An entity in the following state without a target
+                let TargetTestFixture {
+                    mut app, follower, ..
+                } = setup_targets(false);
+
+                // WHEN
+                // We give it a target
+                let expected_target = app.world_mut().spawn_empty().id();
+                app.world_mut().trigger(GainedTarget {
+                    entity: follower,
+                    target: expected_target,
+                });
+
+                // And update
+                app.update();
+
+                // THEN
+                // It should update its target as expected
+                let mut query = app.world_mut().query::<&FollowerState>();
+                let follower_state = query.get(app.world(), follower);
+
+                assert!(follower_state.is_ok(), "Cannot get follower state!");
+
+                let current_target = follower_state.unwrap().target;
+
+                assert!(current_target.is_some(), "Entity has no target!");
+                assert_eq!(
+                    expected_target,
+                    current_target.unwrap(),
+                    "Target did not match expected!"
+                );
+            }
+
+            #[test]
+            fn gain_target_change_target() {
+                // GIVEN
+                // An entity in the following state that already has a target
+                let TargetTestFixture {
+                    mut app, follower, ..
+                } = setup_targets(true);
+
+                // WHEN
+                // We give it a new target
+                let new_target = app.world_mut().spawn_empty().id();
+                app.world_mut().trigger(GainedTarget {
+                    entity: follower,
+                    target: new_target,
+                });
+
+                // And update
+                app.update();
+
+                // THEN
+                // It should update its target to the new one and trigger a re-path
+                let mut query = app.world_mut().query::<&FollowerState>();
+                let follower_state = query.get(app.world(), follower);
+
+                assert!(follower_state.is_ok(), "Cannot get follower state!");
+
+                let follower_state = follower_state.unwrap();
+                let current_target = follower_state.target;
+
+                assert!(current_target.is_some(), "Entity has no target!");
+                assert_eq!(
+                    new_target,
+                    current_target.unwrap(),
+                    "Target did not match expected!"
+                );
+
+                assert!(follower_state.should_re_path(), "Re-path not triggered!");
+            }
+
+            #[test]
+            fn gain_target_same_target() {
+                // GIVEN
+                // An entity in the following state that already has a target
+                let TargetTestFixture {
+                    mut app,
+                    follower,
+                    target: expected_target,
+                } = setup_targets(true);
+
+                // WHEN
+                // We try to assign it the same target again
+                app.world_mut().trigger(GainedTarget {
+                    entity: follower,
+                    target: expected_target.unwrap(),
+                });
+
+                // And update
+                app.update();
+
+                // THEN
+                // Nothing should happen
+                let mut query = app.world_mut().query::<&FollowerState>();
+                let follower_state = query.get(app.world(), follower);
+
+                assert!(follower_state.is_ok(), "Cannot get follower state!");
+
+                let follower_state = follower_state.unwrap();
+                let current_target = follower_state.target;
+
+                assert!(current_target.is_some(), "Entity has no target!");
+                assert_eq!(
+                    expected_target, current_target,
+                    "Target did not match expected!"
+                );
+
+                assert!(
+                    !follower_state.should_re_path(),
+                    "Re-path trigger should not occur!"
+                );
+            }
+
+            #[test]
+            fn gain_target_not_following() {
+                // GIVEN
+                // An entity in the following state without a target
+                let TargetTestFixture {
+                    mut app, follower, ..
+                } = setup_targets(false);
+
+                // WHEN
+                // We remove it from the following state (this tests the component removal as well)
+                app.world_mut().entity_mut(follower).remove::<Following>();
+
+                // And then try to assign it a follower target
+                let expected_target = app.world_mut().spawn_empty().id();
+                app.world_mut().trigger(GainedTarget {
+                    entity: follower,
+                    target: expected_target,
+                });
+
+                // And update
+                app.update();
+
+                // THEN
+                // An error should occur and no changes should be made
+                let mut query = app.world_mut().query::<&FollowerState>();
+                let follower_state = query.get(app.world(), follower);
+
+                assert!(
+                    follower_state.is_err(),
+                    "Follower state should not be present!"
+                );
+
+                let mut query = app.world_mut().query::<&GainLoseTargetError>();
+                let error = query.get(app.world(), follower);
+
+                assert!(error.is_ok(), "Error should be present!");
+            }
+
+            #[test]
+            fn gain_target_no_follow_data() {
+                // GIVEN
+                // An entity without follower data
+                let TargetTestFixture { mut app, .. } = setup_targets(false);
+                let non_follower = app.world_mut().spawn_empty().id();
+
+                // WHEN
+                // We try to assign it a follower target
+                let expected_target = app.world_mut().spawn_empty().id();
+                app.world_mut().trigger(GainedTarget {
+                    entity: non_follower,
+                    target: expected_target,
+                });
+
+                // And update
+                app.update();
+
+                // THEN
+                // An error should occur and no changes should be made
+                let mut query = app.world_mut().query::<(
+                    Option<&FollowerData>,
+                    Option<&Following>,
+                    Option<&FollowerState>,
+                )>();
+                let (data, marker, state) = query.get(app.world(), non_follower).unwrap();
+
+                assert!(data.is_none(), "Follower data should not be present!");
+                assert!(marker.is_none(), "Following marker should not be present!");
+                assert!(state.is_none(), "Follower state should not be present!");
+
+                let mut query = app.world_mut().query::<&GainLoseTargetError>();
+                let error = query.get(app.world(), non_follower);
+
+                assert!(error.is_ok(), "Error should be present!");
+            }
+        }
+
+        mod lose_target {
+            use super::*;
+
+            #[test]
+            fn lose_target() {
+                // GIVEN
+
+                // WHEN
+
+                // THEN
+            }
+
+            #[test]
+            fn lose_target_no_target() {
+                // GIVEN
+
+                // WHEN
+
+                // THEN
+            }
+
+            #[test]
+            fn lose_target_not_following() {
+                // GIVEN
+
+                // WHEN
+
+                // THEN
+            }
+
+            #[test]
+            fn lose_target_no_follow_data() {
+                // GIVEN
+
+                // WHEN
+
+                // THEN
+            }
+        }
+    }
 }
