@@ -1,6 +1,0 @@
-(
-    format: 1,
-    sprite_sheet: "base:grass",
-    sprite_index: 24,
-    shape: Stairs(NegX),
-)

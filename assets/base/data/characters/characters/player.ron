@@ -2,9 +2,9 @@
     format: 1,
     allowed_states: Default,
     animations: {
-        Running: "base:player/running",
         Idle: "base:player/idle",
         Sprinting: "base:player/sprinting",
+        Running: "base:player/running",
         Walking: "base:player/walking",
     },
     attack_set: "base:player/basic_attack",

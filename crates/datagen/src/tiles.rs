@@ -5,6 +5,23 @@ use data::prelude::*;
 
 const LATEST_FORMAT: u8 = 1;
 
+const TILE_SPRITE_SHEET: &str = "tiles";
+const TILE: &str = "tile";
+const TILE_CRACKED: &str = "tile_cracked";
+const TILE_QUARTERED: &str = "tile_quartered";
+
+pub fn generate_tiles() -> Result<(), WriteError> {
+    create_dir(TileResource::ROOT_DIR)?;
+
+    create_tile_data(TileData::new(TILE, TILE_SPRITE_SHEET, 0))?;
+    create_tile_data(TileData::new(TILE_CRACKED, TILE_SPRITE_SHEET, 1))?;
+    create_tile_data(TileData::new(TILE_QUARTERED, TILE_SPRITE_SHEET, 2))?;
+
+    Ok(())
+}
+
+//------ OLD TILES ------//
+
 const GRASS_SPRITE_SHEET: &str = "grass";
 const GRASS: &str = "grass";
 const GRASS_LAYER: &str = "grass_layer";
@@ -33,9 +50,7 @@ const LIGHT_PLANKS_STAIRS_TOP_RIGHT: &str = "light_planks_stairs_top_right";
 const LIGHT_PLANKS_STAIRS_BOTTOM_LEFT: &str = "light_planks_stairs_bottom_left";
 const LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT: &str = "light_planks_stairs_bottom_right";
 
-pub fn generate_tiles() -> Result<(), WriteError> {
-    create_dir(TileResource::ROOT_DIR)?;
-
+pub fn generate_old_tiles() -> Result<(), WriteError> {
     create_tile_data(TileData::new(GRASS, GRASS_SPRITE_SHEET, 0))?;
     create_tile_data(TileData::new(GRASS_LAYER, GRASS_SPRITE_SHEET, 2))?;
     create_tile_data(

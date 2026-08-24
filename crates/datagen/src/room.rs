@@ -8,8 +8,7 @@ use data::prelude::*;
 pub fn generate_rooms() -> Result<(), WriteError> {
     create_dir(RoomResource::ROOT_DIR)?;
 
-    create_room_data(basic_room("grass"))?;
-    create_room_data(basic_room("planks"))?;
+    create_room_data(basic_room())?;
 
     Ok(())
 }
@@ -55,13 +54,21 @@ impl From<RoomData> for RoomCodec {
 
 const LATEST_FORMAT: u8 = 1;
 
-fn basic_room(tile: &str) -> RoomData {
+fn basic_room() -> RoomData {
     const SIZE: usize = 7;
     const HALF_SIZE: usize = SIZE / 2;
     const HEIGHT: usize = 2;
 
     let mut layout = vec![vec![vec![0; SIZE]; SIZE]; HEIGHT];
     layout[0] = vec![vec![1; SIZE]; SIZE];
+    
+    let cracks = [
+        (1, 1),
+        (2, 4),
+        (3, 6),
+        (4, 2),
+        (6, 3),
+    ];
 
     for x in 0..SIZE {
         for z in 0..SIZE {
@@ -69,13 +76,16 @@ fn basic_room(tile: &str) -> RoomData {
                 && x != HALF_SIZE
                 && z != HALF_SIZE
             {
-                layout[0][z][x] = 0;
+                let index = if cracks.contains(&(x, z)) {
+                    1
+                } else {
+                    0
+                };
+                
+                layout[0][z][x] = index;
             }
         }
     }
-
-    layout[1][2][1] = 2;
-    layout[1][SIZE - 2][1] = 2;
 
     let basic_connections = vec![
         RoomConnection::new(
@@ -100,15 +110,12 @@ fn basic_room(tile: &str) -> RoomData {
         ),
     ];
 
-    let loc = format!("basic_{}", tile);
+    let loc = "basic_tiles";
     RoomData::new(
-        loc.as_str(),
+        loc,
         vec![
-            tile.parse().unwrap(),
-            format!("{}_stairs_top_left", tile).parse().unwrap(),
-            format!("{}_stairs_top_right", tile).parse().unwrap(),
-            format!("{}_stairs_bottom_left", tile).parse().unwrap(),
-            format!("{}_stairs_bottom_right", tile).parse().unwrap(),
+            "tile".parse().unwrap(),
+            "tile_cracked".parse().unwrap(),
         ],
         layout,
         basic_connections,
