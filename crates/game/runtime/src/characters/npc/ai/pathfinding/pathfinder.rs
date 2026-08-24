@@ -119,6 +119,15 @@ impl Debug for PathfindPending {
 #[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CancelPathing(pub Entity);
 
+#[cfg(test)]
+pub fn test_on_cancel_pathing(
+    event: On<CancelPathing>,
+    pending_pathfind_query: Query<PathfinderData>,
+    commands: Commands,
+) {
+    on_cancel_pathing(event, pending_pathfind_query, commands);
+}
+
 fn on_cancel_pathing(
     event: On<CancelPathing>,
     mut pending_pathfind_query: Query<PathfinderData>,

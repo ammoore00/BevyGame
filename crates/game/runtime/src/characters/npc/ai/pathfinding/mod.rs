@@ -3,7 +3,7 @@ use strategy::wander::{WanderData, Wandering};
 use crate::characters::npc::ai::{AiState, AiSystems};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-use common::WorldPosition;
+use common::{WorldCoords, WorldPosition};
 use physics::Collider;
 
 mod movement;
@@ -59,4 +59,17 @@ pub struct PathfinderData {
     pub pos: &'static WorldPosition,
     pub collider: &'static Collider,
     pub ai_state: &'static AiState,
+}
+
+/// Instantiate components required for a valid PathfinderData query for use in tests
+#[cfg(test)]
+pub fn pathfinder_test_components() -> impl Bundle {
+    let pos = WorldCoords(Vec3::ZERO);
+
+    (
+        Pathfinder::default(),
+        AiState::default(),
+        Collider::cuboid(Vec3::ONE, pos),
+        WorldPosition(pos),
+    )
 }

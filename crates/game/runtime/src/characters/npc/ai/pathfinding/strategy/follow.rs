@@ -201,10 +201,10 @@ pub struct LostTarget {
 
 fn on_lost_target(
     event: On<LostTarget>,
-    mut follower_query: Query<(Entity, &mut FollowerState), With<Following>>,
+    mut follower_query: Query<&mut FollowerState, With<Following>>,
     mut commands: Commands,
 ) {
-    let Ok((entity, mut follower_state)) = follower_query.get_mut(event.entity) else {
+    let Ok(mut follower_state) = follower_query.get_mut(event.entity) else {
         let err = "Cannot lose target if not in following state!";
 
         #[cfg(test)]
@@ -217,7 +217,7 @@ fn on_lost_target(
     };
 
     follower_state.target = None;
-    commands.entity(entity).trigger(CancelPathing);
+    commands.entity(event.entity).trigger(CancelPathing);
 }
 
 #[cfg(test)]
@@ -232,6 +232,7 @@ mod test {
 
     mod target_events {
         use super::*;
+        use crate::characters::npc::ai::pathfinding::pathfinder::test_on_cancel_pathing;
         use bevy::scene::ScenePlugin;
 
         #[derive(Component, Debug, Clone, thiserror::Error)]
@@ -241,7 +242,7 @@ mod test {
         struct TargetTestFixture {
             app: App,
             follower: Entity,
-            target: Option<Entity>,
+            existing_target: Option<Entity>,
         }
 
         fn setup_targets(has_target: bool) -> TargetTestFixture {
@@ -254,6 +255,8 @@ mod test {
 
             app.add_observer(on_gained_target);
             app.add_observer(on_lost_target);
+
+            app.add_observer(test_on_cancel_pathing);
 
             let target = if has_target {
                 Some(app.world_mut().spawn_empty().id())
@@ -275,7 +278,7 @@ mod test {
             TargetTestFixture {
                 app,
                 follower,
-                target,
+                existing_target: target,
             }
         }
 
@@ -298,7 +301,6 @@ mod test {
                     target: expected_target,
                 });
 
-                // And update
                 app.update();
 
                 // THEN
@@ -334,7 +336,6 @@ mod test {
                     target: new_target,
                 });
 
-                // And update
                 app.update();
 
                 // THEN
@@ -364,17 +365,16 @@ mod test {
                 let TargetTestFixture {
                     mut app,
                     follower,
-                    target: expected_target,
+                    existing_target,
                 } = setup_targets(true);
 
                 // WHEN
                 // We try to assign it the same target again
                 app.world_mut().trigger(GainedTarget {
                     entity: follower,
-                    target: expected_target.unwrap(),
+                    target: existing_target.unwrap(),
                 });
 
-                // And update
                 app.update();
 
                 // THEN
@@ -389,7 +389,7 @@ mod test {
 
                 assert!(current_target.is_some(), "Entity has no target!");
                 assert_eq!(
-                    expected_target, current_target,
+                    existing_target, current_target,
                     "Target did not match expected!"
                 );
 
@@ -418,7 +418,6 @@ mod test {
                     target: expected_target,
                 });
 
-                // And update
                 app.update();
 
                 // THEN
@@ -452,7 +451,6 @@ mod test {
                     target: expected_target,
                 });
 
-                // And update
                 app.update();
 
                 // THEN
@@ -477,41 +475,134 @@ mod test {
 
         mod lose_target {
             use super::*;
+            use crate::characters::npc::ai::pathfinding::pathfinder::Waypoints;
+            use crate::characters::npc::ai::pathfinding::pathfinder_test_components;
+
+            fn setup_path() -> Waypoints {
+                Waypoints::new(vec![Vec3::ZERO.into()])
+            }
 
             #[test]
             fn lose_target() {
                 // GIVEN
+                // An entity in the following state with a target
+                let TargetTestFixture {
+                    mut app, follower, ..
+                } = setup_targets(true);
+                app.world_mut()
+                    .entity_mut(follower)
+                    .insert((setup_path(), pathfinder_test_components()));
 
                 // WHEN
+                // We remove that target
+                app.world_mut().trigger(LostTarget { entity: follower });
+                app.update();
 
                 // THEN
+                // The target should be removed and any existing path should be cleared
+                let mut query = app.world_mut().query::<&FollowerState>();
+                let follower_state = query.get(app.world(), follower);
+
+                assert!(follower_state.is_ok(), "Cannot get follower state!");
+
+                let follower_state = follower_state.unwrap();
+                let current_target = follower_state.target;
+
+                assert!(current_target.is_none(), "Target should be removed!");
+
+                let mut query = app.world_mut().query::<&Waypoints>();
+                let waypoints = query.get(app.world(), follower);
+
+                assert!(waypoints.is_err(), "Waypoints should be removed!");
             }
 
             #[test]
             fn lose_target_no_target() {
                 // GIVEN
+                // An entity in the following state no target
+                let TargetTestFixture {
+                    mut app, follower, ..
+                } = setup_targets(false);
 
                 // WHEN
+                // We try to remove its target
+                app.world_mut().trigger(LostTarget { entity: follower });
+                app.update();
 
                 // THEN
+                // Nothing should happen
+                let mut query = app.world_mut().query::<&FollowerState>();
+                let follower_state = query.get(app.world(), follower);
+
+                assert!(follower_state.is_ok(), "Cannot get follower state!");
+
+                let follower_state = follower_state.unwrap();
+                let current_target = follower_state.target;
+
+                assert!(current_target.is_none(), "Target should not be present!");
             }
 
             #[test]
             fn lose_target_not_following() {
                 // GIVEN
+                // An entity not in the following state
+                let TargetTestFixture {
+                    mut app, follower, ..
+                } = setup_targets(false);
+                app.world_mut().entity_mut(follower).remove::<Following>();
 
                 // WHEN
+                // We try to remove its target
+                app.world_mut().trigger(LostTarget { entity: follower });
+                app.update();
 
                 // THEN
+                // An error should occur and no changes should be made
+                let mut query = app.world_mut().query::<&FollowerState>();
+                let follower_state = query.get(app.world(), follower);
+
+                assert!(
+                    follower_state.is_err(),
+                    "Follower state should not be present!"
+                );
+
+                let mut query = app.world_mut().query::<&GainLoseTargetError>();
+                let error = query.get(app.world(), follower);
+
+                assert!(error.is_ok(), "Error should be present!");
             }
 
             #[test]
             fn lose_target_no_follow_data() {
                 // GIVEN
+                // An entity without follower data
+                let TargetTestFixture { mut app, .. } = setup_targets(false);
+                let non_follower = app.world_mut().spawn_empty().id();
 
                 // WHEN
+                // We try to remove its target
+                app.world_mut().trigger(LostTarget {
+                    entity: non_follower,
+                });
+                app.update();
 
                 // THEN
+                // An error should occur and no changes should be made
+                let mut query = app.world_mut().query::<(
+                    Option<&FollowerData>,
+                    Option<&Following>,
+                    Option<&FollowerState>,
+                )>();
+                let (data, marker, state) = query.get(app.world(), non_follower).unwrap();
+
+                assert!(data.is_none(), "Follower data should not be present!");
+                assert!(marker.is_none(), "Following marker should not be present!");
+                assert!(state.is_none(), "Follower state should not be present!");
+
+                let mut query = app.world_mut().query::<&GainLoseTargetError>();
+                let error = query.get(app.world(), non_follower);
+
+                assert!(error.is_ok(), "Error should be present!");
             }
         }
     }
