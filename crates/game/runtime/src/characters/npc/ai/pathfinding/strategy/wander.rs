@@ -73,15 +73,10 @@ fn wander_dispatch(
             rand::rng(),
         );
 
-        let collider_size = pathfinder_data.collider.size();
-        let clearance_half_width = collider_size.x.max(collider_size.z) / 2.0;
-        let clearance_height = collider_size.y;
-
         let request = PathfindRequest::new(
             tile_coords.into(),
             target.into(),
-            clearance_half_width,
-            clearance_height,
+            pathfinder_data.clearance(),
         );
         commands.entity(pathfinder_data.entity).insert(request);
 

@@ -19,9 +19,7 @@ const DIRT_LAYER: &str = "dirt_layer";
 
 const PLANKS_SPRITE_SHEET: &str = "planks";
 const PLANKS: &str = "planks";
-const PLANKS_LOWER: &str = "planks_lower";
 const PLANKS_LAYER: &str = "planks_layer";
-const PLANKS_LAYER_LOWER: &str = "planks_layer_lower";
 const PLANKS_STAIRS_TOP_LEFT: &str = "planks_stairs_top_left";
 const PLANKS_STAIRS_TOP_RIGHT: &str = "planks_stairs_top_right";
 const PLANKS_STAIRS_BOTTOM_LEFT: &str = "planks_stairs_bottom_left";

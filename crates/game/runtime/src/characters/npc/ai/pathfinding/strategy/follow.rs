@@ -1,17 +1,16 @@
 use crate::characters::npc::ai::pathfinding::pathfinder::{
-    CancelPathing, PathfinderState, TARGET_REACHED_THRESHOLD,
+    CancelPathing, PathfindRequest, PathfinderState, TARGET_REACHED_THRESHOLD,
 };
+#[cfg(test)]
+use crate::characters::npc::ai::pathfinding::strategy::follow::test::GainLoseTargetError;
 use crate::characters::npc::ai::pathfinding::strategy::{
     PathfindStrategy, PathfindStrategyRegistry, ReflectPathfindStrategy,
 };
 use crate::characters::npc::ai::pathfinding::{PathfinderData, PathfinderSystems};
-use crate::debug::TileNavMap;
 use crate::level::LEVEL_LOADED;
 use bevy::prelude::*;
+use common::WorldPosition;
 use std::time::Duration;
-
-#[cfg(test)]
-use crate::characters::npc::ai::pathfinding::strategy::follow::test::GainLoseTargetError;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -139,17 +138,14 @@ fn update_follower_state(pathfinder_query: Query<(&FollowerData, &mut FollowerSt
 }
 
 fn follow_dispatch(
-    pathfinder_query: Query<(PathfinderData, &FollowerData, &mut FollowerState), With<Following>>,
-    nav_map_query: Query<&TileNavMap>,
+    pathfinder_query: Query<
+        (PathfinderData, &mut FollowerState),
+        (With<Following>, With<FollowerData>),
+    >,
+    target_query: Query<&WorldPosition>,
     mut commands: Commands,
 ) {
-    let nav_map = nav_map_query.single();
-    let Ok(nav_map) = nav_map else {
-        error!("Failed to get nav map!: {:?}", nav_map.err().unwrap());
-        return;
-    };
-
-    for (pathfinder_data, follower_data, mut follower_state) in pathfinder_query {
+    for (pathfinder_data, mut follower_state) in pathfinder_query {
         if pathfinder_data.pathfinder.state() != PathfinderState::Dispatch {
             continue;
         }
@@ -160,7 +156,24 @@ fn follow_dispatch(
 
         follower_state.on_re_path();
 
-        todo!()
+        let Some(target) = follower_state.target else {
+            warn!("Re-path triggered for follower without a target!");
+            continue;
+        };
+
+        let Ok(target_pos) = target_query.get(target) else {
+            error!("Failed to get target's position!");
+            continue;
+        };
+
+        let request = PathfindRequest::new(
+            pathfinder_data.pos.0,
+            target_pos.0,
+            pathfinder_data.clearance(),
+        );
+        commands.entity(pathfinder_data.entity).insert(request);
+
+        info!("NPC started searching");
     }
 }
 

@@ -73,9 +73,7 @@ pub struct PathfindRequest {
     #[getset(get = "pub")]
     target: WorldCoords,
     #[getset(get = "pub")]
-    clearance_half_width: f32,
-    #[getset(get = "pub")]
-    clearance_height: f32,
+    clearance: PathfinderClearance,
 
     request_id: Uuid,
 }
@@ -83,17 +81,21 @@ impl PathfindRequest {
     pub fn new(
         start: WorldCoords,
         target: WorldCoords,
-        clearance_half_width: f32,
-        clearance_height: f32,
+        clearance: PathfinderClearance,
     ) -> Self {
         Self {
             start,
             target,
-            clearance_half_width,
-            clearance_height,
+            clearance,
             request_id: Uuid::new_v4(),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PathfinderClearance {
+    pub half_width: f32,
+    pub height: f32,
 }
 
 #[derive(Component)]
@@ -428,8 +430,8 @@ pub fn find_path(
                 && nav_map.has_line_of_sight(
                     &TileCoords::from(grandparent),
                     edge.0.end(),
-                    request.clearance_half_width,
-                    request.clearance_height,
+                    request.clearance.half_width,
+                    request.clearance.height,
                 ) {
                 let next_pos = WorldCoords::from(edge.0.end());
 

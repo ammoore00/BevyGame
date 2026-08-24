@@ -1,21 +1,21 @@
-use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindPending, Pathfinder, Waypoints};
-use strategy::wander::{WanderData, Wandering};
+use crate::characters::npc::ai::pathfinding::pathfinder::{
+    PathfindPending, Pathfinder, PathfinderClearance, Waypoints,
+};
 use crate::characters::npc::ai::{AiState, AiSystems};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-use common::{WorldCoords, WorldPosition};
+#[cfg(test)]
+use common::WorldCoords;
+use common::WorldPosition;
 use physics::Collider;
+use strategy::wander::{WanderData, Wandering};
 
 mod movement;
 mod pathfinder;
 mod strategy;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((
-        movement::plugin,
-        pathfinder::plugin,
-        strategy::plugin,
-    ));
+    app.add_plugins((movement::plugin, pathfinder::plugin, strategy::plugin));
 
     app.configure_sets(
         Update,
@@ -35,7 +35,7 @@ enum PathfinderSystems {
     Update,
     /// Execute dispatched pathfinding
     Dispatch,
-    /// Collect any generate requests
+    /// Collect any generated requests
     Collect,
 }
 
@@ -59,6 +59,16 @@ pub struct PathfinderData {
     pub pos: &'static WorldPosition,
     pub collider: &'static Collider,
     pub ai_state: &'static AiState,
+}
+impl PathfinderDataItem<'_, '_> {
+    pub fn clearance(&self) -> PathfinderClearance {
+        let collider_size = self.collider.size();
+        let half_width = collider_size.x.max(collider_size.z) / 2.0;
+
+        let height = collider_size.y;
+
+        PathfinderClearance { half_width, height }
+    }
 }
 
 /// Instantiate components required for a valid PathfinderData query for use in tests
