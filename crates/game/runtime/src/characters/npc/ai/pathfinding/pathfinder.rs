@@ -30,7 +30,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_cancel_pathing.run_if(in_state(LEVEL_LOADED)));
 }
 
-pub const TARGET_REACHED_THRESHOLD: f32 = 0.2;
+pub const DEFAULT_TARGET_REACHED_THRESHOLD: f32 = 0.2;
+pub const WAYPOINT_REACHED_THRESHOLD: f32 = 0.2;
 
 #[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash, CopyGetters)]
 pub struct Pathfinder {
@@ -154,11 +155,18 @@ fn on_cancel_pathing(
 pub struct Waypoints {
     pub(super) path: Vec<WorldCoords>,
     pub(super) target: WorldCoords,
+
     pub(super) next_position: Option<WorldCoords>,
     pub(super) next_index: usize,
+
+    pub(super) target_reached_threshold: f32,
 }
 impl Waypoints {
     pub(super) fn new(path: Vec<WorldCoords>) -> Self {
+        Self::new_with_target_threshold(path, DEFAULT_TARGET_REACHED_THRESHOLD)
+    }
+
+    pub(super) fn new_with_target_threshold(path: Vec<WorldCoords>, target_reached_threshold: f32) -> Self {
         let target = *path.last().unwrap();
         let next_position = *path.first().unwrap();
         Self {
@@ -166,6 +174,7 @@ impl Waypoints {
             target,
             next_position: Some(next_position),
             next_index: 0,
+            target_reached_threshold,
         }
     }
 
@@ -213,8 +222,14 @@ fn update_pathfinder_state(
 
             let distance = target.distance(*pos.0 - Vec3::Y);
 
+            let threshold = if target == waypoints.target {
+                WAYPOINT_REACHED_THRESHOLD
+            } else {
+                waypoints.target_reached_threshold
+            };
+
             // If we are within the threshold of the next waypoint
-            if distance <= TARGET_REACHED_THRESHOLD {
+            if distance <= threshold {
                 // If it is the last waypoint, clear the path
                 if target == waypoints.target {
                     commands.entity(entity).remove::<Waypoints>();

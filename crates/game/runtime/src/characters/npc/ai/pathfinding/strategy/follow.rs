@@ -1,5 +1,5 @@
 use crate::characters::npc::ai::pathfinding::pathfinder::{
-    CancelPathing, PathfindRequest, PathfinderState, TARGET_REACHED_THRESHOLD,
+    CancelPathing, PathfindRequest, PathfinderState, DEFAULT_TARGET_REACHED_THRESHOLD,
 };
 #[cfg(test)]
 use crate::characters::npc::ai::pathfinding::strategy::follow::test::GainLoseTargetError;
@@ -110,7 +110,7 @@ pub struct FollowerData {
 impl Default for FollowerData {
     fn default() -> Self {
         Self {
-            stop_distance: TARGET_REACHED_THRESHOLD,
+            stop_distance: DEFAULT_TARGET_REACHED_THRESHOLD,
             re_path_threshold: RE_PATH_THRESHOLD,
             re_path_time: RE_PATH_TIMER,
         }
