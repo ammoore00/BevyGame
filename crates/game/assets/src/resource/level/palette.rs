@@ -63,7 +63,7 @@ impl PaletteDefinition for StandardPalette {
 
     fn create_transition_pool() -> TransitionRoomPool {
         TransitionRoomPool(vec![
-            TransitionRoom::new("basic_tiles".parse().unwrap(), 1.0),
+            TransitionRoom::new("basic_grass".parse().unwrap(), 1.0),
         ])
     }
 }

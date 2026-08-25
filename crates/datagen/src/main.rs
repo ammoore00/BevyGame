@@ -1,6 +1,6 @@
 use crate::characters::generate_characters;
 use crate::room::generate_rooms;
-use crate::tiles::{generate_old_tiles, generate_tiles};
+use crate::tiles::generate_tiles;
 use data::prelude::*;
 use serde::Serialize;
 use std::fs::OpenOptions;

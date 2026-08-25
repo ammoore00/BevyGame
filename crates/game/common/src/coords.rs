@@ -6,8 +6,8 @@ use std::ops::{AddAssign, Deref};
 
 pub const SCREEN_Z_SCALE: f32 = 2.0;
 
-pub const TILE_WIDTH: i32 = 32;
-pub const TILE_HEIGHT: i32 = 16;
+pub const TILE_WIDTH: i32 = 64;
+pub const TILE_HEIGHT: i32 = 32;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

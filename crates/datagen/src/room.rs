@@ -33,6 +33,8 @@ impl RoomData {
         tiles: Vec<Vec<Vec<u8>>>,
         connections: Vec<RoomConnection>,
     ) -> Self {
+        
+        
         Self {
             loc: loc.parse().unwrap(),
             tile_palette,
@@ -59,33 +61,15 @@ fn basic_room() -> RoomData {
     const HALF_SIZE: usize = SIZE / 2;
     const HEIGHT: usize = 2;
 
-    let mut layout = vec![vec![vec![0; SIZE]; SIZE]; HEIGHT];
-    layout[0] = vec![vec![1; SIZE]; SIZE];
-    
-    let cracks = [
-        (1, 1),
-        (2, 4),
-        (3, 6),
-        (4, 2),
-        (6, 3),
+    let layout = vec![
+        vec![0,  0,  0,  17, 0,  0,  0],
+        vec![0,  12, 13, 28, 13, 14, 0],
+        vec![0,  11, 28, 28, 28, 4,  0],
+        vec![19, 28, 28, 28, 28, 28, 19],
+        vec![0,  11, 28, 28, 28, 4,  0],
+        vec![0,  10, 8,  28, 8,  6,  0],
+        vec![0,  0,  0,  17, 0,  0,  0],
     ];
-
-    for x in 0..SIZE {
-        for z in 0..SIZE {
-            if (x == 0 || x == SIZE - 1 || z == 0 || z == SIZE - 1)
-                && x != HALF_SIZE
-                && z != HALF_SIZE
-            {
-                let index = if cracks.contains(&(x, z)) {
-                    1
-                } else {
-                    0
-                };
-                
-                layout[0][z][x] = index;
-            }
-        }
-    }
 
     let basic_connections = vec![
         RoomConnection::new(
@@ -110,14 +94,42 @@ fn basic_room() -> RoomData {
         ),
     ];
 
-    let loc = "basic_tiles";
+    use crate::tiles::*;
+    
+    let loc = "basic_grass";
     RoomData::new(
         loc,
         vec![
-            "tile".parse().unwrap(),
-            "tile_cracked".parse().unwrap(),
+            GRASS_ALL_OUTLINE.parse().unwrap(),
+            GRASS_ALL.parse().unwrap(),
+            GRASS_S_OUTLINE.parse().unwrap(),
+            GRASS_S.parse().unwrap(),
+            GRASS_SW_OUTLINE.parse().unwrap(),
+            GRASS_SW.parse().unwrap(),
+            GRASS_W_OUTLINE.parse().unwrap(),
+            GRASS_W.parse().unwrap(),
+            GRASS_NW_OUTLINE.parse().unwrap(),
+            GRASS_NW.parse().unwrap(),
+            GRASS_N.parse().unwrap(),
+            GRASS_NE.parse().unwrap(),
+            GRASS_E.parse().unwrap(),
+            GRASS_SE_OUTLINE.parse().unwrap(),
+            GRASS_SE.parse().unwrap(),
+            GRASS_NS_OUTLINE.parse().unwrap(),
+            GRASS_NS.parse().unwrap(),
+            GRASS_EW_OUTLINE.parse().unwrap(),
+            GRASS_EW.parse().unwrap(),
+            GRASS_NOT_S_OUTLINE.parse().unwrap(),
+            GRASS_NOT_S.parse().unwrap(),
+            GRASS_NOT_W_OUTLINE.parse().unwrap(),
+            GRASS_NOT_W.parse().unwrap(),
+            GRASS_NOT_N_OUTLINE.parse().unwrap(),
+            GRASS_NOT_N.parse().unwrap(),
+            GRASS_NOT_E_OUTLINE.parse().unwrap(),
+            GRASS_NOT_E.parse().unwrap(),
+            GRASS.parse().unwrap(),
         ],
-        layout,
+        vec![layout],
         basic_connections,
     )
 }

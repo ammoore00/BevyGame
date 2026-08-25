@@ -5,123 +5,68 @@ use data::prelude::*;
 
 const LATEST_FORMAT: u8 = 1;
 
-const TILE_SPRITE_SHEET: &str = "tiles";
-const TILE: &str = "tile";
-const TILE_CRACKED: &str = "tile_cracked";
-const TILE_QUARTERED: &str = "tile_quartered";
+const GRASS_SPRITE_SHEET: &str = "grass";
+
+pub const GRASS_ALL_OUTLINE: &str = "grass_all_outline";
+pub const GRASS_ALL: &str = "grass_all";
+pub const GRASS_S_OUTLINE: &str = "grass_s_outline";
+pub const GRASS_S: &str = "grass_s";
+pub const GRASS_SW_OUTLINE: &str = "grass_sw_outline";
+pub const GRASS_SW: &str = "grass_sw";
+pub const GRASS_W_OUTLINE: &str = "grass_w_outline";
+pub const GRASS_W: &str = "grass_w";
+pub const GRASS_NW_OUTLINE: &str = "grass_nw_outline";
+pub const GRASS_NW: &str = "grass_nw";
+pub const GRASS_N: &str = "grass_n";
+pub const GRASS_NE: &str = "grass_ne";
+pub const GRASS_E: &str = "grass_e";
+pub const GRASS_SE_OUTLINE: &str = "grass_se_outline";
+pub const GRASS_SE: &str = "grass_se";
+pub const GRASS_NS_OUTLINE: &str = "grass_ns_outline";
+pub const GRASS_NS: &str = "grass_ns";
+pub const GRASS_EW_OUTLINE: &str = "grass_ew_outline";
+pub const GRASS_EW: &str = "grass_ew";
+pub const GRASS_NOT_S_OUTLINE: &str = "grass_not_s_outline";
+pub const GRASS_NOT_S: &str = "grass_not_s";
+pub const GRASS_NOT_W_OUTLINE: &str = "grass_not_w_outline";
+pub const GRASS_NOT_W: &str = "grass_not_w";
+pub const GRASS_NOT_N_OUTLINE: &str = "grass_not_n_outline";
+pub const GRASS_NOT_N: &str = "grass_not_n";
+pub const GRASS_NOT_E_OUTLINE: &str = "grass_not_e_outline";
+pub const GRASS_NOT_E: &str = "grass_not_e";
+pub const GRASS: &str = "grass";
 
 pub fn generate_tiles() -> Result<(), WriteError> {
     create_dir(TileResource::ROOT_DIR)?;
 
-    create_tile_data(TileData::new(TILE, TILE_SPRITE_SHEET, 0))?;
-    create_tile_data(TileData::new(TILE_CRACKED, TILE_SPRITE_SHEET, 1))?;
-    create_tile_data(TileData::new(TILE_QUARTERED, TILE_SPRITE_SHEET, 2))?;
-
-    Ok(())
-}
-
-//------ OLD TILES ------//
-
-const GRASS_SPRITE_SHEET: &str = "grass";
-const GRASS: &str = "grass";
-const GRASS_LAYER: &str = "grass_layer";
-const GRASS_STAIRS_TOP_LEFT: &str = "grass_stairs_top_left";
-const GRASS_STAIRS_TOP_RIGHT: &str = "grass_stairs_top_right";
-const GRASS_STAIRS_BOTTOM_LEFT: &str = "grass_stairs_bottom_left";
-const GRASS_STAIRS_BOTTOM_RIGHT: &str = "grass_stairs_bottom_right";
-
-const DIRT_SPRITE_SHEET: &str = "dirt";
-const DIRT: &str = "dirt";
-const DIRT_LAYER: &str = "dirt_layer";
-
-const PLANKS_SPRITE_SHEET: &str = "planks";
-const PLANKS: &str = "planks";
-const PLANKS_LAYER: &str = "planks_layer";
-const PLANKS_STAIRS_TOP_LEFT: &str = "planks_stairs_top_left";
-const PLANKS_STAIRS_TOP_RIGHT: &str = "planks_stairs_top_right";
-const PLANKS_STAIRS_BOTTOM_LEFT: &str = "planks_stairs_bottom_left";
-const PLANKS_STAIRS_BOTTOM_RIGHT: &str = "planks_stairs_bottom_right";
-
-const LIGHT_PLANKS_SPRITE_SHEET: &str = "light_planks";
-const LIGHT_PLANKS: &str = "light_planks";
-const LIGHT_PLANKS_LAYER: &str = "light_planks_layer";
-const LIGHT_PLANKS_STAIRS_TOP_LEFT: &str = "light_planks_stairs_top_left";
-const LIGHT_PLANKS_STAIRS_TOP_RIGHT: &str = "light_planks_stairs_top_right";
-const LIGHT_PLANKS_STAIRS_BOTTOM_LEFT: &str = "light_planks_stairs_bottom_left";
-const LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT: &str = "light_planks_stairs_bottom_right";
-
-pub fn generate_old_tiles() -> Result<(), WriteError> {
-    create_tile_data(TileData::new(GRASS, GRASS_SPRITE_SHEET, 0))?;
-    create_tile_data(TileData::new(GRASS_LAYER, GRASS_SPRITE_SHEET, 2))?;
-    create_tile_data(
-        TileData::new(GRASS_STAIRS_TOP_LEFT, GRASS_SPRITE_SHEET, 24)
-            .with_shape(TileShape::Stairs(TileFacing::NegX)),
-    )?;
-    create_tile_data(
-        TileData::new(GRASS_STAIRS_TOP_RIGHT, GRASS_SPRITE_SHEET, 25)
-            .with_shape(TileShape::Stairs(TileFacing::NegZ)),
-    )?;
-    create_tile_data(
-        TileData::new(GRASS_STAIRS_BOTTOM_LEFT, GRASS_SPRITE_SHEET, 26)
-            .with_shape(TileShape::Stairs(TileFacing::PosX)),
-    )?;
-    create_tile_data(
-        TileData::new(GRASS_STAIRS_BOTTOM_RIGHT, GRASS_SPRITE_SHEET, 27)
-            .with_shape(TileShape::Stairs(TileFacing::PosZ)),
-    )?;
-
-    create_tile_data(TileData::new(DIRT, DIRT_SPRITE_SHEET, 1))?;
-    create_tile_data(TileData::new(DIRT_LAYER, DIRT_SPRITE_SHEET, 3))?;
-
-    create_tile_data(TileData::new(PLANKS, PLANKS_SPRITE_SHEET, 0))?;
-    create_tile_data(TileData::new(PLANKS_LAYER, PLANKS_SPRITE_SHEET, 2))?;
-    create_tile_data(
-        TileData::new(PLANKS_STAIRS_TOP_LEFT, PLANKS_SPRITE_SHEET, 24)
-            .with_shape(TileShape::Stairs(TileFacing::NegX)),
-    )?;
-    create_tile_data(
-        TileData::new(PLANKS_STAIRS_TOP_RIGHT, PLANKS_SPRITE_SHEET, 25)
-            .with_shape(TileShape::Stairs(TileFacing::NegZ)),
-    )?;
-    create_tile_data(
-        TileData::new(PLANKS_STAIRS_BOTTOM_LEFT, PLANKS_SPRITE_SHEET, 26)
-            .with_shape(TileShape::Stairs(TileFacing::PosX)),
-    )?;
-    create_tile_data(
-        TileData::new(PLANKS_STAIRS_BOTTOM_RIGHT, PLANKS_SPRITE_SHEET, 27)
-            .with_shape(TileShape::Stairs(TileFacing::PosZ)),
-    )?;
-
-    create_tile_data(TileData::new(LIGHT_PLANKS, LIGHT_PLANKS_SPRITE_SHEET, 0))?;
-    create_tile_data(TileData::new(
-        LIGHT_PLANKS_LAYER,
-        LIGHT_PLANKS_SPRITE_SHEET,
-        2,
-    ))?;
-    create_tile_data(
-        TileData::new(LIGHT_PLANKS_STAIRS_TOP_LEFT, LIGHT_PLANKS_SPRITE_SHEET, 24)
-            .with_shape(TileShape::Stairs(TileFacing::NegX)),
-    )?;
-    create_tile_data(
-        TileData::new(LIGHT_PLANKS_STAIRS_TOP_RIGHT, LIGHT_PLANKS_SPRITE_SHEET, 25)
-            .with_shape(TileShape::Stairs(TileFacing::NegZ)),
-    )?;
-    create_tile_data(
-        TileData::new(
-            LIGHT_PLANKS_STAIRS_BOTTOM_LEFT,
-            LIGHT_PLANKS_SPRITE_SHEET,
-            26,
-        )
-        .with_shape(TileShape::Stairs(TileFacing::PosX)),
-    )?;
-    create_tile_data(
-        TileData::new(
-            LIGHT_PLANKS_STAIRS_BOTTOM_RIGHT,
-            LIGHT_PLANKS_SPRITE_SHEET,
-            27,
-        )
-        .with_shape(TileShape::Stairs(TileFacing::PosZ)),
-    )?;
+    create_tile_data(TileData::new(GRASS_ALL_OUTLINE, GRASS_SPRITE_SHEET, 0))?;
+    create_tile_data(TileData::new(GRASS_ALL, GRASS_SPRITE_SHEET, 1))?;
+    create_tile_data(TileData::new(GRASS_S_OUTLINE, GRASS_SPRITE_SHEET, 2))?;
+    create_tile_data(TileData::new(GRASS_S, GRASS_SPRITE_SHEET, 3))?;
+    create_tile_data(TileData::new(GRASS_SW_OUTLINE, GRASS_SPRITE_SHEET, 4))?;
+    create_tile_data(TileData::new(GRASS_SW, GRASS_SPRITE_SHEET, 5))?;
+    create_tile_data(TileData::new(GRASS_W_OUTLINE, GRASS_SPRITE_SHEET, 6))?;
+    create_tile_data(TileData::new(GRASS_W, GRASS_SPRITE_SHEET, 7))?;
+    create_tile_data(TileData::new(GRASS_NW_OUTLINE, GRASS_SPRITE_SHEET, 8))?;
+    create_tile_data(TileData::new(GRASS_NW, GRASS_SPRITE_SHEET, 9))?;
+    create_tile_data(TileData::new(GRASS_N, GRASS_SPRITE_SHEET, 10))?;
+    create_tile_data(TileData::new(GRASS_NE, GRASS_SPRITE_SHEET, 11))?;
+    create_tile_data(TileData::new(GRASS_E, GRASS_SPRITE_SHEET, 12))?;
+    create_tile_data(TileData::new(GRASS_SE_OUTLINE, GRASS_SPRITE_SHEET, 13))?;
+    create_tile_data(TileData::new(GRASS_SE, GRASS_SPRITE_SHEET, 14))?;
+    create_tile_data(TileData::new(GRASS_NS_OUTLINE, GRASS_SPRITE_SHEET, 15))?;
+    create_tile_data(TileData::new(GRASS_NS, GRASS_SPRITE_SHEET, 16))?;
+    create_tile_data(TileData::new(GRASS_EW_OUTLINE, GRASS_SPRITE_SHEET, 17))?;
+    create_tile_data(TileData::new(GRASS_EW, GRASS_SPRITE_SHEET, 18))?;
+    create_tile_data(TileData::new(GRASS_NOT_S_OUTLINE, GRASS_SPRITE_SHEET, 19))?;
+    create_tile_data(TileData::new(GRASS_NOT_S, GRASS_SPRITE_SHEET, 20))?;
+    create_tile_data(TileData::new(GRASS_NOT_W_OUTLINE, GRASS_SPRITE_SHEET, 21))?;
+    create_tile_data(TileData::new(GRASS_NOT_W, GRASS_SPRITE_SHEET, 22))?;
+    create_tile_data(TileData::new(GRASS_NOT_N_OUTLINE, GRASS_SPRITE_SHEET, 23))?;
+    create_tile_data(TileData::new(GRASS_NOT_N, GRASS_SPRITE_SHEET, 24))?;
+    create_tile_data(TileData::new(GRASS_NOT_E_OUTLINE, GRASS_SPRITE_SHEET, 25))?;
+    create_tile_data(TileData::new(GRASS_NOT_E, GRASS_SPRITE_SHEET, 26))?;
+    create_tile_data(TileData::new(GRASS, GRASS_SPRITE_SHEET, 27))?;
 
     Ok(())
 }
