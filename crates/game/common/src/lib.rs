@@ -25,7 +25,7 @@ impl Plugin for CommonPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((app::plugin, coords::plugin, game_states::plugin));
 
-        app.insert_resource(Scale(3.0));
+        app.insert_resource(Scale(6.0));
     }
 }
 

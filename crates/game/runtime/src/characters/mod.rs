@@ -169,8 +169,7 @@ impl PrototypeBuilder for CharacterBuilder {
             state_capabilities,
             sprite,
             collider,
-            //Transform::from_scale(Vec3::splat(context.scale.0)),
-            Transform::from_scale(Vec3::splat(context.scale.0 * 2.)), //TODO: Temporary rescale
+            Transform::from_scale(Vec3::splat(context.scale.0)),
         ));
 
         Ok(())

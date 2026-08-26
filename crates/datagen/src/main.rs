@@ -7,24 +7,24 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
-use tracing::info;
+use tracing::{error, info};
 
 mod characters;
 pub mod room;
 mod sprite;
 pub mod tiles;
 
-static ROOT_GENERATED: LazyLock<PathBuf> =
+static GENERATED_ASSETS: LazyLock<PathBuf> =
     LazyLock::new(|| PathBuf::from(Path::new("../../assets/generated")));
-pub static ROOT: LazyLock<PathBuf> = LazyLock::new(|| ROOT_GENERATED.join("base"));
+pub static ROOT: LazyLock<PathBuf> = LazyLock::new(|| GENERATED_ASSETS.join("base"));
 
 fn main() {
     // Clean the directory if it exists
-    if ROOT_GENERATED.exists() {
-        std::fs::remove_dir_all(ROOT_GENERATED.as_path())
+    if GENERATED_ASSETS.exists() {
+        std::fs::remove_dir_all(GENERATED_ASSETS.as_path())
             .expect("Failed to remove existing generated directory");
     }
-    std::fs::create_dir_all(ROOT_GENERATED.join("base")).expect("Failed to create directory");
+    std::fs::create_dir_all(GENERATED_ASSETS.join("base")).expect("Failed to create directory");
 
     generate_characters().expect("Failed to generate characters");
     generate_tiles().expect("Failed to generate tiles");
@@ -44,7 +44,7 @@ where
     let serialized = compact_integer_arrays(&serialized);
 
     // Create all parent directories
-    let path = ROOT_GENERATED.join(loc.as_path());
+    let path = GENERATED_ASSETS.join(loc.as_path());
     if let Some(parent) = path.parent() {
         info!("Creating directory: {}", parent.display());
         std::fs::create_dir_all(parent).map_err(|err| WriteError::io(&loc, err))?;
