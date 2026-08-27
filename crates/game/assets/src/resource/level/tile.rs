@@ -2,11 +2,11 @@ use crate::codec::TileCodec;
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::state::AssetSystems;
 use bevy::prelude::*;
+use common::TILE_WIDTH;
 use data::prelude::*;
 use data::{define_data_resource, define_sprite_resource};
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
-use common::TILE_WIDTH;
 
 pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();
@@ -20,8 +20,19 @@ pub(in crate::resource) fn plugin(app: &mut App) {
     );
 }
 
+const TILE_SHEET_COLUMNS: u32 = 16;
+const TILE_SHEET_ROWS: u32 = 16;
+
 static TILE_SPRITE_LAYOUT: LazyLock<TextureAtlasLayout> = LazyLock::new(|| {
-    TextureAtlasLayout::from_grid(UVec2::splat(TILE_WIDTH as u32), 8, 8, Some(UVec2::splat(1)), None)
+    TextureAtlasLayout::from_grid(
+        UVec2::splat(TILE_WIDTH as u32),
+        TILE_SHEET_COLUMNS,
+        TILE_SHEET_ROWS,
+        // Padding
+        Some(UVec2::splat(1)),
+        // Offset
+        None,
+    )
 });
 
 fn populate_tile_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
@@ -35,7 +46,6 @@ fn populate_tile_assets(asset_server: Res<AssetServer>, mut commands: Commands) 
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct TileLayout {
-    //#[dependency]
     layout: Handle<TextureAtlasLayout>,
 }
 impl TileLayout {
