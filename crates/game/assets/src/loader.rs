@@ -18,7 +18,10 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        advance_from_loading_to_resolving.run_if(in_state(AssetLoadState::Loading)),
+        (
+            finish_load_state.run_if(in_state(AssetLoadState::Loading)),
+            finish_resolving_state.run_if(in_state(AssetLoadState::Resolving)),
+        )
     );
 
     app.add_systems(OnEnter(AssetLoadState::Resolving), visit_assets);
@@ -31,7 +34,13 @@ fn load_assets(world: &mut World) {
         .for_each(|job| job.load(world).expect("Failed to load resource"));
 }
 
-fn advance_from_loading_to_resolving(world: &mut World) {
+fn visit_assets(world: &mut World) {
+    let loader = world.resource::<GameAssetLoader>();
+    let jobs = loader.loader_jobs.clone();
+    jobs.iter().for_each(|job| job.visit(world));
+}
+
+fn finish_load_state(world: &mut World) {
     let loader = world.resource::<GameAssetLoader>();
 
     if loader.loader_jobs.iter().all(|job| job.is_loaded(world)) {
@@ -40,10 +49,13 @@ fn advance_from_loading_to_resolving(world: &mut World) {
     }
 }
 
-fn visit_assets(world: &mut World) {
-    let loader = world.resource::<GameAssetLoader>();
-    let jobs = loader.loader_jobs.clone();
-    jobs.iter().for_each(|job| job.visit(world));
+fn finish_resolving_state(
+    loader: Res<GameAssetLoader>,
+    mut next_state: ResMut<NextState<AssetLoadState>>,
+) {
+    if loader.loader_jobs.iter().all(|job| job.has_visited()) {
+        next_state.set(AssetLoadState::Done);
+    }
 }
 
 /// Resource which holds a list of jobs to load resource
@@ -159,16 +171,19 @@ trait RegistryLoader: Send + Sync + 'static {
     fn load(&self, world: &mut World) -> Result<(), LoaderError>;
     fn is_loaded(&self, world: &World) -> bool;
     fn visit(&self, world: &mut World);
+    fn has_visited(&self) -> bool;
 }
 
 #[derive(Debug)]
 struct LoaderJob<T: ResourceKind> {
     phantom_data: PhantomData<T>,
+    has_visited: bool,
 }
 impl<T: ResourceKind> Default for LoaderJob<T> {
     fn default() -> Self {
         Self {
             phantom_data: Default::default(),
+            has_visited: false,
         }
     }
 }
@@ -242,6 +257,10 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
             let mut asset_ptr = assets.get_mut(&handle).unwrap();
             *asset_ptr = asset;
         }
+    }
+
+    fn has_visited(&self) -> bool {
+        self.has_visited
     }
 }
 
