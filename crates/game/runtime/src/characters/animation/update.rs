@@ -1,7 +1,7 @@
 use crate::characters::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::characters::state::ActionStateTracker;
 use assets::action_states::Attacking;
-use assets::resource::characters::{AnimationContext, AnimationData, AttackResource};
+use assets::resource::characters::{ResolvedAnimationData, AttackResource, AnimationData, AnimationResource};
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems};
 use data::prelude::*;
@@ -40,7 +40,7 @@ fn update_animation_state(
         Option<&Attacking>,
     )>,
     attack_context: SystemRegistry<AttackResource>,
-    animation_context: AnimationContext,
+    animation_context: SystemRegistry<AnimationResource>,
 ) {
     for (state_tracker, facing, animation_state_map, mut animation_tracker, attacking_state) in
         &mut query
@@ -61,10 +61,10 @@ fn update_animation_state(
         // Update animation tracker state if the animation has changed
         animation_tracker.current_animation = animation_handle.clone();
         let animation = animation_context
-            .get_data_from_handle(animation_handle.clone())
+            .get_asset_from_handle(animation_handle.clone())
             .unwrap();
 
-        let interval = animation.frame_data().frame_duration(0).unwrap();
+        let interval = animation.unwrap().frame_data().frame_duration(0).unwrap();
 
         if animation_tracker.prev_animation != animation_tracker.current_animation {
             animation_tracker.timer = Timer::new(interval, TimerMode::Repeating);
@@ -84,7 +84,7 @@ fn update_animation_atlas(
         Option<&Attacking>,
     )>,
     attack_context: SystemRegistry<AttackResource>,
-    animation_context: AnimationContext,
+    animation_context: SystemRegistry<AnimationResource>,
 ) {
     for (state_tracker, animation_tracker, animation_state_map, mut sprite, attacking_state) in
         &mut query
@@ -101,14 +101,14 @@ fn update_animation_atlas(
         };
 
         let animation = animation_context
-            .get_data_from_handle(animation_handle)
+            .get_asset_from_handle(animation_handle)
             .unwrap();
 
-        sprite.image = animation.image().clone();
+        sprite.image = animation.unwrap().image().clone();
 
-        let mut atlas = animation.atlas().clone();
+        let mut atlas = animation.unwrap().atlas().clone();
         // Calculate index: (Direction Row * Frames per row) + Current Frame
-        atlas.index = animation_tracker.get_atlas_index(animation_context.resolved_assets());
+        atlas.index = animation_tracker.get_atlas_index(animation_context.assets());
         sprite.texture_atlas = Some(atlas);
     }
 }
@@ -118,7 +118,7 @@ pub fn get_animation_handle(
     animation_state_map: &AnimationStateMap,
     attacking_state: Option<&Attacking>,
     attack_context: &SystemRegistry<AttackResource>,
-    animation_context: &AnimationContext,
+    animation_context: &SystemRegistry<AnimationResource>,
 ) -> Option<Handle<AnimationData>> {
     if let Some(attacking_state) = attacking_state {
         let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
@@ -130,7 +130,7 @@ pub fn get_animation_handle(
         };
 
         // TODO: Improve error handling
-        let Some(animation_handle) = animation_context.get_handle(attack.animation()).ok() else {
+        let Some(animation_handle) = animation_context.get_handle(attack.animation()) else {
             error!(
                 "Could not find animation definition for attack: {}!",
                 attacking_state.attack()
@@ -140,7 +140,7 @@ pub fn get_animation_handle(
 
         Some(animation_handle)
     } else if let Some(animation_handle) = animation_state_map
-        .0
+        .get()
         .get(&state_tracker.state_type_id())
         .cloned()
     {

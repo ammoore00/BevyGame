@@ -1,9 +1,9 @@
 use crate::loader::LoaderJobManager;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use data::define_resource;
 use data::loc::ResourceLocation;
 use data::prelude::{ResourceFileType, ResourceRegistry};
+use data::resource::resource_kind;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<FontResource>();
@@ -25,7 +25,8 @@ pub(super) fn plugin(app: &mut App) {
     ));
 }
 
-define_resource!(Font, "font", Font, ResourceFileType::Font);
+#[resource_kind(path = "font", asset_kind = Font, file_type = ResourceFileType::Font)]
+pub struct FontResource;
 
 #[derive(Debug, Clone, Resource)]
 struct DefaultFont(ResourceLocation<FontResource>);

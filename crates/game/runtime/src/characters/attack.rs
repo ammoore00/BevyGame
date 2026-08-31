@@ -53,12 +53,13 @@ fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Comma
         );
     };
 
-    let Ok(animation) = context.animation_context.get_data(attack.animation()) else {
+    let Some(animation) = context.animation_context.get_asset(attack.animation()) else {
         return error!(
             "Invalid attack definition: animation {} does not exist!",
             attack.animation()
         );
     };
+    let animation = animation.unwrap();
 
     let Some(particle_sprite) = context
         .character_sprite_registry

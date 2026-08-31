@@ -5,7 +5,9 @@ mod attack;
 mod character;
 
 pub use {
-    animation::{AnimationContext, AnimationData, AnimationRegistry, AnimationResource, FrameData},
+    animation::{
+        AnimationData, AnimationRegistry, AnimationResource, FrameData, ResolvedAnimationData,
+    },
     attack::{
         AttackContext, AttackDefinition, AttackProgress, AttackRegistry, AttackResource, AttackSet,
         AttackSetRegistry, AttackSetResource, ExclusionGroup, KeyFrame,

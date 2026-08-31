@@ -2,12 +2,12 @@ use crate::codec::{
     AttackCodec, AttackSetCodec, ColliderCodec, HealthEventKind, HitboxCodec, KeyFrameCodec,
 };
 use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::resource::characters::{AnimationContext, AnimationResource, CharacterSpriteResource};
+use crate::resource::characters::{AnimationResource, CharacterSpriteResource};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::WorldCoords;
-use data::define_data_resource;
 use data::prelude::*;
+use data::resource::resource_kind;
 use getset::{CopyGetters, Getters};
 use physics::ColliderKind;
 use std::ops::Deref;
@@ -27,11 +27,12 @@ pub(in crate::resource) fn plugin(app: &mut App) {
 pub struct AttackContext<'w> {
     pub attack_registry: SystemRegistry<'w, AttackResource>,
     pub attack_set_registry: SystemRegistry<'w, AttackSetResource>,
-    pub animation_context: AnimationContext<'w>,
+    pub animation_context: SystemRegistry<'w, AnimationResource>,
     pub character_sprite_registry: SystemRegistry<'w, CharacterSpriteResource>,
 }
 
-define_data_resource!(Attack, "characters/attacks", AttackDefinition);
+#[resource_kind(path = "characters/attacks", asset_kind = AttackDefinition)]
+pub struct AttackResource;
 
 #[derive(Debug, Clone, Asset, TypePath, Getters, CopyGetters)]
 pub struct AttackDefinition {
@@ -392,7 +393,8 @@ impl SweptHitbox {
     }
 }
 
-define_data_resource!(AttackSet, "characters/attack_sets", AttackSet);
+#[resource_kind(path = "characters/attack_sets", asset_kind = AttackSet)]
+pub struct AttackSetResource;
 
 #[derive(Debug, Clone, Asset, TypePath, Getters)]
 pub struct AttackSet {

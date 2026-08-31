@@ -1,7 +1,10 @@
 use bevy::asset::Asset;
-use bevy::prelude::Reflect;
+use bevy::prelude::{Reflect, World};
 use std::fmt::Debug;
 use std::hash::Hash;
+
+use crate::loc::ResourceLocation;
+pub use define_resource::resource_kind;
 
 pub trait ResourceKind:
     Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static
@@ -9,7 +12,20 @@ pub trait ResourceKind:
     type AssetKind: Asset + Clone + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
+
+    /// Perform any post-processing on the resource after loading has finished
+    fn visit(
+        _loc: ResourceLocation<Self>,
+        asset: Self::AssetKind,
+        _world: &mut World,
+    ) -> Result<Self::AssetKind, ResourceVisitError> {
+        Ok(asset)
+    }
 }
+
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("Failed to visit resource: {0}")]
+pub struct ResourceVisitError(pub String);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ResourceFileType {
@@ -28,36 +44,6 @@ impl ResourceFileType {
             ResourceFileType::Font => "ttf",
             ResourceFileType::Data => "ron",
             ResourceFileType::Other(s) => s,
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! define_resource {
-    ($name:ident, $path:expr, $asset_type:ty, $file_type:expr) => {
-        paste::paste! {
-            #[allow(unused)]
-            pub type [<$name Registry>] = $crate::registry::ResourceRegistry<[<$name Resource>]>;
-
-            #[allow(unused)]
-            #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy, Default, Reflect)]
-            pub struct [<$name Resource>];
-
-            impl $crate::resource::ResourceKind for [<$name Resource>] {
-                type AssetKind = $asset_type;
-
-                const ROOT_DIR: &'static str = $path;
-                const FILE_TYPE: $crate::resource::ResourceFileType = $file_type;
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! define_data_resource {
-    ($name:ident, $path:literal, $asset_type:ty) => {
-        paste::paste! {
-            $crate::define_resource!($name, const_format::concatcp!("data/", $path), $asset_type, $crate::resource::ResourceFileType::Data);
         }
     }
 }

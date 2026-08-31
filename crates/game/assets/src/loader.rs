@@ -20,6 +20,8 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         advance_from_loading_to_resolving.run_if(in_state(AssetLoadState::Loading)),
     );
+
+    app.add_systems(OnEnter(AssetLoadState::Resolving), visit_assets);
 }
 
 fn load_assets(world: &mut World) {
@@ -36,6 +38,12 @@ fn advance_from_loading_to_resolving(world: &mut World) {
         let mut next_state = world.resource_mut::<NextState<AssetLoadState>>();
         next_state.set(AssetLoadState::Resolving);
     }
+}
+
+fn visit_assets(world: &mut World) {
+    let loader = world.resource::<GameAssetLoader>();
+    let jobs = loader.loader_jobs.clone();
+    jobs.iter().for_each(|job| job.visit(world));
 }
 
 /// Resource which holds a list of jobs to load resource
@@ -62,16 +70,19 @@ impl GameAssetLoader {
 }
 
 pub trait LoaderJobManager {
-    /// Adds a job to the asset loader which will load all resource in the registry
-    fn add_resource_registry<T: ResourceKind>(&mut self);
+    /// Adds a job to the asset loader which will load all resources in the registry
+    fn add_resource_registry<T: ResourceKind>(&mut self) -> &mut Self;
     /// Adds a job to the asset loader with a pre-filled manifest
-    fn add_registry_with_manifest<T: ResourceKind>(&mut self, manifest: Vec<ResourceLocation<T>>);
-    /// Adds a job to the asset loader which will discover all resource in the registry automatically
-    fn add_registry_with_discovery<T: ResourceKind>(&mut self);
+    fn add_registry_with_manifest<T: ResourceKind>(
+        &mut self,
+        manifest: Vec<ResourceLocation<T>>,
+    ) -> &mut Self;
+    /// Adds a job to the asset loader which will discover all resources in the registry automatically
+    fn add_registry_with_discovery<T: ResourceKind>(&mut self) -> &mut Self;
 }
 
 impl LoaderJobManager for App {
-    fn add_resource_registry<T: ResourceKind>(&mut self) {
+    fn add_resource_registry<T: ResourceKind>(&mut self) -> &mut Self {
         let world = self.world_mut();
 
         if world.contains_resource::<ResourceRegistry<T>>() {
@@ -85,21 +96,29 @@ impl LoaderJobManager for App {
 
         let mut asset_loader = world.resource_mut::<GameAssetLoader>();
         asset_loader.add_loader_job::<T>();
+
+        self
     }
 
-    fn add_registry_with_manifest<T: ResourceKind>(&mut self, manifest: Vec<ResourceLocation<T>>) {
+    fn add_registry_with_manifest<T: ResourceKind>(
+        &mut self,
+        manifest: Vec<ResourceLocation<T>>,
+    ) -> &mut Self {
         self.add_resource_registry::<T>();
         let world = self.world_mut();
         let mut registry = world.resource_mut::<ResourceRegistry<T>>();
         registry.extend_manifest(manifest);
+
+        self
     }
 
     // TODO: Eventually I want to be able to load resource from multiple places (e.g. mod files)
     //       This will require a way to check all places, not just the normal resource folder
-    fn add_registry_with_discovery<T: ResourceKind>(&mut self) {
+    fn add_registry_with_discovery<T: ResourceKind>(&mut self) -> &mut Self {
         // Find all namespaces currently available
         let Ok(namespaces) = std::fs::read_dir("./assets/") else {
-            return;
+            error!("Failed to read asset directory!");
+            return self;
         };
 
         let mut manifest = Vec::new();
@@ -131,12 +150,15 @@ impl LoaderJobManager for App {
         }
 
         self.add_registry_with_manifest::<T>(manifest);
+
+        self
     }
 }
 
 trait RegistryLoader: Send + Sync + 'static {
     fn load(&self, world: &mut World) -> Result<(), LoaderError>;
     fn is_loaded(&self, world: &World) -> bool;
+    fn visit(&self, world: &mut World);
 }
 
 #[derive(Debug)]
@@ -181,6 +203,46 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
             .iter()
             .all(|(_, handle)| asset_server.is_loaded_with_dependencies(handle))
     }
+
+    fn visit(&self, world: &mut World) {
+        let registry = world.resource::<ResourceRegistry<T>>();
+        let assets = world.resource::<Assets<T::AssetKind>>();
+
+        let registry = registry
+            .iter()
+            .map(|(loc, handle)| (loc.clone(), assets.get(handle).unwrap().clone()))
+            .collect::<Vec<_>>();
+
+        let mut new_assets = HashMap::new();
+
+        for (loc, asset) in registry {
+            info!("Visiting asset: {}", loc);
+
+            match T::visit(loc.clone(), asset.clone(), world) {
+                Ok(asset) => {
+                    new_assets.insert(loc, asset);
+                }
+                Err(err) => {
+                    // TODO: Doing nothing to correct the error will eventually lead to a panic,
+                    //  so handle this more properly
+                    error!("Error visiting asset: {}", err);
+                }
+            }
+        }
+
+        let registry = world.resource::<ResourceRegistry<T>>();
+        let new_assets = new_assets
+            .into_iter()
+            .map(|(loc, asset)| (registry.get(&loc).unwrap().clone(), asset))
+            .collect::<HashMap<_, _>>();
+
+        let mut assets = world.resource_mut::<Assets<T::AssetKind>>();
+
+        for (handle, asset) in new_assets {
+            let mut asset_ptr = assets.get_mut(&handle).unwrap();
+            *asset_ptr = asset;
+        }
+    }
 }
 
 #[non_exhaustive]
@@ -201,7 +263,6 @@ where
 {
 }
 
-// TODO: Allow for fallible type conversion using TryFrom instead of From
 #[derive(TypePath)]
 pub struct RonAssetLoader<Codec, AssetType>
 where

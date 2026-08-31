@@ -2405,11 +2405,11 @@ name = "data"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "define_resource",
  "getset",
  "regex",
  "serde",
  "thiserror 2.0.18",
- "walkdir",
 ]
 
 [[package]]
@@ -2451,6 +2451,14 @@ dependencies = [
  "quote",
  "syn 2.0.118",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "define_resource"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn 2.0.118",
 ]
 
 [[package]]

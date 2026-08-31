@@ -1,17 +1,14 @@
 use crate::action_states::{ActionStateCapabilities, DEFAULT_STATES};
 use crate::codec::{CharacterCodec, ColliderCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::resource::characters::{
-    AnimationContext, AnimationData, AnimationResource, AttackContext, AttackDefinition,
-    AttackSetResource,
-};
+use crate::resource::characters::{AnimationResource, AttackSetResource};
 use bevy::prelude::*;
 use data::loc::ResourceLocation;
-use data::{define_data_resource, define_sprite_resource};
+use data::prelude::ResourceFileType;
+use data::resource::resource_kind;
 use getset::Getters;
 use std::any::TypeId;
 use std::collections::HashMap;
-use tracing::error;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterResource>();
@@ -24,6 +21,7 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Debug, Clone, Asset, TypePath, derive_new::new, Getters)]
 pub struct CharacterData {
     state_capabilities: ActionStateCapabilities,
+    #[getset(get = "pub")]
     animations: HashMap<TypeId, ResourceLocation<AnimationResource>>,
     _attack_set: Option<ResourceLocation<AttackSetResource>>,
     #[getset(get = "pub")]
@@ -32,52 +30,6 @@ pub struct CharacterData {
 impl CharacterData {
     pub fn state_capabilities(&self) -> &ActionStateCapabilities {
         &self.state_capabilities
-    }
-
-    pub fn resolve_animation_handles(
-        &self,
-        animation_context: &AnimationContext,
-    ) -> HashMap<TypeId, Handle<AnimationData>> {
-        let mut animation_handles = HashMap::new();
-
-        for (state_id, animation_loc) in self.animations.iter() {
-            match animation_context.get_handle(animation_loc) {
-                Ok(animation) => {
-                    animation_handles.insert(*state_id, animation.clone());
-                }
-                Err(err) => {
-                    // TODO: Handle this more gracefully
-                    panic!("Failed to retrieve animation: {}", err);
-                }
-            }
-        }
-        animation_handles
-    }
-
-    pub fn _resolve_attack_handles(
-        &self,
-        context: &AttackContext,
-    ) -> Vec<Handle<AttackDefinition>> {
-        match &self._attack_set {
-            None => Vec::new(),
-            Some(attack_set_loc) => {
-                let mut attacks = Vec::new();
-
-                let Some(attack_set) = context.attack_set_registry.get_asset(attack_set_loc) else {
-                    error!("Failed to retrieve attack_set: {}", attack_set_loc);
-                    return attacks;
-                };
-
-                for attack_loc in attack_set.iter() {
-                    let Some(attack) = context.attack_registry.get_handle(attack_loc) else {
-                        error!("Failed to retrieve attack definition: {}", attack_loc);
-                        continue;
-                    };
-                    attacks.push(attack.clone());
-                }
-                attacks
-            }
-        }
     }
 }
 impl From<CharacterCodec> for CharacterData {
@@ -106,5 +58,8 @@ impl From<CharacterCodec> for CharacterData {
     }
 }
 
-define_data_resource!(Character, "characters/characters", CharacterData);
-define_sprite_resource!(Character, "characters");
+#[resource_kind(path = "characters/characters", asset_kind = CharacterData)]
+pub struct CharacterResource;
+
+#[resource_kind(path = "images/characters/characters", asset_kind = Image, file_type = ResourceFileType::Image)]
+pub struct CharacterSpriteResource;

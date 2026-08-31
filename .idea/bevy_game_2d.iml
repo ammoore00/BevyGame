@@ -17,6 +17,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/game/debug/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/game/widgets/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/macros/debug_option_derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/macros/asset_visitor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/macros/define_resource/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/crates/datagen/target" />
     </content>

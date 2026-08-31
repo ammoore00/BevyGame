@@ -8,14 +8,18 @@ edition = "2024"
 members = [
     ".",
     "crates/datagen",
-
     "crates/game/app",
     "crates/game/assets",
-    "crates/game/common", "crates/game/controls",
-    "crates/game/data", "crates/game/debug", "crates/game/input",
+    "crates/game/common",
+    "crates/game/controls",
+    "crates/game/data",
+    "crates/game/debug",
+    "crates/game/input",
     "crates/game/physics",
-    "crates/game/runtime", "crates/game/settings", "crates/game/widgets", "crates/macros/debug_option_derive",
-
+    "crates/game/runtime",
+    "crates/game/settings",
+    "crates/game/widgets",
+    "crates/macros/debug_option_derive", "crates/macros/define_resource",
     "crates/macros/maybe_fields",
 ]
 resolver = "2"
@@ -26,7 +30,6 @@ bevy = { version = "0.19", default-features = false, features = [
     "2d",
     "audio",
     "ui",
-
     # Additional features
     "bevy_settings",
     "bevy_state",
@@ -36,19 +39,14 @@ bevy = { version = "0.19", default-features = false, features = [
     "std",
     "sysinfo_plugin",
     "trace",
-
     # UI and input
     "system_clipboard",
-
     # Gamepad functionality
     "bevy_gilrs",
-
     # File formats
     "png",
-
     # Picking (aka clicking on world objects)
     "sprite_picking",
-
     # Linux rendering
     "wayland",
     "x11",
@@ -60,7 +58,7 @@ getset = "0.1.6"
 paste = "1.0.15"
 regex = "1.12.3"
 ron = "0.12.1"
-strum = {  version = "0.28.0", features = ["derive"] }
+strum = { version = "0.28.0", features = ["derive"] }
 strum_macros = "0.28.0"
 thiserror = "2.0.17"
 
@@ -93,19 +91,15 @@ syn = { version = "2", features = ["full"] }
 default = ["dev_native"]
 dev = [
     "app/dev",
-
     # Improve compile times for dev builds by linking Bevy as a dynamic library.
     #TODO: Figure out how to run the debugger with this enabled
     #"bevy/dynamic_linking",
     # Improve error messages coming from Bevy
     "bevy/track_location",
-
     "bevy/bevy_dev_tools",
     "bevy/bevy_ui_debug",
     "bevy/bevy_feathers",
-
     "bevy/debug",
-
     "bevy_mod_debugdump",
     "graphviz-rust",
 ]

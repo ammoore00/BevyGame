@@ -2,11 +2,11 @@ use crate::action_state_scene;
 use crate::debug::{Health, Player};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
-use assets::resource::characters::{AnimationContext, CharacterData, CharacterResource};
+use assets::resource::characters::{AnimationResource, CharacterData, CharacterResource};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
-use common::{marker, Facing, GameplaySystems, Scale, WorldPosition};
+use common::{Facing, GameplaySystems, Scale, WorldPosition, marker};
 use data::prelude::*;
 use data::register_prototype_system;
 use physics::{DEFAULT_MAX_SPEED, HasGravity, MovementController, PhysicsData};
@@ -147,17 +147,17 @@ impl PrototypeBuilder for CharacterBuilder {
             .ok_or(BevyError::error("Failed to find characters data"))?;
 
         let animation_context = context.animation_context();
-        let animation_map = AnimationStateMap(data.resolve_animation_handles(animation_context));
+        let animation_map = AnimationStateMap::new(data.animations(), animation_context);
 
         let state_capabilities = data.state_capabilities().clone();
 
-        let animations = data.resolve_animation_handles(context.animation_context());
-        let idle_animation = animations
+        let idle_animation = animation_map
+            .get()
             .get(&TypeId::of::<Idle>())
             .cloned()
             .expect("Failed to find idle animation for player characters");
 
-        let animation_assets = context.animation_context().resolved_assets();
+        let animation_assets = context.animation_context().assets();
         let animation_tracker = CharacterAnimationTracker::new(idle_animation, animation_assets);
         let sprite = animation_tracker.default_sprite(animation_assets);
 
@@ -181,7 +181,7 @@ struct CharacterBuilderContext<'w> {
     #[getset(get = "pub")]
     character_registry: SystemRegistry<'w, CharacterResource>,
     #[getset(get = "pub")]
-    animation_context: AnimationContext<'w>,
+    animation_context: SystemRegistry<'w, AnimationResource>,
     #[getset(get = "pub")]
     scale: Res<'w, Scale>,
 }
@@ -204,7 +204,7 @@ pub struct DeathEvent {
 fn on_death(
     event: On<DeathEvent>,
     query: Query<Option<&Player>, With<Character>>,
-    mut commands: Commands
+    mut commands: Commands,
 ) {
     let Ok(player) = query.get(event.entity) else {
         error!("Failed to get death event entity");
@@ -219,10 +219,7 @@ fn on_death(
     }
 }
 
-fn remove_dead_entities(
-    query: Query<Entity, With<Dead>>,
-    mut commands: Commands,
-) {
+fn remove_dead_entities(query: Query<Entity, With<Dead>>, mut commands: Commands) {
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }

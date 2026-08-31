@@ -1,4 +1,6 @@
 use bevy::prelude::*;
-use data::define_sprite_resource;
+use data::prelude::ResourceFileType;
+use data::resource::resource_kind;
 
-define_sprite_resource!(Ui, "ui");
+#[resource_kind(path = "images/ui", asset_kind = Image, file_type = ResourceFileType::Image)]
+pub struct UiSpriteResource;

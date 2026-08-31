@@ -1,14 +1,15 @@
 use crate::resource::level::palette::Palette;
 use bevy::prelude::*;
-use data::define_data_resource;
 use data::prelude::ResourceLocation;
 use getset::Getters;
+use data::resource::resource_kind;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset::<MapDefinition>();
 }
 
-define_data_resource!(Map, "level/maps", MapDefinition);
+#[resource_kind(path = "level/maps", asset_kind = MapDefinition)]
+pub struct MapResource;
 
 /// Pool of all registered level definitions
 /// This contains every level def that the game knows about

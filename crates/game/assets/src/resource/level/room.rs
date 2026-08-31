@@ -3,10 +3,10 @@ use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::resource::level::TileResource;
 use bevy::prelude::*;
 use common::TileCoords;
-use data::define_data_resource;
 use data::loc::ResourceLocation;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
+use data::resource::resource_kind;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_asset_loader::<RonAssetLoader<RoomCodec, RoomDefinition>>();
@@ -14,7 +14,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<RoomResource>();
 }
 
-define_data_resource!(Room, "rooms", RoomDefinition);
+#[resource_kind(path = "rooms", asset_kind = RoomDefinition)]
+pub struct RoomResource;
 
 type RoomTileCoords = TileCoords;
 

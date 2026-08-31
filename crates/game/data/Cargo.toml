@@ -10,7 +10,7 @@ getset = { workspace = true }
 regex = { workspace = true }
 thiserror = { workspace = true }
 
-walkdir = "2.5.0"
+define_resource = { path = "../../macros/define_resource" }
 
 [lints]
 workspace = true

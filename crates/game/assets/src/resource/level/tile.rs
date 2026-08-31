@@ -4,9 +4,9 @@ use crate::state::AssetSystems;
 use bevy::prelude::*;
 use common::TILE_WIDTH;
 use data::prelude::*;
-use data::{define_data_resource, define_sprite_resource};
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
+use data::resource::resource_kind;
 
 pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<TileAsset>();
@@ -81,8 +81,11 @@ impl From<TileCodec> for TileAsset {
     }
 }
 
-define_data_resource!(Tile, "tiles", TileAsset);
-define_sprite_resource!(Tile, "tiles");
+#[resource_kind(path = "tiles", asset_kind = TileAsset)]
+pub struct TileResource;
+
+#[resource_kind(path = "images/tiles", asset_kind = Image, file_type = ResourceFileType::Image)]
+pub struct TileSpriteResource;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub enum TileShape {
