@@ -1,6 +1,6 @@
 //! The main menu (seen on the title screen).
 
-use crate::{asset_tracking::ResourceHandles, menus::Menu, screens::Screen};
+use crate::{menus::Menu, screens::Screen};
 use bevy::prelude::*;
 use assets::AssetLoadState;
 use widgets::button;

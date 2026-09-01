@@ -193,13 +193,11 @@ trait RegistryLoader: Send + Sync + 'static {
 #[derive(Debug)]
 struct LoaderJob<T: ResourceKind> {
     phantom_data: PhantomData<T>,
-    has_visited: bool,
 }
 impl<T: ResourceKind> Default for LoaderJob<T> {
     fn default() -> Self {
         Self {
             phantom_data: Default::default(),
-            has_visited: false,
         }
     }
 }

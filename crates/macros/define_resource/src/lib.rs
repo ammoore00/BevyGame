@@ -3,7 +3,7 @@ use quote::{format_ident, quote};
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{parse_macro_input, Expr, ItemStruct, LitBool, Meta, Token, Type, Lit, LitStr};
+use syn::{parse_macro_input, Expr, ItemStruct, LitBool, Meta, Token, Type, LitStr};
 
 #[proc_macro_attribute]
 pub fn resource_kind(attr: TokenStream, item: TokenStream) -> TokenStream {

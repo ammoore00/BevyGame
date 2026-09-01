@@ -101,17 +101,17 @@ const RE_PATH_TIMER: Duration = Duration::from_millis(500);
 #[derive(Component, Debug, Clone)]
 pub struct FollowerData {
     /// The distance from the target to be considered close enough to stop
-    stop_distance: f32,
+    _stop_distance: f32,
     /// The distance the target must move before the follower re-paths
-    re_path_threshold: f32,
+    _re_path_threshold: f32,
     /// The timer for re-pathing
     re_path_time: Duration,
 }
 impl Default for FollowerData {
     fn default() -> Self {
         Self {
-            stop_distance: DEFAULT_TARGET_REACHED_THRESHOLD,
-            re_path_threshold: RE_PATH_THRESHOLD,
+            _stop_distance: DEFAULT_TARGET_REACHED_THRESHOLD,
+            _re_path_threshold: RE_PATH_THRESHOLD,
             re_path_time: RE_PATH_TIMER,
         }
     }

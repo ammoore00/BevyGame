@@ -1,9 +1,9 @@
 //! A loading screen during which game resource are loaded if necessary.
 //! This reduces stuttering, especially for audio on Wasm.
 
-use bevy::prelude::*;
+use crate::screens::Screen;
 use assets::AssetLoadState;
-use crate::{asset_tracking::ResourceHandles, screens::Screen};
+use bevy::prelude::*;
 use widgets::text;
 
 pub(super) fn plugin(app: &mut App) {
