@@ -3,7 +3,7 @@ use quote::{format_ident, quote};
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{parse_macro_input, Expr, ItemStruct, LitBool, Meta, Token, Type};
+use syn::{parse_macro_input, Expr, ItemStruct, LitBool, Meta, Token, Type, Lit, LitStr};
 
 #[proc_macro_attribute]
 pub fn resource_kind(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -17,7 +17,7 @@ pub fn resource_kind(attr: TokenStream, item: TokenStream) -> TokenStream {
         Err(err) => return err.to_compile_error().into(),
     };
 
-    let mut path_expr: Option<Expr> = None;
+    let mut path_expr: Option<LitStr> = None;
     let mut asset_kind: Option<Type> = None;
     let mut file_type: Option<Expr> = None;
     let mut visit_override: Option<LitBool> = None;
@@ -26,7 +26,11 @@ pub fn resource_kind(attr: TokenStream, item: TokenStream) -> TokenStream {
         match meta {
             Meta::NameValue(nv) => {
                 if nv.path.is_ident("path") {
-                    path_expr = Some(nv.value);
+                    let expr = nv.value;
+                    match syn::parse2::<LitStr>(quote!(#expr)) {
+                        Ok(lit) => path_expr = Some(lit),
+                        Err(err) => return err.to_compile_error().into(),
+                    }
                 } else if nv.path.is_ident("asset_kind") || nv.path.is_ident("asset_type") {
                     let expr = nv.value;
                     match syn::parse2::<Type>(quote!(#expr)) {
@@ -66,7 +70,13 @@ pub fn resource_kind(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Ensure required parameters are provided
     let path = match path_expr {
-        Some(p) => p,
+        Some(p) => {
+            if file_type.is_none() {
+                LitStr::new(&format!("data/{}", p.value()), p.span())
+            } else {
+                p
+            }
+        },
         None => {
             return syn::Error::new(
                 input_struct.span(),
