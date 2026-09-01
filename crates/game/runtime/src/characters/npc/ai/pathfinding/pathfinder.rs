@@ -366,6 +366,9 @@ impl PathfindCancelToken {
     }
 }
 
+/// The maximum range to search for nearby grid points for pathfinding
+const MAX_GRID_SEARCH_DISTANCE: i32 = 5;
+
 /// Use Theta* pathfinding to find a path from start to target
 ///
 /// See [here](https://web.archive.org/web/20100916211209/http://aigamedev.com/open/tutorials/theta-star-any-angle-paths/)
@@ -383,20 +386,70 @@ pub fn find_path(
     // Sanity check
     // The code would return the correct result anyway,
     // but this early guard prevents unnecessary computation
-    if request.start == request.target {
+    if request.start.distance(*request.target) <= WAYPOINT_REACHED_THRESHOLD {
         return Some(Waypoints::new(vec![request.start]));
     }
 
+    let start = request.start;
+    let mut target = request.target;
+
+    // Find the closest point on the grid to the target
+    let target_tile = TileCoords::from(target);
+    let mut best_target = None;
+    let mut best_distance = i32::MAX;
+
+    for r in 1..=MAX_GRID_SEARCH_DISTANCE {
+        for dx in -r..=r {
+            for dy in -r..=r {
+                for dz in -r..=r {
+                    if dx.abs() != r && dy.abs() != r && dz.abs() != r {
+                        continue;
+                    }
+
+                    let candidate = TileCoords::from([
+                        target_tile.x + dx,
+                        target_tile.y + dy,
+                        target_tile.z + dz,
+                    ]);
+
+                    if !nav_map.has_node(&candidate) {
+                        continue;
+                    }
+
+                    let dist = candidate.distance_squared(*target_tile);
+
+                    if dist >= best_distance {
+                        continue;
+                    }
+
+                    best_distance = dist;
+                    best_target = Some(candidate);
+                }
+            }
+        }
+    }
+
+    if let Some(best_target) = best_target {
+        // If the best target is the same as the original target, do nothing
+        // Otherwise, update the target to the closest point on the grid
+        if best_target != target_tile {
+            target = best_target.into();
+        }
+    } else {
+        info!("Target is outside of nav mesh by more than the maximum search range!");
+        return None;
+    }
+
     let mut costs = BTreeMap::new();
-    costs.insert(request.start, 0);
+    costs.insert(start, 0);
 
     let mut parents = BTreeMap::new();
 
     let mut heap = BinaryHeap::new();
     heap.push(PathfindCoordState {
         cost: 0,
-        heuristic_cost: request.start.distance(*request.target) as u32,
-        position: request.start,
+        heuristic_cost: start.distance(*target) as u32,
+        position: start,
     });
 
     // Explore frontier using min heap to explore lower cost nodes first
@@ -406,7 +459,7 @@ pub fn find_path(
         }
 
         let PathfindCoordState { cost, position, .. } = &node;
-        if *position == request.target {
+        if *position == target {
             let mut position = position;
             let mut path = Vec::new();
 
@@ -415,11 +468,11 @@ pub fn find_path(
                 position = parent;
             }
 
-            if *position != request.start {
+            if *position != start {
                 error!("Pathfinding failed to find a path from start to target!");
                 return None;
             }
-            path.push(request.start);
+            path.push(start);
             path.reverse();
 
             return Some(Waypoints::new(path));
@@ -487,6 +540,7 @@ pub fn find_path(
         }
     }
 
+    info!("Heap ended before path was found!");
     None
 }
 
