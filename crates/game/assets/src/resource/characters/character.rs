@@ -61,5 +61,5 @@ impl From<CharacterCodec> for CharacterData {
 #[resource_kind(path = "characters/characters", asset_kind = CharacterData)]
 pub struct CharacterResource;
 
-#[resource_kind(path = "images/characters/characters", asset_kind = Image, file_type = ResourceFileType::Image)]
+#[resource_kind(path = "images/characters", asset_kind = Image, file_type = ResourceFileType::Image)]
 pub struct CharacterSpriteResource;

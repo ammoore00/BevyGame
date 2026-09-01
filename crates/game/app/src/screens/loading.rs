@@ -2,7 +2,7 @@
 //! This reduces stuttering, especially for audio on Wasm.
 
 use bevy::prelude::*;
-
+use assets::AssetLoadState;
 use crate::{asset_tracking::ResourceHandles, screens::Screen};
 use widgets::text;
 
@@ -57,6 +57,6 @@ fn enter_editor_screen(mut next_screen: ResMut<NextState<Screen>>) {
     next_screen.set(Screen::Editor);
 }
 
-fn all_assets_loaded(resource_handles: Res<ResourceHandles>) -> bool {
-    resource_handles.is_all_done()
+fn all_assets_loaded(asset_state: Res<State<AssetLoadState>>) -> bool {
+    *asset_state == AssetLoadState::Done
 }

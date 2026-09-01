@@ -2,6 +2,7 @@
 
 use crate::{asset_tracking::ResourceHandles, menus::Menu, screens::Screen};
 use bevy::prelude::*;
+use assets::AssetLoadState;
 use widgets::button;
 
 pub(super) fn plugin(app: &mut App) {
@@ -32,10 +33,10 @@ fn spawn_main_menu() -> impl Scene {
 
 fn enter_loading_or_gameplay_screen(
     _: On<Pointer<Click>>,
-    resource_handles: Res<ResourceHandles>,
+    asset_state: Res<State<AssetLoadState>>,
     mut next_screen: ResMut<NextState<Screen>>,
 ) {
-    if resource_handles.is_all_done() {
+    if *asset_state == AssetLoadState::Done {
         next_screen.set(Screen::Gameplay);
     } else {
         next_screen.set(Screen::Loading(&Screen::Gameplay));
@@ -45,10 +46,10 @@ fn enter_loading_or_gameplay_screen(
 #[cfg(feature = "dev")]
 fn enter_loading_or_editor_screen(
     _: On<Pointer<Click>>,
-    resource_handles: Res<ResourceHandles>,
+    asset_state: Res<State<AssetLoadState>>,
     mut next_screen: ResMut<NextState<Screen>>,
 ) {
-    if resource_handles.is_all_done() {
+    if *asset_state == AssetLoadState::Done {
         next_screen.set(Screen::Editor);
     } else {
         next_screen.set(Screen::Loading(&Screen::Editor));

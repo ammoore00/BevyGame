@@ -25,7 +25,7 @@ pub(super) fn plugin(app: &mut App) {
     ));
 }
 
-#[resource_kind(path = "font", asset_kind = Font, file_type = ResourceFileType::Font)]
+#[resource_kind(path = "fonts", asset_kind = Font, file_type = ResourceFileType::Font)]
 pub struct FontResource;
 
 #[derive(Debug, Clone, Resource)]

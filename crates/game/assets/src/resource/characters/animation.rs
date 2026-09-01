@@ -8,7 +8,7 @@ use getset::{CloneGetters, Getters};
 use std::time::Duration;
 use tracing::info;
 
-pub(in crate::resource) fn plugin(app: &mut App) {
+pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AnimationData>();
     app.init_asset_loader::<RonAssetLoader<AnimationCodec, AnimationData>>();
     app.add_registry_with_discovery::<AnimationResource>();

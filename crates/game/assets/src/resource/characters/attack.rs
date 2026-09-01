@@ -13,7 +13,7 @@ use physics::ColliderKind;
 use std::ops::Deref;
 use std::time::Duration;
 
-pub(in crate::resource) fn plugin(app: &mut App) {
+pub(super) fn plugin(app: &mut App) {
     app.init_asset::<AttackDefinition>();
     app.init_asset_loader::<RonAssetLoader<AttackCodec, AttackDefinition>>();
     app.add_registry_with_discovery::<AttackResource>();

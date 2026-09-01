@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::Deref;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use walkdir::WalkDir;
 
 pub(super) fn plugin(app: &mut App) {
@@ -28,22 +28,31 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn load_assets(world: &mut World) {
+    info!("Loading assets...");
+
     let loader = world.resource::<GameAssetLoader>();
+    info!("Jobs: {}", loader.job_list_display());
+
     let jobs = loader.loader_jobs.clone();
     jobs.iter()
-        .for_each(|job| job.load(world).expect("Failed to load resource"));
+        .for_each(|(job, _)| job.load(world).expect("Failed to load resource"));
 }
 
 fn visit_assets(world: &mut World) {
-    let loader = world.resource::<GameAssetLoader>();
-    let jobs = loader.loader_jobs.clone();
-    jobs.iter().for_each(|job| job.visit(world));
+    info!("Processing assets...");
+    let loader = world.resource_mut::<GameAssetLoader>();
+    let mut jobs = loader.loader_jobs.clone();
+    jobs.iter_mut().for_each(|(job, visited)| {
+        job.visit(world);
+        *visited.write().unwrap() = true;
+    });
 }
 
 fn finish_load_state(world: &mut World) {
     let loader = world.resource::<GameAssetLoader>();
 
-    if loader.loader_jobs.iter().all(|job| job.is_loaded(world)) {
+    if loader.loader_jobs.iter().all(|(job, _)| job.is_loaded(world)) {
+        info!("Assets loaded");
         let mut next_state = world.resource_mut::<NextState<AssetLoadState>>();
         next_state.set(AssetLoadState::Resolving);
     }
@@ -53,7 +62,8 @@ fn finish_resolving_state(
     loader: Res<GameAssetLoader>,
     mut next_state: ResMut<NextState<AssetLoadState>>,
 ) {
-    if loader.loader_jobs.iter().all(|job| job.has_visited()) {
+    if loader.loader_jobs.iter().all(|(_, visited)| *visited.read().unwrap()) {
+        info!("Assets processed");
         next_state.set(AssetLoadState::Done);
     }
 }
@@ -63,7 +73,7 @@ fn finish_resolving_state(
 /// load each asset, then insert them into the registry
 #[derive(Default, Resource)]
 pub struct GameAssetLoader {
-    loader_jobs: Vec<Arc<dyn RegistryLoader>>,
+    loader_jobs: Vec<(Arc<dyn RegistryLoader>, Arc<RwLock<bool>>)>,
 }
 impl GameAssetLoader {
     pub fn new() -> Self {
@@ -73,11 +83,15 @@ impl GameAssetLoader {
     }
 
     pub fn add_loader_job<T: ResourceKind>(&mut self) {
-        self.loader_jobs.push(Arc::new(LoaderJob::<T>::default()));
+        self.loader_jobs.push((Arc::new(LoaderJob::<T>::default()), Arc::new(RwLock::new(false))));
     }
 
-    pub fn _all_jobs_loaded(&self, world: &World) -> bool {
-        self.loader_jobs.iter().all(|job| job.is_loaded(world))
+    pub fn job_list_display(&self) -> String {
+        self.loader_jobs
+            .iter()
+            .map(|(job, _)| job.name().to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
@@ -161,6 +175,8 @@ impl LoaderJobManager for App {
                 .for_each(|location| manifest.push(location));
         }
 
+        info!("Found {} assets in {}", manifest.len(), T::ROOT_DIR);
+
         self.add_registry_with_manifest::<T>(manifest);
 
         self
@@ -171,7 +187,7 @@ trait RegistryLoader: Send + Sync + 'static {
     fn load(&self, world: &mut World) -> Result<(), LoaderError>;
     fn is_loaded(&self, world: &World) -> bool;
     fn visit(&self, world: &mut World);
-    fn has_visited(&self) -> bool;
+    fn name(&self) -> &str;
 }
 
 #[derive(Debug)]
@@ -190,6 +206,8 @@ impl<T: ResourceKind> Default for LoaderJob<T> {
 impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
     /// Iterate through all registered resource for the associated registry and loads them
     fn load(&self, world: &mut World) -> Result<(), LoaderError> {
+        info!("--- Loading assets in {} ---", self.name());
+
         let asset_server = world.resource::<AssetServer>();
 
         let mut assets = HashMap::new();
@@ -197,6 +215,7 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
         let registry = world.resource::<ResourceRegistry<T>>();
         let manifest = registry.manifest();
         manifest.iter().for_each(|loc| {
+            info!("Loading {}", loc.as_path().to_str().unwrap());
             let path = loc.as_path();
             let asset = asset_server.load::<T::AssetKind>(path);
             assets.insert(loc.clone(), asset);
@@ -205,7 +224,9 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
         let mut registry = world.resource_mut::<ResourceRegistry<T>>();
         assets
             .into_iter()
-            .for_each(|(loc, asset)| registry.register_asset(loc, asset));
+            .for_each(|(loc, asset)| {
+                registry.register_asset(loc, asset);
+            });
 
         Ok(())
     }
@@ -231,7 +252,7 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
         let mut new_assets = HashMap::new();
 
         for (loc, asset) in registry {
-            info!("Visiting asset: {}", loc);
+            info!("Visiting {}", loc.as_path().to_str().unwrap());
 
             match T::visit(loc.clone(), asset.clone(), world) {
                 Ok(asset) => {
@@ -259,8 +280,8 @@ impl<T: ResourceKind> RegistryLoader for LoaderJob<T> {
         }
     }
 
-    fn has_visited(&self) -> bool {
-        self.has_visited
+    fn name(&self) -> &str {
+        T::ROOT_DIR
     }
 }
 
