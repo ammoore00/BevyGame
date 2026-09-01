@@ -14,6 +14,9 @@ mod movement;
 mod pathfinder;
 mod strategy;
 
+pub use strategy::follow::{GainedTarget, LostTarget};
+use crate::characters::npc::ai::pathfinding::strategy::follow::{FollowerData, Following};
+
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((movement::plugin, pathfinder::plugin, strategy::plugin));
 
@@ -42,8 +45,10 @@ enum PathfinderSystems {
 pub(super) fn pathfinder_scene() -> impl Scene {
     bsn! [
         Pathfinder
-        WanderData
-        Wandering
+        //WanderData
+        //Wandering
+        FollowerData
+        @Following
     ]
 }
 

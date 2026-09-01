@@ -338,6 +338,7 @@ fn collect_pathfind_requests(
         if request_valid {
             entity_commands.remove::<PathfindRequest>();
             if let Some(waypoints) = result {
+                info!("New path assigned!");
                 entity_commands.insert(waypoints);
             } else {
                 info!("No path found for entity {:?}", entity);
@@ -382,6 +383,8 @@ pub fn find_path(
     cancel_token: &PathfindCancelToken,
 ) -> Option<Waypoints> {
     // TODO: account movement capabilities, add search timeout, add LoS caching
+
+    info!("{:?}", request);
 
     // Sanity check
     // The code would return the correct result anyway,

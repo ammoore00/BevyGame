@@ -1,5 +1,5 @@
 use crate::characters::npc::ai::pathfinding::pathfinder::{
-    CancelPathing, PathfindRequest, PathfinderState, DEFAULT_TARGET_REACHED_THRESHOLD,
+    CancelPathing, DEFAULT_TARGET_REACHED_THRESHOLD, PathfindRequest, PathfinderState,
 };
 #[cfg(test)]
 use crate::characters::npc::ai::pathfinding::strategy::follow::test::GainLoseTargetError;
@@ -9,7 +9,7 @@ use crate::characters::npc::ai::pathfinding::strategy::{
 use crate::characters::npc::ai::pathfinding::{PathfinderData, PathfinderSystems};
 use crate::level::LEVEL_LOADED;
 use bevy::prelude::*;
-use common::WorldPosition;
+use common::{WorldCoords, WorldPosition};
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
@@ -34,7 +34,6 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(PathfindStrategy)]
 #[scene(FollowerProps)]
 pub struct Following;
-impl PathfindStrategy for Following {}
 impl Following {
     pub fn scene(props: FollowerProps) -> impl Scene {
         bsn! [
@@ -45,6 +44,7 @@ impl Following {
         ]
     }
 }
+impl PathfindStrategy for Following {}
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct FollowerProps {
@@ -72,6 +72,7 @@ impl FollowerState {
             timer.reset()
         }
         self.re_path_flag = true;
+        info!("Triggered re-path");;
     }
 
     /// Clear the flag once a re-path has been performed
@@ -117,7 +118,10 @@ impl Default for FollowerData {
     }
 }
 
-fn update_follower_state(pathfinder_query: Query<(&FollowerData, &mut FollowerState)>) {
+fn update_follower_state(
+    pathfinder_query: Query<(&FollowerData, &mut FollowerState)>,
+    time: Res<Time>,
+) {
     for (follower_data, mut follower_state) in pathfinder_query {
         // If the timer hasn't been initialized, initialize it
         // This is done because the data for how often to re-path is stored in a different component so cannot be retrieved
@@ -131,7 +135,10 @@ fn update_follower_state(pathfinder_query: Query<(&FollowerData, &mut FollowerSt
             follower_state.re_path_flag = true;
         }
 
-        if follower_state.re_path_timer.as_ref().unwrap().is_finished() {
+        let timer = follower_state.re_path_timer.as_mut().unwrap();
+        timer.tick(time.delta());
+
+        if timer.is_finished() {
             follower_state.trigger_re_path();
         }
     }
@@ -146,11 +153,10 @@ fn follow_dispatch(
     mut commands: Commands,
 ) {
     for (pathfinder_data, mut follower_state) in pathfinder_query {
-        if pathfinder_data.pathfinder.state() != PathfinderState::Dispatch {
-            continue;
-        }
-
-        if !follower_state.should_re_path() {
+        // TODO: Move re-pathing logic into main pathfinding code
+        if pathfinder_data.pathfinder.state() != PathfinderState::Dispatch
+            && !follower_state.should_re_path()
+        {
             continue;
         }
 
@@ -166,18 +172,17 @@ fn follow_dispatch(
             continue;
         };
 
-        let request = PathfindRequest::new(
-            pathfinder_data.pos.0,
-            target_pos.0,
-            pathfinder_data.clearance(),
-        );
+        let start = WorldCoords::from(*pathfinder_data.pos.0 - Vec3::Y);
+        let target = WorldCoords::from(*target_pos.0 - Vec3::Y);
+
+        let request = PathfindRequest::new(start, target, pathfinder_data.clearance());
         commands.entity(pathfinder_data.entity).insert(request);
 
         info!("NPC started searching");
     }
 }
 
-#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_new::new)]
 pub struct GainedTarget {
     pub entity: Entity,
     pub target: Entity,

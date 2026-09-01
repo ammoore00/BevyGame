@@ -12,6 +12,7 @@ use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use common::{GameState, marker};
 use physics::PhysicsLevelLoadedEvent;
+use crate::characters::npc::ai::pathfinding::GainedTarget;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((grid::plugin, map::plugin));
@@ -185,14 +186,18 @@ fn add_objects(
     };
 
     let player = player(Vec3::new(3.0, 1.0, 3.0));
-
+    let player = commands.spawn_scene(player).id();
+    
     let test_npc = npc_bundle("test".parse().unwrap(), Vec3::new(5.0, 1.0, 3.0));
+    let test_npc = commands.spawn_scene(test_npc).id();
 
     let children = &[
-        commands.spawn_scene(player).id(),
-        commands.spawn_scene(test_npc).id(),
+        player,
+        test_npc,
     ];
     commands.entity(level).add_children(children);
+    
+    commands.trigger(GainedTarget::new(test_npc, player));
 
     next_state.set(LevelSpawnState::AddObjects.next());
 }
