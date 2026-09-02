@@ -43,14 +43,13 @@ const fn color(code: u32) -> Color {
     )
 }
 
+pub const BUTTON_TEXT: Color = SEPIA_7;
+
 /// #ddd369
 pub const LABEL_TEXT: Color = Color::srgb(0.867, 0.827, 0.412);
 
 /// #fcfbcc
 pub const HEADER_TEXT: Color = Color::srgb(0.988, 0.984, 0.800);
-
-/// #ececec
-pub const BUTTON_TEXT: Color = Color::srgb(0.925, 0.925, 0.925);
 /// #4666bf
 pub const BUTTON_BACKGROUND: Color = Color::srgb(0.275, 0.400, 0.750);
 /// #6299d1

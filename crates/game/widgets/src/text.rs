@@ -26,7 +26,7 @@ pub fn world_text(text: impl Into<String>, size: impl Into<FontSize>, color: Col
     ]
 }
 
-fn text_formatting(size: impl Into<FontSize>, color: Color) -> impl Scene {
+pub fn text_formatting(size: impl Into<FontSize>, color: Color) -> impl Scene {
     bsn! [
         TextColor(color)
         TextLayout {
