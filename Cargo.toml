@@ -61,6 +61,7 @@ ron = "0.12.1"
 strum = { version = "0.28.0", features = ["derive"] }
 strum_macros = "0.28.0"
 thiserror = "2.0.17"
+winnow = "1.0.4"
 
 # Compile out low-severity logs to improve performance.
 # Remove these features if you want to profile your game with tracy.

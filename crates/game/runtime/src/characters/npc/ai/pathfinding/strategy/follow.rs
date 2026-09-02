@@ -72,7 +72,7 @@ impl FollowerState {
             timer.reset()
         }
         self.re_path_flag = true;
-        info!("Triggered re-path");;
+        info!("Triggered re-path");
     }
 
     /// Clear the flag once a re-path has been performed

@@ -10,6 +10,7 @@ runtime = { workspace = true, features = ["dev"] }
 widgets = { workspace = true }
 
 bevy = { workspace = true }
+winnow = { workspace = true }
 
 [lints]
 workspace = true

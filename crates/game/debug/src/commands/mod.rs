@@ -1,3 +1,5 @@
+mod parser;
+
 use crate::window;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::input_focus::tab_navigation::{TabGroup, TabIndex};
@@ -9,6 +11,8 @@ use widgets::text::{TINY_FONT_SIZE, text};
 use widgets::theme::palette::{BUTTON_TEXT, SEPIA_1};
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins(parser::plugin);
+
     app.init_state::<CommandsWindowOpen>();
 
     app.add_systems(
