@@ -1,7 +1,7 @@
 use crate::button::scene::{ButtonConfig, ButtonImpl};
 use crate::button::style::ButtonStyle;
 use crate::text::LARGE_FONT_SIZE;
-use crate::theme::palette::{BUTTON_TEXT, BackgroundInteractionPalette};
+use crate::theme::palette::{PRIMARY_TEXT, BackgroundInteractionPalette};
 use bevy::ecs::system::IntoObserverSystem;
 use bevy::prelude::*;
 
@@ -19,7 +19,7 @@ impl Default for ButtonWithTextOptions {
     fn default() -> Self {
         Self {
             font_size: LARGE_FONT_SIZE,
-            color: BUTTON_TEXT,
+            color: PRIMARY_TEXT,
 
             width: px(380),
             height: px(80),

@@ -43,7 +43,8 @@ const fn color(code: u32) -> Color {
     )
 }
 
-pub const BUTTON_TEXT: Color = SEPIA_7;
+pub const PRIMARY_TEXT: Color = SEPIA_7;
+pub const ERROR_TEXT: Color = RED_3;
 
 /// #ddd369
 pub const LABEL_TEXT: Color = Color::srgb(0.867, 0.827, 0.412);

@@ -1,5 +1,6 @@
 mod parser;
 
+use crate::commands::parser::{CommandRegistry, parse_command};
 use crate::window;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::input_focus::tab_navigation::{TabGroup, TabIndex};
@@ -8,7 +9,7 @@ use bevy::prelude::*;
 use bevy::text::{EditableText, TextCursorStyle};
 use common::{GameState, Pause, marker};
 use widgets::text::{TINY_FONT_SIZE, text};
-use widgets::theme::palette::{BUTTON_TEXT, SEPIA_1};
+use widgets::theme::palette::{ERROR_TEXT, PRIMARY_TEXT, SEPIA_2};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(parser::plugin);
@@ -112,10 +113,10 @@ fn command_input() -> impl Scene {
         EditableText {
             allow_newlines: false,
         }
-        BorderColor::from(SEPIA_1)
+        BorderColor::from(SEPIA_2)
         TextCursorStyle
         TabIndex(0)
-        TextColor(BUTTON_TEXT)
+        TextColor(PRIMARY_TEXT)
         TextLayout {
             justify: Justify::Left
         }
@@ -133,31 +134,57 @@ fn command_output() -> impl Scene {
             border: {px(2).all()},
             padding: {px(5).horizontal()},
 
-            flex_direction: FlexDirection::ColumnReverse,
+            flex_direction: FlexDirection::Column,
+
+            align_items: AlignItems::FlexStart,
         }
     ]
 }
 
-fn command_submission(
-    input_focus: Res<InputFocus>,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut text_input: Query<&mut EditableText, With<CommandInput>>,
-    text_output: Single<Entity, With<CommandOutput>>,
-    mut commands: Commands,
-) {
-    if keyboard_input.just_pressed(KeyCode::Enter)
-        && let Some(focused_entity) = input_focus.get()
-        && let Ok(mut text_input) = text_input.get_mut(focused_entity)
-    {
-        let text = commands
-            .spawn_scene(text(
-                format!("{:}", text_input.value()),
-                TINY_FONT_SIZE,
-                BUTTON_TEXT,
-            ))
-            .id();
-        commands.entity(text_output.entity()).add_child(text);
+fn command_submission(world: &mut World) {
+    let keyboard_input = world.resource::<ButtonInput<KeyCode>>();
+    let just_pressed_enter = keyboard_input.just_pressed(KeyCode::Enter);
 
-        text_input.clear();
+    if !just_pressed_enter {
+        return;
     }
+
+    let input_focus = world.resource::<InputFocus>();
+    let focused_entity = input_focus.get();
+
+    let Some(focused_entity) = focused_entity else {
+        return;
+    };
+
+    // Extract input text if the focused entity has EditableText
+    let mut text_query = world.query_filtered::<&mut EditableText, With<CommandInput>>();
+    let Ok(mut text_input) = text_query.get_mut(world, focused_entity) else {
+        return;
+    };
+
+    let text_val = text_input.value().to_string();
+    text_input.clear();
+
+    // Parse command using registry
+    let mut command_registry = world.resource_mut::<CommandRegistry>();
+    let result = parse_command(&mut text_val.as_str(), &mut command_registry);
+
+    let (output, color) = match result {
+        Ok(command) => (command.invoke(world), PRIMARY_TEXT),
+        Err(err) => (format!("Error: {}", err), ERROR_TEXT),
+    };
+
+    // Query for text output target entity
+    let text_output_entity = world
+        .query_filtered::<Entity, With<CommandOutput>>()
+        .single(world)
+        .unwrap();
+
+    // Spawn and attach output text scene directly using World
+    let text_entity = world
+        .spawn_scene(text(output, TINY_FONT_SIZE, color))
+        .unwrap()
+        .id();
+
+    world.entity_mut(text_output_entity).add_child(text_entity);
 }

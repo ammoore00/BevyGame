@@ -8,7 +8,7 @@ use widgets::background::UiBackgroundStyle;
 use widgets::button;
 use widgets::button::ButtonWithTextOptions;
 use widgets::text::{LARGE_FONT_SIZE, SMALL_FONT_SIZE, text};
-use widgets::theme::palette::BUTTON_TEXT;
+use widgets::theme::palette::PRIMARY_TEXT;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -74,7 +74,7 @@ fn editor_port_content() -> impl Scene {
 
             padding: UiRect::all(px(50.0))
         }
-        text("Editor Content", LARGE_FONT_SIZE, BUTTON_TEXT)
+        text("Editor Content", LARGE_FONT_SIZE, PRIMARY_TEXT)
     ]
 }
 

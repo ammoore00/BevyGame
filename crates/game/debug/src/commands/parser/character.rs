@@ -11,10 +11,10 @@ impl DebugCommand for CharacterCommand {
     const NAME: &'static str = "character";
 
     fn parse(input: &mut &str) -> ModalResult<Box<Self>> {
-        todo!()
+        Ok(Box::new(CharacterCommand))
     }
 
-    fn invoke(&self, world: &mut World) {
-        todo!()
+    fn invoke(&self, world: &mut World) -> String {
+        "Character Command Invoked".to_string()
     }
 }

@@ -3,7 +3,7 @@ use crate::commands::parser::basic_parsers::parse_prefix;
 use bevy::prelude::*;
 use std::collections::HashMap;
 use winnow::combinator::{fail, opt};
-use winnow::error::{ContextError, ErrMode};
+use winnow::error::{ContextError, ErrMode, StrContext};
 use winnow::{ModalResult, Parser, Result};
 
 mod basic_parsers;
@@ -43,13 +43,13 @@ pub trait DebugCommand: DynDebugCommand {
     fn parse(input: &mut &str) -> ModalResult<Box<Self>>;
 
     /// Invokes the command
-    fn invoke(&self, world: &mut World);
+    fn invoke(&self, world: &mut World) -> String;
 }
 
 pub trait DynDebugCommand: Send + Sync {
     /// The name of the command used to invoke it
     fn name(&self) -> &'static str;
-    fn invoke(&self, world: &mut World);
+    fn invoke(&self, world: &mut World) -> String;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -58,8 +58,8 @@ impl<T: DebugCommand + 'static> DynDebugCommand for T {
         T::NAME
     }
 
-    fn invoke(&self, world: &mut World) {
-        <T as DebugCommand>::invoke(self, world);
+    fn invoke(&self, world: &mut World) -> String {
+        <T as DebugCommand>::invoke(self, world)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -91,6 +91,7 @@ pub fn parse_command<'s>(
     match output {
         Some(cmd) => Ok(cmd),
         None => Err(fail::<&'s str, &'s str, ContextError>
+            .context(StrContext::Label("command"))
             .parse_next(input)
             .unwrap_err()),
     }
@@ -122,7 +123,7 @@ mod test {
             Ok(Box::new(Self))
         }
 
-        fn invoke(&self, _world: &mut World) {
+        fn invoke(&self, _world: &mut World) -> String {
             unimplemented!()
         }
     }

@@ -6,7 +6,7 @@ use common::marker;
 use std::marker::PhantomData;
 use widgets::button::ButtonWithTextOptions;
 use widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE, TINY_FONT_SIZE};
-use widgets::theme::palette::{BUTTON_TEXT, BackgroundInteractionPalette};
+use widgets::theme::palette::{PRIMARY_TEXT, BackgroundInteractionPalette};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<NavMapNodesRes>();
@@ -45,7 +45,7 @@ pub(super) fn global_debug() -> impl Scene {
         }
         Children [
             (
-                widgets::text::text("Debug Options", MEDIUM_FONT_SIZE, BUTTON_TEXT)
+                widgets::text::text("Debug Options", MEDIUM_FONT_SIZE, PRIMARY_TEXT)
                 Node {
                     justify_self: JustifySelf::Start,
                 }
@@ -72,7 +72,7 @@ fn debug_category(display: &str) -> impl Scene {
                 Node
                 Children [
                     (
-                        widgets::text::text(display, SMALL_FONT_SIZE, BUTTON_TEXT)
+                        widgets::text::text(display, SMALL_FONT_SIZE, PRIMARY_TEXT)
                         Node {
                             justify_self: JustifySelf::Start,
                         }
