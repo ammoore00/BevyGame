@@ -2439,6 +2439,8 @@ dependencies = [
  "common",
  "physics",
  "runtime",
+ "strum",
+ "strum_macros",
  "widgets",
  "winnow",
 ]

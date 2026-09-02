@@ -1,10 +1,16 @@
 use crate::commands::CommandPickable;
+use crate::commands::parser::basic_parsers::{parse_digits, parse_entity, parse_prefix};
 use crate::commands::parser::{CommandRegistrar, DebugCommand};
 use crate::commands::window::CommandsWindowOpen;
 use bevy::prelude::*;
 use common::marker;
 use runtime::characters::Character;
-use winnow::ModalResult;
+use std::convert::Infallible;
+use strum_macros::{Display, EnumString};
+use winnow::ascii::alpha1;
+use winnow::combinator::{alt, fail};
+use winnow::error::{StrContext, StrContextValue};
+use winnow::{ModalResult, Parser};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_debug_command::<CharacterCommand>();
@@ -13,17 +19,57 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(CommandsWindowOpen(false)), remove_pickable);
 }
 
-struct CharacterCommand;
+#[derive(Debug)]
+struct CharacterCommand {
+    entity: Entity,
+    operation: Operation,
+}
+
 impl DebugCommand for CharacterCommand {
     const NAME: &'static str = "character";
+    type Err = Infallible;
 
     fn parse(input: &mut &str) -> ModalResult<Box<Self>> {
-        Ok(Box::new(CharacterCommand))
+        info!("Parsing: {}", input);
+        let entity = parse_entity
+            .context(StrContext::Label("entity"))
+            .context(StrContext::Expected(StrContextValue::Description("Failed to find target entity")))
+            .parse_next(input)?;
+        let operation = parse_operation(input)?;
+        Ok(Box::new(CharacterCommand { entity, operation }))
     }
 
-    fn invoke(&self, world: &mut World) -> String {
-        "Character Command Invoked".to_string()
+    fn invoke(&self, _world: &mut World) -> Result<String, Self::Err> {
+        Ok(format!("{self:?}"))
     }
+}
+
+fn parse_operation(input: &mut &str) -> ModalResult<Operation> {
+    alt((
+        ("modify", parse_attribute)
+            .map(|(_, attr)| Operation::Modify(attr))
+            .context(StrContext::Label("modify attribute")),
+        fail.context(StrContext::Label("operation"))
+            .context(StrContext::Expected(StrContextValue::StringLiteral(
+                "modify",
+            ))),
+    ))
+    .parse_next(input)
+}
+
+#[derive(Debug, Display)]
+enum Operation {
+    Modify(Attribute),
+}
+
+fn parse_attribute(input: &mut &str) -> ModalResult<Attribute> {
+    alt((("modify", alpha1).map(|_| Attribute::Health),)).parse_next(input)
+}
+
+#[derive(Debug, Display, EnumString)]
+#[strum(serialize_all = "snake_case")]
+enum Attribute {
+    Health,
 }
 
 marker!(RemovePickableOnCommandExit);

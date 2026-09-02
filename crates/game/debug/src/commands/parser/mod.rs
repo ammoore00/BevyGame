@@ -1,7 +1,8 @@
-use std::any::Any;
 use crate::commands::parser::basic_parsers::parse_prefix;
 use bevy::prelude::*;
+use std::any::Any;
 use std::collections::HashMap;
+use std::error::Error;
 use winnow::combinator::{fail, opt};
 use winnow::error::{ContextError, ErrMode, StrContext};
 use winnow::{ModalResult, Parser, Result};
@@ -39,17 +40,19 @@ type ParserFn =
 
 pub trait DebugCommand: DynDebugCommand {
     const NAME: &'static str;
+    type Err: Error;
+
     /// Parses the command from the given input
     fn parse(input: &mut &str) -> ModalResult<Box<Self>>;
 
     /// Invokes the command
-    fn invoke(&self, world: &mut World) -> String;
+    fn invoke(&self, world: &mut World) -> Result<String, Self::Err>;
 }
 
 pub trait DynDebugCommand: Send + Sync {
     /// The name of the command used to invoke it
     fn name(&self) -> &'static str;
-    fn invoke(&self, world: &mut World) -> String;
+    fn invoke(&self, world: &mut World) -> Result<String, Box<dyn Error>>;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -58,8 +61,8 @@ impl<T: DebugCommand + 'static> DynDebugCommand for T {
         T::NAME
     }
 
-    fn invoke(&self, world: &mut World) -> String {
-        <T as DebugCommand>::invoke(self, world)
+    fn invoke(&self, world: &mut World) -> Result<String, Box<dyn Error>> {
+        <T as DebugCommand>::invoke(self, world).map_err(|err| Box::new(err) as Box<dyn Error>)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -70,35 +73,30 @@ impl<T: DebugCommand + 'static> DynDebugCommand for T {
 pub fn parse_command<'s>(
     input: &mut &'s str,
     registry: &'s mut CommandRegistry, // TODO: Fix this being a mutable reference?
-) -> Result<Box<dyn DynDebugCommand>> {
+) -> ModalResult<Box<dyn DynDebugCommand>> {
     let mut output = None;
 
     for (command, parser) in registry.0.iter_mut() {
-        if let Some(mut out) = opt(parse_prefix(command)).parse_next(input)? {
-            match parser.parse_next(&mut out) {
-                Ok(cmd) => output = Some(cmd),
-                Err(err) => {
-                    return match err {
-                        ErrMode::Backtrack(err) => Err(err),
-                        ErrMode::Cut(err) => Err(err),
-                        ErrMode::Incomplete(_) => todo!(),
-                    };
-                }
-            }
-        }
+        let Some(mut out) = opt(parse_prefix(command)).parse_next(input)? else {
+            continue;
+        };
+
+        let cmd = parser.parse_next(&mut out)?;
+        output = Some(cmd);
+        *input = out;
     }
 
     match output {
         Some(cmd) => Ok(cmd),
-        None => Err(fail::<&'s str, &'s str, ContextError>
+        None => Err(fail
             .context(StrContext::Label("command"))
-            .parse_next(input)
-            .unwrap_err()),
+            .parse_next(input)?),
     }
 }
 
 #[cfg(test)]
 mod test {
+    use std::convert::Infallible;
     use super::*;
 
     fn registry() -> CommandRegistry {
@@ -118,12 +116,13 @@ mod test {
     struct TestCommand;
     impl DebugCommand for TestCommand {
         const NAME: &'static str = "test";
+        type Err = Infallible;
 
         fn parse(_: &mut &str) -> ModalResult<Box<Self>> {
             Ok(Box::new(Self))
         }
 
-        fn invoke(&self, _world: &mut World) -> String {
+        fn invoke(&self, _world: &mut World) -> Result<String, Self::Err> {
             unimplemented!()
         }
     }
@@ -142,7 +141,10 @@ mod test {
         // THEN
         // It should be parsed correctly
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().as_any().downcast_ref::<TestCommand>(), Some(&TestCommand));
+        assert_eq!(
+            result.unwrap().as_any().downcast_ref::<TestCommand>(),
+            Some(&TestCommand)
+        );
     }
 
     #[test]

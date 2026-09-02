@@ -168,8 +168,15 @@ fn command_submission(world: &mut World) {
     let result = parse_command(&mut text_val.as_str(), &mut command_registry);
 
     let (output, color) = match result {
-        Ok(command) => (command.invoke(world), PRIMARY_TEXT),
-        Err(err) => (format!("Error: {}", err), ERROR_TEXT),
+        Ok(command) => {
+            let result = command.invoke(world);
+
+            match result {
+                Ok(output) => (output, PRIMARY_TEXT),
+                Err(err) => (format!("Execution Error: {}", err), ERROR_TEXT),
+            }
+        },
+        Err(err) => (format!("Syntax Error: {}", err), ERROR_TEXT),
     };
 
     // Query for text output target entity

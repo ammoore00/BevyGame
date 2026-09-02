@@ -19,6 +19,6 @@ fn on_picked(
     mut commands: Commands,
 ) {
     if let Ok(entity) = pickable_query.get(event.entity) {
-        commands.trigger(AddTextEvent(entity.to_string()));
+        commands.trigger(AddTextEvent(entity.to_bits().to_string()));
     }
 }
