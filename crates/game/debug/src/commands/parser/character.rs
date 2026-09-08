@@ -1,11 +1,12 @@
 use crate::commands::CommandPickable;
-use crate::commands::parser::basic_parsers::{parse_digits, parse_entity, parse_prefix};
+use crate::commands::parser::basic_parsers::{parse_digits, parse_prefix, parse_uuid};
 use crate::commands::parser::{CommandRegistrar, DebugCommand};
 use crate::commands::window::CommandsWindowOpen;
 use bevy::prelude::*;
 use common::marker;
 use runtime::characters::Character;
 use std::convert::Infallible;
+use bevy::asset::uuid::Uuid;
 use strum_macros::{Display, EnumString};
 use winnow::ascii::alpha1;
 use winnow::combinator::{alt, fail};
@@ -21,7 +22,7 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Debug)]
 struct CharacterCommand {
-    entity: Entity,
+    entity_id: Uuid,
     operation: Operation,
 }
 
@@ -31,12 +32,12 @@ impl DebugCommand for CharacterCommand {
 
     fn parse(input: &mut &str) -> ModalResult<Box<Self>> {
         info!("Parsing: {}", input);
-        let entity = parse_entity
+        let entity_id = parse_uuid
             .context(StrContext::Label("entity"))
             .context(StrContext::Expected(StrContextValue::Description("Failed to find target entity")))
             .parse_next(input)?;
         let operation = parse_operation(input)?;
-        Ok(Box::new(CharacterCommand { entity, operation }))
+        Ok(Box::new(CharacterCommand { entity_id, operation }))
     }
 
     fn invoke(&self, _world: &mut World) -> Result<String, Self::Err> {
@@ -90,7 +91,7 @@ fn add_pickable(
             ));
         }
 
-        commands.entity(character_entity).insert(CommandPickable);
+        commands.entity(character_entity).insert(CommandPickable::new());
     }
 }
 
