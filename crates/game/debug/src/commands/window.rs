@@ -1,8 +1,8 @@
+use crate::commands::CommandHistory;
 use crate::commands::parser::{CommandRegistry, parse_command};
 use crate::window;
 use bevy::input::common_conditions::input_just_pressed;
-use bevy::input_focus::tab_navigation::{TabGroup, TabIndex};
-use bevy::input_focus::{AutoFocus, InputFocus};
+use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::prelude::*;
 use bevy::text::{EditableText, TextCursorStyle};
 use common::{GameState, Pause, marker};
@@ -32,7 +32,12 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        command_submission.run_if(in_state(CommandsWindowOpen(true))),
+        (
+            command_submission,
+            keep_command_input_focused,
+            scroll_command_history,
+        )
+            .run_if(in_state(CommandsWindowOpen(true))),
     );
 
     app.add_observer(on_add_text);
@@ -61,8 +66,6 @@ fn spawn_command_window() -> impl Scene {
                 align_items: AlignItems::FlexStart,
                 justify_content: JustifyContent::FlexEnd,
             }
-            AutoFocus
-            TabGroup::new(0)
             Children [
                 (command_output()),
                 (command_input()),
@@ -113,7 +116,6 @@ fn command_input() -> impl Scene {
         }
         BorderColor::from(SEPIA_2)
         TextCursorStyle
-        TabIndex(0)
         TextColor(PRIMARY_TEXT)
         TextLayout {
             justify: Justify::Left
@@ -139,6 +141,15 @@ fn command_output() -> impl Scene {
     ]
 }
 
+fn keep_command_input_focused(
+    mut input_focus: ResMut<InputFocus>,
+    input_entity: Single<Entity, With<CommandInput>>,
+) {
+    if input_focus.get() != Some(input_entity.entity()) {
+        input_focus.set(input_entity.entity(), FocusCause::Navigated);
+    }
+}
+
 fn command_submission(world: &mut World) {
     let keyboard_input = world.resource::<ButtonInput<KeyCode>>();
     let just_pressed_enter = keyboard_input.just_pressed(KeyCode::Enter);
@@ -154,7 +165,7 @@ fn command_submission(world: &mut World) {
         return;
     };
 
-    // Extract input text if the focused entity has EditableText
+    // Extract input text
     let mut text_query = world.query_filtered::<&mut EditableText, With<CommandInput>>();
     let Ok(mut text_input) = text_query.get_mut(world, focused_entity) else {
         return;
@@ -163,7 +174,7 @@ fn command_submission(world: &mut World) {
     let text_val = text_input.value().to_string();
     text_input.clear();
 
-    // Parse command using registry
+    // Parse command
     let mut command_registry = world.resource_mut::<CommandRegistry>();
     let result = parse_command(&mut text_val.as_str(), &mut command_registry);
 
@@ -175,23 +186,27 @@ fn command_submission(world: &mut World) {
                 Ok(output) => (output, PRIMARY_TEXT),
                 Err(err) => (format!("Execution Error: {}", err), ERROR_TEXT),
             }
-        },
+        }
         Err(err) => (format!("Syntax Error: {}", err), ERROR_TEXT),
     };
 
-    // Query for text output target entity
+    // Query for command output
     let text_output_entity = world
         .query_filtered::<Entity, With<CommandOutput>>()
         .single(world)
         .unwrap();
 
-    // Spawn and attach output text scene directly using World
+    // Spawn scene into the world
     let text_entity = world
         .spawn_scene(text(output, TINY_FONT_SIZE, color))
         .unwrap()
         .id();
 
     world.entity_mut(text_output_entity).add_child(text_entity);
+
+    // Push the sent command to the command history
+    let mut history = world.resource_mut::<CommandHistory>();
+    history.push_clear(text_val.clone());
 }
 
 #[derive(Event, Debug, Clone, PartialEq, Eq)]
@@ -199,9 +214,27 @@ pub struct AddTextEvent(pub String);
 
 fn on_add_text(
     event: On<AddTextEvent>,
-    mut text_input: Single<&mut EditableText, With<CommandInput>>
+    mut text_input: Single<&mut EditableText, With<CommandInput>>,
 ) {
     let existing = text_input.value().to_string();
     let new_text = existing + &event.0;
     text_input.editor.set_text(new_text.as_str());
+}
+
+fn scroll_command_history(
+    mut command_history: ResMut<CommandHistory>,
+    mut text_input: Single<&mut EditableText, With<CommandInput>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::ArrowUp) {
+        if command_history.is_prompt() {
+            command_history.stash(text_input.value().to_string());
+        }
+
+        let prev = command_history.prev();
+        text_input.editor.set_text(prev.as_str());
+    } else if keyboard_input.just_pressed(KeyCode::ArrowDown) {
+        let next = command_history.next();
+        text_input.editor.set_text(next.as_str());
+    }
 }
