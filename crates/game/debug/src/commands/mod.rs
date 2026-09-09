@@ -1,7 +1,6 @@
 use bevy::asset::uuid::Uuid;
 use crate::commands::window::{AddTextEvent, CommandsWindowOpen};
 use bevy::prelude::*;
-use common::marker;
 
 mod parser;
 mod window;

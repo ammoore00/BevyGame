@@ -1,5 +1,6 @@
 use crate::commands::parser::basic_parsers::parse_prefix;
 use bevy::prelude::*;
+#[cfg(test)]
 use std::any::Any;
 use std::collections::HashMap;
 use std::error::Error;
@@ -50,21 +51,17 @@ pub trait DebugCommand: DynDebugCommand {
 }
 
 pub trait DynDebugCommand: Send + Sync {
-    /// The name of the command used to invoke it
-    fn name(&self) -> &'static str;
     fn invoke(&self, world: &mut World) -> Result<String, Box<dyn Error>>;
+    #[cfg(test)]
     fn as_any(&self) -> &dyn Any;
 }
 
 impl<T: DebugCommand + 'static> DynDebugCommand for T {
-    fn name(&self) -> &'static str {
-        T::NAME
-    }
-
     fn invoke(&self, world: &mut World) -> Result<String, Box<dyn Error>> {
         <T as DebugCommand>::invoke(self, world).map_err(|err| Box::new(err) as Box<dyn Error>)
     }
 
+    #[cfg(test)]
     fn as_any(&self) -> &dyn Any {
         self
     }

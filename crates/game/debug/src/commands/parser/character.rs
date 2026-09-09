@@ -6,12 +6,12 @@ use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
 use common::marker;
 use runtime::characters::{Character, DeathEvent};
-use runtime::debug::Health;
+use runtime::debug::{Following, GainedTarget, Health, Player, Wandering};
 use std::convert::Infallible;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
 use strum_macros::Display;
-use winnow::ascii::{digit1, space1};
+use winnow::ascii::space1;
 use winnow::combinator::{alt, fail, preceded};
 use winnow::error::{StrContext, StrContextValue};
 use winnow::{ModalResult, Parser};
@@ -60,28 +60,23 @@ impl DebugCommand for CharacterCommand {
             .parse_next(input)?;
         let target = CharacterCommandTarget::Uuid(entity_id);
 
-        Ok(Box::new(CharacterCommand {
-            target,
-            operation,
-        }))
+        Ok(Box::new(CharacterCommand { target, operation }))
     }
 
     fn invoke(&self, world: &mut World) -> Result<String, Self::Err> {
-        let targets = self.target.get_entities(world);
+        let targets = self.target.get_entities(world).into_iter();
         let target_count = targets.len();
 
         let out = match self.operation {
             CharacterOperation::Kill => {
-                targets
-                    .iter()
-                    .for_each(|entity| world.trigger(DeathEvent::new(*entity)));
+                targets.for_each(|entity| world.trigger(DeathEvent::new(entity)));
                 format!("Killed {target_count} character(s)")
             }
             CharacterOperation::Attribute(attr) => match attr {
                 Attribute::Health { operation, amount } => {
-                    targets.iter().for_each(|entity| {
+                    targets.for_each(|entity| {
                         let mut query = world.query::<&mut Health>();
-                        if let Ok(mut health) = query.get_mut(world, *entity) {
+                        if let Ok(mut health) = query.get_mut(world, entity) {
                             health.current = operation.apply(health.current, amount);
                         }
                     });
@@ -91,7 +86,32 @@ impl DebugCommand for CharacterCommand {
                     )
                 }
             },
-            CharacterOperation::Ai(_) => "Not yet implemented!".to_string(),
+            CharacterOperation::Ai(operation) => match operation {
+                AiOperation::Enable => "Not yet implemented!".to_string(),
+                AiOperation::Disable => "Not yet implemented!".to_string(),
+                AiOperation::Pathfinder(mode) => match mode {
+                    PathfinderMode::Follow => {
+                        let mut player_query = world.query_filtered::<Entity, With<Player>>();
+                        let player = player_query.single(world).expect("Failed to get player!");
+                        
+                        targets.for_each(|entity| {
+                            world
+                                .entity_mut(entity)
+                                .apply_scene(bsn![@Following])
+                                .expect("Failed to apply Following state scene");
+                            world.trigger(GainedTarget::new(entity, player));
+                        });
+                        
+                        format!("Set {target_count} character(s) to Following mode")
+                    }
+                    PathfinderMode::Wander => {
+                        targets.for_each(|entity| {
+                            world.entity_mut(entity).insert(Wandering);
+                        });
+                        format!("Set {target_count} character(s) to Wandering mode")
+                    }
+                },
+            },
         };
 
         Ok(out)
@@ -122,15 +142,17 @@ fn parse_operation(input: &mut &str) -> ModalResult<CharacterOperation> {
     alt((
         ("kill", ()).map(|_| CharacterOperation::Kill),
         ("attribute", preceded(space1, parse_attribute))
-            .map(|(_, operation)| operation)
+            .map(|(_, attr)| CharacterOperation::Attribute(attr))
             .context(StrContext::Label("attribute <attribute>")),
         ("ai", preceded(space1, parse_ai_operation))
-            .map(|(_, operation)| operation)
+            .map(|(_, operation)| CharacterOperation::Ai(operation))
             .context(StrContext::Label("ai <operation>")),
         fail.context(StrContext::Label("operation"))
+            .context(StrContext::Expected(StrContextValue::StringLiteral("kill")))
             .context(StrContext::Expected(StrContextValue::StringLiteral(
                 "attribute",
-            ))),
+            )))
+            .context(StrContext::Expected(StrContextValue::StringLiteral("ai"))),
     ))
     .parse_next(input)
 }
@@ -142,21 +164,19 @@ enum CharacterOperation {
     Ai(AiOperation),
 }
 
-fn parse_attribute(input: &mut &str) -> ModalResult<CharacterOperation> {
-    Ok(CharacterOperation::Attribute(
-        alt(((
-            "health",
-            preceded(
-                space1,
-                (
-                    parse_attribute_operation.context(StrContext::Label("operation")),
-                    preceded(space1, parse_digits::<u32>).context(StrContext::Label("amount")),
-                ),
+fn parse_attribute(input: &mut &str) -> ModalResult<Attribute> {
+    alt(((
+        "health",
+        preceded(
+            space1,
+            (
+                parse_attribute_operation.context(StrContext::Label("operation")),
+                preceded(space1, parse_digits::<u32>).context(StrContext::Label("amount")),
             ),
-        )
-            .map(|(_, (operation, amount))| Attribute::Health { operation, amount }),))
-        .parse_next(input)?,
-    ))
+        ),
+    )
+        .map(|(_, (operation, amount))| Attribute::Health { operation, amount }),))
+    .parse_next(input)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -204,19 +224,35 @@ impl AttributeOperation {
     }
 }
 
-fn parse_ai_operation(input: &mut &str) -> ModalResult<CharacterOperation> {
-    todo!()
+fn parse_ai_operation(input: &mut &str) -> ModalResult<AiOperation> {
+    alt((
+        ("enable", ()).map(|_| AiOperation::Enable),
+        ("disable", ()).map(|_| AiOperation::Disable),
+        ("pathfinder", preceded(space1, parse_pathfinder_mode))
+            .map(|(_, mode)| AiOperation::Pathfinder(mode)),
+    ))
+    .context(StrContext::Label("ai"))
+    .parse_next(input)
 }
 
 #[derive(Debug, Clone, Copy)]
 enum AiOperation {
     Enable,
     Disable,
-    SetMode(AiMode),
+    Pathfinder(PathfinderMode),
+}
+
+fn parse_pathfinder_mode(input: &mut &str) -> ModalResult<PathfinderMode> {
+    alt((
+        ("follow", ()).map(|_| PathfinderMode::Follow),
+        ("wander", ()).map(|_| PathfinderMode::Wander),
+    ))
+    .context(StrContext::Label("pathfinder"))
+    .parse_next(input)
 }
 
 #[derive(Debug, Clone, Copy)]
-enum AiMode {
+enum PathfinderMode {
     Follow,
     Wander,
 }

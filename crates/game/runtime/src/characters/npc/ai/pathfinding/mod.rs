@@ -1,6 +1,7 @@
 use crate::characters::npc::ai::pathfinding::pathfinder::{
     PathfindPending, Pathfinder, PathfinderClearance, Waypoints,
 };
+use crate::characters::npc::ai::pathfinding::strategy::follow::{FollowerData, Following};
 use crate::characters::npc::ai::{AiState, AiSystems};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
@@ -8,14 +9,14 @@ use bevy::prelude::*;
 use common::WorldCoords;
 use common::WorldPosition;
 use physics::Collider;
-use strategy::wander::{WanderData, Wandering};
 
 mod movement;
 mod pathfinder;
-mod strategy;
+pub mod strategy;
 
-pub use strategy::follow::{GainedTarget, LostTarget};
-use crate::characters::npc::ai::pathfinding::strategy::follow::{FollowerData, Following};
+pub use strategy::follow::GainedTarget;
+use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
+use crate::debug::Wandering;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((movement::plugin, pathfinder::plugin, strategy::plugin));
@@ -45,10 +46,10 @@ enum PathfinderSystems {
 pub(super) fn pathfinder_scene() -> impl Scene {
     bsn! [
         Pathfinder
-        //WanderData
-        //Wandering
+        WanderData
+        Wandering
         FollowerData
-        @Following
+        //@Following
     ]
 }
 
