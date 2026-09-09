@@ -1,12 +1,12 @@
 use bevy::asset::uuid::Uuid;
-use crate::commands::window::{AddTextEvent, CommandsWindowOpen};
+use crate::command_window::window::{AddTextEvent, CommandsWindowOpen};
 use bevy::prelude::*;
 
-mod parser;
+mod commands;
 mod window;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((parser::plugin, window::plugin));
+    app.add_plugins((commands::plugin, window::plugin));
 
     app.init_resource::<CommandHistory>();
 

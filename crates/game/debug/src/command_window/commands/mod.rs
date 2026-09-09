@@ -1,4 +1,5 @@
-use crate::commands::parser::basic_parsers::parse_prefix;
+use crate::command_window::CommandPickable;
+use crate::command_window::commands::basic_parsers::parse_prefix;
 use bevy::prelude::*;
 #[cfg(test)]
 use std::any::Any;
@@ -31,6 +32,16 @@ impl CommandRegistrar for App {
             T::NAME,
             Box::new(|input: &mut &_| T::parse(input).map(|cmd| cmd as Box<dyn DynDebugCommand>)),
         );
+
+        self.add_systems(Update, add_pickable::<T::TargetComponent>);
+    }
+}
+
+fn add_pickable<T: Component>(query: Query<Entity, (With<T>, Without<CommandPickable>)>, mut commands: Commands) {
+    for entity in query {
+        commands
+            .entity(entity)
+            .insert((Pickable::default(), CommandPickable::new()));
     }
 }
 
@@ -42,6 +53,7 @@ type ParserFn =
 pub trait DebugCommand: DynDebugCommand {
     const NAME: &'static str;
     type Err: Error;
+    type TargetComponent: Component;
 
     /// Parses the command from the given input
     fn parse(input: &mut &str) -> ModalResult<Box<Self>>;
@@ -93,8 +105,8 @@ pub fn parse_command<'s>(
 
 #[cfg(test)]
 mod test {
-    use std::convert::Infallible;
     use super::*;
+    use std::convert::Infallible;
 
     fn registry() -> CommandRegistry {
         let mut registry = CommandRegistry(HashMap::new());
@@ -109,11 +121,15 @@ mod test {
         registry
     }
 
+    #[derive(Component)]
+    struct TestComponent;
+
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct TestCommand;
     impl DebugCommand for TestCommand {
         const NAME: &'static str = "test";
         type Err = Infallible;
+        type TargetComponent = TestComponent;
 
         fn parse(_: &mut &str) -> ModalResult<Box<Self>> {
             Ok(Box::new(Self))

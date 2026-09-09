@@ -1,4 +1,4 @@
-mod commands;
+mod command_window;
 mod debug_options;
 
 use bevy::prelude::*;
@@ -8,7 +8,7 @@ use widgets::background::UiBackgroundStyle;
 pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((commands::plugin, debug_options::plugin));
+        app.add_plugins((command_window::plugin, debug_options::plugin));
     }
 }
 

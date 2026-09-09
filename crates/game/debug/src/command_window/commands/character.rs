@@ -1,10 +1,8 @@
-use crate::commands::CommandPickable;
-use crate::commands::parser::basic_parsers::{parse_digits, parse_uuid};
-use crate::commands::parser::{CommandRegistrar, DebugCommand};
-use crate::commands::window::CommandsWindowOpen;
+use crate::command_window::CommandPickable;
+use crate::command_window::commands::basic_parsers::{parse_digits, parse_uuid};
+use crate::command_window::commands::{CommandRegistrar, DebugCommand};
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
-use common::marker;
 use runtime::characters::{Character, DeathEvent};
 use runtime::debug::{Following, GainedTarget, Health, Player, Wandering};
 use std::convert::Infallible;
@@ -18,9 +16,6 @@ use winnow::{ModalResult, Parser};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_debug_command::<CharacterCommand>();
-
-    app.add_systems(OnEnter(CommandsWindowOpen(true)), add_pickable);
-    app.add_systems(OnEnter(CommandsWindowOpen(false)), remove_pickable);
 }
 
 /// # Character
@@ -47,6 +42,7 @@ struct CharacterCommand {
 impl DebugCommand for CharacterCommand {
     const NAME: &'static str = "character";
     type Err = Infallible;
+    type TargetComponent = Character;
 
     fn parse(input: &mut &str) -> ModalResult<Box<Self>> {
         let operation = parse_operation(input)?;
@@ -255,44 +251,4 @@ fn parse_pathfinder_mode(input: &mut &str) -> ModalResult<PathfinderMode> {
 enum PathfinderMode {
     Follow,
     Wander,
-}
-
-marker!(RemovePickableOnCommandExit);
-
-fn add_pickable(
-    character_query: Query<Entity, With<Character>>,
-    pickable_query: Query<Entity, With<Pickable>>,
-    mut commands: Commands,
-) {
-    for character_entity in character_query.iter() {
-        if pickable_query.get(character_entity).is_err() {
-            commands.entity(character_entity).insert((
-                RemovePickableOnCommandExit,
-                Pickable {
-                    should_block_lower: true,
-                    is_hoverable: true,
-                },
-            ));
-        }
-
-        commands
-            .entity(character_entity)
-            .insert(CommandPickable::new());
-    }
-}
-
-fn remove_pickable(
-    pickable_query: Query<(Entity, Option<&RemovePickableOnCommandExit>), With<Pickable>>,
-    mut commands: Commands,
-) {
-    for (entity, remove_pickable) in pickable_query.iter() {
-        if remove_pickable.is_some() {
-            commands
-                .entity(entity)
-                .remove::<(Pickable, RemovePickableOnCommandExit)>();
-        }
-        commands.entity(entity).remove::<CommandPickable>();
-
-        info!("Removing Pickable!");
-    }
 }

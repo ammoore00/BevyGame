@@ -1,5 +1,5 @@
-use crate::commands::CommandHistory;
-use crate::commands::parser::{CommandRegistry, parse_command};
+use crate::command_window::CommandHistory;
+use crate::command_window::commands::{CommandRegistry, parse_command};
 use crate::window;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::input_focus::{FocusCause, InputFocus};
@@ -19,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
             set_commands_window_closed.run_if(in_state(CommandsWindowOpen(true))),
         )
             .run_if(input_just_pressed(KeyCode::Backquote))
-            // Don't just use GameplaySystems because we want to be able to use commands
+            // Don't just use GameplaySystems because we want to be able to use command_window
             // even if main gameplay systems are suspended (GameplaySystems is not controlled
             // by Pause state, but might be separately suspended)
             .run_if(in_state(GameState::Gameplay)),

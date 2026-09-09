@@ -156,7 +156,7 @@ fn navigate(
                 println!("Navigated {direction:?} successfully. {entity} is now focused.");
 
                 // TODO: Fix this once audio is its own crate
-                //if let Some(ref interaction_assets) = interaction_assets { commands.spawn(sound_effect(interaction_assets.hover.clone())); }
+                //if let Some(ref interaction_assets) = interaction_assets { command_window.spawn(sound_effect(interaction_assets.hover.clone())); }
             }
             Err(e) => println!("Navigation failed: {e}"),
         }

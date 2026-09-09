@@ -192,7 +192,7 @@ fn play_on_hover_sound_effect(
 
     if interaction_query.contains(trigger.entity) {
         // TODO: Fix this after audio is separated into its own crate
-        //commands.spawn(sound_effect(interaction_assets.hover.clone()));
+        //command_window.spawn(sound_effect(interaction_assets.hover.clone()));
     }
 }
 
@@ -208,6 +208,6 @@ fn play_on_click_sound_effect(
 
     if interaction_query.contains(trigger.entity) {
         // TODO: Fix this after audio is separated into its own crate
-        //commands.spawn(sound_effect(interaction_assets.click.clone()));
+        //command_window.spawn(sound_effect(interaction_assets.click.clone()));
     }
 }
