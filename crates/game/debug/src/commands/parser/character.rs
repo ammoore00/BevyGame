@@ -24,7 +24,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 /// # Character
-/// Syntax: `character <entity> <operation>`
+/// Syntax: `character <operation> <target(s)>`
 ///
 /// ### Operations
 /// - `kill`
@@ -49,15 +49,19 @@ impl DebugCommand for CharacterCommand {
     type Err = Infallible;
 
     fn parse(input: &mut &str) -> ModalResult<Box<Self>> {
-        let entity_id = parse_uuid
+        let operation = parse_operation(input)?;
+
+        // TODO: Expand target selectors
+        let entity_id = preceded(space1, parse_uuid)
             .context(StrContext::Label("entity"))
             .context(StrContext::Expected(StrContextValue::Description(
                 "Failed to find target entity",
             )))
             .parse_next(input)?;
-        let operation = parse_operation(input)?;
+        let target = CharacterCommandTarget::Uuid(entity_id);
+
         Ok(Box::new(CharacterCommand {
-            target: CharacterCommandTarget::Uuid(entity_id),
+            target,
             operation,
         }))
     }
@@ -145,8 +149,8 @@ fn parse_attribute(input: &mut &str) -> ModalResult<CharacterOperation> {
             preceded(
                 space1,
                 (
-                    parse_attribute_operation,
-                    preceded(space1, parse_digits::<u32>),
+                    parse_attribute_operation.context(StrContext::Label("operation")),
+                    preceded(space1, parse_digits::<u32>).context(StrContext::Label("amount")),
                 ),
             ),
         )
