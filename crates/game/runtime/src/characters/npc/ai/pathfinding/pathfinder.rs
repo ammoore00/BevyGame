@@ -137,7 +137,6 @@ fn on_cancel_pathing(
     mut commands: Commands,
 ) {
     let Ok(mut data) = pending_pathfind_query.get_mut(event.0) else {
-        error!("Cannot cancel pathfinding for an entity without a pathfinder!");
         return;
     };
 

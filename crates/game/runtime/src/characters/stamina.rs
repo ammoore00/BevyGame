@@ -16,21 +16,21 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Clone)]
 pub struct Stamina {
-    pub max: usize,
-    pub current: isize,
-    pub regen_rate: usize,
+    pub max: u32,
+    pub current: i32,
+    pub regen_rate: f32,
     pub regen_delay: f32,
     pub regen_timer: Timer,
     pub regen_delay_timer: Option<Timer>,
 }
 impl Stamina {
-    pub fn new(max: usize, regen_per_second: usize, regen_delay: f32) -> Self {
+    pub fn new(max: u32, regen_per_second: u32, regen_delay: f32) -> Self {
         let regen_interval = 0.05;
-        let regen_rate = (regen_per_second as f32 * regen_interval).max(0.0) as usize;
+        let regen_rate = (regen_per_second as f32 * regen_interval).max(0.0);
 
         Self {
             max,
-            current: max as isize,
+            current: max as i32,
             regen_rate,
             regen_delay,
             regen_timer: Timer::from_seconds(regen_interval, TimerMode::Repeating),
@@ -47,18 +47,18 @@ impl Default for Stamina {
 #[derive(EntityEvent)]
 pub struct StaminaEvent {
     entity: Entity,
-    cost: usize,
+    cost: u32,
 }
 
 impl StaminaEvent {
-    pub fn new(entity: Entity, cost: usize) -> Self {
+    pub fn new(entity: Entity, cost: u32) -> Self {
         Self { entity, cost }
     }
 }
 
 fn on_stamina_event(event: On<StaminaEvent>, mut query: Query<&mut Stamina>) {
     if let Ok(mut stamina) = query.get_mut(event.entity) {
-        stamina.current -= event.cost as isize;
+        stamina.current -= event.cost as i32;
         stamina.regen_delay_timer = Some(Timer::from_seconds(stamina.regen_delay, TimerMode::Once));
     }
 }
@@ -83,8 +83,8 @@ fn update_stamina(mut query: Query<&mut Stamina>) {
         }
 
         if stamina.regen_timer.is_finished() {
-            stamina.current += stamina.regen_rate as isize;
-            stamina.current = stamina.current.min(stamina.max as isize);
+            stamina.current += stamina.regen_rate as i32;
+            stamina.current = stamina.current.min(stamina.max as i32);
         }
     }
 }

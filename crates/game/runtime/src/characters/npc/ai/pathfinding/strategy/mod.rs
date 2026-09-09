@@ -1,6 +1,6 @@
 use crate::characters::npc::ai::pathfinding::PathfinderSystems;
 use crate::characters::npc::ai::pathfinding::pathfinder::CancelPathing;
-use bevy::ecs::system::SystemState;
+use bevy::ecs::system::{command, SystemState};
 use bevy::prelude::*;
 use std::any::TypeId;
 use std::marker::PhantomData;

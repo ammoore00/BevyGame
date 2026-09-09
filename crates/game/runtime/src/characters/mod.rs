@@ -196,7 +196,7 @@ impl CharacterBuilderContext<'_> {
 
 marker!(pub Dead);
 
-#[derive(EntityEvent, Debug, Clone)]
+#[derive(EntityEvent, Debug, Clone, derive_new::new)]
 pub struct DeathEvent {
     entity: Entity,
 }

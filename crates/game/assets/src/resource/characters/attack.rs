@@ -39,7 +39,7 @@ pub struct AttackDefinition {
     #[getset(get = "pub")]
     duration: Duration,
     #[getset(get_copy = "pub")]
-    stamina_cost: usize,
+    stamina_cost: u32,
     #[getset(get = "pub")]
     animation: ResourceLocation<AnimationResource>,
     #[getset(get = "pub")]

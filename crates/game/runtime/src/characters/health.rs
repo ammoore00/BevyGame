@@ -16,8 +16,8 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[scene(HealthProps)]
 pub struct Health {
-    pub max: usize,
-    pub current: usize,
+    pub max: u32,
+    pub current: u32,
 }
 impl Health {
     fn scene(props: HealthProps) -> impl Scene {
@@ -42,7 +42,7 @@ impl Default for Health {
 
 #[derive(Debug, Clone)]
 pub struct HealthProps {
-    pub max_health: usize,
+    pub max_health: u32,
     pub damage_modifiers: DamageModifierCodec,
 }
 impl Default for HealthProps {

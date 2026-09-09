@@ -19,11 +19,11 @@ pub enum DamageModifierKind {
     Immunity,
 }
 impl DamageModifierKind {
-    pub fn apply(&self, amount: usize) -> usize {
+    pub fn apply(&self, amount: u32) -> u32 {
         match self {
             DamageModifierKind::None => amount,
-            DamageModifierKind::Vulnerability(tier) => (amount as f32 * tier.as_f32()) as usize,
-            DamageModifierKind::Resistance(tier) => (amount as f32 / tier.as_f32()) as usize,
+            DamageModifierKind::Vulnerability(tier) => (amount as f32 * tier.as_f32()) as u32,
+            DamageModifierKind::Resistance(tier) => (amount as f32 / tier.as_f32()) as u32,
             DamageModifierKind::Immunity => 0,
         }
     }
@@ -65,9 +65,9 @@ pub enum DamageKind {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum HealthEventKind {
-    Heal(usize),
-    Damage(usize, DamageKind),
-    Set(usize),
+    Heal(u32),
+    Damage(u32, DamageKind),
+    Set(u32),
     FullHeal,
     InstantDeath,
     None,

@@ -11,6 +11,7 @@ use crate::level::LEVEL_LOADED;
 use bevy::prelude::*;
 use common::{WorldCoords, WorldPosition};
 use std::time::Duration;
+use bevy::ecs::system::entity_command::remove;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -93,7 +94,8 @@ fn on_following_added(
 }
 
 fn on_following_removed(event: On<Remove, Following>, mut commands: Commands) {
-    commands.entity(event.entity).remove::<FollowerState>();
+    // Queue silenced used to suppress errors about despawned entities
+    commands.entity(event.entity).queue_silenced(remove::<FollowerState>());
 }
 
 const RE_PATH_THRESHOLD: f32 = 1.0;

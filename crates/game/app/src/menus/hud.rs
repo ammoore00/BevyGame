@@ -78,7 +78,7 @@ impl FromWorld for StatBarAssets {
     }
 }
 
-const HEALTH_BAR_PIXEL_VALUE: usize = 10;
+const HEALTH_BAR_PIXEL_VALUE: u32 = 10;
 
 // TODO: Update this to not need to query values from runtime directly
 fn update_health_bar(
@@ -115,7 +115,7 @@ fn update_health_bar(
     )
 }
 
-const STAMINA_BAR_PIXEL_VALUE: usize = 10;
+const STAMINA_BAR_PIXEL_VALUE: u32 = 10;
 
 // TODO: Update this to not need to query values from runtime directly
 fn update_stamina_bar(
@@ -141,7 +141,7 @@ fn update_stamina_bar(
 
     spawn_stat_bar(
         stamina.max,
-        stamina.current.max(0) as usize,
+        stamina.current.max(0) as u32,
         STAMINA_BAR_PIXEL_VALUE,
         16,
         StaminaBarSegment,
@@ -153,9 +153,9 @@ fn update_stamina_bar(
 }
 
 fn spawn_stat_bar(
-    max: usize,
-    current: usize,
-    pixel_value: usize,
+    max: u32,
+    current: u32,
+    pixel_value: u32,
     bar_sprite_index: usize,
     bar_component: impl Bundle + Clone,
     parent: Entity,

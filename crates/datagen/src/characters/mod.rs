@@ -173,7 +173,7 @@ impl From<AnimationData> for AnimationCodec {
 struct AttackData {
     loc: ResourceLocation<AttackResource>,
     duration: u64,
-    stamina_cost: usize,
+    stamina_cost: u32,
     animation: AnimationData,
     particle_sprite: ResourceLocation<CharacterSpriteResource>,
     key_frames: Vec<KeyFrameCodec>,
@@ -194,7 +194,7 @@ impl AttackData {
     fn new(
         loc: &str,
         duration: u64,
-        stamina_cost: usize,
+        stamina_cost: u32,
         animation: AnimationData,
         particle_sprite: &str,
         key_frames: Vec<KeyFrameCodec>,
