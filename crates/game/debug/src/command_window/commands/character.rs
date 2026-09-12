@@ -46,7 +46,7 @@ impl DebugCommand for CharacterCommand {
 
     fn parse(input: &mut &str) -> ModalResult<Box<Self>> {
         let operation = parse_operation(input)?;
-        let targets = parse_targets(input)?;
+        let targets = parse_target_list(input)?;
         Ok(Box::new(CharacterCommand { targets, operation }))
     }
 
@@ -73,23 +73,28 @@ impl DebugCommand for CharacterCommand {
                     )
                 }
             },
-            CharacterOperation::Ai(operation) => match operation {
+            CharacterOperation::Ai(ref operation) => match operation {
                 AiOperation::Enable => "Not yet implemented!".to_string(),
                 AiOperation::Disable => "Not yet implemented!".to_string(),
                 AiOperation::Pathfinder(mode) => match mode {
-                    PathfinderMode::Follow => {
-                        let mut player_query = world.query_filtered::<Entity, With<Player>>();
-                        let player = player_query.single(world).expect("Failed to get player!");
+                    PathfinderMode::Follow(follower_target) => {
+                        let follower_target = follower_target.get_entity(world);
 
-                        targets.for_each(|entity| {
-                            world
-                                .entity_mut(entity)
-                                .apply_scene(bsn![@Following])
-                                .expect("Failed to apply Following state scene");
-                            world.trigger(GainedTarget::new(entity, player));
-                        });
+                        if let Some(follower_target) = follower_target {
+                            targets.for_each(|entity| {
+                                world
+                                    .entity_mut(entity)
+                                    .apply_scene(bsn![@Following])
+                                    .expect("Failed to apply Following state scene");
+                                world.trigger(GainedTarget::new(entity, follower_target));
+                            });
 
-                        format!("Set {target_count} character(s) to Following mode")
+                            format!("Set {target_count} character(s) to Following mode with target")
+                        } else {
+                            format!(
+                                "Failed to find target. Set {target_count} character(s) to Following mode with no target"
+                            )
+                        }
                     }
                     PathfinderMode::Wander => {
                         targets.for_each(|entity| {
@@ -105,26 +110,8 @@ impl DebugCommand for CharacterCommand {
     }
 }
 
-fn parse_targets(input: &mut &str) -> ModalResult<CharacterCommandTargetList> {
-    let uuid = opt(preceded(space1, parse_uuid)
-        .context(StrContext::Label("entity"))
-        .context(StrContext::Expected(StrContextValue::Description(
-            "Failed to find target entity",
-        ))))
-    .parse_next(input)?;
-
-    let target = if let Some(entity_id) = uuid {
-        CharacterCommandTarget::Uuid(entity_id)
-    } else {
-        let parse_identifier = alt((("player", ()).map(|_| CharacterCommandIdentifier::Player),))
-            .context(StrContext::Label("identifier"))
-            .context(StrContext::Expected(StrContextValue::Description(
-                "Failed to find target identifier",
-            )));
-
-        let identifier = preceded(space1, parse_identifier).parse_next(input)?;
-        CharacterCommandTarget::Identifier(identifier)
-    };
+fn parse_target_list(input: &mut &str) -> ModalResult<CharacterCommandTargetList> {
+    let target = parse_target(input)?;
 
     Ok(CharacterCommandTargetList::Single(target))
 }
@@ -136,24 +123,32 @@ enum CharacterCommandTargetList {
 impl CharacterCommandTargetList {
     fn get_entities(&self, world: &mut World) -> Vec<Entity> {
         match self {
-            CharacterCommandTargetList::Single(target) => match target {
-                CharacterCommandTarget::Uuid(uuid) => {
-                    let mut query = world.query::<(Entity, &CommandPickable)>();
-                    query
-                        .iter(world)
-                        .filter(|(_, u)| u.0 == *uuid)
-                        .map(|(e, _)| e)
-                        .collect()
-                }
-                CharacterCommandTarget::Identifier(id) => match id {
-                    CharacterCommandIdentifier::Player => {
-                        let mut query =
-                            world.query_filtered::<Entity, (With<CommandPickable>, With<Player>)>();
-                        vec![query.single(world).expect("Failed to get player!")]
-                    }
-                },
-            },
+            CharacterCommandTargetList::Single(target) => {
+                target.get_entity(world).iter().copied().collect()
+            }
         }
+    }
+}
+
+fn parse_target(input: &mut &str) -> ModalResult<CharacterCommandTarget> {
+    let uuid = opt(preceded(space1, parse_uuid)
+        .context(StrContext::Label("entity"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "Failed to find target entity",
+        ))))
+    .parse_next(input)?;
+
+    if let Some(entity_id) = uuid {
+        Ok(CharacterCommandTarget::Uuid(entity_id))
+    } else {
+        let parse_identifier = alt((("player", ()).map(|_| CharacterCommandIdentifier::Player),))
+            .context(StrContext::Label("identifier"))
+            .context(StrContext::Expected(StrContextValue::Description(
+                "Failed to find target identifier",
+            )));
+
+        let identifier = preceded(space1, parse_identifier).parse_next(input)?;
+        Ok(CharacterCommandTarget::Identifier(identifier))
     }
 }
 
@@ -161,6 +156,27 @@ impl CharacterCommandTargetList {
 enum CharacterCommandTarget {
     Uuid(Uuid),
     Identifier(CharacterCommandIdentifier),
+}
+impl CharacterCommandTarget {
+    fn get_entity(&self, world: &mut World) -> Option<Entity> {
+        match self {
+            CharacterCommandTarget::Uuid(uuid) => {
+                let mut query = world.query::<(Entity, &CommandPickable)>();
+                query
+                    .iter(world)
+                    .filter(|(_, u)| u.0 == *uuid)
+                    .map(|(e, _)| e)
+                    .next()
+            }
+            CharacterCommandTarget::Identifier(id) => match id {
+                CharacterCommandIdentifier::Player => {
+                    let mut query =
+                        world.query_filtered::<Entity, (With<CommandPickable>, With<Player>)>();
+                    query.single(world).ok()
+                }
+            },
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -266,7 +282,7 @@ fn parse_ai_operation(input: &mut &str) -> ModalResult<AiOperation> {
     .parse_next(input)
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 enum AiOperation {
     Enable,
     Disable,
@@ -275,15 +291,23 @@ enum AiOperation {
 
 fn parse_pathfinder_mode(input: &mut &str) -> ModalResult<PathfinderMode> {
     alt((
-        ("follow", ()).map(|_| PathfinderMode::Follow),
+        // TODO: Make this parse the target from the command
+        ("follow", ()).map(|_| PathfinderMode::Follow(CharacterCommandTarget::Identifier(CharacterCommandIdentifier::Player))),
+            //.map(|(_, target)| PathfinderMode::Follow(target)),
         ("wander", ()).map(|_| PathfinderMode::Wander),
     ))
     .context(StrContext::Label("pathfinder"))
+    .context(StrContext::Expected(StrContextValue::StringLiteral(
+        "follow <target>",
+    )))
+    .context(StrContext::Expected(StrContextValue::StringLiteral(
+        "wander",
+    )))
     .parse_next(input)
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 enum PathfinderMode {
-    Follow,
+    Follow(CharacterCommandTarget),
     Wander,
 }

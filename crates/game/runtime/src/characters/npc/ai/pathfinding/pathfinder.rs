@@ -79,11 +79,7 @@ pub struct PathfindRequest {
     request_id: Uuid,
 }
 impl PathfindRequest {
-    pub fn new(
-        start: WorldCoords,
-        target: WorldCoords,
-        clearance: PathfinderClearance,
-    ) -> Self {
+    pub fn new(start: WorldCoords, target: WorldCoords, clearance: PathfinderClearance) -> Self {
         Self {
             start,
             target,
@@ -165,7 +161,10 @@ impl Waypoints {
         Self::new_with_target_threshold(path, DEFAULT_TARGET_REACHED_THRESHOLD)
     }
 
-    pub(super) fn new_with_target_threshold(path: Vec<WorldCoords>, target_reached_threshold: f32) -> Self {
+    pub(super) fn new_with_target_threshold(
+        path: Vec<WorldCoords>,
+        target_reached_threshold: f32,
+    ) -> Self {
         let target = *path.last().unwrap();
         let next_position = *path.first().unwrap();
         Self {
@@ -233,7 +232,6 @@ fn update_pathfinder_state(
                 if target == waypoints.target {
                     commands.entity(entity).remove::<Waypoints>();
                     pathfinder.set_state(PathfinderState::Idle);
-                    info!("NPC reached target! Stopping movement");
                 } else {
                     // Otherwise, increment the path to the next waypoint
                     waypoints.increment_position();
@@ -270,13 +268,10 @@ fn update_pathfinder_state(
                 }
             }
             // If we are still waiting for a path, do nothing
-            PathfinderState::Searching => {
-                info!("NPC still searching!");
-            }
+            PathfinderState::Searching => {}
             // If we are somehow in the moving state but don't have a path, set the state to idle
             PathfinderState::Moving => {
                 pathfinder.set_state(PathfinderState::Idle);
-                info!("NPC has no path, setting to idle!");
             }
         }
     }
@@ -337,7 +332,6 @@ fn collect_pathfind_requests(
         if request_valid {
             entity_commands.remove::<PathfindRequest>();
             if let Some(waypoints) = result {
-                info!("New path assigned!");
                 entity_commands.insert(waypoints);
             } else {
                 info!("No path found for entity {:?}", entity);
@@ -382,8 +376,6 @@ pub fn find_path(
     cancel_token: &PathfindCancelToken,
 ) -> Option<Waypoints> {
     // TODO: account movement capabilities, add search timeout, add LoS caching
-
-    info!("{:?}", request);
 
     // Sanity check
     // The code would return the correct result anyway,

@@ -73,7 +73,6 @@ impl FollowerState {
             timer.reset()
         }
         self.re_path_flag = true;
-        info!("Triggered re-path");
     }
 
     /// Clear the flag once a re-path has been performed
@@ -94,6 +93,7 @@ fn on_following_added(
 }
 
 fn on_following_removed(event: On<Remove, Following>, mut commands: Commands) {
+    commands.entity(event.entity).trigger(CancelPathing);
     // Queue silenced used to suppress errors about despawned entities
     commands.entity(event.entity).queue_silenced(remove::<FollowerState>());
 }
@@ -179,8 +179,6 @@ fn follow_dispatch(
 
         let request = PathfindRequest::new(start, target, pathfinder_data.clearance());
         commands.entity(pathfinder_data.entity).insert(request);
-
-        info!("NPC started searching");
     }
 }
 
@@ -214,7 +212,7 @@ fn on_gained_target(
     }
 }
 
-#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_new::new)]
 pub struct LostTarget {
     pub entity: Entity,
 }
