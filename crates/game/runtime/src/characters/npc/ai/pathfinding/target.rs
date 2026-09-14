@@ -12,7 +12,7 @@ pub enum TargetGoal {
     /// A static target position
     Position {
         /// The target position
-        coords: WorldCoords,
+        _coords: WorldCoords,
         /// Threshold distance for detecting when we've reached the target
         threshold_dist: f32,
     },
@@ -30,18 +30,26 @@ pub enum TargetGoal {
     },
 }
 impl TargetGoal {
-    fn position(coords: WorldCoords, threshold_dist: f32) -> Self {
+    pub fn position(coords: WorldCoords, threshold_dist: f32) -> Self {
         Self::Position {
-            coords,
+            _coords: coords,
             threshold_dist,
         }
     }
 
-    fn entity(entity: Entity, threshold_dist: f32) -> Self {
+    pub fn entity(entity: Entity, threshold_dist: f32) -> Self {
         Self::Entity {
             entity,
             threshold_dist,
             coarse_threshold: None,
+        }
+    }
+    
+    // TODO: Replace this method with real collision distance detection
+    pub fn threshold_dist(&self) -> f32 {
+        match self {
+            Self::Position { threshold_dist, .. } => *threshold_dist,
+            Self::Entity { coarse_threshold, .. } => coarse_threshold.clone().unwrap().unwrap(),
         }
     }
 }

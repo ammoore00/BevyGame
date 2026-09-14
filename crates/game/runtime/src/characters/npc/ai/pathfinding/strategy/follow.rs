@@ -6,12 +6,14 @@ use crate::characters::npc::ai::pathfinding::strategy::follow::test::GainLoseTar
 use crate::characters::npc::ai::pathfinding::strategy::{
     PathfindStrategy, PathfindStrategyRegistry, ReflectPathfindStrategy,
 };
+use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 use crate::characters::npc::ai::pathfinding::{PathfinderData, PathfinderSystems};
 use crate::level::LEVEL_LOADED;
+use bevy::ecs::system::entity_command::remove;
 use bevy::prelude::*;
 use common::{WorldCoords, WorldPosition};
+use physics::Collider;
 use std::time::Duration;
-use bevy::ecs::system::entity_command::remove;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -95,7 +97,9 @@ fn on_following_added(
 fn on_following_removed(event: On<Remove, Following>, mut commands: Commands) {
     commands.entity(event.entity).trigger(CancelPathing);
     // Queue silenced used to suppress errors about despawned entities
-    commands.entity(event.entity).queue_silenced(remove::<FollowerState>());
+    commands
+        .entity(event.entity)
+        .queue_silenced(remove::<FollowerState>());
 }
 
 const RE_PATH_THRESHOLD: f32 = 1.0;
@@ -148,13 +152,13 @@ fn update_follower_state(
 
 fn follow_dispatch(
     pathfinder_query: Query<
-        (PathfinderData, &mut FollowerState),
+        (PathfinderData, &mut FollowerState, Option<&Collider>),
         (With<Following>, With<FollowerData>),
     >,
-    target_query: Query<&WorldPosition>,
+    target_query: Query<(&WorldPosition, Option<&Collider>)>,
     mut commands: Commands,
 ) {
-    for (pathfinder_data, mut follower_state) in pathfinder_query {
+    for (pathfinder_data, mut follower_state, collider) in pathfinder_query {
         // TODO: Move re-pathing logic into main pathfinding code
         if pathfinder_data.pathfinder.state() != PathfinderState::Dispatch
             && !follower_state.should_re_path()
@@ -169,16 +173,29 @@ fn follow_dispatch(
             continue;
         };
 
-        let Ok(target_pos) = target_query.get(target) else {
+        let Ok((target_pos, target_collider)) = target_query.get(target) else {
             error!("Failed to get target's position!");
             continue;
         };
 
-        let start = WorldCoords::from(*pathfinder_data.pos.0 - Vec3::Y);
-        let target = WorldCoords::from(*target_pos.0 - Vec3::Y);
+        let start_loc = WorldCoords::from(*pathfinder_data.pos.0 - Vec3::Y);
+        let target_loc = WorldCoords::from(*target_pos.0 - Vec3::Y);
 
-        let request = PathfindRequest::new(start, target, pathfinder_data.clearance());
-        commands.entity(pathfinder_data.entity).insert(request);
+        // Don't start a new path if we're already close enough
+        let size = collider.map_or(0.0, |c| c.max_bound_radius());
+        let target_size = target_collider.map_or(0.0, |c| c.max_bound_radius());
+
+        if start_loc.distance(*target_loc)
+            < size + target_size + RE_PATH_THRESHOLD + DEFAULT_TARGET_REACHED_THRESHOLD
+        {
+            continue;
+        }
+
+        let request = PathfindRequest::new(start_loc, target_loc, pathfinder_data.clearance());
+        commands.entity(pathfinder_data.entity).insert((
+            request,
+            TargetGoal::entity(target, DEFAULT_TARGET_REACHED_THRESHOLD),
+        ));
     }
 }
 

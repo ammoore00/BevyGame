@@ -1,7 +1,10 @@
-use crate::characters::npc::ai::pathfinding::pathfinder::{PathfindRequest, PathfinderState};
+use crate::characters::npc::ai::pathfinding::pathfinder::{
+    DEFAULT_TARGET_REACHED_THRESHOLD, PathfindRequest, PathfinderState,
+};
 use crate::characters::npc::ai::pathfinding::strategy::{
     PathfindStrategy, PathfindStrategyRegistry, ReflectPathfindStrategy,
 };
+use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 use crate::characters::npc::ai::pathfinding::{PathfinderData, PathfinderSystems};
 use crate::debug::TileNavMap;
 use bevy::prelude::*;
@@ -78,7 +81,11 @@ fn wander_dispatch(
             target.into(),
             pathfinder_data.clearance(),
         );
-        commands.entity(pathfinder_data.entity).insert(request);
+
+        commands.entity(pathfinder_data.entity).insert((
+            request,
+            TargetGoal::position(target.into(), DEFAULT_TARGET_REACHED_THRESHOLD),
+        ));
 
         info!("NPC started searching");
     }

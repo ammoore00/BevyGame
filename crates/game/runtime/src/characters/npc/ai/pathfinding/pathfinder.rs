@@ -16,6 +16,7 @@ use std::ops::AddAssign;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 use std::time::Duration;
+use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -118,15 +119,6 @@ impl Debug for PathfindPending {
 #[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CancelPathing(pub Entity);
 
-#[cfg(test)]
-pub fn test_on_cancel_pathing(
-    event: On<CancelPathing>,
-    pending_pathfind_query: Query<PathfinderData>,
-    commands: Commands,
-) {
-    on_cancel_pathing(event, pending_pathfind_query, commands);
-}
-
 fn on_cancel_pathing(
     event: On<CancelPathing>,
     mut pending_pathfind_query: Query<PathfinderData>,
@@ -139,7 +131,7 @@ fn on_cancel_pathing(
     data.pathfinder.set_state(PathfinderState::Idle);
     commands
         .entity(event.0)
-        .remove::<(Waypoints, PathfindRequest)>();
+        .remove::<(Waypoints, PathfindRequest, TargetGoal)>();
 
     if let Some(mut pending) = data.pending_task {
         pending.cancel();
@@ -153,18 +145,9 @@ pub struct Waypoints {
 
     pub(super) next_position: Option<WorldCoords>,
     pub(super) next_index: usize,
-
-    pub(super) target_reached_threshold: f32,
 }
 impl Waypoints {
     pub(super) fn new(path: Vec<WorldCoords>) -> Self {
-        Self::new_with_target_threshold(path, DEFAULT_TARGET_REACHED_THRESHOLD)
-    }
-
-    pub(super) fn new_with_target_threshold(
-        path: Vec<WorldCoords>,
-        target_reached_threshold: f32,
-    ) -> Self {
         let target = *path.last().unwrap();
         let next_position = *path.first().unwrap();
         Self {
@@ -172,7 +155,6 @@ impl Waypoints {
             target,
             next_position: Some(next_position),
             next_index: 0,
-            target_reached_threshold,
         }
     }
 
@@ -199,6 +181,7 @@ fn update_pathfinder_state(
 
             pending_task,
             waypoints,
+            target_goal,
 
             pos,
             ..
@@ -215,7 +198,12 @@ fn update_pathfinder_state(
                 commands.entity(entity).remove::<Waypoints>();
                 pathfinder.set_state(PathfinderState::Idle);
                 error!("Invalid NPC target, stopping movement");
-                return;
+                continue;
+            };
+            
+            let Some(target_goal) = target_goal else {
+                error!("NPC with waypoints but no target goal component!");
+                continue;
             };
 
             let distance = target.distance(*pos.0 - Vec3::Y);
@@ -223,7 +211,7 @@ fn update_pathfinder_state(
             let threshold = if target == waypoints.target {
                 WAYPOINT_REACHED_THRESHOLD
             } else {
-                waypoints.target_reached_threshold
+                target_goal.threshold_dist()
             };
 
             // If we are within the threshold of the next waypoint
@@ -559,4 +547,13 @@ impl PartialOrd for PathfindCoordState {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
+}
+
+#[cfg(test)]
+pub fn test_on_cancel_pathing(
+    event: On<CancelPathing>,
+    pending_pathfind_query: Query<PathfinderData>,
+    commands: Commands,
+) {
+    on_cancel_pathing(event, pending_pathfind_query, commands);
 }

@@ -18,6 +18,7 @@ mod target;
 use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
 use crate::debug::Wandering;
 pub use strategy::follow::GainedTarget;
+use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
@@ -53,9 +54,9 @@ pub(super) fn pathfinder_scene() -> impl Scene {
     bsn! [
         Pathfinder
         WanderData
-        Wandering
+        //Wandering
         FollowerData
-        //@Following
+        @Following
     ]
 }
 
@@ -67,6 +68,7 @@ pub struct PathfinderData {
     pub pathfinder: &'static mut Pathfinder,
     pub pending_task: Option<&'static mut PathfindPending>,
     pub waypoints: Option<&'static mut Waypoints>,
+    pub target_goal: Option<&'static mut TargetGoal>,
 
     pub pos: &'static WorldPosition,
     pub collider: &'static Collider,
