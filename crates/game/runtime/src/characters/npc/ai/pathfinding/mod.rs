@@ -15,12 +15,17 @@ mod pathfinder;
 pub mod strategy;
 mod target;
 
-pub use strategy::follow::GainedTarget;
 use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
 use crate::debug::Wandering;
+pub use strategy::follow::GainedTarget;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((movement::plugin, pathfinder::plugin, strategy::plugin));
+    app.add_plugins((
+        movement::plugin,
+        pathfinder::plugin,
+        strategy::plugin,
+        target::plugin,
+    ));
 
     app.configure_sets(
         Update,

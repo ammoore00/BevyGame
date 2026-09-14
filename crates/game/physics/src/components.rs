@@ -259,7 +259,9 @@ impl Collider {
     }
 
     /// Get the minimum and maximum world coordinates of the collider.
+    /// 
     /// Returns (min, max)
+    // TODO: Cache this?
     pub fn bounds(&self) -> (Vec3, Vec3) {
         let (local_min, local_max) = match &self.collider_type {
             ColliderData::Cuboid(cuboid) => {
@@ -305,12 +307,29 @@ impl Collider {
         let (min, max) = self.bounds();
         max - min
     }
+
+    /// Get the maximum radius of the collider for coarse distance calculations.
+    // TODO: Cache this?
+    pub fn max_bound_radius(&self) -> f32 {
+        match &self.collider_type {
+            ColliderData::Cuboid(cuboid) => cuboid.half_extents.length(),
+            ColliderData::Capsule(capsule) => capsule.segment.length() / 2.0 + capsule.radius,
+            ColliderData::ConvexHull { vertices, .. } => vertices
+                .iter()
+                .map(|vertex| vertex.length())
+                .max_by(|a, b| {
+                    a.partial_cmp(b)
+                        .expect("Non-orderable float in convex sphere data!")
+                })
+                .unwrap_or(0.0),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct CollisionContact(Contact);
 impl CollisionContact {
-    pub fn _contact_points(&self) -> (Vec3, Vec3) {
+    pub fn contact_points(&self) -> (Vec3, Vec3) {
         let contact = &self.0;
 
         let p1 = contact.point1;
@@ -321,9 +340,13 @@ impl CollisionContact {
 
         (p1, p2)
     }
+    
+    pub fn dist(&self) -> f32 {
+        self.0.dist
+    }
 
-    pub fn _depth(&self) -> f32 {
-        -self.0.dist
+    pub fn depth(&self) -> f32 {
+        -self.dist()
     }
 
     pub fn normal(&self) -> Vec3 {
