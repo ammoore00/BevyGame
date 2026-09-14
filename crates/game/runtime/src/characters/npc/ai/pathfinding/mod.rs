@@ -13,6 +13,7 @@ use physics::Collider;
 mod movement;
 mod pathfinder;
 pub mod strategy;
+mod target;
 
 pub use strategy::follow::GainedTarget;
 use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
