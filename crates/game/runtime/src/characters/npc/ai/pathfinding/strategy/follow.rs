@@ -102,7 +102,7 @@ fn on_following_removed(event: On<Remove, Following>, mut commands: Commands) {
         .queue_silenced(remove::<FollowerState>());
 }
 
-const RE_PATH_THRESHOLD: f32 = 1.0;
+const RE_PATH_THRESHOLD: f32 = 0.25;
 const RE_PATH_TIMER: Duration = Duration::from_millis(500);
 
 #[derive(Component, Debug, Clone)]
@@ -185,9 +185,7 @@ fn follow_dispatch(
         let size = collider.map_or(0.0, |c| c.max_bound_radius());
         let target_size = target_collider.map_or(0.0, |c| c.max_bound_radius());
 
-        if start_loc.distance(*target_loc)
-            < size + target_size + RE_PATH_THRESHOLD + DEFAULT_TARGET_REACHED_THRESHOLD
-        {
+        if start_loc.distance(*target_loc) < size + target_size + RE_PATH_THRESHOLD {
             continue;
         }
 
