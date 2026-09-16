@@ -240,15 +240,17 @@ fn update_path_render(
                 commands.spawn((path_bundle(), line));
             });
 
-            commands.spawn((
-                path_bundle(),
-                draw_world_line(
-                    prev_pos,
-                    pos,
-                    settings,
-                    scale.0,
-                ),
-            ));
+            if prev_pos != pos {
+                commands.spawn((
+                    path_bundle(),
+                    draw_world_line(
+                        prev_pos,
+                        pos,
+                        settings,
+                        scale.0,
+                    ),
+                ));
+            }
 
             prev_pos = pos;
         }

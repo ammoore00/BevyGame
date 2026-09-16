@@ -377,49 +377,55 @@ pub fn find_path(
 
     // Find the closest point on the grid to the target
     let target_tile = TileCoords::from(target);
-    let mut best_target = None;
-    let mut best_distance = i32::MAX;
+    let mut closest_target_tile = None;
 
-    for r in 1..=MAX_GRID_SEARCH_DISTANCE {
-        for dx in -r..=r {
-            for dy in -r..=r {
-                for dz in -r..=r {
-                    if dx.abs() != r && dy.abs() != r && dz.abs() != r {
-                        continue;
+    if nav_map.has_node(&target_tile) {
+        target = target_tile.into();
+        closest_target_tile = Some(target_tile);
+    } else {
+        let mut best_distance = i32::MAX;
+
+        for r in 1..=MAX_GRID_SEARCH_DISTANCE {
+            for dx in -r..=r {
+                for dy in -r..=r {
+                    for dz in -r..=r {
+                        if dx.abs() != r && dy.abs() != r && dz.abs() != r {
+                            continue;
+                        }
+
+                        let candidate = TileCoords::from([
+                            target_tile.x + dx,
+                            target_tile.y + dy,
+                            target_tile.z + dz,
+                        ]);
+
+                        if !nav_map.has_node(&candidate) {
+                            continue;
+                        }
+
+                        let dist = candidate.distance_squared(*target_tile);
+
+                        if dist >= best_distance {
+                            continue;
+                        }
+
+                        best_distance = dist;
+                        closest_target_tile = Some(candidate);
                     }
-
-                    let candidate = TileCoords::from([
-                        target_tile.x + dx,
-                        target_tile.y + dy,
-                        target_tile.z + dz,
-                    ]);
-
-                    if !nav_map.has_node(&candidate) {
-                        continue;
-                    }
-
-                    let dist = candidate.distance_squared(*target_tile);
-
-                    if dist >= best_distance {
-                        continue;
-                    }
-
-                    best_distance = dist;
-                    best_target = Some(candidate);
                 }
             }
         }
-    }
 
-    if let Some(best_target) = best_target {
-        // If the best target is the same as the original target, do nothing
-        // Otherwise, update the target to the closest point on the grid
-        if best_target != target_tile {
-            target = best_target.into();
+        if let Some(best_target) = closest_target_tile {
+            // If the best target is the same as the original target, do nothing
+            // Otherwise, update the target to the closest point on the grid
+            if best_target != target_tile {
+                target = best_target.into();
+            }
+        } else {
+            info!("Target is outside of nav mesh by more than the maximum search range!");
+            return None;
         }
-    } else {
-        info!("Target is outside of nav mesh by more than the maximum search range!");
-        return None;
     }
 
     let mut costs = BTreeMap::new();
@@ -458,7 +464,7 @@ pub fn find_path(
             path.push(start);
 
             // If the target is within the nav mesh, use the actual target instead of the closest tile
-            if let Some(best_target) = best_target
+            if let Some(best_target) = closest_target_tile
                 && best_target == TileCoords::from(request.target)
             {
                 path[0] = request.target;
