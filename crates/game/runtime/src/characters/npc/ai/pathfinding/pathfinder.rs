@@ -99,7 +99,7 @@ pub struct PathfinderClearance {
 #[derive(Component)]
 pub struct PathfindPending {
     request: PathfindRequest,
-    task: Task<Option<Waypoints>>,
+    task: Task<Result<Waypoints, PathfindError>>,
     task_cancel_token: PathfindCancelToken,
 }
 impl PathfindPending {
@@ -310,19 +310,19 @@ fn collect_pathfind_requests(
             pathfind_pending.task_cancel_token.cancel();
         }
 
-        let mut entity_commands = commands.entity(entity);
-        entity_commands.remove::<PathfindPending>();
-
         let Some(result) = block_on(poll_once(&mut pathfind_pending.task)) else {
             continue;
         };
 
-        if request_valid {
-            entity_commands.remove::<PathfindRequest>();
-            if let Some(waypoints) = result {
+        let mut entity_commands = commands.entity(entity);
+        entity_commands.remove::<(PathfindRequest, PathfindPending)>();
+
+        match result {
+            Ok(waypoints) => {
                 entity_commands.insert(waypoints);
-            } else {
-                info!("No path found for entity {:?}", entity);
+            }
+            Err(err) => {
+                info!("Pathfinding failed for entity: {:?}", err);
             }
         }
     }
@@ -358,18 +358,18 @@ const MAX_GRID_SEARCH_DISTANCE: i32 = 5;
 /// for more information on Theta* pathfinding.
 ///
 /// Returns `None` if a path cannot be found.
-pub fn find_path(
+fn find_path(
     nav_map: &TileNavMap,
     request: &PathfindRequest,
     cancel_token: &PathfindCancelToken,
-) -> Option<Waypoints> {
+) -> Result<Waypoints, PathfindError> {
     // TODO: account movement capabilities, add search timeout, add LoS caching
 
     // Sanity check
     // The code would return the correct result anyway,
     // but this early guard prevents unnecessary computation
     if request.start.distance(*request.target) <= WAYPOINT_REACHED_THRESHOLD {
-        return Some(Waypoints::new(vec![request.start]));
+        return Ok(Waypoints::new(vec![request.start]));
     }
 
     let start = request.start;
@@ -423,8 +423,7 @@ pub fn find_path(
         if let Some(best_target) = closest_target_tile {
             target = best_target.into();
         } else {
-            info!("Target is outside of nav mesh by more than the maximum search range!");
-            return None;
+            return Err(PathfindError::TargetOutsideNavMesh);
         }
     }
 
@@ -443,7 +442,7 @@ pub fn find_path(
     // Explore frontier using min heap to explore lower cost nodes first
     while let Some(node) = heap.pop() {
         if cancel_token.is_cancelled() {
-            return None;
+            return Err(PathfindError::Cancelled);
         }
 
         // If we have reached the target position, reconstruct the path from parents, then return it
@@ -460,7 +459,7 @@ pub fn find_path(
             path.push(start);
             path.reverse();
 
-            return Some(Waypoints::new(path));
+            return Ok(Waypoints::new(path));
         }
 
         // If we already found a better path here, skip this node
@@ -525,8 +524,7 @@ pub fn find_path(
         }
     }
 
-    info!("Heap ended before path was found!");
-    None
+    Err(PathfindError::HeapEnded)
 }
 
 /// Tracks the pathfinding state for a single coordinate
@@ -550,6 +548,16 @@ impl PartialOrd for PathfindCoordState {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+enum PathfindError {
+    #[error("Pathfinding was cancelled")]
+    Cancelled,
+    #[error("Target is outside of navmesh by more than the maximum search radius")]
+    TargetOutsideNavMesh,
+    #[error("Heap ended before path was found")]
+    HeapEnded,
 }
 
 #[cfg(test)]
