@@ -381,7 +381,6 @@ pub fn find_path(
 
     if nav_map.has_node(&target_tile) {
         target = target_tile.into();
-        closest_target_tile = Some(target_tile);
     } else {
         let mut best_distance = i32::MAX;
 
@@ -414,14 +413,15 @@ pub fn find_path(
                     }
                 }
             }
+
+            // If we've found a tile on the grid, there is no need to search further radii
+            if closest_target_tile.is_some() {
+                break;
+            }
         }
 
         if let Some(best_target) = closest_target_tile {
-            // If the best target is the same as the original target, do nothing
-            // Otherwise, update the target to the closest point on the grid
-            if best_target != target_tile {
-                target = best_target.into();
-            }
+            target = best_target.into();
         } else {
             info!("Target is outside of nav mesh by more than the maximum search range!");
             return None;
@@ -457,19 +457,7 @@ pub fn find_path(
                 position = parent;
             }
 
-            if *position != start {
-                error!("Pathfinding failed to find a path from start to target!");
-                return None;
-            }
             path.push(start);
-
-            // If the target is within the nav mesh, use the actual target instead of the closest tile
-            if let Some(best_target) = closest_target_tile
-                && best_target == TileCoords::from(request.target)
-            {
-                path[0] = request.target;
-            }
-
             path.reverse();
 
             return Some(Waypoints::new(path));

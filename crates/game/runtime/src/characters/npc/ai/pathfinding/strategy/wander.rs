@@ -86,8 +86,6 @@ fn wander_dispatch(
             request,
             TargetGoal::position(target.into(), DEFAULT_TARGET_REACHED_THRESHOLD),
         ));
-
-        info!("NPC started searching");
     }
 }
 
