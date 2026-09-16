@@ -1,3 +1,4 @@
+mod movement;
 pub mod pathfinding;
 
 use crate::LevelLoadedSystems;
@@ -6,7 +7,7 @@ use bevy::prelude::*;
 use common::{AppSystems, GameplaySystems, PausableSystems};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(pathfinding::plugin);
+    app.add_plugins((movement::plugin, pathfinding::plugin,));
 
     app.configure_sets(
         Update,

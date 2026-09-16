@@ -219,10 +219,10 @@ fn update_path_render(
     }
 
     for (waypoints, pos) in waypoints_query {
-        let mut prev_pos = pos.0 + (Vec3::NEG_Y * 0.5).into();
+        let mut prev_pos = pos.0 + (Vec3::NEG_Y * 0.5);
 
         for node in waypoints.get_remaining_path() {
-            let pos = *node + (Vec3::Y * 0.5).into();
+            let pos = *node + (Vec3::Y * 0.5);
 
             let settings = LineSettings {
                 color: PATH_COLOR,

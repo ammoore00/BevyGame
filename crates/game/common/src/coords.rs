@@ -2,7 +2,7 @@ use crate::Scale;
 use bevy::prelude::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
-use std::ops::{AddAssign, Deref};
+use std::ops::{AddAssign, Deref, MulAssign, SubAssign};
 
 pub const SCREEN_Z_SCALE: f32 = 2.0;
 
@@ -137,15 +137,37 @@ impl<'de> Deserialize<'de> for TileCoords {
         Ok(TileCoords(IVec3::new(x, y, z)))
     }
 }
-impl std::ops::Add for TileCoords {
+impl<T: Into<IVec3>> std::ops::Add<T> for TileCoords {
     type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
+    fn add(self, rhs: T) -> Self::Output {
+        Self(self.0 + rhs.into())
     }
 }
-impl AddAssign for TileCoords {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
+impl<T: Into<IVec3>> AddAssign<T> for TileCoords {
+    fn add_assign(&mut self, rhs: T) {
+        self.0 += rhs.into();
+    }
+}
+impl<T: Into<IVec3>> std::ops::Sub<T> for TileCoords {
+    type Output = Self;
+    fn sub(self, rhs: T) -> Self::Output {
+        Self(self.0 - rhs.into())
+    }
+}
+impl<T: Into<IVec3>> SubAssign<T> for TileCoords {
+    fn sub_assign(&mut self, rhs: T) {
+        self.0 -= rhs.into();
+    }
+}
+impl<T: Into<IVec3>> std::ops::Mul<T> for TileCoords {
+    type Output = Self;
+    fn mul(self, rhs: T) -> Self::Output {
+        Self(self.0 * rhs.into())
+    }
+}
+impl<T: Into<IVec3>> MulAssign<T> for TileCoords {
+    fn mul_assign(&mut self, rhs: T) {
+        self.0 *= rhs.into();
     }
 }
 
@@ -201,15 +223,37 @@ impl PartialOrd for WorldCoords {
         Some(self.cmp(other))
     }
 }
-impl std::ops::Add for WorldCoords {
+impl<T: Into<Vec3>> std::ops::Add<T> for WorldCoords {
     type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
+    fn add(self, rhs: T) -> Self::Output {
+        Self(self.0 + rhs.into())
     }
 }
-impl AddAssign for WorldCoords {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
+impl<T: Into<Vec3>> AddAssign<T> for WorldCoords {
+    fn add_assign(&mut self, rhs: T) {
+        self.0 += rhs.into();
+    }
+}
+impl<T: Into<Vec3>> std::ops::Sub<T> for WorldCoords {
+    type Output = Self;
+    fn sub(self, rhs: T) -> Self::Output {
+        Self(self.0 - rhs.into())
+    }
+}
+impl<T: Into<Vec3>> SubAssign<T> for WorldCoords {
+    fn sub_assign(&mut self, rhs: T) {
+        self.0 -= rhs.into();
+    }
+}
+impl<T: Into<Vec3>> std::ops::Mul<T> for WorldCoords {
+    type Output = Self;
+    fn mul(self, rhs: T) -> Self::Output {
+        Self(self.0 * rhs.into())
+    }
+}
+impl<T: Into<Vec3>> MulAssign<T> for WorldCoords {
+    fn mul_assign(&mut self, rhs: T) {
+        self.0 *= rhs.into();
     }
 }
 
@@ -268,15 +312,37 @@ impl Deref for ScreenCoords {
         &self.0
     }
 }
-impl std::ops::Add for ScreenCoords {
+impl<T: Into<Vec3>> std::ops::Add<T> for ScreenCoords {
     type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
+    fn add(self, rhs: T) -> Self::Output {
+        Self(self.0 + rhs.into())
     }
 }
-impl AddAssign for ScreenCoords {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
+impl<T: Into<Vec3>> AddAssign<T> for ScreenCoords {
+    fn add_assign(&mut self, rhs: T) {
+        self.0 += rhs.into();
+    }
+}
+impl<T: Into<Vec3>> std::ops::Sub<T> for ScreenCoords {
+    type Output = Self;
+    fn sub(self, rhs: T) -> Self::Output {
+        Self(self.0 - rhs.into())
+    }
+}
+impl<T: Into<Vec3>> SubAssign<T> for ScreenCoords {
+    fn sub_assign(&mut self, rhs: T) {
+        self.0 -= rhs.into();
+    }
+}
+impl<T: Into<Vec3>> std::ops::Mul<T> for ScreenCoords {
+    type Output = Self;
+    fn mul(self, rhs: T) -> Self::Output {
+        Self(self.0 * rhs.into())
+    }
+}
+impl<T: Into<Vec3>> MulAssign<T> for ScreenCoords {
+    fn mul_assign(&mut self, rhs: T) {
+        self.0 *= rhs.into();
     }
 }
 

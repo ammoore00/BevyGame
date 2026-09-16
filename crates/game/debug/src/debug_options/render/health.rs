@@ -28,7 +28,7 @@ fn update_health_render(
     }
 
     for (health, pos) in character_query {
-        let pos = pos.0 + Vec3::new(0.1, 1.25, 0.1).into();
+        let pos = pos.0 + [0.1, 1.25, 0.1];
 
         commands.spawn_scene(bsn! [
             HealthRender

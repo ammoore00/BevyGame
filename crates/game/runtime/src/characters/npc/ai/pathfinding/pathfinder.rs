@@ -145,6 +145,7 @@ pub struct Waypoints {
     pub(super) path: Vec<WorldCoords>,
     pub(super) target: WorldCoords,
 
+    #[getset(get = "pub")]
     pub(super) next_position: Option<WorldCoords>,
     pub(super) next_index: usize,
 }

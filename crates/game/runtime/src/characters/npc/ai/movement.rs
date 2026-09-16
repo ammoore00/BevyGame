@@ -24,9 +24,14 @@ fn update_movement_intent(
 ) {
     for (mut controller, pos, waypoints) in pathfinder_query {
         if let Some(waypoints) = waypoints {
-            // TODO: Clean up unwrap here - this should theoretically never fail but safety does not hurt
-            let delta = **waypoints.next_position.as_ref().unwrap() - *pos.0;
-            let delta = delta * Vec3::new(1., 0., 1.);
+             let Some(delta) = *waypoints.next_position() else {
+                 controller.intent = Vec3::ZERO;
+                 error!("No next position found for pathfinder");
+                 continue;
+             };
+
+            let delta = delta - *pos.0;
+            let delta = delta * [1., 0., 1.];
 
             if delta.length() < 0.01 {
                 controller.intent = Vec3::ZERO;

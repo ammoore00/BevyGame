@@ -10,19 +10,16 @@ use common::WorldCoords;
 use common::WorldPosition;
 use physics::Collider;
 
-mod movement;
 pub mod pathfinder;
 pub mod strategy;
 mod target;
 
 use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
-use crate::debug::Wandering;
 pub use strategy::follow::GainedTarget;
 use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
-        movement::plugin,
         pathfinder::plugin,
         strategy::plugin,
         target::plugin,
