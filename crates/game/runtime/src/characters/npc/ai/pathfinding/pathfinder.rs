@@ -6,10 +6,12 @@ use crate::debug::TileNavMap;
 use crate::level::LEVEL_LOADED;
 use crate::level::grid::nav::{NavEdge, NavEdgeKey, NavEdgeKind};
 use bevy::asset::uuid::Uuid;
+use bevy::ecs::query::QueryEntityError;
 use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
 use common::{TileCoords, WorldCoords};
 use getset::{CopyGetters, Getters};
+use physics::Collider;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
 use std::fmt::Debug;
@@ -171,15 +173,14 @@ impl Waypoints {
 /// Updates pathfinder state and signals for pathing dispatch
 fn update_pathfinder_state(
     mut pathfinder_query: Query<PathfinderData>,
+    target_query: Query<&Collider>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    // TODO: Split into multiple functions
-
     for mut data in pathfinder_query.iter_mut() {
         data.pathfinder.increment_timer(time.delta());
 
-        if let Err(err) = update_path(&mut data, commands.reborrow()) {
+        if let Err(err) = update_path(data.reborrow(), target_query, commands.reborrow()) {
             data.pathfinder.set_state(PathfinderState::Idle);
             error!("{err}");
             continue;
@@ -194,58 +195,64 @@ fn update_pathfinder_state(
 
 /// Check for a current path and update it as the npc follows it
 fn update_path(
-    data: &mut PathfinderDataItem,
+    data: PathfinderDataItem,
+    target_query: Query<&Collider>,
     mut commands: Commands,
 ) -> Result<(), PathfinderUpdateError> {
     let PathfinderDataItem {
         entity,
-        pathfinder,
+        mut pathfinder,
 
         waypoints,
         target_goal,
 
         pos,
+        collider,
         ..
     } = data;
 
     // If we have a path, move towards it and return
-    if let Some(waypoints) = waypoints {
-        let target = waypoints.next_position;
+    if let Some(mut waypoints) = waypoints {
+        let next_waypoint = waypoints.next_position;
 
         // If the path is invalid, clear it
-        let Some(target) = target else {
-            commands.entity(*entity).trigger(CancelPathing);
-            pathfinder.set_state(PathfinderState::Idle);
+        let Some(next_waypoint) = next_waypoint else {
+            commands.entity(entity).trigger(CancelPathing);
             return Err(PathfinderUpdateError::WaypointMissing);
         };
+        let is_final_target = next_waypoint == waypoints.target;
+        let distance = next_waypoint.distance(*pos.0 - Vec3::Y);
 
         let Some(target_goal) = target_goal else {
-            commands.entity(*entity).trigger(CancelPathing);
-            pathfinder.set_state(PathfinderState::Idle);
+            commands.entity(entity).trigger(CancelPathing);
             return Err(PathfinderUpdateError::NoTargetGoal);
         };
 
-        let distance = target.distance(*pos.0 - Vec3::Y);
+        pathfinder.set_state(PathfinderState::Moving);
 
-        let threshold = if target == waypoints.target {
-            WAYPOINT_REACHED_THRESHOLD
-        } else {
-            target_goal.threshold_dist()
-        };
+        match (&*target_goal, is_final_target) {
+            (_, false) => {
+                // If we are within the threshold of the next waypoint, update the path
+                if distance <= WAYPOINT_REACHED_THRESHOLD {
+                    waypoints.increment_position();
+                }
+            }
+            (TargetGoal::Position(position_goal), true) => {
+                // If we are within the threshold of the final waypoint, clear the path
+                if distance <= position_goal.threshold_dist() {
+                    commands.entity(entity).trigger(CancelPathing);
+                }
+            }
+            (TargetGoal::Entity(entity_goal), true) => {
+                let target_collider = target_query
+                    .get(entity_goal.entity())
+                    .map_err(EntityGoalError::OtherCollider)?;
 
-        // If we are within the threshold of the next waypoint
-        if distance <= threshold {
-            // If it is the last waypoint, clear the path
-            if target == waypoints.target {
-                commands.entity(*entity).remove::<Waypoints>();
-                pathfinder.set_state(PathfinderState::Idle);
-            } else {
-                // Otherwise, increment the path to the next waypoint
-                waypoints.increment_position();
+                if entity_goal.is_within_threshold(collider, target_collider) {
+                    commands.entity(entity).trigger(CancelPathing);
+                }
             }
         }
-
-        pathfinder.set_state(PathfinderState::Moving);
     }
 
     Ok(())
@@ -257,6 +264,14 @@ enum PathfinderUpdateError {
     WaypointMissing,
     #[error("NPC with waypoints but no target goal data")]
     NoTargetGoal,
+    #[error(transparent)]
+    EntityGoal(#[from] EntityGoalError),
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+enum EntityGoalError {
+    #[error("Error getting other colider: {}", .0)]
+    OtherCollider(#[from] QueryEntityError),
 }
 
 /// Set the state for the pathfinder based on the current state and pending tasks

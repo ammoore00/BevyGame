@@ -253,6 +253,19 @@ impl Collider {
         .map(CollisionContact::from)
     }
 
+    pub fn distance(&self, other: &Self, prediction: f32) -> Option<CollisionContact> {
+        query::contact(
+            &self.position,
+            self.collider_type.get_shape(),
+            &other.position,
+            other.collider_type.get_shape(),
+            prediction,
+        )
+            .ok()
+            .flatten()
+            .map(CollisionContact::from)
+    }
+
     pub fn set_position(&mut self, position: impl Into<WorldCoords>) {
         let position = position.into();
         self.position = Pose::translation(position.x, position.y, position.z);

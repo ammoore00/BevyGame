@@ -83,6 +83,19 @@ impl PathfinderDataItem<'_, '_> {
 
         PathfinderClearance { half_width, height }
     }
+
+    pub fn reborrow(&mut self) -> PathfinderDataItem<'_, '_> {
+        PathfinderDataItem {
+            entity: self.entity,
+            pathfinder: self.pathfinder.reborrow(),
+            pending_task: self.pending_task.as_mut().map(|val| val.reborrow()),
+            waypoints: self.waypoints.as_mut().map(|val| val.reborrow()),
+            target_goal: self.target_goal.as_mut().map(|val| val.reborrow()),
+            pos: self.pos,
+            collider: self.collider,
+            ai_state: self.ai_state,
+        }
+    }
 }
 
 /// Instantiate components required for a valid PathfinderData query for use in tests
