@@ -11,7 +11,7 @@ use common::WorldPosition;
 use physics::Collider;
 
 mod movement;
-mod pathfinder;
+pub mod pathfinder;
 pub mod strategy;
 mod target;
 
@@ -54,9 +54,9 @@ pub(super) fn pathfinder_scene() -> impl Scene {
     bsn! [
         Pathfinder
         WanderData
-        //Wandering
+        Wandering
         FollowerData
-        @Following
+        //@Following
     ]
 }
 

@@ -163,7 +163,7 @@ impl Waypoints {
         self.next_position = self.path.get(self.next_index).copied();
     }
 
-    pub fn _get_remaining_path(&self) -> &[WorldCoords] {
+    pub fn get_remaining_path(&self) -> &[WorldCoords] {
         &self.path[self.next_index..]
     }
 }

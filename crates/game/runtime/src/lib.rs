@@ -15,9 +15,12 @@ pub mod debug {
             health::Health,
             player::Player,
             stamina::Stamina,
-            npc::ai::pathfinding::strategy::{
-                wander::Wandering,
-                follow::{Following, GainedTarget},
+            npc::ai::pathfinding::{
+                pathfinder::Waypoints,
+                strategy::{
+                    wander::Wandering,
+                    follow::{Following, GainedTarget},
+                }
             }
         },
         level::grid::{nav::TileNavMap, tile::Tile},

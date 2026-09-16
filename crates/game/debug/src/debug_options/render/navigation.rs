@@ -1,14 +1,10 @@
-use crate::debug_options::options::{NavMapEdgesRes, NavMapNodesRes};
+use crate::debug_options::options::{NavMapEdgesRes, NavMapNodesRes, PathsRes};
 use crate::debug_options::render::helpers::{LineSettings, draw_sphere, draw_world_line};
-use crate::debug_options::render::palette::{
-    NAV_EDGE_ARROW_LENGTH, NAV_EDGE_ARROW_WIDTH, NAV_EDGE_DIRECTIONAL_OFFSET, NAV_EDGE_END_PADDING,
-    NAV_EDGE_FORWARD_COLOR, NAV_EDGE_LINE_THICKNESS, NAV_EDGE_REVERSE_COLOR, NAV_NODE_COLOR,
-    NAV_NODE_LINE_THICKNESS, NAV_NODE_RADIUS,
-};
+use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{GameState, Scale, WorldCoords, marker};
-use runtime::debug::TileNavMap;
+use common::{GameState, Scale, WorldCoords, WorldPosition, marker};
+use runtime::debug::{TileNavMap, Waypoints};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -24,6 +20,8 @@ pub(super) fn plugin(app: &mut App) {
     );
     app.add_observer(spawn_nav_edge_render);
     app.add_observer(cleanup_nav_edge_render);
+
+    app.add_systems(Update, update_path_render);
 }
 
 //------ Nodes ------//
@@ -201,4 +199,62 @@ fn cleanup_nav_edge_render(
     }
 }
 
-//------ Pathing ------//
+//------ Paths ------//
+
+marker!(PathRender);
+
+fn update_path_render(
+    waypoints_query: Query<(&Waypoints, &WorldPosition)>,
+    render_query: Query<Entity, With<NavNodeRender>>,
+    path_res: Res<PathsRes>,
+    scale: Res<Scale>,
+    mut commands: Commands,
+) {
+    for entity in render_query.iter() {
+        commands.entity(entity).despawn();
+    }
+
+    if !path_res.get() {
+        return;
+    }
+
+    for (waypoints, pos) in waypoints_query {
+        let mut prev_pos = pos.0 + (Vec3::NEG_Y * 0.5).into();
+
+        for node in waypoints.get_remaining_path() {
+            let pos = *node + (Vec3::Y * 0.5).into();
+
+            let settings = LineSettings {
+                color: PATH_COLOR,
+                thickness: PATH_LINE_THICKNESS,
+            };
+
+            draw_sphere(
+                pos,
+                PATH_NODE_RADIUS,
+                settings,
+                scale.0,
+            )
+            .into_iter()
+            .for_each(|line| {
+                commands.spawn((path_bundle(), line));
+            });
+
+            commands.spawn((
+                path_bundle(),
+                draw_world_line(
+                    prev_pos,
+                    pos,
+                    settings,
+                    scale.0,
+                ),
+            ));
+
+            prev_pos = pos;
+        }
+    }
+}
+
+fn path_bundle() -> impl Bundle {
+    (NavNodeRender, DespawnOnExit(GameState::Gameplay))
+}

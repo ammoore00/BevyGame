@@ -11,6 +11,7 @@ use widgets::theme::palette::{PRIMARY_TEXT, BackgroundInteractionPalette};
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<NavMapNodesRes>();
     app.init_resource::<NavMapEdgesRes>();
+    app.init_resource::<PathsRes>();
 
     app.init_resource::<CharacterCollisionRes>();
     app.init_resource::<TileCollisionRes>();
@@ -302,6 +303,7 @@ fn navigation() -> impl Scene {
         {debug_option_list!(
             debug_option!(NavMapNodes, "Render Navigation Nodes"),
             debug_option!(NavMapEdges, "Render Navigation Edges"),
+            debug_option!(Paths, "Render NPC Paths"),
         )}
     ]
 }
@@ -313,6 +315,10 @@ pub struct NavMapNodes(bool);
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
 #[reflect(Component)]
 pub struct NavMapEdges(bool);
+
+#[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
+#[reflect(Component)]
+pub struct Paths(bool);
 
 // Physics
 
