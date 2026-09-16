@@ -4,7 +4,7 @@ use crate::characters::npc::ai::pathfinding::{
 };
 use crate::debug::TileNavMap;
 use crate::level::LEVEL_LOADED;
-use crate::level::grid::nav::NavEdgeKind;
+use crate::level::grid::nav::{NavEdge, NavEdgeKey, NavEdgeKind};
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
@@ -174,119 +174,159 @@ fn update_pathfinder_state(
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    for data in pathfinder_query.iter_mut() {
-        let PathfinderDataItem {
-            entity,
-            mut pathfinder,
+    // TODO: Split into multiple functions
 
-            pending_task,
-            waypoints,
-            target_goal,
+    for mut data in pathfinder_query.iter_mut() {
+        data.pathfinder.increment_timer(time.delta());
 
-            pos,
-            ..
-        } = data;
-
-        pathfinder.increment_timer(time.delta());
-
-        // If we have a path, move towards it and return
-        if let Some(mut waypoints) = waypoints {
-            let target = waypoints.next_position;
-
-            // If the path is invalid, clear it
-            let Some(target) = target else {
-                commands.entity(entity).remove::<Waypoints>();
-                pathfinder.set_state(PathfinderState::Idle);
-                error!("Invalid NPC target, stopping movement");
-                continue;
-            };
-
-            let Some(target_goal) = target_goal else {
-                error!("NPC with waypoints but no target goal component!");
-                continue;
-            };
-
-            let distance = target.distance(*pos.0 - Vec3::Y);
-
-            let threshold = if target == waypoints.target {
-                WAYPOINT_REACHED_THRESHOLD
-            } else {
-                target_goal.threshold_dist()
-            };
-
-            // If we are within the threshold of the next waypoint
-            if distance <= threshold {
-                // If it is the last waypoint, clear the path
-                if target == waypoints.target {
-                    commands.entity(entity).remove::<Waypoints>();
-                    pathfinder.set_state(PathfinderState::Idle);
-                } else {
-                    // Otherwise, increment the path to the next waypoint
-                    waypoints.increment_position();
-                }
-            }
-
-            pathfinder.set_state(PathfinderState::Moving);
-
-            return;
+        if let Err(err) = update_path(&mut data, commands.reborrow()) {
+            data.pathfinder.set_state(PathfinderState::Idle);
+            error!("{err}");
+            continue;
         }
 
-        // If we don't have a path, check the current pathfinder state and any pending pathfind requests
-        match pathfinder.state() {
-            // If we are idle with no pending task and no current path,
-            //  we should check against the idle timer
-            //  then request a new path
-            PathfinderState::Idle => {
-                // If we somehow got into the idle state while searching, something went wrong
-                // Log the error and correct the state
-                if pending_task.is_some() {
-                    error!("NPC in Idle pathfind state while executing pathfinding request!");
-                    pathfinder.set_state(PathfinderState::Searching);
-                    return;
-                }
-
-                pathfinder.set_state(PathfinderState::Dispatch);
-            }
-            // Dispatch is handled on a per-pathfinding strategy basis, so no extra logic is necessary
-            // besides a check for erroneous state
-            PathfinderState::Dispatch => {
-                if pending_task.is_some() {
-                    pathfinder.set_state(PathfinderState::Searching);
-                    error!("NPC in Dispatch pathfind state while executing pathfinding request!");
-                }
-            }
-            // If we are still waiting for a path, do nothing
-            PathfinderState::Searching => {}
-            // If we are somehow in the moving state but don't have a path, set the state to idle
-            PathfinderState::Moving => {
-                pathfinder.set_state(PathfinderState::Idle);
-            }
+        if let Err(err) = set_pathfinder_state(&mut data) {
+            error!("{err}");
+            continue;
         }
     }
+}
+
+/// Check for a current path and update it as the npc follows it
+fn update_path(
+    data: &mut PathfinderDataItem,
+    mut commands: Commands,
+) -> Result<(), PathfinderUpdateError> {
+    let PathfinderDataItem {
+        entity,
+        pathfinder,
+
+        waypoints,
+        target_goal,
+
+        pos,
+        ..
+    } = data;
+
+    // If we have a path, move towards it and return
+    if let Some(waypoints) = waypoints {
+        let target = waypoints.next_position;
+
+        // If the path is invalid, clear it
+        let Some(target) = target else {
+            commands.entity(*entity).trigger(CancelPathing);
+            pathfinder.set_state(PathfinderState::Idle);
+            return Err(PathfinderUpdateError::WaypointMissing);
+        };
+
+        let Some(target_goal) = target_goal else {
+            commands.entity(*entity).trigger(CancelPathing);
+            pathfinder.set_state(PathfinderState::Idle);
+            return Err(PathfinderUpdateError::NoTargetGoal);
+        };
+
+        let distance = target.distance(*pos.0 - Vec3::Y);
+
+        let threshold = if target == waypoints.target {
+            WAYPOINT_REACHED_THRESHOLD
+        } else {
+            target_goal.threshold_dist()
+        };
+
+        // If we are within the threshold of the next waypoint
+        if distance <= threshold {
+            // If it is the last waypoint, clear the path
+            if target == waypoints.target {
+                commands.entity(*entity).remove::<Waypoints>();
+                pathfinder.set_state(PathfinderState::Idle);
+            } else {
+                // Otherwise, increment the path to the next waypoint
+                waypoints.increment_position();
+            }
+        }
+
+        pathfinder.set_state(PathfinderState::Moving);
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+enum PathfinderUpdateError {
+    #[error("Waypoints missing next point")]
+    WaypointMissing,
+    #[error("NPC with waypoints but no target goal data")]
+    NoTargetGoal,
+}
+
+/// Set the state for the pathfinder based on the current state and pending tasks
+fn set_pathfinder_state(data: &mut PathfinderDataItem) -> Result<(), PathfinderStateError> {
+    let PathfinderDataItem {
+        pathfinder,
+        pending_task,
+        ..
+    } = data;
+
+    // If we don't have a path, check the current pathfinder state and any pending pathfind requests
+    match pathfinder.state() {
+        // If we are idle with no pending task and no current path, dispatch a new path request
+        PathfinderState::Idle => {
+            // If we somehow got into the idle state while searching, something went wrong
+            // Log the error and correct the state
+            if pending_task.is_some() {
+                pathfinder.set_state(PathfinderState::Searching);
+                return Err(PathfinderStateError::InvalidSearchState(
+                    PathfinderState::Idle,
+                ));
+            } else {
+                pathfinder.set_state(PathfinderState::Dispatch);
+            }
+        }
+        // Dispatch is handled on a per-pathfinding-strategy basis,
+        //  so no extra logic is necessary besides a check for erroneous state
+        PathfinderState::Dispatch => {
+            if pending_task.is_some() {
+                pathfinder.set_state(PathfinderState::Searching);
+                return Err(PathfinderStateError::InvalidSearchState(
+                    PathfinderState::Dispatch,
+                ));
+            }
+        }
+        // If we are still waiting for a path, do nothing
+        PathfinderState::Searching => {}
+        // If we are in the moving state but don't have a path,
+        //  likely because the path is completed, set the state to idle
+        PathfinderState::Moving => {
+            pathfinder.set_state(PathfinderState::Idle);
+        }
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+enum PathfinderStateError {
+    #[error("Pathfinder is searching for a path while in an invalid state: {0:?}")]
+    InvalidSearchState(PathfinderState),
 }
 
 /// Dispatch async tasks to find paths for pending requests.
 fn process_pathfind_requests(
     requests_query: Query<(Entity, &mut Pathfinder, &PathfindRequest), Without<PathfindPending>>,
-    nav_map_query: Query<&TileNavMap>,
+    nav_map: Single<&TileNavMap>,
     mut commands: Commands,
 ) {
-    let nav_map = nav_map_query.single();
-    let Ok(nav_map) = nav_map else {
-        error!("Failed to get nav map!: {:?}", nav_map.err().unwrap());
-        return;
-    };
-
     let task_pool = AsyncComputeTaskPool::get();
 
     for (entity, mut pathfinder, request) in requests_query {
+        // TileNavMap stores data internally in Arc references, so clone is cheap
         let nav_map = nav_map.clone();
         let request = *request;
 
         let task_cancel_token = PathfindCancelToken::new();
         let cloned_token = task_cancel_token.clone();
 
-        let task = task_pool.spawn(async move { find_path(&nav_map, &request, &cloned_token) });
+        let task = task_pool.spawn(async move { find_path(nav_map, &request, &cloned_token) });
 
         commands.entity(entity).insert(PathfindPending {
             request,
@@ -359,11 +399,11 @@ const MAX_GRID_SEARCH_DISTANCE: i32 = 5;
 ///
 /// Returns `None` if a path cannot be found.
 fn find_path(
-    nav_map: &TileNavMap,
+    nav_map: TileNavMap,
     request: &PathfindRequest,
     cancel_token: &PathfindCancelToken,
 ) -> Result<Waypoints, PathfindError> {
-    // TODO: account movement capabilities, add search timeout, add LoS caching
+    // TODO: account for movement capabilities, add search timeout, add LoS caching
 
     // Sanity check
     // The code would return the correct result anyway,
@@ -373,59 +413,13 @@ fn find_path(
     }
 
     let start = request.start;
-    let mut target = request.target;
+    let target = request.target;
 
     // Find the closest point on the grid to the target
-    let target_tile = TileCoords::from(target);
-    let mut closest_target_tile = None;
-
-    if nav_map.has_node(&target_tile) {
-        target = target_tile.into();
-    } else {
-        let mut best_distance = i32::MAX;
-
-        for r in 1..=MAX_GRID_SEARCH_DISTANCE {
-            for dx in -r..=r {
-                for dy in -r..=r {
-                    for dz in -r..=r {
-                        if dx.abs() != r && dy.abs() != r && dz.abs() != r {
-                            continue;
-                        }
-
-                        let candidate = TileCoords::from([
-                            target_tile.x + dx,
-                            target_tile.y + dy,
-                            target_tile.z + dz,
-                        ]);
-
-                        if !nav_map.has_node(&candidate) {
-                            continue;
-                        }
-
-                        let dist = candidate.distance_squared(*target_tile);
-
-                        if dist >= best_distance {
-                            continue;
-                        }
-
-                        best_distance = dist;
-                        closest_target_tile = Some(candidate);
-                    }
-                }
-            }
-
-            // If we've found a tile on the grid, there is no need to search further radii
-            if closest_target_tile.is_some() {
-                break;
-            }
-        }
-
-        if let Some(best_target) = closest_target_tile {
-            target = best_target.into();
-        } else {
-            return Err(PathfindError::TargetOutsideNavMesh);
-        }
-    }
+    let Some(target_tile) = get_closest_tile(nav_map.clone(), target) else {
+        return Err(PathfindError::TargetOutsideNavMesh);
+    };
+    let target = WorldCoords::from(target_tile);
 
     let mut costs = BTreeMap::new();
     costs.insert(start, 0);
@@ -474,57 +468,131 @@ fn find_path(
             continue;
         };
 
-        for edge in edges {
-            // Try to shortcut to the grandparent based on line-of-sight
-            let (next_cost, next_pos, next_parent) = if let Some(grandparent) =
-                parents.get(position)
-                && edge.1.kind() == NavEdgeKind::Walk
-                && nav_map.has_line_of_sight(
-                    &TileCoords::from(grandparent),
-                    edge.0.end(),
-                    request.clearance.half_width,
-                    request.clearance.height,
-                ) {
-                let next_pos = WorldCoords::from(edge.0.end());
-
-                // Look up how much it actually cost to get to the grandparent
-                let grandparent_cost = costs.get(grandparent).copied().unwrap_or(0);
-
-                // Calculate true distance from grandparent to the neighbor tile
-                let walk_cost = edge.1.cost(); // We know this is a walk edge, so just check the cost here to avoid magic numbers
-                let distance_cost = (next_pos.distance(**grandparent) * walk_cost as f32) as u32;
-
-                (grandparent_cost + distance_cost, next_pos, grandparent)
-            } else {
-                (
-                    cost + edge.1.cost(),
-                    WorldCoords::from(edge.0.end()),
-                    position,
-                )
-            };
-
-            let next_heuristic_cost = next_pos.distance(*request.target) as u32;
-
-            // If the position isn't tracked yet, default to true.
-            // If it is tracked, evaluate if our new cost is cheaper
-            let is_cheaper = costs
-                .get(&next_pos)
-                .is_none_or(|&prev_cost| next_cost < prev_cost);
-
-            if is_cheaper {
-                parents.insert(next_pos, *next_parent);
-                costs.insert(next_pos, next_cost);
-
-                heap.push(PathfindCoordState {
-                    cost: next_cost,
-                    heuristic_cost: next_heuristic_cost,
-                    position: next_pos,
-                });
-            }
-        }
+        update_edge_costs(EdgeCostData {
+            nav_map: nav_map.clone(),
+            request,
+            cost: *cost,
+            position: *position,
+            edges,
+            parents: &mut parents,
+            costs: &mut costs,
+            heap: &mut heap,
+        })
     }
 
     Err(PathfindError::HeapEnded)
+}
+
+fn get_closest_tile(nav_map: TileNavMap, target: WorldCoords) -> Option<TileCoords> {
+    let target_tile = TileCoords::from(target);
+
+    if nav_map.has_node(&target_tile) {
+        Some(target_tile)
+    } else {
+        let mut closest_target_tile = None;
+        let mut best_distance = i32::MAX;
+
+        for r in 1..=MAX_GRID_SEARCH_DISTANCE {
+            for dx in -r..=r {
+                for dy in -r..=r {
+                    for dz in -r..=r {
+                        if dx.abs() != r && dy.abs() != r && dz.abs() != r {
+                            continue;
+                        }
+
+                        let candidate = TileCoords::from([
+                            target_tile.x + dx,
+                            target_tile.y + dy,
+                            target_tile.z + dz,
+                        ]);
+
+                        if !nav_map.has_node(&candidate) {
+                            continue;
+                        }
+
+                        let dist = candidate.distance_squared(*target_tile);
+
+                        if dist >= best_distance {
+                            continue;
+                        }
+
+                        best_distance = dist;
+                        closest_target_tile = Some(candidate);
+                    }
+                }
+            }
+
+            // If we've found a tile on the grid, there is no need to search further radii
+            if closest_target_tile.is_some() {
+                break;
+            }
+        }
+
+        closest_target_tile
+    }
+}
+
+struct EdgeCostData<'a> {
+    nav_map: TileNavMap,
+    request: &'a PathfindRequest,
+    cost: u32,
+    position: WorldCoords,
+    edges: Vec<(NavEdgeKey, NavEdge)>,
+    parents: &'a mut BTreeMap<WorldCoords, WorldCoords>,
+    costs: &'a mut BTreeMap<WorldCoords, u32>,
+    heap: &'a mut BinaryHeap<PathfindCoordState>,
+}
+
+fn update_edge_costs(data: EdgeCostData<'_>) {
+    for edge in data.edges {
+        // Try to shortcut to the grandparent based on line-of-sight
+        let (next_cost, next_pos, next_parent) = if let Some(grandparent) =
+            data.parents.get(&data.position)
+            && edge.1.kind() == NavEdgeKind::Walk
+            && data.nav_map.has_line_of_sight(
+                &TileCoords::from(grandparent),
+                edge.0.end(),
+                data.request.clearance.half_width,
+                data.request.clearance.height,
+            ) {
+            let next_pos = WorldCoords::from(edge.0.end());
+
+            // Look up how much it actually cost to get to the grandparent
+            let grandparent_cost = data.costs.get(grandparent).copied().unwrap_or(0);
+
+            // Calculate true distance from grandparent to the neighbor tile
+            let walk_cost = edge.1.cost(); // We know this is a walk edge, so just check the cost here to avoid magic numbers
+            let distance_cost = (next_pos.distance(**grandparent) * walk_cost as f32) as u32;
+
+            (grandparent_cost + distance_cost, next_pos, *grandparent)
+        } else {
+            (
+                data.cost + edge.1.cost(),
+                WorldCoords::from(edge.0.end()),
+                data.position,
+            )
+        };
+
+        let next_heuristic_cost = next_pos.distance(*data.request.target) as u32;
+
+        // If the position isn't tracked yet, default to true.
+        // If it is tracked, evaluate if our new cost is cheaper
+        let is_cheaper = data
+            .costs
+            .get(&next_pos)
+            .is_none_or(|&prev_cost| next_cost < prev_cost);
+
+        if is_cheaper {
+            data.parents.insert(next_pos, next_parent);
+            data.costs.insert(next_pos, next_cost);
+
+            data.heap.push(PathfindCoordState {
+                cost: next_cost,
+                heuristic_cost: next_heuristic_cost,
+                position: next_pos,
+            });
+        }
+    }
 }
 
 /// Tracks the pathfinding state for a single coordinate
