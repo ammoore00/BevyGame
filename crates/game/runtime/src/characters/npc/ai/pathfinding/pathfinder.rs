@@ -1,3 +1,4 @@
+use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 use crate::characters::npc::ai::pathfinding::{
     PathfinderData, PathfinderDataItem, PathfinderSystems,
 };
@@ -16,7 +17,6 @@ use std::ops::AddAssign;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 use std::time::Duration;
-use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -200,7 +200,7 @@ fn update_pathfinder_state(
                 error!("Invalid NPC target, stopping movement");
                 continue;
             };
-            
+
             let Some(target_goal) = target_goal else {
                 error!("NPC with waypoints but no target goal component!");
                 continue;
@@ -440,6 +440,7 @@ pub fn find_path(
             return None;
         }
 
+        // If we have reached the target position, reconstruct the path from parents, then return it
         let PathfindCoordState { cost, position, .. } = &node;
         if *position == target {
             let mut position = position;
@@ -455,6 +456,14 @@ pub fn find_path(
                 return None;
             }
             path.push(start);
+
+            // If the target is within the nav mesh, use the actual target instead of the closest tile
+            if let Some(best_target) = best_target
+                && best_target == TileCoords::from(request.target)
+            {
+                path[0] = request.target;
+            }
+
             path.reverse();
 
             return Some(Waypoints::new(path));
