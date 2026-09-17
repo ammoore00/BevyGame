@@ -16,21 +16,21 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct CharacterCodec {
     pub format: u8,
+    pub ai_params: Maybe<AiCodec>,
     pub allowed_states: Maybe<AllowedStatesCodec>,
     pub animations: HashMap<ActionStateCodec, ResourceLocation<AnimationResource>>,
     pub attack_set: Maybe<ResourceLocation<AttackSetResource>>,
     pub collider: ColliderCodec,
-    pub damage_modifiers: Maybe<DamageModifierCodec>,
+    pub health_params: HealthCodec,
 }
-
 impl CharacterCodec {
     pub const LATEST_FORMAT: u8 = 1;
 }
-
 impl Default for CharacterCodec {
     fn default() -> Self {
         Self {
             format: Self::LATEST_FORMAT,
+            ai_params: Maybe(Some(AiCodec::default())),
             allowed_states: Maybe(None),
             animations: HashMap::new(),
             attack_set: Maybe(None),
@@ -41,9 +41,14 @@ impl Default for CharacterCodec {
                     height: 0.25,
                 }),
             },
-            damage_modifiers: Maybe(None),
+            health_params: HealthCodec::default(),
         }
     }
+}
+
+#[maybe_fields]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]
+pub struct AiCodec {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]
@@ -54,7 +59,6 @@ pub enum AllowedStatesCodec {
     #[serde(untagged)]
     Custom(Vec<ActionStateCodec>),
 }
-
 impl AllowedStatesCodec {
     pub fn into_type_ids(self) -> Vec<TypeId> {
         match self {
@@ -77,7 +81,6 @@ pub enum ActionStateCodec {
     Sprinting,
     Attacking,
 }
-
 impl ActionStateCodec {
     pub fn into_type_id(self) -> TypeId {
         match self {
@@ -88,4 +91,11 @@ impl ActionStateCodec {
             ActionStateCodec::Attacking => TypeId::of::<Attacking>(),
         }
     }
+}
+
+#[maybe_fields]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]
+pub struct HealthCodec {
+    pub max_health: u32,
+    pub damage_modifiers: Maybe<DamageModifierCodec>,
 }
