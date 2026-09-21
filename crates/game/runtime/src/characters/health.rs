@@ -1,10 +1,12 @@
-use assets::codec::{DamageKind, DamageModifierCodec, DamageModifierKind, HealthEventKind};
+use crate::characters::DeathEvent;
+use assets::codec::{
+    DamageKind, DamageModifierCodec, DamageModifierKind, DamageModifierList, HealthEventKind,
+};
 use bevy::prelude::*;
 use common::AppSystems;
 use std::collections::HashMap;
 use std::time::Duration;
 use strum::IntoEnumIterator;
-use crate::characters::DeathEvent;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_iframes.in_set(AppSystems::TickTimers));
@@ -67,16 +69,16 @@ impl HealthEvent {
 }
 
 #[derive(Component, Debug, Clone)]
-struct DamageModifiers(HashMap<DamageKind, DamageModifierKind>);
+struct DamageModifiers(DamageModifierList);
 impl Default for DamageModifiers {
     fn default() -> Self {
         let mut map = HashMap::new();
 
         for kind in DamageKind::iter() {
-            map.insert(kind, DamageModifierKind::default());
+            map.insert(kind.into(), DamageModifierKind::default());
         }
 
-        Self(map)
+        Self(map.into())
     }
 }
 impl From<DamageModifierCodec> for DamageModifiers {
@@ -84,16 +86,21 @@ impl From<DamageModifierCodec> for DamageModifiers {
         let mut map = codec.modifiers;
 
         for kind in DamageKind::iter() {
-            map.entry(kind).or_default();
+            map.entry(kind.into()).or_default();
         }
 
-        Self(map)
+        Self(map.into())
     }
 }
 
 fn on_health_event(
     event: On<HealthEvent>,
-    mut query: Query<(Entity, &mut Health, Option<&DamageModifiers>, Option<&IFrames>)>,
+    mut query: Query<(
+        Entity,
+        &mut Health,
+        Option<&DamageModifiers>,
+        Option<&IFrames>,
+    )>,
     mut commands: Commands,
 ) {
     if let Ok((entity, mut health, modifiers, iframes)) = query.get_mut(event.entity) {
@@ -112,7 +119,7 @@ fn on_health_event(
                 let modifier = if let Some(modifiers) = modifiers {
                     modifiers
                         .0
-                        .get(&damage_type)
+                        .get(damage_type)
                         .unwrap_or(&DamageModifierKind::None)
                 } else {
                     &DamageModifierKind::None
