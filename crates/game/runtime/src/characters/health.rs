@@ -70,6 +70,17 @@ impl HealthEvent {
 
 #[derive(Component, Debug, Clone)]
 struct DamageModifiers(DamageModifierList);
+impl DamageModifiers {
+    fn new(list: DamageModifierList) -> Self {
+        if list.get(DamageKind::Generic).is_some() {
+            error!(
+                "Damage modifiers assigned for generic damage! Note: modifiers do not apply to generic damage."
+            )
+        }
+
+        Self(list)
+    }
+}
 impl Default for DamageModifiers {
     fn default() -> Self {
         let mut map = HashMap::new();
@@ -78,7 +89,7 @@ impl Default for DamageModifiers {
             map.insert(kind.into(), DamageModifierKind::default());
         }
 
-        Self(map.into())
+        Self::new(map.into())
     }
 }
 impl From<DamageModifierCodec> for DamageModifiers {
@@ -89,7 +100,7 @@ impl From<DamageModifierCodec> for DamageModifiers {
             map.entry(kind.into()).or_default();
         }
 
-        Self(map.into())
+        Self::new(map.into())
     }
 }
 
@@ -116,7 +127,10 @@ fn on_health_event(
                     //return;
                 }
 
-                let modifier = if let Some(modifiers) = modifiers {
+                // Generic damage type is not affected by modifiers
+                let modifier = if damage_type != DamageKind::Generic
+                    && let Some(modifiers) = modifiers
+                {
                     modifiers
                         .0
                         .get(damage_type)
