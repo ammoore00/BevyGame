@@ -10,7 +10,7 @@ pub use {
     audio::{AudioRegistry, AudioResource},
     font::FontBuilder,
     ui::{
-        TextResource, Translation, TranslationRegistry, TranslationResource, UiSpriteRegistry,
+        TextResource, Translations, TranslationRegistry, TranslationResource, UiSpriteRegistry,
         UiSpriteResource,
     },
 };
@@ -21,5 +21,6 @@ pub(super) fn plugin(app: &mut App) {
         characters::plugin,
         font::plugin,
         level::plugin,
+        ui::plugin,
     ));
 }

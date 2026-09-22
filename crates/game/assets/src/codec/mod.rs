@@ -19,4 +19,5 @@ pub use crate::codec::{
     room::RoomCodec,
     sprite::TextureAtlasCodec,
     tile::TileCodec,
+    translation::{TranslationCodec, TranslationList},
 };

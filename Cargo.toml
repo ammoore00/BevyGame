@@ -17,9 +17,10 @@ members = [
     "crates/game/input",
     "crates/game/physics",
     "crates/game/runtime",
-    "crates/game/settings", "crates/game/translate",
+    "crates/game/settings",
     "crates/game/widgets",
-    "crates/macros/debug_option_derive", "crates/macros/define_resource",
+    "crates/macros/debug_option_derive",
+    "crates/macros/define_resource",
     "crates/macros/maybe_fields",
 ]
 resolver = "2"

@@ -11,6 +11,6 @@ pub mod prelude {
             Prototype, PrototypeBuilder, PrototypeFinalizedMarker, PrototypeMarkerToken,
         },
         registry::{ResourceRegistry, SystemRegistry, SystemRegistryMut},
-        resource::{ResourceFileType, ResourceKind},
+        resource::{ResourceFileType, ResourceKind, resource_kind},
     };
 }
