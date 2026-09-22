@@ -9,7 +9,10 @@ pub mod level;
 pub use {
     audio::{AudioRegistry, AudioResource},
     font::FontBuilder,
-    ui::{UiSpriteRegistry, UiSpriteResource},
+    ui::{
+        TextResource, Translation, TranslationRegistry, TranslationResource, UiSpriteRegistry,
+        UiSpriteResource,
+    },
 };
 
 pub(super) fn plugin(app: &mut App) {

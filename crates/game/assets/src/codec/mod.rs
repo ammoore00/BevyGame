@@ -3,6 +3,7 @@ mod collider;
 mod room;
 mod sprite;
 mod tile;
+mod translation;
 
 pub use crate::codec::{
     character::{

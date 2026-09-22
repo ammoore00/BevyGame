@@ -1,13 +1,13 @@
+use crate::loc::ResourceLocation;
 use bevy::asset::Asset;
 use bevy::prelude::{Reflect, World};
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use crate::loc::ResourceLocation;
 pub use define_resource::resource_kind;
 
 pub trait ResourceKind:
-    Debug + Reflect + Clone + Hash + Eq + Send + Sync + Reflect + 'static
+    Debug + Reflect + Clone + Hash + Eq + Send + Sync + 'static
 {
     type AssetKind: Asset + Clone + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
@@ -34,6 +34,8 @@ pub enum ResourceFileType {
     Font,
     Data,
     Other(&'static str),
+    /// Used to represent resource locations with no associated file
+    None,
 }
 
 impl ResourceFileType {
@@ -44,6 +46,7 @@ impl ResourceFileType {
             ResourceFileType::Font => "ttf",
             ResourceFileType::Data => "ron",
             ResourceFileType::Other(s) => s,
+            ResourceFileType::None => "",
         }
     }
 }
