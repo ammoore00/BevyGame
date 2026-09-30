@@ -6,7 +6,7 @@ pub mod sprite;
 
 pub mod prelude {
     pub use crate::{
-        loc::{ResourceLocation, loc},
+        loc::{ResourceLocation, loc, ResourceLoc},
         prototyping::{
             Prototype, PrototypeBuilder, PrototypeFinalizedMarker, PrototypeMarkerToken,
         },

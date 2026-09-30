@@ -1,4 +1,4 @@
-use crate::resource::TextResource;
+use crate::resource::UiTextResource;
 use bevy::prelude::*;
 use data::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct TranslationCodec {
     pub format: u8,
-    pub ui: TranslationList<TextResource>,
+    pub ui: TranslationList<UiTextResource>,
 }
 impl TranslationCodec {
     const LATEST_FORMAT: u8 = 1;
@@ -22,3 +22,8 @@ impl TranslationCodec {
     )
 )]
 pub struct TranslationList<T: ResourceKind>(pub HashMap<ResourceLocation<T>, String>);
+impl <T: ResourceKind> TranslationList<T> {
+    pub fn translate(&self, loc: &ResourceLocation<T>) -> Option<&String> {
+        self.0.get(loc)
+    }
+}

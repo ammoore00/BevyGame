@@ -12,15 +12,25 @@ pub(super) fn plugin(app: &mut App) {
 pub struct UiSpriteResource;
 
 #[resource_kind(path = "text", asset_kind = (), file_type = ResourceFileType::None)]
-pub struct TextResource;
+pub struct UiTextResource;
 
 #[resource_kind(path = "translations", asset_kind = Translations)]
 pub struct TranslationResource;
 
+pub trait Translator<T: ResourceKind> {
+    fn translate(&self, loc: &ResourceLocation<T>) -> Option<&String>;
+}
+
 #[derive(Asset, Clone, TypePath)]
 pub struct Translations {
-    ui: TranslationList<TextResource>,
+    ui: TranslationList<UiTextResource>,
 }
+impl Translator<UiTextResource> for Translations {
+    fn translate(&self, loc: &ResourceLocation<UiTextResource>) -> Option<&String> {
+        self.ui.translate(loc)
+    }
+}
+
 impl From<TranslationCodec> for Translations {
     fn from(codec: TranslationCodec) -> Self {
         Translations { ui: codec.ui }

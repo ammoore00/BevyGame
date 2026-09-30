@@ -12,8 +12,8 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
 
-trait ResourceLoc: FromStr {
-    fn new(namespace: Namespace, id: ResourceId) -> Self;
+pub trait ResourceLoc: FromStr {
+    fn new(namespace: impl Into<Namespace>, id: impl Into<ResourceId>) -> Self;
 
     fn from_str_impl(s: &str) -> prelude::Result<Self, ResourceLocationParseError> {
         let mut split = s.split(':');
@@ -128,10 +128,10 @@ impl<T: ResourceKind> ResourceLocation<T> {
 }
 
 impl<T: ResourceKind> ResourceLoc for ResourceLocation<T> {
-    fn new(namespace: Namespace, id: ResourceId) -> Self {
+    fn new(namespace: impl Into<Namespace>, id: impl Into<ResourceId>) -> Self {
         Self {
-            namespace,
-            id,
+            namespace: namespace.into(),
+            id: id.into(),
             phantom_data: Default::default(),
         }
     }
@@ -198,8 +198,11 @@ impl AnyResourceLocation {
 }
 
 impl ResourceLoc for AnyResourceLocation {
-    fn new(namespace: Namespace, id: ResourceId) -> Self {
-        Self { namespace, id }
+    fn new(namespace: impl Into<Namespace>, id: impl Into<ResourceId>) -> Self {
+        Self {
+            namespace: namespace.into(),
+            id: id.into(),
+        }
     }
 }
 
