@@ -1,10 +1,13 @@
 use crate::theme::palette::{HEADER_TEXT, LABEL_TEXT};
-use assets::resource::{TranslationResource, Translations, Translator};
+use assets::resource::{CurrentTranslation, TranslationResource, Translations, Translator};
 use bevy::prelude::*;
 use common::{Scale, WorldCoords, convert_world_to_screen_coords};
 use data::loc::AnyResourceLocation;
 use data::prelude::*;
-use std::sync::Arc;
+
+pub(super) fn plugin(app: &mut App) {
+    app.add_systems(Update, translate_text);
+}
 
 pub const TINY_FONT_SIZE: FontSize = FontSize::Px(16.0);
 pub const SMALL_FONT_SIZE: FontSize = FontSize::Px(20.0);
@@ -30,9 +33,19 @@ impl TextFormatting {
     }
 }
 
-type TranslatorFn = Arc<
-    dyn for<'a> Fn(&'a AnyResourceLocation, &'a Translations) -> Option<&'a String> + Send + Sync,
->;
+type TranslatorFn = for<'a> fn(&AnyResourceLocation, &'a Translations) -> Option<&'a str>;
+
+fn translate_with<'a, T>(
+    loc: &AnyResourceLocation,
+    translations: &'a Translations,
+) -> Option<&'a str>
+where
+    T: ResourceKind,
+    Translations: Translator<T>,
+{
+    let typed_loc = ResourceLocation::<T>::from(loc.clone());
+    translations.translate(&typed_loc)
+}
 
 pub enum TextContent {
     Raw(String),
@@ -53,14 +66,9 @@ impl TextContent {
         T: ResourceKind,
         Translations: Translator<T>,
     {
-        let translator = |loc: &AnyResourceLocation, translations: &Translations| {
-            let typed_loc = ResourceLocation::<T>::from(loc.clone());
-            translations.translate(&typed_loc)
-        };
-
         Self::Localized {
             loc: AnyResourceLocation::from(loc),
-            translator: Arc::new(translator),
+            translator: translate_with::<T>,
         }
     }
 
@@ -72,9 +80,9 @@ impl TextContent {
             ]),
             TextContent::Localized { loc, translator } => Box::new(bsn! [
                 #LocalizedText
-                LocalizedText {
+                LocalizableText {
                     loc: {loc.clone()},
-                    translator: {translator.clone()},
+                    translator: {*translator},
                 }
                 Text
             ]),
@@ -88,18 +96,41 @@ impl<S: Into<String>> From<S> for TextContent {
 }
 
 #[derive(Component, Clone)]
-struct LocalizedText {
+struct LocalizableText {
     loc: AnyResourceLocation,
     translator: TranslatorFn,
     last_language: Option<ResourceLocation<TranslationResource>>,
 }
-impl Default for LocalizedText {
+impl Default for LocalizableText {
     // This function should not be used but is required for use in scenes
     fn default() -> Self {
         Self {
             loc: "invalid".parse().unwrap(),
-            translator: Arc::new(|_, _| None),
+            translator: |_, _| None,
             last_language: None,
+        }
+    }
+}
+
+fn translate_text(
+    text_query: Query<(&mut LocalizableText, &mut Text)>,
+    current_translation: Res<CurrentTranslation>,
+    translation_registry: SystemRegistry<TranslationResource>,
+) {
+    for (mut localizable_text, mut text) in text_query {
+        if localizable_text.last_language.as_ref() != Some(&current_translation.0) {
+            let translations = translation_registry.get_asset(&current_translation.0);
+
+            let translated = translations
+                .map(|translations| {
+                    (localizable_text.translator)(&localizable_text.loc, translations)
+                })
+                .flatten()
+                .map(|s| s.to_string())
+                .unwrap_or(localizable_text.loc.to_string());
+
+            text.0 = translated;
+            localizable_text.last_language = Some(current_translation.0.clone());
         }
     }
 }

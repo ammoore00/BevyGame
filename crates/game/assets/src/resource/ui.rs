@@ -6,6 +6,7 @@ use data::prelude::*;
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<TranslationResource>();
     app.init_asset_loader::<RonAssetLoader<TranslationCodec, Translations>>();
+    app.init_resource::<CurrentTranslation>();
 }
 
 #[resource_kind(path = "images/ui", asset_kind = Image, file_type = ResourceFileType::Image)]
@@ -18,7 +19,7 @@ pub struct UiTextResource;
 pub struct TranslationResource;
 
 pub trait Translator<T: ResourceKind> {
-    fn translate(&self, loc: &ResourceLocation<T>) -> Option<&String>;
+    fn translate(&self, loc: &ResourceLocation<T>) -> Option<&str>;
 }
 
 #[derive(Asset, Clone, TypePath)]
@@ -26,7 +27,7 @@ pub struct Translations {
     ui: TranslationList<UiTextResource>,
 }
 impl Translator<UiTextResource> for Translations {
-    fn translate(&self, loc: &ResourceLocation<UiTextResource>) -> Option<&String> {
+    fn translate(&self, loc: &ResourceLocation<UiTextResource>) -> Option<&str> {
         self.ui.translate(loc)
     }
 }
@@ -34,5 +35,13 @@ impl Translator<UiTextResource> for Translations {
 impl From<TranslationCodec> for Translations {
     fn from(codec: TranslationCodec) -> Self {
         Translations { ui: codec.ui }
+    }
+}
+
+#[derive(Resource, Debug, Clone)]
+pub struct CurrentTranslation(pub ResourceLocation<TranslationResource>);
+impl Default for CurrentTranslation {
+    fn default() -> Self {
+        CurrentTranslation("en_us".parse().unwrap())
     }
 }

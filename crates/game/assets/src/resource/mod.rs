@@ -10,8 +10,8 @@ pub use {
     audio::{AudioRegistry, AudioResource},
     font::FontBuilder,
     ui::{
-        TranslationRegistry, TranslationResource, Translations, Translator, UiSpriteRegistry,
-        UiSpriteResource, UiTextResource,
+        CurrentTranslation, TranslationRegistry, TranslationResource, Translations, Translator,
+        UiSpriteRegistry, UiSpriteResource, UiTextResource,
     },
 };
 

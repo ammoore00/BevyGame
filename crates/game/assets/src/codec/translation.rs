@@ -23,7 +23,7 @@ impl TranslationCodec {
 )]
 pub struct TranslationList<T: ResourceKind>(pub HashMap<ResourceLocation<T>, String>);
 impl <T: ResourceKind> TranslationList<T> {
-    pub fn translate(&self, loc: &ResourceLocation<T>) -> Option<&String> {
-        self.0.get(loc)
+    pub fn translate(&self, loc: &ResourceLocation<T>) -> Option<&str> {
+        self.0.get(loc).map(|s| s.as_str())
     }
 }
