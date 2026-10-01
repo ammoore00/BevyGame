@@ -45,8 +45,10 @@ pub struct AiState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum AiStateKind {
     #[default]
+    Idle,
     Wander,
-    _Follow,
+    Alert,
+    Attack,
 }
 
 fn update_prev_state(query: Query<&mut AiState>) {

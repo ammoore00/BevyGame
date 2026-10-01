@@ -299,7 +299,6 @@ impl Hitbox {
         }
     }
 }
-// TODO: Convert this to use TryFrom once fallible type conversion is supported
 impl TryFrom<HitboxCodec> for Hitbox {
     type Error = HitboxError;
 
@@ -352,32 +351,18 @@ pub struct HitboxData {
     offset: WorldCoords,
 }
 
-#[derive(Debug, Clone, Getters)]
+#[derive(Debug, Clone, Getters, derive_new::new)]
 pub struct InterpolatedHitbox {
     #[getset(get = "pub")]
-    _collider_start: ColliderCodec,
+    collider_start: ColliderCodec,
     #[getset(get = "pub")]
-    _collider_end: ColliderCodec,
+    collider_end: ColliderCodec,
     #[getset(get = "pub")]
-    _offset_start: WorldCoords,
+    offset_start: WorldCoords,
     #[getset(get = "pub")]
-    _offset_end: WorldCoords,
+    offset_end: WorldCoords,
 }
 impl InterpolatedHitbox {
-    fn new(
-        collider_start: ColliderCodec,
-        collider_end: ColliderCodec,
-        offset_start: WorldCoords,
-        offset_end: WorldCoords,
-    ) -> Self {
-        Self {
-            _collider_start: collider_start,
-            _collider_end: collider_end,
-            _offset_start: offset_start,
-            _offset_end: offset_end,
-        }
-    }
-
     fn get_current_interpolated_hitbox(&self, _frame_progress: FrameProgress) -> HitboxData {
         todo!()
     }
