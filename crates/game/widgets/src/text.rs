@@ -113,8 +113,8 @@ impl Default for LocalizableText {
 }
 
 fn translate_text(
-    text_query: Query<(&mut LocalizableText, &mut Text)>,
-    text_2d_query: Query<(&mut LocalizableText, &mut Text2d)>,
+    text_query: Query<(&mut LocalizableText, &mut Text), Without<Text2d>>,
+    text_2d_query: Query<(&mut LocalizableText, &mut Text2d), Without<Text>>,
     current_translation: Res<CurrentTranslation>,
     translation_registry: SystemRegistry<TranslationResource>,
 ) {

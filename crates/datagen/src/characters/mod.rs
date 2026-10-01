@@ -5,11 +5,7 @@ use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
 use crate::{WriteError, create_dir, write_data};
-use assets::codec::{
-    ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec,
-    CharacterCodec, ColliderCodec, ColliderDataCodec, DamageModifierCodec, FrameDataCodec,
-    KeyFrameCodec, TextureAtlasCodec,
-};
+use assets::codec::{ActionStateCodec, AiCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, DamageModifierCodec, FrameDataCodec, HealthCodec, KeyFrameCodec, TextureAtlasCodec};
 use assets::resource::characters::{
     AnimationResource, AttackResource, AttackSetResource, CharacterResource,
     CharacterSpriteResource,
@@ -79,23 +75,31 @@ fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
 #[derive(getset::WithSetters)]
 struct CharacterData {
     loc: ResourceLocation<CharacterResource>,
+    
+    collider: ColliderDataCodec,
+    health_params: HealthCodec,
     #[getset(set_with)]
     allowed_states: AllowedStatesCodec,
     #[getset(set_with)]
     animations: HashMap<ActionStateCodec, AnimationData>,
+    
     attack_set: Option<AttackSetData>,
-    collider: ColliderDataCodec,
-    damage_modifiers: Option<DamageModifierCodec>,
+    
+    ai_params: Option<AiCodec>
 }
 impl CharacterData {
     fn new(loc: &str, collider: ColliderDataCodec) -> Self {
         Self {
             loc: loc.parse().unwrap(),
+            
+            collider,
+            health_params: HealthCodec::default(),
             allowed_states: AllowedStatesCodec::default(),
             animations: HashMap::new(),
+            
             attack_set: None,
-            collider,
-            damage_modifiers: None,
+            
+            ai_params: None,
         }
     }
 
@@ -123,11 +127,15 @@ impl From<CharacterData> for CharacterCodec {
 
         Self {
             format: LATEST_CHARACTER_FORMAT,
+            
+            collider,
+            health_params: value.health_params,
             allowed_states: Some(value.allowed_states).into(),
             animations,
+            
             attack_set: attack_set.into(),
-            collider,
-            damage_modifiers: value.damage_modifiers.into(),
+            
+            ai_params: value.ai_params.into(),
         }
     }
 }

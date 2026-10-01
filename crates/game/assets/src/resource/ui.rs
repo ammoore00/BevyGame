@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use data::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
+    app.init_asset::<Translations>();
     app.add_registry_with_discovery::<TranslationResource>();
     app.init_asset_loader::<RonAssetLoader<TranslationCodec, Translations>>();
     app.init_resource::<CurrentTranslation>();
