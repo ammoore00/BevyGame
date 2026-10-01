@@ -1,8 +1,11 @@
+use crate::characters::npc::ai::AiSystems;
 use crate::characters::npc::ai::pathfinding::pathfinder::{
     PathfindPending, Pathfinder, PathfinderClearance, Waypoints,
 };
 use crate::characters::npc::ai::pathfinding::strategy::follow::{FollowerData, Following};
-use crate::characters::npc::ai::{AiState, AiSystems};
+use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
+use crate::characters::npc::ai::pathfinding::target::TargetGoal;
+use crate::characters::npc::ai::state::AiState;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 #[cfg(test)]
@@ -10,20 +13,16 @@ use common::WorldCoords;
 use common::WorldPosition;
 use physics::Collider;
 
+// TODO: Remove this reexport
+pub use strategy::follow::GainedTarget;
+
+// TODO: Remove this pub
 pub mod pathfinder;
 pub mod strategy;
 mod target;
 
-use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
-pub use strategy::follow::GainedTarget;
-use crate::characters::npc::ai::pathfinding::target::TargetGoal;
-
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((
-        pathfinder::plugin,
-        strategy::plugin,
-        target::plugin,
-    ));
+    app.add_plugins((pathfinder::plugin, strategy::plugin, target::plugin));
 
     app.configure_sets(
         Update,
