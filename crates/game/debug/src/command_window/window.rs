@@ -6,7 +6,7 @@ use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::prelude::*;
 use bevy::text::{EditableText, TextCursorStyle};
 use common::{GameState, Pause, marker};
-use widgets::text::{TINY_FONT_SIZE, text};
+use widgets::text::{TINY_FONT_SIZE, TextFormatting, text};
 use widgets::theme::palette::{ERROR_TEXT, PRIMARY_TEXT, SEPIA_2};
 
 pub(super) fn plugin(app: &mut App) {
@@ -198,7 +198,13 @@ fn command_submission(world: &mut World) {
 
     // Spawn scene into the world
     let text_entity = world
-        .spawn_scene(text(output, TINY_FONT_SIZE, color))
+        .spawn_scene(text(
+            output,
+            TextFormatting {
+                font_size: TINY_FONT_SIZE,
+                color,
+            },
+        ))
         .unwrap()
         .id();
 

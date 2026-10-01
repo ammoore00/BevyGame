@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use widgets::background::UiBackgroundStyle;
 use widgets::button;
 use widgets::button::ButtonWithTextOptions;
-use widgets::text::{LARGE_FONT_SIZE, SMALL_FONT_SIZE, text};
+use widgets::text::{text, TextFormatting, LARGE_FONT_SIZE, SMALL_FONT_SIZE};
 use widgets::theme::palette::PRIMARY_TEXT;
 
 pub(super) fn plugin(app: &mut App) {
@@ -74,7 +74,10 @@ fn editor_port_content() -> impl Scene {
 
             padding: UiRect::all(px(50.0))
         }
-        text("Editor Content", LARGE_FONT_SIZE, PRIMARY_TEXT)
+        text("Editor Content", TextFormatting {
+            font_size: LARGE_FONT_SIZE,
+            color: PRIMARY_TEXT,
+        })
     ]
 }
 

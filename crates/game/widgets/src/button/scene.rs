@@ -7,6 +7,7 @@ use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
 use bevy::ui::auto_directional_navigation::AutoDirectionalNavigation;
 use data::loc::loc;
+use crate::text::TextFormatting;
 
 #[derive(SceneComponent, Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[scene(ButtonConfigProp)]
@@ -152,7 +153,7 @@ impl ButtonConfig {
             } => {
                 let button_style =
                     Box::new(bsn![{ Self::make_scene_from_style(ButtonStyle::Default) }]);
-                let button_children = Box::new(bsn![{ text::text(text, font_size, color) }]);
+                let button_children = Box::new(bsn![{ text::text(text, TextFormatting {font_size, color}) }]);
                 ButtonConfigScene::Styled {
                     button_style,
                     button_children,
@@ -174,7 +175,7 @@ impl ButtonConfig {
                         pressed: {palette.pressed},
                     }
                 ]);
-                let button_children = Box::new(bsn![{ text::text(text, font_size, color) }]);
+                let button_children = Box::new(bsn![{ text::text(text, TextFormatting {font_size, color}) }]);
                 ButtonConfigScene::Background {
                     background,
                     button_children,

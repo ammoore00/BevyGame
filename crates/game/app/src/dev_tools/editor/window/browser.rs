@@ -14,7 +14,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use widgets::button::{ButtonStyle, ButtonWithTextOptions};
-use widgets::text::{MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
+use widgets::text::{TextFormatting, MEDIUM_FONT_SIZE, SMALL_FONT_SIZE};
 use widgets::theme::palette::{BackgroundInteractionPalette, HEADER_TEXT};
 use widgets::{button, text};
 
@@ -134,7 +134,10 @@ fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> 
                         }
                     }
                 }),
-                text::text(text, font_size, HEADER_TEXT)
+                text::text(text, TextFormatting {
+                    font_size: font_size.into(),
+                    color: HEADER_TEXT,
+                })
             ]
         ]
     ]

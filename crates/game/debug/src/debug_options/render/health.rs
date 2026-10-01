@@ -4,7 +4,7 @@ use common::dev_tools::DebugState;
 use common::{Scale, WorldPosition, marker};
 use runtime::debug::Health;
 use widgets::text;
-use widgets::text::LARGE_FONT_SIZE;
+use widgets::text::{TextFormatting, LARGE_FONT_SIZE};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_health_render);
@@ -32,7 +32,15 @@ fn update_health_render(
 
         commands.spawn_scene(bsn! [
             HealthRender
-            text::world_text(health.current.to_string(), LARGE_FONT_SIZE, Color::srgb(0.9, 0.3, 0.2), pos, *scale)
+            text::world_text(
+                health.current.to_string(),
+                TextFormatting {
+                    font_size: LARGE_FONT_SIZE,
+                    color: Color::srgb(0.9, 0.3, 0.2),
+                },
+                pos,
+                *scale,
+            )
         ]);
     }
 }

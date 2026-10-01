@@ -8,6 +8,6 @@ use bevy::prelude::*;
 pub struct WidgetsPlugin;
 impl Plugin for WidgetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((button::plugin, theme::plugin));
+        app.add_plugins((button::plugin, theme::plugin, text::plugin));
     }
 }
