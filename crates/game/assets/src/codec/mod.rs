@@ -7,7 +7,8 @@ mod translation;
 
 pub use crate::codec::{
     character::{
-        ActionStateCodec, AiCodec, AllowedStatesCodec, CharacterCodec,
+        ActionStateCodec, AllowedStatesCodec, CharacterCodec,
+        ai::AiCodec,
         animation::{AnimationCodec, FrameDataCodec},
         attack::{AttackCodec, AttackSetCodec, HitboxCodec, KeyFrameCodec},
         health::{

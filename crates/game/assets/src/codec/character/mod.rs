@@ -11,10 +11,12 @@ use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
+use crate::codec::character::ai::AiCodec;
 
 pub mod animation;
 pub mod attack;
 pub mod health;
+pub mod ai;
 
 #[maybe_fields]
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
@@ -69,10 +71,6 @@ impl Default for CharacterCodec {
         }
     }
 }
-
-#[maybe_fields]
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]
-pub struct AiCodec {}
 
 /// Codec for allowed character action states.
 ///
