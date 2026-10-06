@@ -50,9 +50,7 @@ pub(super) fn pathfinder_scene() -> impl Scene {
     bsn! [
         Pathfinder
         WanderData
-        //Wandering
         FollowerData
-        @Following
     ]
 }
 

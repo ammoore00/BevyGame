@@ -23,6 +23,10 @@ impl PathfindStrategyRegistry for App {
 #[reflect_trait]
 pub trait PathfindStrategy: Reflect + Debug + Send + Sync + 'static {}
 
+#[derive(Component, Debug, Reflect)]
+pub struct NoPathfinding;
+impl PathfindStrategy for NoPathfinding {}
+
 fn on_pathfind_strategy_added<T: PathfindStrategy + Component>(
     event: On<Add, T>,
     mut commands: Commands,

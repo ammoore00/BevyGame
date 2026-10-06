@@ -7,7 +7,7 @@ use common::{AppSystems, GameplaySystems, PausableSystems};
 mod movement;
 // TODO: Remove this pub
 pub mod pathfinding;
-mod state;
+pub mod state;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((movement::plugin, pathfinding::plugin, state::plugin));

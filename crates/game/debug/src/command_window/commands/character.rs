@@ -4,7 +4,7 @@ use crate::command_window::commands::{CommandRegistrar, DebugCommand};
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
 use runtime::characters::{Character, DeathEvent};
-use runtime::debug::{Following, GainedTarget, Health, Player, Wandering};
+use runtime::debug::{AiStateKind, Following, GainedTarget, Health, Player, SetStateEvent, Wandering};
 use std::convert::Infallible;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
@@ -73,36 +73,15 @@ impl DebugCommand for CharacterCommand {
                     )
                 }
             },
-            CharacterOperation::Ai(ref operation) => match operation {
+            CharacterOperation::Ai(operation) => match operation {
                 AiOperation::Enable => "Not yet implemented!".to_string(),
                 AiOperation::Disable => "Not yet implemented!".to_string(),
-                AiOperation::Pathfinder(mode) => match mode {
-                    PathfinderMode::Follow(follower_target) => {
-                        let follower_target = follower_target.get_entity(world);
-
-                        if let Some(follower_target) = follower_target {
-                            targets.for_each(|entity| {
-                                world
-                                    .entity_mut(entity)
-                                    .apply_scene(bsn![@Following])
-                                    .expect("Failed to apply Following state scene");
-                                world.trigger(GainedTarget::new(entity, follower_target));
-                            });
-
-                            format!("Set {target_count} character(s) to Following mode with target")
-                        } else {
-                            format!(
-                                "Failed to find target. Set {target_count} character(s) to Following mode with no target"
-                            )
-                        }
-                    }
-                    PathfinderMode::Wander => {
-                        targets.for_each(|entity| {
-                            world.entity_mut(entity).insert(Wandering);
-                        });
-                        format!("Set {target_count} character(s) to Wandering mode")
-                    }
-                },
+                AiOperation::SetState(state) => {
+                    targets.for_each(|entity| {
+                        world.trigger(SetStateEvent::new(entity, state))
+                    });
+                    format!("Set {target_count} character(s) to {state:?} state")
+                }
             },
         };
 
@@ -275,39 +254,37 @@ fn parse_ai_operation(input: &mut &str) -> ModalResult<AiOperation> {
     alt((
         ("enable", ()).map(|_| AiOperation::Enable),
         ("disable", ()).map(|_| AiOperation::Disable),
-        ("pathfinder", preceded(space1, parse_pathfinder_mode))
-            .map(|(_, mode)| AiOperation::Pathfinder(mode)),
+        ("set", preceded(space1, parse_pathfinder_mode))
+            .map(|(_, mode)| AiOperation::SetState(mode)),
     ))
     .context(StrContext::Label("ai"))
     .parse_next(input)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum AiOperation {
     Enable,
     Disable,
-    Pathfinder(PathfinderMode),
+    SetState(AiStateKind),
 }
 
-fn parse_pathfinder_mode(input: &mut &str) -> ModalResult<PathfinderMode> {
+fn parse_pathfinder_mode(input: &mut &str) -> ModalResult<AiStateKind> {
     alt((
-        // TODO: Make this parse the target from the command
-        ("follow", ()).map(|_| PathfinderMode::Follow(CharacterCommandTarget::Identifier(CharacterCommandIdentifier::Player))),
-            //.map(|(_, target)| PathfinderMode::Follow(target)),
-        ("wander", ()).map(|_| PathfinderMode::Wander),
+        ("idle", ()).map(|_| AiStateKind::Idle),
+        ("wander", ()).map(|_| AiStateKind::Wander),
+        ("alert", ()).map(|_| AiStateKind::Alert),
+        ("attack", ()).map(|_| AiStateKind::Attack),
     ))
     .context(StrContext::Label("pathfinder"))
-    .context(StrContext::Expected(StrContextValue::StringLiteral(
-        "follow <target>",
-    )))
+    .context(StrContext::Expected(StrContextValue::StringLiteral("idle")))
     .context(StrContext::Expected(StrContextValue::StringLiteral(
         "wander",
     )))
+    .context(StrContext::Expected(StrContextValue::StringLiteral(
+        "alert",
+    )))
+    .context(StrContext::Expected(StrContextValue::StringLiteral(
+        "attack",
+    )))
     .parse_next(input)
-}
-
-#[derive(Debug)]
-enum PathfinderMode {
-    Follow(CharacterCommandTarget),
-    Wander,
 }

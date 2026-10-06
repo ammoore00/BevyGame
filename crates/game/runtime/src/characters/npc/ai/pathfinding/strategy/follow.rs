@@ -205,20 +205,32 @@ pub struct GainedTarget {
 
 fn on_gained_target(
     event: On<GainedTarget>,
-    mut follower_query: Query<&mut FollowerState, (With<Following>, With<FollowerData>)>,
+    mut follower_query: Query<(Option<&mut FollowerState>, Option<&Following>), With<FollowerData>>,
     #[cfg(test)] mut commands: Commands,
 ) {
-    let Ok(mut follower_state) = follower_query.get_mut(event.entity) else {
-        let err =
-            "Cannot gain target without appropriate follower data and while in follower state!";
+    let follower_result = follower_query.get_mut(event.entity)
+        .map_err(|_| "Cannot gain target without appropriate FollowerData!")
+        .and_then(|(follower_state, following)| {
+            following
+                .map(|_| follower_state)
+                .ok_or_else(|| "Cannot gain target while not in Following state!")
+        })
+        .and_then(|follower_state| {
+            follower_state
+                .ok_or_else(|| "Cannot gain target without FollowerState tracker!")
+        });
 
-        #[cfg(test)]
-        commands
-            .entity(event.entity)
-            .insert(GainLoseTargetError(err.to_string()));
+    let mut follower_state = match follower_result {
+        Ok(follower_state) => follower_state,
+        Err(err) => {
+            #[cfg(test)]
+            commands
+                .entity(event.entity)
+                .insert(GainLoseTargetError(err.to_string()));
 
-        error!(err);
-        return;
+            error!(err);
+            return;
+        }
     };
 
     if follower_state.target != Some(event.target) {

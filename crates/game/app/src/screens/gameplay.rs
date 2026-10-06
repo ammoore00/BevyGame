@@ -24,8 +24,7 @@ pub(super) fn plugin(app: &mut App) {
                 .in_set(GameplaySystems)
                 .run_if(
                     in_state(Menu::None)
-                        .and_then(input_just_pressed(KeyCode::KeyP))
-                        .or_else(input_just_pressed(KeyCode::Escape))
+                        .and_then(input_just_pressed(KeyCode::Escape))
                         .or_else(gamepad_just_pressed(GamepadButton::Start)),
                 ),
             close_menu

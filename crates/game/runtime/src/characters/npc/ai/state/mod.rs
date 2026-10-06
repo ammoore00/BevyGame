@@ -1,7 +1,7 @@
 use crate::characters::npc::ai::AiSystems;
 use bevy::prelude::*;
 
-mod transition;
+pub mod transition;
 mod behavior;
 
 pub(super) fn plugin(app: &mut App) {

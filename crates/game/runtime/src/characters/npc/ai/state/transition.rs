@@ -4,13 +4,14 @@ use crate::characters::npc::ai::pathfinding::strategy::wander::Wandering;
 use crate::characters::npc::ai::state::{AiState, AiStateKind};
 use crate::debug::{GainedTarget, Player};
 use bevy::prelude::*;
+use crate::characters::npc::ai::pathfinding::strategy::NoPathfinding;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_set_state);
     app.add_observer(on_state_transition);
 }
 
-#[derive(EntityEvent, Debug, Clone)]
+#[derive(EntityEvent, Debug, Clone, derive_new::new)]
 pub struct SetStateEvent {
     entity: Entity,
     state: AiStateKind,
@@ -45,7 +46,7 @@ fn on_state_transition(
 ) {
     match event.new_state {
         AiStateKind::Idle => {
-            commands.entity(event.entity).trigger(CancelPathing);
+            commands.entity(event.entity).insert(NoPathfinding);
         }
         AiStateKind::Wander => {
             commands.entity(event.entity).insert(Wandering);
@@ -54,7 +55,7 @@ fn on_state_transition(
             commands.entity(event.entity).insert(Wandering);
         }
         AiStateKind::Attack => {
-            commands.entity(event.entity).insert(Following);
+            commands.entity(event.entity).apply_scene(bsn![@Following]);
             // TODO: Proper detection
             commands.trigger(GainedTarget::new(event.entity, player.entity()));
         }
