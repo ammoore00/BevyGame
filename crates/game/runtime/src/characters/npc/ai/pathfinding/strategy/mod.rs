@@ -8,6 +8,8 @@ pub mod wander;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((follow::plugin, wander::plugin));
+
+    app.register_pathfind_strategy::<NoPathfinding>();
 }
 
 trait PathfindStrategyRegistry {

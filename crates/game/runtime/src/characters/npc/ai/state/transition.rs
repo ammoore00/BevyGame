@@ -1,10 +1,9 @@
-use crate::characters::npc::ai::pathfinding::pathfinder::CancelPathing;
+use crate::characters::npc::ai::pathfinding::strategy::NoPathfinding;
 use crate::characters::npc::ai::pathfinding::strategy::follow::Following;
 use crate::characters::npc::ai::pathfinding::strategy::wander::Wandering;
 use crate::characters::npc::ai::state::{AiState, AiStateKind};
 use crate::debug::{GainedTarget, Player};
 use bevy::prelude::*;
-use crate::characters::npc::ai::pathfinding::strategy::NoPathfinding;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_set_state);

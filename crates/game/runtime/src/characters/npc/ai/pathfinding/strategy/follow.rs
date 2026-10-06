@@ -208,7 +208,8 @@ fn on_gained_target(
     mut follower_query: Query<(Option<&mut FollowerState>, Option<&Following>), With<FollowerData>>,
     #[cfg(test)] mut commands: Commands,
 ) {
-    let follower_result = follower_query.get_mut(event.entity)
+    let follower_result = follower_query
+        .get_mut(event.entity)
         .map_err(|_| "Cannot gain target without appropriate FollowerData!")
         .and_then(|(follower_state, following)| {
             following
@@ -216,8 +217,7 @@ fn on_gained_target(
                 .ok_or_else(|| "Cannot gain target while not in Following state!")
         })
         .and_then(|follower_state| {
-            follower_state
-                .ok_or_else(|| "Cannot gain target without FollowerState tracker!")
+            follower_state.ok_or_else(|| "Cannot gain target without FollowerState tracker!")
         });
 
     let mut follower_state = match follower_result {
