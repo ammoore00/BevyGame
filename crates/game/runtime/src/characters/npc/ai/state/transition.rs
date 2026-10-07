@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::characters::npc::ai::pathfinding::strategy::NoPathfinding;
 use crate::characters::npc::ai::pathfinding::strategy::follow::Following;
 use crate::characters::npc::ai::pathfinding::strategy::wander::Wandering;
@@ -25,6 +26,7 @@ fn on_set_state(event: On<SetStateEvent>, mut query: Query<&mut AiState>, mut co
                 state.current,
                 state.prev,
             ));
+            state.time_in_state = Duration::ZERO;
         }
         Err(err) => error!("Error getting AiState: {err:?}"),
     }
@@ -34,7 +36,7 @@ fn on_set_state(event: On<SetStateEvent>, mut query: Query<&mut AiState>, mut co
 struct StateTransitionEvent {
     entity: Entity,
     new_state: AiStateKind,
-    prev_state: AiStateKind,
+    _prev_state: AiStateKind,
 }
 
 // TODO: Replace temporary logic with real data-driven logic

@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::characters::npc::ai::AiSystems;
 use bevy::prelude::*;
 
@@ -18,6 +19,7 @@ pub fn state_scene() -> impl Scene {
 pub struct AiState {
     current: AiStateKind,
     prev: AiStateKind,
+    time_in_state: Duration,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
