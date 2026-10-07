@@ -1,5 +1,5 @@
 use crate::debug_options::options::{NavMapEdgesRes, NavMapNodesRes, PathsRes};
-use crate::debug_options::render::helpers::{LineSettings, draw_sphere, draw_world_line};
+use crate::debug_options::render::draw::{LineSettings, draw_sphere, draw_world_line};
 use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;

@@ -1,9 +1,10 @@
 mod health;
-mod helpers;
+mod draw;
 mod navigation;
 mod palette;
 mod physics;
 mod ui;
+mod label;
 
 use bevy::prelude::*;
 

@@ -1,5 +1,5 @@
 use crate::debug_options::options::{AttackCollisionRes, CharacterCollisionRes, TileCollisionRes};
-use crate::debug_options::render::helpers::*;
+use crate::debug_options::render::draw::*;
 use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
