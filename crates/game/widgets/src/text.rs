@@ -21,6 +21,13 @@ pub struct TextFormatting {
     pub color: Color,
 }
 impl TextFormatting {
+    pub fn new(font_size: impl Into<FontSize>, color: Color) -> Self {
+        Self {
+            font_size: font_size.into(),
+            color,
+        }
+    }
+
     fn into_scene(self) -> impl Scene {
         bsn! [
             TextColor({self.color})
