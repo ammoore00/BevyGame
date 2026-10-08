@@ -31,7 +31,7 @@ fn update_movement_intent(
              };
 
             let delta = delta - *pos.0;
-            let delta = delta * [1., 0., 1.];
+            let delta = delta * Vec3::from([1., 0., 1.]);
 
             if delta.length() < 0.01 {
                 controller.intent = Vec3::ZERO;

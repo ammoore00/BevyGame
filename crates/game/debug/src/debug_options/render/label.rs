@@ -73,12 +73,13 @@ fn update_debug_labels(
     for (label_list, pos, collider) in label_list_query {
         // Render debug above the entity
         let world_coords = pos.0 + (collider.size() * Vec3::Y);
+        
         let mut screen_coords = ScreenCoords::from(world_coords);
-        screen_coords.0.x -= 0.25 * TILE_WIDTH as f32;
-        screen_coords.0 *= scale.0;
+        screen_coords -= Vec3::X * 0.25 * TILE_WIDTH as f32;
+        screen_coords *= scale.0;
         
         // Convert 2D world coords into viewport coords
-        let Ok(viewport_pos) = camera.world_to_viewport(camera_transform, screen_coords.0) else {
+        let Ok(viewport_pos) = camera.world_to_viewport(camera_transform, *screen_coords) else {
             error!("Failed to convert screen coords to viewport coords");
             return;
         };

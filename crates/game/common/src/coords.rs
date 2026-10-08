@@ -2,7 +2,7 @@ use crate::Scale;
 use bevy::prelude::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
-use std::ops::{AddAssign, Deref, MulAssign, SubAssign};
+use std::ops::{AddAssign, Deref, DivAssign, MulAssign, SubAssign};
 
 pub const SCREEN_Z_SCALE: f32 = 2.0;
 
@@ -137,37 +137,72 @@ impl<'de> Deserialize<'de> for TileCoords {
         Ok(TileCoords(IVec3::new(x, y, z)))
     }
 }
-impl<T: Into<IVec3>> std::ops::Add<T> for TileCoords {
+impl<T> std::ops::Add<T> for TileCoords
+where
+    IVec3: std::ops::Add<T, Output = IVec3>
+{
     type Output = Self;
     fn add(self, rhs: T) -> Self::Output {
-        Self(self.0 + rhs.into())
+        Self(self.0 + rhs)
     }
 }
-impl<T: Into<IVec3>> AddAssign<T> for TileCoords {
+impl<T> AddAssign<T> for TileCoords
+where
+    IVec3: AddAssign<T>
+{
     fn add_assign(&mut self, rhs: T) {
-        self.0 += rhs.into();
+        self.0 += rhs;
     }
 }
-impl<T: Into<IVec3>> std::ops::Sub<T> for TileCoords {
+impl<T> std::ops::Sub<T> for TileCoords
+where
+    IVec3: std::ops::Sub<T, Output = IVec3>
+{
     type Output = Self;
     fn sub(self, rhs: T) -> Self::Output {
-        Self(self.0 - rhs.into())
+        Self(self.0 - rhs)
     }
 }
-impl<T: Into<IVec3>> SubAssign<T> for TileCoords {
+impl<T> SubAssign<T> for TileCoords
+where
+    IVec3: SubAssign<T>
+{
     fn sub_assign(&mut self, rhs: T) {
-        self.0 -= rhs.into();
+        self.0 -= rhs;
     }
 }
-impl<T: Into<IVec3>> std::ops::Mul<T> for TileCoords {
+impl<T> std::ops::Mul<T> for TileCoords
+where
+    IVec3: std::ops::Mul<T, Output = IVec3>
+{
     type Output = Self;
     fn mul(self, rhs: T) -> Self::Output {
-        Self(self.0 * rhs.into())
+        Self(self.0 * rhs)
     }
 }
-impl<T: Into<IVec3>> MulAssign<T> for TileCoords {
+impl<T> MulAssign<T> for TileCoords
+where
+    IVec3: MulAssign<T>
+{
     fn mul_assign(&mut self, rhs: T) {
-        self.0 *= rhs.into();
+        self.0 *= rhs;
+    }
+}
+impl<T> std::ops::Div<T> for TileCoords
+where
+    IVec3: std::ops::Div<T, Output = IVec3>
+{
+    type Output = Self;
+    fn div(self, rhs: T) -> Self::Output {
+        Self(self.0 / rhs)
+    }
+}
+impl<T> DivAssign<T> for TileCoords
+where
+    IVec3: DivAssign<T>
+{
+    fn div_assign(&mut self, rhs: T) {
+        self.0 /= rhs;
     }
 }
 
@@ -223,37 +258,72 @@ impl PartialOrd for WorldCoords {
         Some(self.cmp(other))
     }
 }
-impl<T: Into<Vec3>> std::ops::Add<T> for WorldCoords {
+impl<T> std::ops::Add<T> for WorldCoords
+where
+    Vec3: std::ops::Add<T, Output = Vec3>
+{
     type Output = Self;
     fn add(self, rhs: T) -> Self::Output {
-        Self(self.0 + rhs.into())
+        Self(self.0 + rhs)
     }
 }
-impl<T: Into<Vec3>> AddAssign<T> for WorldCoords {
+impl<T> AddAssign<T> for WorldCoords
+where
+    Vec3: AddAssign<T>
+{
     fn add_assign(&mut self, rhs: T) {
-        self.0 += rhs.into();
+        self.0 += rhs;
     }
 }
-impl<T: Into<Vec3>> std::ops::Sub<T> for WorldCoords {
+impl<T> std::ops::Sub<T> for WorldCoords
+where
+    Vec3: std::ops::Sub<T, Output = Vec3>
+{
     type Output = Self;
     fn sub(self, rhs: T) -> Self::Output {
-        Self(self.0 - rhs.into())
+        Self(self.0 - rhs)
     }
 }
-impl<T: Into<Vec3>> SubAssign<T> for WorldCoords {
+impl<T> SubAssign<T> for WorldCoords
+where
+    Vec3: SubAssign<T>
+{
     fn sub_assign(&mut self, rhs: T) {
-        self.0 -= rhs.into();
+        self.0 -= rhs;
     }
 }
-impl<T: Into<Vec3>> std::ops::Mul<T> for WorldCoords {
+impl<T> std::ops::Mul<T> for WorldCoords
+where
+    Vec3: std::ops::Mul<T, Output = Vec3>
+{
     type Output = Self;
     fn mul(self, rhs: T) -> Self::Output {
-        Self(self.0 * rhs.into())
+        Self(self.0 * rhs)
     }
 }
-impl<T: Into<Vec3>> MulAssign<T> for WorldCoords {
+impl<T> MulAssign<T> for WorldCoords
+where
+    Vec3: MulAssign<T>
+{
     fn mul_assign(&mut self, rhs: T) {
-        self.0 *= rhs.into();
+        self.0 *= rhs;
+    }
+}
+impl<T> std::ops::Div<T> for WorldCoords
+where
+    Vec3: std::ops::Div<T, Output = Vec3>
+{
+    type Output = Self;
+    fn div(self, rhs: T) -> Self::Output {
+        Self(self.0 / rhs)
+    }
+}
+impl<T> DivAssign<T> for WorldCoords
+where
+    Vec3: DivAssign<T>
+{
+    fn div_assign(&mut self, rhs: T) {
+        self.0 /= rhs;
     }
 }
 
@@ -312,37 +382,72 @@ impl Deref for ScreenCoords {
         &self.0
     }
 }
-impl<T: Into<Vec3>> std::ops::Add<T> for ScreenCoords {
+impl<T> std::ops::Add<T> for ScreenCoords
+where
+    Vec3: std::ops::Add<T, Output = Vec3>
+{
     type Output = Self;
     fn add(self, rhs: T) -> Self::Output {
-        Self(self.0 + rhs.into())
+        Self(self.0 + rhs)
     }
 }
-impl<T: Into<Vec3>> AddAssign<T> for ScreenCoords {
+impl<T> AddAssign<T> for ScreenCoords
+where
+    Vec3: AddAssign<T>
+{
     fn add_assign(&mut self, rhs: T) {
-        self.0 += rhs.into();
+        self.0 += rhs;
     }
 }
-impl<T: Into<Vec3>> std::ops::Sub<T> for ScreenCoords {
+impl<T> std::ops::Sub<T> for ScreenCoords
+where
+    Vec3: std::ops::Sub<T, Output = Vec3>
+{
     type Output = Self;
     fn sub(self, rhs: T) -> Self::Output {
-        Self(self.0 - rhs.into())
+        Self(self.0 - rhs)
     }
 }
-impl<T: Into<Vec3>> SubAssign<T> for ScreenCoords {
+impl<T> SubAssign<T> for ScreenCoords
+where
+    Vec3: SubAssign<T>
+{
     fn sub_assign(&mut self, rhs: T) {
-        self.0 -= rhs.into();
+        self.0 -= rhs;
     }
 }
-impl<T: Into<Vec3>> std::ops::Mul<T> for ScreenCoords {
+impl<T> std::ops::Mul<T> for ScreenCoords
+where
+    Vec3: std::ops::Mul<T, Output = Vec3>
+{
     type Output = Self;
     fn mul(self, rhs: T) -> Self::Output {
-        Self(self.0 * rhs.into())
+        Self(self.0 * rhs)
     }
 }
-impl<T: Into<Vec3>> MulAssign<T> for ScreenCoords {
+impl<T> MulAssign<T> for ScreenCoords
+where
+    Vec3: MulAssign<T>
+{
     fn mul_assign(&mut self, rhs: T) {
-        self.0 *= rhs.into();
+        self.0 *= rhs;
+    }
+}
+impl<T> std::ops::Div<T> for ScreenCoords
+where
+    Vec3: std::ops::Div<T, Output = Vec3>
+{
+    type Output = Self;
+    fn div(self, rhs: T) -> Self::Output {
+        Self(self.0 / rhs)
+    }
+}
+impl<T> DivAssign<T> for ScreenCoords
+where
+    Vec3: DivAssign<T>
+{
+    fn div_assign(&mut self, rhs: T) {
+        self.0 /= rhs;
     }
 }
 
