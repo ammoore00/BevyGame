@@ -11,6 +11,7 @@ use bevy::prelude::*;
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         health::plugin,
+        label::plugin,
         navigation::plugin,
         physics::plugin,
         ui::plugin,

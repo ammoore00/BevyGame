@@ -31,3 +31,5 @@ impl Plugin for CommonPlugin {
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq)]
 pub struct Scale(pub f32);
+
+marker!(pub MainCamera);

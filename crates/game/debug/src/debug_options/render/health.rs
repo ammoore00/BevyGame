@@ -1,25 +1,24 @@
 use crate::debug_options::options::CharacterHealthRes;
+use crate::debug_options::render::label::{DebugLabel, DebugLabelAttachedTo};
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{Scale, WorldPosition, marker};
+use common::marker;
 use runtime::debug::Health;
-use widgets::text;
-use widgets::text::{TextFormatting, LARGE_FONT_SIZE};
+use widgets::theme::palette::{PRIMARY_TEXT, SEPIA_6};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, update_health_render);
+    app.add_systems(Update, update_health_label);
 }
 
-marker!(HealthRender);
+marker!(HealthLabel);
 
-fn update_health_render(
-    character_query: Query<(&Health, &WorldPosition)>,
-    render_query: Query<Entity, With<HealthRender>>,
-    scale: Res<Scale>,
+fn update_health_label(
+    character_query: Query<(Entity, &Health)>,
+    label_query: Query<Entity, With<HealthLabel>>,
     should_render_health: Res<CharacterHealthRes>,
     mut commands: Commands,
 ) {
-    for entity in render_query.iter() {
+    for entity in label_query.iter() {
         commands.entity(entity).despawn();
     }
 
@@ -27,20 +26,17 @@ fn update_health_render(
         return;
     }
 
-    for (health, pos) in character_query {
-        let pos = pos.0 + [0.1, 1.25, 0.1];
+    for (character_entity, health) in character_query {
+        commands.spawn((
+            HealthLabel,
+            DebugLabel {
+                name: "Health".to_string(),
+                name_color: PRIMARY_TEXT,
 
-        commands.spawn_scene(bsn! [
-            HealthRender
-            text::world_text(
-                health.current.to_string(),
-                TextFormatting {
-                    font_size: LARGE_FONT_SIZE,
-                    color: Color::srgb(0.9, 0.3, 0.2),
-                },
-                pos,
-                *scale,
-            )
-        ]);
+                text: health.current.to_string(),
+                text_color: SEPIA_6,
+            },
+            DebugLabelAttachedTo(character_entity),
+        ));
     }
 }

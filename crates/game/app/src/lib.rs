@@ -8,6 +8,7 @@ use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::window::ExitCondition;
 use bevy::{asset::AssetMetaCheck, prelude::*};
+use common::MainCamera;
 use controls::ControlsPlugin;
 use debug::DebugPlugin;
 use input::InputPlugin;
@@ -80,6 +81,7 @@ impl Plugin for AppPlugin {
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Name::new("Camera"),
+        MainCamera,
         Camera2d,
         Projection::Orthographic(OrthographicProjection {
             near: -10000000.0,
