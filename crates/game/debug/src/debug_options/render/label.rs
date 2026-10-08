@@ -101,6 +101,7 @@ fn update_debug_labels(
                 position_type: PositionType::Absolute,
                 left: {px(ui_x)},
                 bottom: {px(ui_y)},
+                flex_direction: FlexDirection::Column,
             }
         ]).id();
         commands.entity(canvas.entity()).add_child(debug_display);

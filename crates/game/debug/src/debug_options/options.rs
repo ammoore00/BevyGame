@@ -11,13 +11,15 @@ use widgets::theme::palette::{BackgroundInteractionPalette, PRIMARY_TEXT};
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<NavMapNodesRes>();
     app.init_resource::<NavMapEdgesRes>();
-    app.init_resource::<PathsRes>();
 
     app.init_resource::<CharacterCollisionRes>();
     app.init_resource::<TileCollisionRes>();
     app.init_resource::<AttackCollisionRes>();
 
     app.init_resource::<CharacterHealthRes>();
+
+    app.init_resource::<AiStateRes>();
+    app.init_resource::<PathsRes>();
 
     app.init_resource::<UiRenderRes>();
 
@@ -60,6 +62,7 @@ pub(super) fn global_debug() -> impl Scene {
             navigation(),
             physics(),
             entities(),
+            ai(),
             ui(),
         ]
     ]
@@ -315,7 +318,6 @@ fn navigation() -> impl Scene {
         {debug_option_list!(
             debug_option!(NavMapNodes, "Render Navigation Nodes"),
             debug_option!(NavMapEdges, "Render Navigation Edges"),
-            debug_option!(Paths, "Render NPC Paths"),
         )}
     ]
 }
@@ -327,10 +329,6 @@ pub struct NavMapNodes(bool);
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
 #[reflect(Component)]
 pub struct NavMapEdges(bool);
-
-#[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
-#[reflect(Component)]
-pub struct Paths(bool);
 
 // Physics
 
@@ -373,6 +371,27 @@ fn entities() -> impl Scene {
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
 #[reflect(Component)]
 pub struct CharacterHealth(bool);
+
+// AI
+
+fn ai() -> impl Scene {
+    bsn! [
+        #AiDebug
+        debug_category("AI")
+        {debug_option_list!(
+            debug_option!(Paths, "Render NPC Paths"),
+            debug_option!(AiState, "Display AI State"),
+        )}
+    ]
+}
+
+#[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
+#[reflect(Component)]
+pub struct Paths(bool);
+
+#[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
+#[reflect(Component)]
+pub struct AiState(bool);
 
 // User Interface
 

@@ -1,6 +1,7 @@
 use std::time::Duration;
 use crate::characters::npc::ai::AiSystems;
 use bevy::prelude::*;
+use getset::CopyGetters;
 
 pub mod transition;
 mod behavior;
@@ -15,10 +16,13 @@ pub fn state_scene() -> impl Scene {
     bsn![AiState]
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, CopyGetters)]
 pub struct AiState {
+    #[getset(get_copy = "pub")]
     current: AiStateKind,
+    #[getset(get_copy = "pub")]
     prev: AiStateKind,
+    #[getset(get_copy = "pub")]
     time_in_state: Duration,
 }
 

@@ -24,7 +24,7 @@ pub mod debug {
                     }
                 },
                 state::{
-                    AiStateKind,
+                    AiState, AiStateKind,
                     transition::SetStateEvent,
                 },
             }

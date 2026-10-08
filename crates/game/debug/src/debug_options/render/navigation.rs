@@ -20,8 +20,6 @@ pub(super) fn plugin(app: &mut App) {
     );
     app.add_observer(spawn_nav_edge_render);
     app.add_observer(cleanup_nav_edge_render);
-
-    app.add_systems(Update, update_path_render);
 }
 
 //------ Nodes ------//
@@ -197,66 +195,4 @@ fn cleanup_nav_edge_render(
     for entity in render_query.iter() {
         commands.entity(entity).despawn();
     }
-}
-
-//------ Paths ------//
-
-marker!(PathRender);
-
-fn update_path_render(
-    waypoints_query: Query<(&Waypoints, &WorldPosition)>,
-    render_query: Query<Entity, With<NavNodeRender>>,
-    path_res: Res<PathsRes>,
-    scale: Res<Scale>,
-    mut commands: Commands,
-) {
-    for entity in render_query.iter() {
-        commands.entity(entity).despawn();
-    }
-
-    if !path_res.get() {
-        return;
-    }
-
-    for (waypoints, pos) in waypoints_query {
-        let mut prev_pos = pos.0 + (Vec3::NEG_Y * 0.5);
-
-        for node in waypoints.get_remaining_path() {
-            let pos = *node + (Vec3::Y * 0.5);
-
-            let settings = LineSettings {
-                color: PATH_COLOR,
-                thickness: PATH_LINE_THICKNESS,
-            };
-
-            draw_sphere(
-                pos,
-                PATH_NODE_RADIUS,
-                settings,
-                scale.0,
-            )
-            .into_iter()
-            .for_each(|line| {
-                commands.spawn((path_bundle(), line));
-            });
-
-            if prev_pos != pos {
-                commands.spawn((
-                    path_bundle(),
-                    draw_world_line(
-                        prev_pos,
-                        pos,
-                        settings,
-                        scale.0,
-                    ),
-                ));
-            }
-
-            prev_pos = pos;
-        }
-    }
-}
-
-fn path_bundle() -> impl Bundle {
-    (NavNodeRender, DespawnOnExit(GameState::Gameplay))
 }
