@@ -1,8 +1,10 @@
 use crate::characters::health::{AddIFrames, HealthEvent};
 use crate::characters::stamina::StaminaEvent;
+use crate::characters::state::TrySetStateEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
+use assets::action_states::Attacking;
 use assets::resource::characters::{
-    AttackContext, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
+    AttackContext, AttackDefinition, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
 };
 use bevy::prelude::*;
 use common::{
@@ -14,6 +16,8 @@ use physics::{
 };
 use std::collections::HashMap;
 use std::slice;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
@@ -30,7 +34,8 @@ pub(super) fn plugin(app: &mut App) {
         process_attack_hits.in_set(DetectorCollisionResponse),
     );
 
-    app.add_observer(on_attack);
+    app.add_observer(on_try_attack);
+    app.add_observer(on_attack_success);
 }
 
 /// The length of time that an attack will prevent the character from taking additional damage.
@@ -38,37 +43,69 @@ pub const ON_HIT_IFRAMES: Duration = Duration::from_millis(250);
 
 /// Initiate an attack from the entity to the provided facing
 #[derive(EntityEvent, Debug, Clone, Reflect, derive_new::new)]
-pub struct AttackEvent {
+pub struct TryAttackEvent {
     entity: Entity,
     facing: Facing,
     attack: ResourceLocation<AttackResource>,
 }
 
 /// Initiate attack in response to an attack event request
-fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Commands) {
-    let Some(attack) = context.attack_registry.get_asset(&event.attack) else {
-        return error!(
+fn on_try_attack(event: On<TryAttackEvent>, context: AttackContext, mut commands: Commands) {
+    let Some(attack_def) = context.attack_registry.get_asset(&event.attack) else {
+        error!(
             "Invalid attack event: attack {} does not exist!",
             event.attack
         );
+        return;
     };
 
-    let Some(animation) = context.animation_context.get_asset(attack.animation()) else {
-        return error!(
+    let TryAttackEvent { facing, attack, .. } = event.clone();
+
+    let attack_state = Box::new(Attacking::new(&event.attack, *attack_def.duration()));
+    let attack_event = TrySetStateEvent::new(event.entity, attack_state).with_callback(
+        move |entity, mut commands: Commands, result: Result<_, _>| {
+            if result.is_ok() {
+                info!("Attack success!");
+                commands.trigger(AttackSuccessEvent::new(entity, facing, attack.clone()));
+            }
+        },
+    );
+    commands.trigger(attack_event);
+}
+
+#[derive(EntityEvent, derive_new::new)]
+struct AttackSuccessEvent {
+    entity: Entity,
+    facing: Facing,
+    attack: ResourceLocation<AttackResource>,
+}
+
+fn on_attack_success(
+    event: On<AttackSuccessEvent>,
+    context: AttackContext,
+    mut commands: Commands,
+) {
+    // Unwrap is safe because this event is only triggered if the checks from `on_try_attack` pass
+    let attack_def = context.attack_registry.get_asset(&event.attack).unwrap();
+    
+    let Some(animation) = context.animation_context.get_asset(attack_def.animation()) else {
+        error!(
             "Invalid attack definition: animation {} does not exist!",
-            attack.animation()
+            attack_def.animation()
         );
+        return;
     };
     let animation = animation.unwrap();
 
     let Some(particle_sprite) = context
         .character_sprite_registry
-        .get_handle(attack.particle_sprite())
+        .get_handle(attack_def.particle_sprite())
     else {
-        return error!(
+        error!(
             "Invalid attack definition: particle sprite {} does not exist!",
-            attack.particle_sprite()
+            attack_def.particle_sprite()
         );
+        return;
     };
 
     let particle_atlas = animation.atlas().clone().with_index(event.facing as usize);
@@ -80,7 +117,7 @@ fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Comma
 
     commands.entity(event.entity).insert(CurrentAttack::new(
         event.attack.clone(),
-        attack.exclusion_groups(),
+        attack_def.exclusion_groups(),
     ));
 
     commands.trigger(ParticleSpawnEvent::with_parent(
@@ -89,7 +126,7 @@ fn on_attack(event: On<AttackEvent>, context: AttackContext, mut commands: Comma
         event.entity,
     ));
 
-    commands.trigger(StaminaEvent::new(event.entity, attack.stamina_cost()));
+    commands.trigger(StaminaEvent::new(event.entity, attack_def.stamina_cost()));
 }
 
 /// Store the current attack definition location, and the current progress value

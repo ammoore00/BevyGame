@@ -2,7 +2,7 @@ use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 use crate::characters::npc::ai::pathfinding::{
     PathfinderData, PathfinderDataItem, PathfinderSystems,
 };
-use crate::debug::TileNavMap;
+use crate::prelude::TileNavMap;
 use crate::level::LEVEL_LOADED;
 use crate::level::grid::nav::{NavEdge, NavEdgeKey, NavEdgeKind};
 use bevy::asset::uuid::Uuid;

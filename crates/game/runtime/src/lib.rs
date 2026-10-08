@@ -8,7 +8,7 @@ mod level;
 mod object;
 mod particle;
 
-pub mod debug {
+pub mod prelude {
     pub use crate::{
         characters::{
             attack::AttackHitbox,

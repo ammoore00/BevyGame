@@ -4,7 +4,7 @@ use crate::command_window::commands::{CommandRegistrar, DebugCommand};
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
 use runtime::characters::{Character, DeathEvent};
-use runtime::debug::{AiStateKind, Health, Player, SetStateEvent};
+use runtime::prelude::{AiStateKind, Health, Player, SetStateEvent};
 use std::convert::Infallible;
 use std::fmt::Display;
 use std::ops::{Add, Sub};

@@ -6,7 +6,7 @@ use crate::characters::npc::ai::pathfinding::strategy::{
 };
 use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 use crate::characters::npc::ai::pathfinding::{PathfinderData, PathfinderSystems};
-use crate::debug::TileNavMap;
+use crate::prelude::TileNavMap;
 use bevy::prelude::*;
 use common::TileCoords;
 use rand::{Rng, RngExt};

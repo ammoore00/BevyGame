@@ -2,7 +2,7 @@ use crate::asset_tracking::LoadResource;
 use crate::screens::Screen;
 use bevy::prelude::*;
 use common::{AppSystems, GameplaySystems, marker};
-use runtime::debug::{Health, Player, Stamina};
+use runtime::prelude::{Health, Player, Stamina};
 
 pub(super) fn plugin(app: &mut App) {
     app.load_resource::<StatBarAssets>();

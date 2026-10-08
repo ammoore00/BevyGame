@@ -6,7 +6,7 @@ use common::dev_tools::DebugState;
 use common::{GameState, Scale, TilePosition, WorldCoords, WorldPosition, marker};
 use physics::{Collider, ColliderData};
 use runtime::characters::Character;
-use runtime::debug::{AttackHitbox, Tile};
+use runtime::prelude::{AttackHitbox, Tile};
 
 pub(super) fn plugin(app: &mut App) {
     // Tile collision uses retained state for rendering because tile collision does not move

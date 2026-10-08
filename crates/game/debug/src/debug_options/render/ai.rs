@@ -4,7 +4,7 @@ use crate::debug_options::render::palette::{PATH_COLOR, PATH_LINE_THICKNESS, PAT
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
 use common::{GameState, Scale, WorldPosition, marker};
-use runtime::debug::{AiState, Health, Waypoints};
+use runtime::prelude::{AiState, Health, Waypoints};
 use widgets::theme::palette::{PRIMARY_TEXT, SEPIA_6};
 use crate::debug_options::render::label::{DebugLabel, DebugLabelAttachedTo};
 

@@ -3,7 +3,7 @@ use crate::debug_options::render::label::{DebugLabel, DebugLabelAttachedTo};
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
 use common::marker;
-use runtime::debug::Health;
+use runtime::prelude::Health;
 use widgets::theme::palette::{PRIMARY_TEXT, SEPIA_6};
 
 pub(super) fn plugin(app: &mut App) {

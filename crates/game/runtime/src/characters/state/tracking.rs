@@ -214,6 +214,10 @@ pub fn on_state_change(event: On<TrySetStateEvent>, mut commands: Commands) {
 
             // Update the tracker component
             entity_mut.insert(ActionStateTracker::from_box(new_state));
+            
+            if let Some(callback) = callback {
+                callback(entity, world.commands(), Ok(()));
+            }
         } else {
             if let Some(callback) = callback {
                 callback(entity, world.commands(), Err(SetStateError::StateUpdate));

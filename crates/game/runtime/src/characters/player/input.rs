@@ -1,4 +1,4 @@
-use crate::characters::attack::AttackEvent;
+use crate::characters::attack::TryAttackEvent;
 use crate::characters::player::{AimFacing, Player};
 use crate::characters::stamina::Stamina;
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
@@ -180,7 +180,6 @@ fn on_attack_input(
     event: On<AttackInputEvent>,
     mut player_query: Query<(Entity, &mut Facing, &Stamina), (With<Player>, With<Children>)>,
     aim_facing_query: Query<(&AimFacing, &ChildOf)>,
-    attack_registry: SystemRegistry<AttackResource>,
     mut commands: Commands,
 ) {
     let (player_entity, mut facing, stamina) = player_query
@@ -195,7 +194,6 @@ fn on_attack_input(
 
     // TODO: Make this check better
     if stamina.current > 0 {
-        // TODO: Move this into the characters attack event
         let facing = {
             if let Some(aim_facing) = aim_facing.0 {
                 *facing = aim_facing;
@@ -204,16 +202,7 @@ fn on_attack_input(
         };
 
         let attack_loc: ResourceLocation<AttackResource> = "player/basic_attack".parse().unwrap();
-
-        commands.trigger(AttackEvent::new(player_entity, facing, attack_loc.clone()));
-
-        let Some(attack) = attack_registry.get_asset(&attack_loc) else {
-            error!("Attack resource {} does not exist!", attack_loc);
-            return;
-        };
-
-        let attack_state = Box::new(Attacking::new(&attack_loc, *attack.duration()));
-        commands.trigger(TrySetStateEvent::new(player_entity, attack_state));
+        commands.trigger(TryAttackEvent::new(player_entity, facing, attack_loc.clone()));
     }
 }
 

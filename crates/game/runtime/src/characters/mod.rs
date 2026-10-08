@@ -1,5 +1,5 @@
 use crate::action_state_scene;
-use crate::debug::{Health, Player};
+use crate::prelude::{Health, Player};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
 use assets::resource::characters::{AnimationResource, CharacterData, CharacterResource};

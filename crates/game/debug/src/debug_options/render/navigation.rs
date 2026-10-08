@@ -4,7 +4,7 @@ use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
 use common::{GameState, Scale, WorldCoords, WorldPosition, marker};
-use runtime::debug::{TileNavMap, Waypoints};
+use runtime::prelude::{TileNavMap, Waypoints};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
