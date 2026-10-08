@@ -14,6 +14,7 @@ use bevy::prelude::*;
 use common::{WorldCoords, WorldPosition};
 use physics::Collider;
 use std::time::Duration;
+use getset::CopyGetters;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -54,9 +55,10 @@ pub struct FollowerProps {
     target: Option<Entity>,
 }
 
-#[derive(Component, Default, Debug, Clone, PartialEq, Eq)]
-struct FollowerState {
+#[derive(Component, Default, Debug, Clone, PartialEq, Eq, CopyGetters)]
+pub struct FollowerState {
     /// The current target to follow
+    #[getset(get_copy = "pub")]
     target: Option<Entity>,
 
     /// The timer for re-pathing
