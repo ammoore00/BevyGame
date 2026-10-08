@@ -1,7 +1,11 @@
 ## Definitions
 
-"Engine Code" and "Game Engine" refer to the code used to load and run content for the game.
-This is the code under `src/`, as well as sub-crates excluding the code under `datagen/`.
+"Engine Code" and "Game Engine" refer to the code and build infrastructure used to load
+and run content for the game. This includes all source code under `src/` and `crates/`
+(excluding `crates/datagen/`), as well as project build manifests, toolchain settings,
+configuration files, continuous integration (CI) scripts, and other build infrastructure
+required for building the Engine Code (including `Cargo.toml`, `Cargo.lock`, `clippy.toml`,
+and configuration under `.github/`).
 
 "Official Game Content" refers to all game assets, data, and content provided by the
 project, including images, audio, fonts, maps, levels, dialogue, characters,
@@ -9,12 +13,12 @@ configuration files, generated data files, source asset files, and other non-eng
 content, except where otherwise stated.
 
 The "Official Content Generator" refers to the code used to generate the game's
-official game content, located under `datagen/`.
+official game content, located under `crates/datagen/`.
 
 "User Generated Content" refers to original mods, game content, and content
 generation tools created by end users. User Generated Content does not include
-Official Game Content, the Official Content Generator, modified versions of the
-Official Content Generator, or substantial portions of any of them.
+unmodified Official Game Content, the Official Content Generator, or modified versions
+of the Official Content Generator.
 
 ## Engine Code
 
@@ -31,10 +35,12 @@ explicit permission.
 Official Game Content is All Rights Reserved, except where otherwise stated in
 this file or in [LICENSE_THIRD_PARTY.md](LICENSE_THIRD_PARTY.md).
 
+You are granted permission to capture, stream, and monetize video and audio footage of the game
+(such as on Twitch or YouTube) provided you do not distribute the raw asset files.
+
 The following assets required for basic engine functionality are exempt
 and are provided under the terms of the MPL 2.0:
-- `assets/base/images/ui/bars.png`
-- `assets/base/images/ui/buttons.png`
+- _TODO_
 
 ## Official Content Generator
 
@@ -91,24 +97,30 @@ scripts, libraries, templates, and generators for creating User Generated Conten
 including tools that produce files compatible with the game's supported data
 formats.
 
-User Generated Content may be based on the game’s data formats, public APIs, and
-workflows, but may not directly use, extract, or redistribute Official Game Content
-or the Official Content Generator. Any derivative works must rely solely on the
-Engine Code and user-provided assets.
+You are granted a limited license to create derivative works based on Official Game Content
+(such as modifying existing sprites, tilesets, or configuration files) specifically for
+use as User Generated Content.
 
-User Generated Content may not include or redistribute Official Game Content or
-third-party content included with the game, except as allowed by the applicable
-license or by explicit permission.
+When distributing User Generated Content that contains or is derived from
+Official Game Content, you must adhere to the following requirements:
+- **Base Game Dependency**: The content must be designed to run strictly as a modification,
+    add-on, or extension to the game, requiring the presence of the Official Game Content to function.
+- **No Unmodified Redistribution**: You may only distribute the specific game files you have
+    created or modified. You may not bundle or distribute unmodified Official Game Content
+    alongside your mod.
+- **No Substitution**: Your derivative works may not be distributed in a standalone
+    capacity (e.g., repackaged as a separate standalone game) or in any manner that
+    serves as a substitute for purchasing the original game.
+
+User Generated Content, including works derivative of Official Game Content, may be distributed
+for both commercial and non-commercial purposes, provided it complies with these terms and
+does not include infringing third-party materials.
 
 You may not use or distribute the Official Content Generator, or modified versions of
 it, to recreate, extract, clone, or distribute Official Game Content.
 
-Users retain ownership of their original User Generated Content, subject to
-any third-party materials they include.
-
-User Generated Content may be distributed for both commercial and non-commercial
-purposes, provided it complies with these terms and does not include Official Game
-Content, the Official Content Generator, or infringing third-party materials.
+Users retain ownership of their original additions in User Generated Content,
+subject to any underlying rights in the Official Game Content or third-party materials.
 
 User Generated Content may identify itself as compatible with the game, but may
 not imply endorsement, sponsorship, or official status unless explicitly
@@ -117,6 +129,6 @@ authorized.
 ## Warranty Disclaimer
 
 The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the
-warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or
-copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or
-otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.
+warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors or
+copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or
+otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
