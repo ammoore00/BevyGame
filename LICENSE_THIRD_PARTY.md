@@ -1,49 +1,56 @@
 ## Code
 
-This project includes the following rust crates under the MIT license:
-- bevy
-- rand
-- tracing
-- parry3d
-- thiserror
-- regex
-- serde
-- ron
-- derive-new
-- walkdir
-- paste
+This project uses open-source third-party Rust crates.
 
-Additionally, transitive dependencies may include other crates not listed here. You can view the full list of
-dependencies and their licenses via the documentation of each crate or by using the `cargo tree` command.
+- For source distributions, dependency details and crate licenses are declared in `Cargo.lock`.
+- A complete, generated list of all compiled crate dependencies, copyright notices, and license
+  texts is included in `THIRD_PARTY_CRATES.html` (distributed alongside binary builds of the game).
 
 ## Assets
 
-CC0 by Jaszunio15:
-- `assets/base/audio/sound_effects/button_click.ogg`
-- `assets/base/audio/sound_effects/button_hover.ogg`
+### Music & Sound Effects
 
-CC BY 4.0 by Tim Kulig
-- `assets/base/audio/music/8_bit_open_world.ogg`
+- **Button Click / Hover Sound Effects**
+    - Files:
+      - `assets/base/audio/sound_effects/button_click.ogg`
+      - `assets/base/audio/sound_effects/button_hover.ogg`
+    - Author: Jaszunio15
+    - License: CC0 1.0 (Public Domain)
 
-CC BY 3.0 by Kevin MacLeod
-- `assets/base/audio/music/fluffing_a_duck.ogg`
-- `assets/base/audio/music/monkeys_spinning_monkets.ogg`
+- **8 Bit Open World**
+    - File: `assets/base/audio/music/8_bit_open_world.ogg`
+    - Author: Tim Kulig
+    - Source: https://www.timkulig.com / https://filmmusic.io
+    - License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
 
-Open Font License by Yuki Pixels
-- `assets/base/fonts/bold_pixels.ttf`
+- **Fluffing a Duck** & **Monkeys Spinning Monkeys**
+    - Files:
+      - `assets/base/audio/music/fluffing_a_duck.ogg`
+      - `assets/base/audio/music/monkeys_spinning_monkeys.ogg`
+    - Author: Kevin MacLeod (Incompetech)
+    - Source: https://incompetech.com
+    - License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
 
-All rights reserved by the Bevy Foundation, permission granted for splash screen use when unmodified.
-- `assets/base/images/ui/splash.png`
+### Fonts
 
-The following asset packs were used in the creation of this game's content:
-- Modern UI by LimeZu – https://limezu.itch.io
-- Character Templates by ZeggyGames – https://zegley.itch.io
+- **Bold Pixels**
+    - File: `assets/base/fonts/bold_pixels.ttf`
+    - Copyright: Copyright (c) Yuki Pixels
+    - License: SIL Open Font License 1.1 (https://opensource.org/licenses/OFL-1.1)
 
-## License Text
+### UI & Visual Assets
 
-The text of each third party license can be found here:
-- MIT License: https://opensource.org/licenses/MIT
-- Open Font License: https://opensource.org/licenses/OFL-1.1
-- CC0: https://creativecommons.org/publicdomain/zero/1.0/
-- CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
-- CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+- **Bevy Engine Splash Screen**
+    - File: `assets/base/images/ui/splash.png`
+    - Copyright: Copyright (c) Bevy Foundation
+    - Terms: All rights reserved; permission granted for unmodified splash screen use.
+
+- **Modern UI Asset Pack**
+    - Author: LimeZu
+    - Source: https://limezu.itch.io
+    - License: Custom Creator License (Attribution via link to source)
+
+- **Character Templates Asset Pack**
+    - Author: ZeggyGames
+    - Source: https://zegley.itch.io
+    - License: Custom Creator License (Attribution via link to source)
