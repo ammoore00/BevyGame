@@ -13,9 +13,9 @@
     allowed_states: Default,
     animations: {
         Walking: "base:test/walking",
-        Idle: "base:test/idle",
-        Running: "base:test/running",
         Sprinting: "base:test/sprinting",
+        Running: "base:test/running",
+        Idle: "base:test/idle",
     },
     attack_set: "base:test/basic_attack",
 )
