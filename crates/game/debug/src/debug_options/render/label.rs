@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use common::{marker, Scale, ScreenCoords, WorldPosition, MainCamera, WorldCoords, TILE_WIDTH};
+use common::{marker, Scale, ScreenCoords, WorldPosition, MainCamera, TILE_WIDTH};
 use physics::Collider;
 use widgets::text::{SMALL_FONT_SIZE, TextFormatting};
 

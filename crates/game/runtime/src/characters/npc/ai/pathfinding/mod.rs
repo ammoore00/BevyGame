@@ -2,7 +2,7 @@ use crate::characters::npc::ai::AiSystems;
 use crate::characters::npc::ai::pathfinding::pathfinder::{
     PathfindPending, Pathfinder, PathfinderClearance, Waypoints,
 };
-use crate::characters::npc::ai::pathfinding::strategy::follow::{FollowerData, Following};
+use crate::characters::npc::ai::pathfinding::strategy::follow::FollowerData;
 use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
 use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 use crate::characters::npc::ai::state::AiState;

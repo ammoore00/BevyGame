@@ -82,7 +82,7 @@ impl TextContent {
 
     fn into_scene(self) -> Box<dyn Scene> {
         match self {
-            TextContent::Raw(text) => Box::new(bsn![]),
+            TextContent::Raw(_) => Box::new(bsn![]),
             TextContent::Localized { loc, translator } => {
                 Box::new(bsn![LocalizableText { loc, translator }])
             }

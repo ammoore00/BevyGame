@@ -1,8 +1,7 @@
-use std::time::Duration;
 use crate::characters::npc::ai::AiSystems;
 use crate::characters::npc::ai::state::AiState;
-use bevy::prelude::*;
 use crate::debug::AiStateKind;
+use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -14,10 +13,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn calculate_intent(
-    npc_query: Query<&mut AiState>,
-    time: Res<Time>,
-) {
+fn calculate_intent(npc_query: Query<&mut AiState>, time: Res<Time>) {
     for mut ai_state in npc_query {
         ai_state.time_in_state += time.delta();
     }
