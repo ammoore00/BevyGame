@@ -37,9 +37,9 @@ fn on_debug_window_initialized(
 }
 
 pub(super) fn global_debug() -> impl Scene {
-    bsn! [
+    bsn! {
         #GlobalDebug
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         Node {
             position_type: PositionType::Relative,
             align_items: AlignItems::Start,
@@ -47,61 +47,55 @@ pub(super) fn global_debug() -> impl Scene {
             row_gap: px(8)
         }
         Children [
-            (
-                widgets::text::text(
-                    "Debug Options",
+            @widgets::text::text(
+                "Debug Options",
+                TextFormatting {
+                    font_size: MEDIUM_FONT_SIZE,
+                    color: PRIMARY_TEXT,
+                }
+            )
+            Node {
+                justify_self: JustifySelf::Start,
+            }
+            -- @navigation()
+            -- @physics()
+            -- @entities()
+            -- @ai()
+            -- @ui()
+        ]
+    }
+}
+
+fn debug_category(display: &str) -> impl Scene {
+    bsn! {
+        DebugCategory
+        Node {
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Start,
+            
+            width: percent(100),
+        }
+        Children [
+            Node
+            Children [
+                @widgets::text::text(
+                    display,
                     TextFormatting {
-                        font_size: MEDIUM_FONT_SIZE,
+                        font_size: SMALL_FONT_SIZE,
                         color: PRIMARY_TEXT,
                     }
                 )
                 Node {
                     justify_self: JustifySelf::Start,
                 }
-            ),
-            navigation(),
-            physics(),
-            entities(),
-            ai(),
-            ui(),
+            ]
         ]
-    ]
-}
-
-fn debug_category(display: &str) -> impl Scene {
-    bsn! [
-        DebugCategory
-        Node {
-            flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Start,
-
-            width: percent(100),
-        }
-        Children [
-            (
-                Node
-                Children [
-                    (
-                        widgets::text::text(
-                            display,
-                            TextFormatting {
-                                font_size: SMALL_FONT_SIZE,
-                                color: PRIMARY_TEXT,
-                            }
-                        )
-                        Node {
-                            justify_self: JustifySelf::Start,
-                        }
-                    ),
-                ]
-            )
-        ]
-    ]
+    }
 }
 
 macro_rules! debug_option_list {
     ($($option:expr),* $(,)?) => {
-        bsn! [
+        bsn! {
             Children [
                 Node {
                     padding: {UiRect::left(px(24)).with_right(px(16))},
@@ -110,22 +104,22 @@ macro_rules! debug_option_list {
                 }
                 Children [
                     $(
-                        {$option},
+                        @{$option},
                     )*
                 ]
             ]
-        ]
+        }
     };
 }
 
 macro_rules! debug_option {
     ($option:ident, $display:literal) => {
-        bsn! [
+        bsn! {
             @DebugEntry<$option> {
                 @display: $display
             }
             Node
-        ]
+        }
     };
 }
 
@@ -143,14 +137,14 @@ where
     T: DebugOption<Mutability = Mutable> + Unpin,
 {
     fn scene(props: DebugButtonProps) -> impl Scene {
-        bsn! [
+        bsn! {
             T
             DebugEntry<T>
             Node
             Children [
-                debug_option_button::<T>(props.display)
+                @debug_option_button::<T>(props.display)
             ]
-        ]
+        }
     }
 }
 
@@ -198,15 +192,15 @@ fn debug_option_button<T: DebugOption<Mutability = Mutable>>(text: impl AsRef<st
         on_debug_option_button_pressed::<T>,
     );
 
-    bsn! [
-        button
+    bsn! {
+        @button
         DebugButton
         Node {
             justify_self: JustifySelf::Start,
             padding: UiRect::left(px(4)),
         }
         on(on_debug_option_button_spawned::<T>)
-    ]
+    }
 }
 
 #[derive(EntityEvent)]
@@ -234,7 +228,7 @@ fn on_debug_option_button_spawned<T: DebugOption<Mutability = Mutable>>(
 }
 
 fn on_debug_option_button_pressed<T: DebugOption<Mutability = Mutable>>(
-    event: On<Pointer<Click>>,
+    event: On<PointerClick>,
     button_query: Query<(Entity, &ChildOf, &Children), With<DebugButton>>,
     text_query: Query<(Entity, &mut Text)>,
     ui_state_query: Query<&mut T, With<Children>>,
@@ -312,14 +306,14 @@ enum DebugUiState {
 // Navigation
 
 fn navigation() -> impl Scene {
-    bsn! [
+    bsn! {
         #NavigationDebug
-        debug_category("Navigation")
-        {debug_option_list!(
+        @debug_category("Navigation")
+        @{debug_option_list!(
             debug_option!(NavMapNodes, "Render Navigation Nodes"),
             debug_option!(NavMapEdges, "Render Navigation Edges"),
         )}
-    ]
+    }
 }
 
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
@@ -333,15 +327,15 @@ pub struct NavMapEdges(bool);
 // Physics
 
 fn physics() -> impl Scene {
-    bsn! [
+    bsn! {
         #PhysicsDebug
-        debug_category("Physics")
-        {debug_option_list!(
+        @debug_category("Physics")
+        @{debug_option_list!(
             debug_option!(CharacterCollision, "Render Character Collision"),
             debug_option!(TileCollision, "Render Tile Collision"),
             debug_option!(AttackCollision, "Render Attack Collision"),
         )}
-    ]
+    }
 }
 
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
@@ -359,13 +353,13 @@ pub struct AttackCollision(bool);
 // Entity Info
 
 fn entities() -> impl Scene {
-    bsn! [
+    bsn! {
         #EntityDebug
-        debug_category("Entity Info")
-        {debug_option_list!(
+        @debug_category("Entity Info")
+        @{debug_option_list!(
             debug_option!(CharacterHealth, "Display Character Health"),
         )}
-    ]
+    }
 }
 
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
@@ -375,14 +369,14 @@ pub struct CharacterHealth(bool);
 // AI
 
 fn ai() -> impl Scene {
-    bsn! [
+    bsn! {
         #AiDebug
-        debug_category("AI")
-        {debug_option_list!(
+        @debug_category("AI")
+        @{debug_option_list!(
             debug_option!(Paths, "Render NPC Paths"),
             debug_option!(AiState, "Display AI State"),
         )}
-    ]
+    }
 }
 
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
@@ -396,13 +390,13 @@ pub struct AiState(bool);
 // User Interface
 
 fn ui() -> impl Scene {
-    bsn! [
+    bsn! {
         #UiDebug
-        debug_category("User Interface")
-        {debug_option_list!(
+        @debug_category("User Interface")
+        @{debug_option_list!(
             debug_option!(UiRender, "Render User Interface Debug"),
         )}
-    ]
+    }
 }
 
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]

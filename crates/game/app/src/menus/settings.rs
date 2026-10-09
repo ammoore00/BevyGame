@@ -24,17 +24,19 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_settings_menu() -> impl Scene {
-    bsn! [
+    bsn! {
         #Settings
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         GlobalZIndex(2)
         DespawnOnExit<Menu>(Menu::Settings)
         Children [
-            text::header("Settings"),
-            button::with_text("Back", go_back_on_click)
+            @text::header("Settings")
+            --
+            @button::with_text("Back", go_back_on_click)
+            --
             // TODO: Add settings grid
         ]
-    ]
+    }
 }
 
 fn _settings_grid(
@@ -115,12 +117,12 @@ fn _global_volume_widget(
 const _MIN_VOLUME: f32 = 0.0;
 const _MAX_VOLUME: f32 = 3.0;
 
-fn _lower_global_volume(_: On<Pointer<Click>>, mut global_volume: ResMut<GlobalVolume>) {
+fn _lower_global_volume(_: On<PointerClick>, mut global_volume: ResMut<GlobalVolume>) {
     let linear = (global_volume.volume.to_linear() - 0.1).max(_MIN_VOLUME);
     global_volume.volume = Volume::Linear(linear);
 }
 
-fn _raise_global_volume(_: On<Pointer<Click>>, mut global_volume: ResMut<GlobalVolume>) {
+fn _raise_global_volume(_: On<PointerClick>, mut global_volume: ResMut<GlobalVolume>) {
     let linear = (global_volume.volume.to_linear() + 0.1).min(_MAX_VOLUME);
     global_volume.volume = Volume::Linear(linear);
 }
@@ -138,7 +140,7 @@ fn update_global_volume_label(
 }
 
 fn go_back_on_click(
-    _: On<Pointer<Click>>,
+    _: On<PointerClick>,
     screen: Res<State<Screen>>,
     mut next_menu: ResMut<NextState<Menu>>,
 ) {

@@ -42,7 +42,7 @@ fn spawn_editor() -> impl Scene {
     bsn! {
         #EditorUiRoot
         EditorUiRoot
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         Node {
             row_gap: px(0),
         }
@@ -73,7 +73,7 @@ fn spawn_editor() -> impl Scene {
                             (
                                 #LeftPanel
                                 EditorLeftPanel
-                                widgets::background::scrollable_ui_root()
+                                @widgets::background::scrollable_ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
                                     width: percent(LEFT_PANEL_WIDTH_TARGET),
@@ -84,28 +84,28 @@ fn spawn_editor() -> impl Scene {
                                 Children [
                                     (
                                         #LeftPanelBackground
-                                        background()
+                                        @background()
                                     ),
-                                    spawn_file_browser(),
+                                    @spawn_file_browser(),
                                 ]
                             ),
                             (
                                 #CenterPanel
                                 EditorCenterPanel
-                                widgets::background::ui_root()
+                                @widgets::background::ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
                                     flex_grow: 1.0,
                                 }
                                 Pickable::IGNORE
                                 Children [
-                                    spawn_editor_port(),
+                                    @spawn_editor_port(),
                                 ]
                             ),
                             (
                                 #RightPanel
                                 EditorRightPanel
-                                widgets::background::scrollable_ui_root()
+                                @widgets::background::scrollable_ui_root()
                                 Node {
                                     position_type: PositionType::Relative,
                                     width: percent(RIGHT_PANEL_WIDTH_TARGET),
@@ -116,9 +116,9 @@ fn spawn_editor() -> impl Scene {
                                 Children [
                                     (
                                         #RightPanelBackground
-                                        background()
+                                        @background()
                                     ),
-                                    spawn_details_screen()
+                                    @spawn_details_screen()
                                 ]
                             ),
                         ]
@@ -126,7 +126,7 @@ fn spawn_editor() -> impl Scene {
                     (
                         #BottomPanel
                         EditorBottomPanel
-                        widgets::background::ui_background(UiBackgroundStyle::Main)
+                        @widgets::background::ui_background(UiBackgroundStyle::Main)
                         Node {
                             width: percent(100),
                             height: percent(LOWER_PANEL_HEIGHT),
@@ -137,15 +137,15 @@ fn spawn_editor() -> impl Scene {
             ),
             // Menu Bar
             (
-                spawn_menu_bar()
+                @spawn_menu_bar()
             ),
         ]
     }
 }
 
 fn background() -> impl Scene {
-    bsn! [
-        widgets::background::ui_background(UiBackgroundStyle::Panel)
+    bsn! {
+        @widgets::background::ui_background(UiBackgroundStyle::Panel)
         Node {
             position_type: PositionType::Absolute,
             left: px(0),
@@ -154,5 +154,5 @@ fn background() -> impl Scene {
             bottom: px(-BACKGROUND_BLEED),
         }
         Pickable::IGNORE
-    ]
+    }
 }

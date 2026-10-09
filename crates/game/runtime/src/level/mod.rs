@@ -111,7 +111,7 @@ fn on_reset_level(
 fn construct_level(mut next_state: ResMut<NextState<LevelSpawnState>>, mut commands: Commands) {
     info!("Level construction - init");
 
-    let level = bsn![
+    let level = bsn! {
         #Level
         Level
         Transform
@@ -121,10 +121,11 @@ fn construct_level(mut next_state: ResMut<NextState<LevelSpawnState>>, mut comma
             // TODO: Fix this
             //music(loc::<AudioResource>("music/8_bit_open_world").unwrap())
         ]
-    ];
+    };
     commands.spawn_scene(level);
     next_state.set(LevelSpawnState::ConstructLevel.next());
 }
+
 fn bake_tiles(
     level: Query<Entity, With<Level>>,
     level_palettes: Res<Palettes>,
@@ -153,6 +154,7 @@ fn bake_tiles(
 
     next_state.set(LevelSpawnState::BakeTiles.next());
 }
+
 fn bake_nav(
     nav_context: NavContext,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
@@ -168,6 +170,7 @@ fn bake_nav(
 
     next_state.set(LevelSpawnState::BakeNav.next());
 }
+
 fn add_objects(
     level: Query<Entity, With<Level>>,
     mut next_state: ResMut<NextState<LevelSpawnState>>,
@@ -198,6 +201,7 @@ fn add_objects(
 
     next_state.set(LevelSpawnState::AddObjects.next());
 }
+
 fn finish_level_spawn(mut next_state: ResMut<NextState<LevelSpawnState>>, mut commands: Commands) {
     info!("Level construction - finishing");
     next_state.set(LevelSpawnState::Cleanup.next());

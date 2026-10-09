@@ -16,10 +16,10 @@ fn spawn_debug_window(mut commands: Commands) {
 }
 
 fn debug_options_window_scene() -> impl Scene {
-    bsn! [
+    bsn! {
         #DebugOptionsWindow
         DebugOptionsWindow
-        window()
+        @window()
         Node {
             position_type: PositionType::Relative,
             width: percent(30),
@@ -27,9 +27,9 @@ fn debug_options_window_scene() -> impl Scene {
         }
         DespawnOnExit<DebugOptionsWindowOpen>(DebugOptionsWindowOpen(true))
         Children [
-            global_debug()
+            @global_debug()
         ]
-    ]
+    }
 }
 
 #[derive(Event)]

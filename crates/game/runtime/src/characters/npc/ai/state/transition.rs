@@ -56,7 +56,7 @@ fn on_state_transition(
             commands.entity(event.entity).insert(Wandering);
         }
         AiStateKind::Attack => {
-            commands.entity(event.entity).apply_scene(bsn![@Following]);
+            commands.entity(event.entity).apply_scene(bsn! { @Following });
             // TODO: Proper detection
             commands.trigger(GainedTarget::new(event.entity, player.entity()));
         }

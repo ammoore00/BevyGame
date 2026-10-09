@@ -7,6 +7,7 @@ use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use std::time::Duration;
+use common::MainCamera;
 use widgets::button::ButtonImpl;
 use widgets::theme::palette::SpriteInteractionPalette;
 
@@ -170,6 +171,7 @@ fn interact_with_focused_button(
     input_focus: Res<InputFocus>,
     children: Query<&Children>,
     mut button_query: Query<(&mut ImageNode, &SpriteInteractionPalette), With<ButtonImpl>>,
+    camera: Single<&Camera, With<MainCamera>>,
     mut commands: Commands,
 ) {
     if action_state
@@ -194,20 +196,17 @@ fn interact_with_focused_button(
                 normal: None,
                 extra: None,
             };
-
-            let event = Click {
+            
+            let event = PointerClick {
+                entity: child,
+                pointer: Pointer::new(PointerId::Mouse, placeholder_location),
                 button: PointerButton::Primary,
                 hit: placeholder_hit,
                 duration: Duration::from_secs_f32(0.1),
                 count: 1,
             };
 
-            commands.trigger(Pointer::<Click>::new(
-                PointerId::Mouse,
-                placeholder_location,
-                event,
-                child,
-            ));
+            commands.trigger(event);
 
             if let Ok((mut image, palette)) = button_query.get_mut(child) {
                 image.texture_atlas.as_mut().unwrap().index = palette.pressed;

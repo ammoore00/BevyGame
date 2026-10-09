@@ -13,9 +13,6 @@ use common::WorldCoords;
 use common::WorldPosition;
 use physics::Collider;
 
-// TODO: Remove this reexport
-pub use strategy::follow::GainedTarget;
-
 // TODO: Remove this pub
 pub mod pathfinder;
 pub mod strategy;
@@ -47,11 +44,11 @@ enum PathfinderSystems {
 }
 
 pub(super) fn pathfinder_scene() -> impl Scene {
-    bsn! [
+    bsn! {
         Pathfinder
         WanderData
         FollowerData
-    ]
+    }
 }
 
 #[derive(QueryData)]

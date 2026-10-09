@@ -4,7 +4,7 @@ use crate::characters::state::TrySetStateEvent;
 use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::action_states::Attacking;
 use assets::resource::characters::{
-    AttackContext, AttackDefinition, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
+    AttackContext, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
 };
 use bevy::prelude::*;
 use common::{
@@ -16,8 +16,6 @@ use physics::{
 };
 use std::collections::HashMap;
 use std::slice;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
@@ -87,7 +85,7 @@ fn on_attack_success(
 ) {
     // Unwrap is safe because this event is only triggered if the checks from `on_try_attack` pass
     let attack_def = context.attack_registry.get_asset(&event.attack).unwrap();
-    
+
     let Some(animation) = context.animation_context.get_asset(attack_def.animation()) else {
         error!(
             "Invalid attack definition: animation {} does not exist!",
@@ -172,7 +170,7 @@ fn update_attack_key_frames(
 ) {
     // Clean up any potential orphaned hitboxes
     for hitboxes in non_attacking_query.iter() {
-        let existing_hitboxes = existing_hitbox_query.iter_many(hitboxes);
+        let existing_hitboxes = existing_hitbox_query.iter_many(hitboxes).matched();
         for hitbox_data in existing_hitboxes {
             commands.entity(hitbox_data.0).despawn();
         }

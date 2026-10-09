@@ -29,26 +29,27 @@ impl DebugLabel {
         let name_formatting = TextFormatting::new(SMALL_FONT_SIZE, self.name_color);
         let text_formatting = TextFormatting::new(SMALL_FONT_SIZE, self.text_color);
 
-        bsn! [
+        bsn! {
             Node {
                 flex_direction: FlexDirection::Row,
             }
             Children [
-                widgets::text::text(format!("{}: ", self.name.as_str()), name_formatting),
-                widgets::text::text(self.text.as_str(), text_formatting),
+                @widgets::text::text(format!("{}: ", self.name.as_str()), name_formatting)
+                --
+                @widgets::text::text(self.text.as_str(), text_formatting)
             ]
-        ]
+        }
     }
 }
 
 marker!(DebugCanvas);
 
 fn spawn_debug_canvas() -> impl Scene {
-    bsn! [
+    bsn! {
         #DebugCanvas
         DebugCanvas
-        widgets::background::ui_root()
-    ]
+        @widgets::background::ui_root()
+    }
 }
 
 marker!(DebugLabelCollection);
@@ -95,7 +96,7 @@ fn update_debug_labels(
         let ui_y = height - viewport_pos.y;
 
         // Spawn the base node for holding all debug labels
-        let debug_display = commands.spawn_scene(bsn![
+        let debug_display = commands.spawn_scene(bsn! {
             DebugLabelCollection
             Node {
                 position_type: PositionType::Absolute,
@@ -103,7 +104,7 @@ fn update_debug_labels(
                 bottom: {px(ui_y)},
                 flex_direction: FlexDirection::Column,
             }
-        ]).id();
+        }).id();
         commands.entity(canvas.entity()).add_child(debug_display);
 
         // For each debug label in the list, spawn the associated scene to render it

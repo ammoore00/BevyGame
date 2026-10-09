@@ -30,7 +30,7 @@ pub struct NoPathfinding;
 impl PathfindStrategy for NoPathfinding {}
 
 fn on_pathfind_strategy_added<T: PathfindStrategy + Component>(
-    event: On<Add, T>,
+    event: On<Add<T>>,
     mut commands: Commands,
 ) {
     let entity = event.entity;
@@ -50,7 +50,7 @@ fn on_pathfind_strategy_added<T: PathfindStrategy + Component>(
 }
 
 fn on_pathfind_strategy_removed<T: PathfindStrategy + Component>(
-    event: On<Remove, T>,
+    event: On<Remove<T>>,
     mut commands: Commands,
 ) {
     commands.entity(event.entity).trigger(CancelPathing);

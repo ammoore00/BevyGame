@@ -22,26 +22,26 @@ marker!(FileTabs);
 marker!(EditorPortContent);
 
 pub(super) fn spawn_editor_port() -> impl Scene {
-    bsn! [
+    bsn! {
         #EditorPort
         EditorPort
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         Node {
             position_type: PositionType::Relative,
             justify_content: JustifyContent::FlexStart,
         }
         Children [
-            file_tabs(),
-            editor_port_content(),
+            @file_tabs(),
+            @editor_port_content(),
         ]
-    ]
+    }
 }
 
 fn file_tabs() -> impl Scene {
-    bsn! [
+    bsn! {
         #FileTabs
         FileTabs
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         Node {
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::FlexStart,
@@ -50,10 +50,10 @@ fn file_tabs() -> impl Scene {
         }
         Children [
             #FileTabsBackground
-            widgets::background::ui_background(UiBackgroundStyle::Panel)
+            @widgets::background::ui_background(UiBackgroundStyle::Panel)
             Node {
                 position_type: PositionType::Absolute,
-
+                
                 left: px(0),
                 right: px(0),
                 top: px(-BACKGROUND_BLEED),
@@ -61,11 +61,11 @@ fn file_tabs() -> impl Scene {
             }
             Pickable::IGNORE
         ]
-    ]
+    }
 }
 
 fn editor_port_content() -> impl Scene {
-    bsn! [
+    bsn! {
         #EditorPortContent
         EditorPortContent
         Node {
@@ -74,11 +74,11 @@ fn editor_port_content() -> impl Scene {
 
             padding: UiRect::all(px(50.0))
         }
-        text("Editor Content", TextFormatting {
+        @text("Editor Content", TextFormatting {
             font_size: LARGE_FONT_SIZE,
             color: PRIMARY_TEXT,
         })
-    ]
+    }
 }
 
 const FILE_TABS_BUTTON_HEIGHT: usize = 40;
@@ -130,18 +130,20 @@ fn update_file_tab_buttons(
         let label_len = label.len();
 
         let file_button = commands
-            .spawn_scene(bsn![button::with_text_ext(
-                label,
-                ButtonWithTextOptions {
-                    font_size: SMALL_FONT_SIZE,
-                    width: px(
-                        FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING
-                    ),
-                    height: percent(100.0),
-                    ..default()
-                },
-                on_file_button_clicked
-            )])
+            .spawn_scene(bsn! {
+                @button::with_text_ext(
+                    label,
+                    ButtonWithTextOptions {
+                        font_size: SMALL_FONT_SIZE,
+                        width: px(
+                            FILE_TABS_BUTTON_PER_CHAR_WIDTH * label_len + FILE_TABS_BUTTON_PADDING
+                        ),
+                        height: percent(100.0),
+                        ..default()
+                    },
+                    on_file_button_clicked
+                ) 
+            })
             .insert(FileTabButton(open_file.clone()))
             .id();
         commands.entity(file_tabs).add_child(file_button);
@@ -149,7 +151,7 @@ fn update_file_tab_buttons(
 }
 
 fn on_file_button_clicked(
-    event: On<Pointer<Click>>,
+    event: On<PointerClick>,
     file_query: Query<&FileTabButton>,
     mut file_manager: ResMut<FileManager>,
 ) {

@@ -19,12 +19,12 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 pub(crate) fn player(position: Vec3) -> impl Scene {
-    bsn! [
+    bsn! {
         @Player {
             @position,
             @max_speed: 4.5,
         }
-    ]
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -39,7 +39,7 @@ pub struct PlayerProps {
 pub struct Player;
 impl Player {
     fn scene(props: PlayerProps) -> impl Scene {
-        bsn! [
+        bsn! {
             #Player
             Player
             @CharacterPrototype {
@@ -65,7 +65,7 @@ impl Player {
                     color: Color::srgba(1.0, 1.0, 1.0, 0.25),
                 }
             ]
-        ]
+        }
     }
 }
 

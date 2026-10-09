@@ -169,12 +169,12 @@ fn translate_text_impl<T: TextSection>(
 pub fn text(text: impl Into<TextContent>, text_formatting: TextFormatting) -> impl Scene {
     let text = text.into();
 
-    bsn! [
+    bsn! {
         #Text
         Text({text.get_default_text()})
-        {text.into_scene()}
-        {text_formatting.into_scene()}
-    ]
+        @{text.into_scene()}
+        @{text_formatting.into_scene()}
+    }
 }
 
 pub fn world_text(
@@ -185,15 +185,15 @@ pub fn world_text(
 ) -> impl Scene {
     let text = text.into();
 
-    bsn! [
+    bsn! {
         #Text2d
         Text2d({text.get_default_text()})
-        {text.into_scene()}
-        {text_formatting.into_scene()}
+        @{text.into_scene()}
+        @{text_formatting.into_scene()}
         Transform {
             translation: {convert_world_to_screen_coords(scale, pos).0},
         }
-    ]
+    }
 }
 
 pub fn label(text_str: impl Into<String>) -> impl Scene {

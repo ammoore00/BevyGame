@@ -12,14 +12,14 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 pub fn npc_bundle(data_loc: ResourceLocation<CharacterResource>, position: Vec3) -> impl Scene {
-    bsn! [
+    bsn! {
         Npc
-        ai_scene()
+        @ai_scene()
         @CharacterPrototype {
             @position,
             @data_loc,
         }
-    ]
+    }
 }
 
 marker!(Npc);

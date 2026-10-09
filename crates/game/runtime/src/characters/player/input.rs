@@ -3,7 +3,7 @@ use crate::characters::player::{AimFacing, Player};
 use crate::characters::stamina::Stamina;
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{
-    ActionState, ActionStateCapabilities, Attacking, Idle, Running, Sprinting, Walking,
+    ActionState, ActionStateCapabilities, Idle, Running, Sprinting, Walking,
 };
 use assets::resource::characters::AttackResource;
 use bevy::prelude::*;
@@ -13,7 +13,10 @@ use physics::{ApplyImpulse, Impulse, KinematicData, MovementController, PhysicsD
 use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(FixedUpdate, camera_follow_player.in_set(AppSystems::Respond));
+    app.add_systems(
+        FixedUpdate,
+        camera_follow_player.in_set(AppSystems::Respond),
+    );
 
     app.add_observer(on_movement_input);
     app.add_observer(on_jump_input);
@@ -202,7 +205,11 @@ fn on_attack_input(
         };
 
         let attack_loc: ResourceLocation<AttackResource> = "player/basic_attack".parse().unwrap();
-        commands.trigger(TryAttackEvent::new(player_entity, facing, attack_loc.clone()));
+        commands.trigger(TryAttackEvent::new(
+            player_entity,
+            facing,
+            attack_loc.clone(),
+        ));
     }
 }
 

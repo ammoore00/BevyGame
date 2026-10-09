@@ -1,10 +1,10 @@
-use crate::debug_options::options::{AiStateRes, CharacterHealthRes, PathsRes};
+use crate::debug_options::options::{AiStateRes, PathsRes};
 use crate::debug_options::render::draw::{LineSettings, draw_sphere, draw_world_line};
 use crate::debug_options::render::palette::{PATH_COLOR, PATH_LINE_THICKNESS, PATH_NODE_RADIUS};
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
 use common::{GameState, Scale, WorldPosition, marker};
-use runtime::prelude::{AiState, Health, Waypoints};
+use runtime::prelude::{AiState, Waypoints};
 use widgets::theme::palette::{PRIMARY_TEXT, SEPIA_6};
 use crate::debug_options::render::label::{DebugLabel, DebugLabelAttachedTo};
 

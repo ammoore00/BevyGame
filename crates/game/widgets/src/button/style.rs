@@ -48,11 +48,13 @@ impl ButtonStyle {
 
     pub(crate) fn make_palette_scene(self) -> impl Scene {
         let indices = self.get_indices();
-        bsn![SpriteInteractionPalette {
-            none: { indices.0 },
-            hovered: { indices.1 },
-            pressed: { indices.2 },
-        }]
+        bsn! {
+            SpriteInteractionPalette {
+                none: { indices.0 },
+                hovered: { indices.1 },
+                pressed: { indices.2 },
+            }
+        }
     }
 
     pub(crate) fn get_palette(&self) -> SpriteInteractionPalette {

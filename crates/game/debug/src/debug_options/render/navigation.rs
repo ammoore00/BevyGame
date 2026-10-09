@@ -1,10 +1,10 @@
-use crate::debug_options::options::{NavMapEdgesRes, NavMapNodesRes, PathsRes};
+use crate::debug_options::options::{NavMapEdgesRes, NavMapNodesRes};
 use crate::debug_options::render::draw::{LineSettings, draw_sphere, draw_world_line};
 use crate::debug_options::render::palette::*;
 use bevy::prelude::*;
 use common::dev_tools::DebugState;
-use common::{GameState, Scale, WorldCoords, WorldPosition, marker};
-use runtime::prelude::{TileNavMap, Waypoints};
+use common::{GameState, Scale, WorldCoords, marker};
+use runtime::prelude::TileNavMap;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(

@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use data::prelude::loc;
 
 pub fn ui_root() -> impl Scene {
-    bsn! [
+    bsn! {
         Node {
             position_type: PositionType::Absolute,
             width: percent(100),
@@ -17,11 +17,11 @@ pub fn ui_root() -> impl Scene {
             row_gap: px(20),
         }
         Pickable::IGNORE
-    ]
+    }
 }
 
 pub fn scrollable_ui_root() -> impl Scene {
-    bsn! [
+    bsn! {
         Node {
             position_type: PositionType::Absolute,
             width: percent(100),
@@ -36,12 +36,12 @@ pub fn scrollable_ui_root() -> impl Scene {
             },
         }
         Pickable::IGNORE
-    ]
+    }
 }
 
 pub fn ui_background(style: UiBackgroundStyle) -> Box<dyn Scene> {
     if let Ok(style) = UiBackgroundImage::try_from(style) {
-        Box::new(bsn![
+        Box::new(bsn! {
             #UiBackground
             ImageNode {
                 image: {loc::<UiSpriteResource>("background").unwrap()},
@@ -51,12 +51,12 @@ pub fn ui_background(style: UiBackgroundStyle) -> Box<dyn Scene> {
                     index: {style.get_index()}
                 }),
             }
-        ]) as Box<dyn Scene>
+        }) as Box<dyn Scene>
     } else {
-        Box::new(bsn![
+        Box::new(bsn! {
             #UiBackground
             BackgroundColor(TRANSPARENT_OVERLAY)
-        ]) as Box<dyn Scene>
+        }) as Box<dyn Scene>
     }
 }
 

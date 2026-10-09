@@ -46,9 +46,9 @@ const SPLASH_DURATION_SECS: f32 = 1.8;
 const SPLASH_FADE_DURATION_SECS: f32 = 0.6;
 
 fn spawn_splash_screen() -> impl Scene {
-    bsn! [
+    bsn! {
         #SplashScreen
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         BackgroundColor(SPLASH_BACKGROUND_COLOR)
         DespawnOnExit<Screen>(Screen::Splash)
         Children [
@@ -64,9 +64,9 @@ fn spawn_splash_screen() -> impl Scene {
                 total_duration: SPLASH_DURATION_SECS,
                 fade_duration: SPLASH_FADE_DURATION_SECS,
                 t: 0.0,
-            },
+            }
         ]
-    ]
+    }
 }
 
 #[derive(Component, Reflect, Default, Clone)]

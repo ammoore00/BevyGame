@@ -22,7 +22,7 @@ impl CommandPickable {
 }
 
 fn on_picked(
-    event: On<Pointer<Press>>,
+    event: On<PointerPress>,
     pickable_query: Query<&CommandPickable>,
     mut commands: Commands,
 ) {

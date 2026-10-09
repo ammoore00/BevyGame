@@ -20,27 +20,33 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_credits_menu() -> impl Scene {
-    bsn! [
+    bsn! {
         #CreditsMenu
-        widgets::background::scrollable_ui_root()
+        @widgets::background::scrollable_ui_root()
         GlobalZIndex(2)
         DespawnOnExit<Menu>(Menu::Credits)
         Children [
-            text::header("Created by"),
-            created_by(),
-            text::header("Assets"),
-            assets(),
-            text::header("License"),
-            license(),
-            button::with_text("Back", go_back_on_click)
+            @text::header("Created by")
+            --
+            @created_by()
+            --
+            @text::header("Assets")
+            --
+            @assets()
+            --
+            @text::header("License")
+            --
+            @license()
+            --
+            @button::with_text("Back", go_back_on_click)
         ]
-    ]
+    }
     // TODO: Figure out a way to set the input focus
 }
 
 macro_rules! grid {
     ($([$label:expr, $text:expr $(,)*]),* $(,)?) => {
-        bsn! [
+        bsn! {
             Node {
                 display: Display::Grid,
                 row_gap: px(10),
@@ -49,21 +55,17 @@ macro_rules! grid {
             }
             Children [
                 $(
-                    (
-                        text::label($label)
-                        TextLayout {
-                            justify: Justify::Right
-                        }
-                    ),
-                    (
-                        text::label($text)
-                        TextLayout {
-                            justify: Justify::Left
-                        }
-                    )
+                    @text::label($label)
+                    TextLayout {
+                        justify: Justify::Right
+                    },
+                    @text::label($text)
+                    TextLayout {
+                        justify: Justify::Left
+                    },
                 )*
             ]
-        ]
+        }
     };
 }
 
@@ -99,7 +101,7 @@ fn license() -> impl Scene {
     )
 }
 
-fn go_back_on_click(_: On<Pointer<Click>>, mut next_menu: ResMut<NextState<Menu>>) {
+fn go_back_on_click(_: On<PointerClick>, mut next_menu: ResMut<NextState<Menu>>) {
     next_menu.set(Menu::Main);
 }
 
@@ -108,9 +110,9 @@ fn go_back(mut next_menu: ResMut<NextState<Menu>>) {
 }
 
 fn start_credits_music(mut commands: Commands) {
-    commands.spawn_scene(bsn! [
+    commands.spawn_scene(bsn! {
         Name::new("Credits Music")
         DespawnOnExit<Menu>(Menu::Credits)
-        music(loc::<AudioResource>("music/monkeys_spinning_monkeys").unwrap())
-    ]);
+        @music(loc::<AudioResource>("music/monkeys_spinning_monkeys").unwrap())
+    });
 }

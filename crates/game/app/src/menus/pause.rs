@@ -21,29 +21,32 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_pause_menu() -> impl Scene {
-    bsn! [
+    bsn! {
         #PauseMenu
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         GlobalZIndex(2)
         DespawnOnExit<Menu>(Menu::Pause)
         Children [
-            text::header("Game paused"),
-            button::with_text("Continue", close_menu),
-            button::with_text("Settings", open_settings_menu),
-            button::with_text("Quit to Title", quit_to_title),
+            @text::header("Game paused")
+            --
+            @button::with_text("Continue", close_menu)
+            --
+            @button::with_text("Settings", open_settings_menu)
+            --
+            @button::with_text("Quit to Title", quit_to_title)
         ]
-    ]
+    }
 }
 
-fn open_settings_menu(_: On<Pointer<Click>>, mut next_menu: ResMut<NextState<Menu>>) {
+fn open_settings_menu(_: On<PointerClick>, mut next_menu: ResMut<NextState<Menu>>) {
     next_menu.set(Menu::Settings);
 }
 
-fn close_menu(_: On<Pointer<Click>>, mut next_menu: ResMut<NextState<Menu>>) {
+fn close_menu(_: On<PointerClick>, mut next_menu: ResMut<NextState<Menu>>) {
     next_menu.set(Menu::None);
 }
 
-fn quit_to_title(_: On<Pointer<Click>>, mut next_screen: ResMut<NextState<Screen>>) {
+fn quit_to_title(_: On<PointerClick>, mut next_screen: ResMut<NextState<Screen>>) {
     next_screen.set(Screen::Title);
 }
 

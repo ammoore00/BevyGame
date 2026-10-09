@@ -46,10 +46,10 @@ pub(super) fn plugin(app: &mut App) {
 marker!(CommandsWindow);
 
 fn spawn_command_window() -> impl Scene {
-    bsn! [
+    bsn! {
         #CommandWindow
         CommandsWindow
-        window()
+        @window()
         Node {
             top: percent(70),
             height: percent(30),
@@ -57,21 +57,22 @@ fn spawn_command_window() -> impl Scene {
         }
         DespawnOnExit<CommandsWindowOpen>(CommandsWindowOpen(true))
         DespawnOnExit<GameState>(GameState::Gameplay)
-        Children [(
+        Children [
             Node {
                 height: percent(100),
                 width: percent(100),
-
+                
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::FlexStart,
                 justify_content: JustifyContent::FlexEnd,
             }
             Children [
-                (command_output()),
-                (command_input()),
+                @command_output()
+                --
+                @command_input()
             ]
-        )]
-    ]
+        ]
+    }
 }
 
 fn set_commands_window_open(
@@ -104,7 +105,7 @@ marker!(CommandInput);
 marker!(CommandOutput);
 
 fn command_input() -> impl Scene {
-    bsn! [
+    bsn! {
         #CommandInput
         CommandInput
         Node {
@@ -123,11 +124,11 @@ fn command_input() -> impl Scene {
         TextFont {
             font_size: TINY_FONT_SIZE
         }
-    ]
+    }
 }
 
 fn command_output() -> impl Scene {
-    bsn! [
+    bsn! {
         #CommandOutput
         CommandOutput
         Node {
@@ -138,7 +139,7 @@ fn command_output() -> impl Scene {
 
             align_items: AlignItems::FlexStart,
         }
-    ]
+    }
 }
 
 fn keep_command_input_focused(

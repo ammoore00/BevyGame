@@ -12,9 +12,9 @@ pub(super) fn plugin(app: &mut App) {
 #[macro_export]
 macro_rules! action_state_scene {
     ($state:ty) => {
-        bsn! [
+        bsn! {
             ActionStateTracker::new($state)
             $state
-        ]
+        }
     };
 }

@@ -1,10 +1,10 @@
 use app::AppPlugin;
 use bevy::prelude::*;
-#[cfg(feature = "dev")]
-use bevy_mod_debugdump::schedule_graph;
+//#[cfg(feature = "dev")]
+//use bevy_mod_debugdump::schedule_graph;
 use std::env;
-use std::fs::{File, create_dir_all};
-use std::io::Write;
+//use std::fs::{File, create_dir_all};
+//use std::io::Write;
 
 fn main() -> AppExit {
     let mut app = App::new();
@@ -14,21 +14,23 @@ fn main() -> AppExit {
 
     #[cfg(feature = "dev")]
     if args.iter().any(|arg| arg == "--schedule") {
-        let dot_string = bevy_mod_debugdump::schedule_graph_dot(
-            &mut app,
-            Update,
-            &schedule_graph::Settings::default(),
-        );
-
-        let svg_data = generate_svg_data(dot_string).expect("Failed to generate SVG data");
-
-        create_dir_all("debug").expect("Unable to create debug directory");
-        let mut file = File::create("debug/schedule.svg").expect("Unable to create SVG file");
-        file.write_all(svg_data.as_slice())
-            .expect("Unable to write SVG data");
-
-        println!("Successfully generated schedule.svg!");
-        return AppExit::Success;
+        /*
+            let dot_string = bevy_mod_debugdump::schedule_graph_dot(
+                &mut app,
+                Update,
+                &schedule_graph::Settings::default(),
+            );
+    
+            let svg_data = generate_svg_data(dot_string).expect("Failed to generate SVG data");
+    
+            create_dir_all("debug").expect("Unable to create debug directory");
+            let mut file = File::create("debug/schedule.svg").expect("Unable to create SVG file");
+            file.write_all(svg_data.as_slice())
+                .expect("Unable to write SVG data");
+    
+            println!("Successfully generated schedule.svg!");
+            return AppExit::Success;
+         */
     }
 
     // Otherwise, run the game normally
@@ -36,7 +38,7 @@ fn main() -> AppExit {
 }
 
 #[cfg(feature = "dev")]
-fn generate_svg_data(dot_string: String) -> Result<Vec<u8>, std::io::Error> {
+fn _generate_svg_data(dot_string: String) -> Result<Vec<u8>, std::io::Error> {
     use graphviz_rust::cmd::Format;
     use graphviz_rust::printer::PrinterContext;
 

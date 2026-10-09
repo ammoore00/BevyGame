@@ -30,22 +30,26 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_gameplay_loading_screen() -> impl Scene {
-    bsn! [
+    bsn! {
         #LoadingScreen
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         DespawnOnExit<Screen>(Screen::Loading({&Screen::Gameplay}))
-        Children [text::label("Loading...")]
-    ]
+        Children [
+            @text::label("Loading...")
+        ]
+    }
 }
 
 #[cfg(feature = "dev")]
 fn spawn_editor_loading_screen() -> impl Scene {
-    bsn! [
+    bsn! {
         #LoadingScreen
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         DespawnOnExit<Screen>(Screen::Loading({&Screen::Editor}))
-        Children [text::label("Loading...")]
-    ]
+        Children [
+            @text::label("Loading...")
+        ]
+    }
 }
 
 fn enter_gameplay_screen(mut next_screen: ResMut<NextState<Screen>>) {

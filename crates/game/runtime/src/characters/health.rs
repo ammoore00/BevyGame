@@ -23,14 +23,14 @@ pub struct Health {
 }
 impl Health {
     fn scene(props: HealthProps) -> impl Scene {
-        bsn! [
+        bsn! {
             Health {
                 max: {props.max_health},
                 current: {props.max_health},
             }
             IFrames
             DamageModifiers::from(props.damage_modifiers)
-        ]
+        }
     }
 }
 impl Default for Health {

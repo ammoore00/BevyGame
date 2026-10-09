@@ -149,7 +149,7 @@ fn update_velocity(
             continue;
         };
 
-        let forces = forces_query.iter_many(forces);
+        let forces = forces_query.iter_many(forces).matched();
 
         let mut combined_target_velocities = Vec::new();
 

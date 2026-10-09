@@ -19,15 +19,15 @@ pub(super) fn plugin(app: &mut App) {
 marker!(PropertiesScreen);
 
 pub(super) fn spawn_details_screen() -> impl Scene {
-    bsn! [
+    bsn! {
         #PropertiesScreen
         PropertiesScreen
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         Node {
             position_type: PositionType::Relative,
             justify_content: JustifyContent::FlexStart,
         }
-    ]
+    }
 }
 
 fn update_properties_view(

@@ -107,7 +107,7 @@ impl CharacterPrototype {
     /// Remaining components are loaded from data after spawning (see `initialize_characters`)
     fn scene(props: CharacterProps) -> impl Scene {
         let state = action_state_scene!(Idle);
-        bsn! [
+        bsn! {
             CharacterPrototype
             MovementController {
                 // TODO: Move this into Character Data
@@ -119,8 +119,8 @@ impl CharacterPrototype {
             HasGravity
             Facing
             Health
-            state
-        ]
+            @state
+        }
     }
 }
 impl Prototype for CharacterPrototype {

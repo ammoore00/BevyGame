@@ -18,18 +18,18 @@ const MENU_PADDING_HORIZONTAL: usize = 22;
 pub(super) const MENU_BAR_TOTAL_HEIGHT: usize = MENU_BUTTON_HEIGHT + MENU_PADDING_VERTICAL * 2;
 
 pub(super) fn spawn_menu_bar() -> impl Scene {
-    bsn! [
+    bsn! {
         #MenuBar
         MenuBar
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         Node {
             flex_direction: FlexDirection::Row,
-
+            
             top: px(0),
             left: px(0),
             right: px(0),
             height: px(MENU_BAR_TOTAL_HEIGHT),
-
+            
             padding: UiRect::px(
                 MENU_PADDING_HORIZONTAL as f32,
                 MENU_PADDING_HORIZONTAL as f32,
@@ -37,18 +37,18 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                 MENU_PADDING_VERTICAL as f32,
             ),
         }
-        widgets::background::ui_background(UiBackgroundStyle::Main)
+        @widgets::background::ui_background(UiBackgroundStyle::Main)
         Children [
             #MenuBarButtons
             MenuBarButtons
-            widgets::background::ui_root()
+            @widgets::background::ui_root()
             Node {
                 position_type: PositionType::Relative,
                 flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::FlexStart,
             }
             Children [
-                button::with_text_ext(
+                @button::with_text_ext(
                     "File",
                     ButtonWithTextOptions {
                         font_size: MEDIUM_FONT_SIZE,
@@ -57,8 +57,9 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         ..default()
                     },
                     file_button_clicked,
-                ),
-                button::with_text_ext(
+                )
+                --
+                @button::with_text_ext(
                     "Edit",
                     ButtonWithTextOptions {
                         font_size: MEDIUM_FONT_SIZE,
@@ -67,8 +68,9 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         ..default()
                     },
                     edit_button_clicked,
-                ),
-                button::with_text_ext(
+                )
+                --
+                @button::with_text_ext(
                     "View",
                     ButtonWithTextOptions {
                         font_size: MEDIUM_FONT_SIZE,
@@ -77,8 +79,9 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         ..default()
                     },
                     view_button_clicked,
-                ),
-                button::with_text_ext(
+                )
+                --
+                @button::with_text_ext(
                     "Tools",
                     ButtonWithTextOptions {
                         font_size: MEDIUM_FONT_SIZE,
@@ -87,8 +90,9 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         ..default()
                     },
                     tools_button_clicked,
-                ),
-                button::with_text_ext(
+                )
+                --
+                @button::with_text_ext(
                     "Window",
                     ButtonWithTextOptions {
                         font_size: MEDIUM_FONT_SIZE,
@@ -97,18 +101,18 @@ pub(super) fn spawn_menu_bar() -> impl Scene {
                         ..default()
                     },
                     window_button_clicked,
-                ),
+                )
             ]
         ]
-    ]
+    }
 }
 
-fn file_button_clicked(_: On<Pointer<Click>>) {}
+fn file_button_clicked(_: On<PointerClick>) {}
 
-fn edit_button_clicked(_: On<Pointer<Click>>) {}
+fn edit_button_clicked(_: On<PointerClick>) {}
 
-fn view_button_clicked(_: On<Pointer<Click>>) {}
+fn view_button_clicked(_: On<PointerClick>) {}
 
-fn tools_button_clicked(_: On<Pointer<Click>>) {}
+fn tools_button_clicked(_: On<PointerClick>) {}
 
-fn window_button_clicked(_: On<Pointer<Click>>) {}
+fn window_button_clicked(_: On<PointerClick>) {}

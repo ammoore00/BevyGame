@@ -13,7 +13,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 pub fn state_scene() -> impl Scene {
-    bsn![AiState]
+    bsn! { AiState }
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, CopyGetters)]

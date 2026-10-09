@@ -40,12 +40,12 @@ pub(super) fn plugin(app: &mut App) {
 pub struct Following;
 impl Following {
     pub fn scene(props: FollowerProps) -> impl Scene {
-        bsn! [
+        bsn! {
             Following
             FollowerState {
                 target: {props.target},
             }
-        ]
+        }
     }
 }
 impl PathfindStrategy for Following {}
@@ -86,7 +86,7 @@ impl FollowerState {
 }
 
 fn on_following_added(
-    event: On<Add, Following>,
+    event: On<Add<Following>>,
     query: Query<(), With<FollowerData>>,
     mut commands: Commands,
 ) {
@@ -96,7 +96,7 @@ fn on_following_added(
     }
 }
 
-fn on_following_removed(event: On<Remove, Following>, mut commands: Commands) {
+fn on_following_removed(event: On<Remove<Following>>, mut commands: Commands) {
     commands.entity(event.entity).trigger(CancelPathing);
     // Queue silenced used to suppress errors about despawned entities
     commands

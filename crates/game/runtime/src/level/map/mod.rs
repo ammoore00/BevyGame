@@ -46,12 +46,12 @@ impl PrototypeFinalizedMarker for Map {
 pub struct MapPrototype;
 impl MapPrototype {
     pub fn scene(props: MapProps) -> impl Scene {
-        bsn! [
+        bsn! {
             Map
             Transform
             Visibility
             MapDataLocation({Some(props.definition)}, {Some(props.palette)})
-        ]
+        }
     }
 }
 impl Prototype for MapPrototype {
@@ -86,12 +86,12 @@ impl PrototypeBuilder for MapBuilder {
 }
 
 pub fn map_scene(definition: &MapDefinition, palette: &Palette) -> impl Scene {
-    bsn! [
+    bsn! {
         @MapPrototype {
             @definition: {definition.clone()},
             @palette: {palette.clone()},
         }
-    ]
+    }
 }
 
 pub fn spawn_map_grid(

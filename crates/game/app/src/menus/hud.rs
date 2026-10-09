@@ -19,20 +19,20 @@ pub(super) fn plugin(app: &mut App) {
 marker!(HudRoot);
 
 fn spawn_hud() -> impl Scene {
-    bsn! [
+    bsn! {
         #Hud
         HudRoot
-        widgets::background::ui_root()
+        @widgets::background::ui_root()
         GlobalZIndex(1)
         DespawnOnExit<Screen>(Screen::Gameplay)
         Children [
-            stat_bars()
+            @stat_bars()
         ]
-    ]
+    }
 }
 
 fn stat_bars() -> impl Scene {
-    bsn! [
+    bsn! {
         #StatBars
         Node {
             position_type: PositionType::Absolute,
@@ -45,10 +45,11 @@ fn stat_bars() -> impl Scene {
             height: percent(10),
         }
         Children [
-            (HealthBar Node),
+            (HealthBar Node)
+            --
             (StaminaBar Node)
         ]
-    ]
+    }
 }
 
 marker!(HealthBar);

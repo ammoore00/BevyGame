@@ -13,10 +13,10 @@ impl Plugin for DebugPlugin {
 }
 
 fn window() -> impl Scene {
-    bsn! [
-        widgets::background::ui_root()
-        widgets::background::ui_background(UiBackgroundStyle::Transparent)
+    bsn! {
+        @widgets::background::ui_root()
+        @widgets::background::ui_background(UiBackgroundStyle::Transparent)
         InputBlocker
         GlobalZIndex(100)
-    ]
+    }
 }

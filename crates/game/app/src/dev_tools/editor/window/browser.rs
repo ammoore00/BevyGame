@@ -51,33 +51,29 @@ pub(super) fn plugin(app: &mut App) {
 marker!(FileBrowser);
 
 pub(super) fn spawn_file_browser() -> impl Scene {
-    bsn! [
+    bsn! {
         #FileBrowser
         FileBrowser
-        widgets::background::scrollable_ui_root()
+        @widgets::background::scrollable_ui_root()
         Node {
             position_type: PositionType::Relative,
             justify_content: JustifyContent::FlexStart,
             row_gap: px(2.),
         }
         Children [
-            (
-                #CharacterMenu
-                CharacterMenu
-                collapsible_menu("Characters", MEDIUM_FONT_SIZE)
-            ),
-            (
-                #AnimationMenu
-                AnimationMenu
-                collapsible_menu("Animations", MEDIUM_FONT_SIZE)
-            ),
-            (
-                #AttackMenu
-                AttackMenu
-                collapsible_menu("Attacks", MEDIUM_FONT_SIZE)
-            ),
+            #CharacterMenu
+            CharacterMenu
+            @collapsible_menu("Characters", MEDIUM_FONT_SIZE)
+            --
+            #AnimationMenu
+            AnimationMenu
+            @collapsible_menu("Animations", MEDIUM_FONT_SIZE)
+            --
+            #AttackMenu
+            AttackMenu
+            @collapsible_menu("Attacks", MEDIUM_FONT_SIZE)
         ]
-    ]
+    }
 }
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -89,7 +85,7 @@ impl Default for Collapsed {
 }
 
 fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> impl Scene {
-    bsn! [
+    bsn! {
         Collapsed
         Node {
             flex_direction: FlexDirection::Column,
@@ -102,9 +98,9 @@ fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> 
                 width: percent(100),
             }
             Children [
-                button::with_style(ButtonStyle::ArrowRight, 2, {
+                @button::with_style(ButtonStyle::ArrowRight, 2, {
                     |
-                        event: On<Pointer<Click>>,
+                        event: On<PointerClick>,
                         parent_query: Query<&ChildOf>,
                         mut commands: Commands,
                         mut menu_query: Query<&mut Collapsed>,
@@ -113,34 +109,34 @@ fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> 
                             error!("Failed to get menu inner");
                             return;
                         };
-
+                        
                         let Ok(menu) = parent_query.get(menu_inner).map(ChildOf::get) else {
                             error!("Failed to get menu root");
                             return;
                         };
-
+                        
                         if let Ok(mut collapsed) = menu_query.get_mut(menu) {
                             collapsed.0 = !collapsed.0;
-
+                            
                             let style = if collapsed.0 {
                                 ButtonStyle::ArrowRight
                             } else {
                                 ButtonStyle::ArrowDown
                             };
-
+                            
                             commands.entity(event.entity).insert(style);
                         } else {
                             error!("Failed to get collapsed component for menu");
                         }
                     }
                 }),
-                text::text(text, TextFormatting {
+                @text::text(text, TextFormatting {
                     font_size: font_size.into(),
                     color: HEADER_TEXT,
                 })
             ]
         ]
-    ]
+    }
 }
 
 trait MenuContentsKind: Component + Debug {
@@ -494,10 +490,10 @@ fn render_menu_items(
         };
 
         let button = {
-            bsn! [
-                {
-                    match item {
-                        MenuItem::Folder(_) => Box::new(bsn! [{
+            bsn! {
+                @{ match item {
+                    MenuItem::Folder(_) => Box::new(bsn! {
+                        @{
                             button::with_text_inline(
                                 item.name(),
                                 ButtonWithTextOptions {
@@ -510,8 +506,10 @@ fn render_menu_items(
                                 palette,
                                 folder_button_clicked,
                             )
-                        }]) as Box<dyn Scene>,
-                        MenuItem::File(_, _, _) => Box::new(bsn! [{
+                        }
+                    }) as Box<dyn Scene>,
+                    MenuItem::File(_, _, _) => Box::new(bsn! {
+                        @{
                             button::with_text_inline(
                                 item.name(),
                                 ButtonWithTextOptions {
@@ -524,16 +522,16 @@ fn render_menu_items(
                                 palette,
                                 file_button_clicked,
                             )
-                        }]) as Box<dyn Scene>,
-                    }
-                }
+                        }
+                    }) as Box<dyn Scene>,
+                } }
                 Node {
                     width: percent(100),
                     margin: UiRect::right(px(BROWSER_BUTTON_MARGIN)),
                     padding: UiRect::horizontal(px(BROWSER_BUTTON_PADDING)),
                     justify_content: JustifyContent::FlexStart,
                 }
-            ]
+            }
         };
 
         let button = commands.spawn_scene(button).id();
@@ -541,10 +539,10 @@ fn render_menu_items(
     }
 }
 
-fn folder_button_clicked(_: On<Pointer<Click>>) {}
+fn folder_button_clicked(_: On<PointerClick>) {}
 
 fn file_button_clicked(
-    event: On<Pointer<Click>>,
+    event: On<PointerClick>,
     parent_query: Query<&ChildOf>,
     file_query: Query<&MenuItem>,
     mut file_manager: ResMut<FileManager>,
