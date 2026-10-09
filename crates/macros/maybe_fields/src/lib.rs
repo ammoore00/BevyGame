@@ -19,7 +19,7 @@ pub fn maybe_fields(_args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     for field in &mut fields.named {
-        if is_maybe_type(&field.ty) {
+        if is_type(&field.ty, "Maybe") {
             if !has_serde_default(field.attrs.as_slice()) {
                 field.attrs.push(parse_quote! {
                     #[serde(default)]
@@ -32,12 +32,26 @@ pub fn maybe_fields(_args: TokenStream, input: TokenStream) -> TokenStream {
                 });
             }
         }
+        
+        if is_type(&field.ty, "MaybeOrDefault") {
+            if !has_serde_default(field.attrs.as_slice()) {
+                field.attrs.push(parse_quote! {
+                    #[serde(default)]
+                });
+            }
+            
+            if !has_serde_skip_serializing_if(field.attrs.as_slice()) {
+                field.attrs.push(parse_quote! {
+                    #[serde(skip_serializing_if = "MaybeOrDefault::is_default")]
+                });
+            }
+        }
     }
 
     quote!(#item).into()
 }
 
-fn is_maybe_type(ty: &Type) -> bool {
+fn is_type(ty: &Type, name: impl AsRef<str>) -> bool {
     let Type::Path(type_path) = ty else {
         return false;
     };
@@ -45,8 +59,9 @@ fn is_maybe_type(ty: &Type) -> bool {
     let Some(segment) = type_path.path.segments.last() else {
         return false;
     };
-
-    if segment.ident != "Maybe" {
+    
+    let name = name.as_ref();
+    if segment.ident != name {
         return false;
     }
 
