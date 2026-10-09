@@ -4,14 +4,13 @@ use crate::action_states::{
 use crate::codec::character::health::HealthCodec;
 use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec};
 use crate::loader::Maybe;
-use crate::resource::characters::{AnimationResource, AttackSetResource};
+use crate::resource::characters::{AiResource, AnimationResource, AttackSetResource};
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
-use crate::codec::character::ai::AiCodec;
 
 pub mod animation;
 pub mod attack;
@@ -44,7 +43,7 @@ pub struct CharacterCodec {
     /// AI related parameters. See `AiCodec` for more.
     ///
     /// Optional - defaults to no AI
-    pub ai_params: Maybe<AiCodec>,
+    pub ai_params: Maybe<ResourceLocation<AiResource>>,
 }
 impl CharacterCodec {
     pub const LATEST_FORMAT: u8 = 1;
@@ -67,7 +66,7 @@ impl Default for CharacterCodec {
 
             attack_set: Maybe(None),
 
-            ai_params: Maybe(Some(AiCodec::default())),
+            ai_params: Maybe(Some("default".parse().unwrap())),
         }
     }
 }

@@ -2,7 +2,9 @@ use crate::action_state_scene;
 use crate::prelude::{Health, Player};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
-use assets::resource::characters::{AnimationResource, CharacterData, CharacterResource};
+use assets::resource::characters::{
+    AiResource, AnimationResource, CharacterData, CharacterResource,
+};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -96,7 +98,7 @@ impl Default for CharacterProps {
     }
 }
 
-/// SceneComponent used to construct a characters
+/// SceneComponent used to construct a character
 ///
 /// See `CharacterProps` for parameters
 #[derive(SceneComponent, Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -163,14 +165,25 @@ impl PrototypeBuilder for CharacterBuilder {
 
         let collider = data.collider().make_collider(position.as_vec3());
 
-        commands.entity(entity).insert((
-            animation_tracker,
-            animation_map,
-            state_capabilities,
-            sprite,
-            collider,
-            Transform::from_scale(Vec3::splat(context.scale.0)),
-        ));
+        let ai_context = context.ai_context();
+        let ai_params_scene = data
+            .ai_params()
+            .map(|loc| ai_context.get_asset(&loc))
+            .flatten()
+            .map(|params| Box::new(params.as_scene()) as Box<dyn Scene>)
+            .unwrap_or_else(|| Box::new(()) as Box<dyn Scene>);
+
+        commands
+            .entity(entity)
+            .insert((
+                animation_tracker,
+                animation_map,
+                state_capabilities,
+                sprite,
+                collider,
+                Transform::from_scale(Vec3::splat(context.scale.0)),
+            ))
+            .apply_scene(ai_params_scene);
 
         Ok(())
     }
@@ -182,6 +195,8 @@ struct CharacterBuilderContext<'w> {
     character_registry: SystemRegistry<'w, CharacterResource>,
     #[getset(get = "pub")]
     animation_context: SystemRegistry<'w, AnimationResource>,
+    #[getset(get = "pub")]
+    ai_context: SystemRegistry<'w, AiResource>,
     #[getset(get = "pub")]
     scale: Res<'w, Scale>,
 }
