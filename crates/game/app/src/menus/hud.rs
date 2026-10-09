@@ -45,9 +45,11 @@ fn stat_bars() -> impl Scene {
             height: percent(10),
         }
         Children [
-            (HealthBar Node)
+            HealthBar
+            Node
             --
-            (StaminaBar Node)
+            StaminaBar
+            Node
         ]
     }
 }
