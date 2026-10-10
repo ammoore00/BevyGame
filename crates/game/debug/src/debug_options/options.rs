@@ -17,9 +17,10 @@ pub(super) fn plugin(app: &mut App) {
     app.init_resource::<AttackCollisionRes>();
 
     app.init_resource::<CharacterHealthRes>();
-
-    app.init_resource::<AiStateRes>();
+    
     app.init_resource::<PathsRes>();
+    app.init_resource::<PathfindStrategyRes>();
+    app.init_resource::<AiStateRes>();
 
     app.init_resource::<UiRenderRes>();
 
@@ -374,6 +375,7 @@ fn ai() -> impl Scene {
         @debug_category("AI")
         @{debug_option_list!(
             debug_option!(Paths, "Render NPC Paths"),
+            debug_option!(PathfindStrategy, "Display Pathfinding Strategy"),
             debug_option!(AiState, "Display AI State"),
         )}
     }
@@ -382,6 +384,10 @@ fn ai() -> impl Scene {
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
 #[reflect(Component)]
 pub struct Paths(bool);
+
+#[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
+#[reflect(Component)]
+pub struct PathfindStrategy(bool);
 
 #[derive(Component, Default, Clone, Debug, DebugOption, Reflect)]
 #[reflect(Component)]

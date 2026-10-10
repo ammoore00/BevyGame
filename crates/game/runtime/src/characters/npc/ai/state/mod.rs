@@ -33,6 +33,7 @@ pub enum AiStateKind {
     Wander,
     Alert,
     Attack,
+    BackHome,
 }
 
 fn update_prev_state(query: Query<&mut AiState>) {

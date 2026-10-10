@@ -19,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Debug, Default, Clone)]
+#[derive(Component, Debug, Default, Clone, Copy)]
 pub struct WorldPosition(pub WorldCoords);
 
 impl WorldPosition {

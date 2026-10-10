@@ -1,4 +1,4 @@
-mod health;
+mod entity_data;
 mod draw;
 mod navigation;
 mod palette;
@@ -12,7 +12,7 @@ use bevy::prelude::*;
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         ai::plugin,
-        health::plugin,
+        entity_data::plugin,
         label::plugin,
         navigation::plugin,
         physics::plugin,

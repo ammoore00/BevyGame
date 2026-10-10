@@ -6,7 +6,7 @@ use physics::Collider;
 pub(super) fn plugin(_app: &mut App) {}
 
 /// Stores information about the pathfinding target for an NPC
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone, Copy)]
 pub enum TargetGoal {
     /// A static target position
     Position(TargetPosition),
@@ -23,16 +23,17 @@ impl TargetGoal {
     }
 }
 
-#[derive(Debug, derive_new::new, CopyGetters)]
+#[derive(Debug, Clone, Copy, derive_new::new, CopyGetters)]
 pub struct TargetPosition {
     /// The target position
-    _coords: WorldCoords,
+    #[getset(get_copy = "pub")]
+    pos: WorldCoords,
     /// Threshold distance for detecting when we've reached the target
     #[getset(get_copy = "pub")]
     threshold_dist: f32,
 }
 
-#[derive(Debug, derive_new::new, CopyGetters)]
+#[derive(Debug, Clone, Copy, derive_new::new, CopyGetters)]
 pub struct TargetEntity {
     /// The target entity
     #[getset(get_copy = "pub")]

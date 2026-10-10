@@ -1,7 +1,9 @@
 use crate::characters::attack::TryAttackEvent;
-use crate::characters::npc::ai::AiSystems;
+use crate::characters::npc::ai::pathfinding::pathfinder::DEFAULT_TARGET_REACHED_THRESHOLD;
 use crate::characters::npc::ai::pathfinding::strategy::follow::FollowerState;
+use crate::characters::npc::ai::{AiSystems, NpcHome};
 use crate::prelude::*;
+use assets::resource::characters::AiBehaviorParams;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::{Facing, WorldPosition};
@@ -26,9 +28,13 @@ fn calculate_intent(npc_query: Query<&mut AiState>, time: Res<Time>) {
 struct AiComponents {
     entity: Entity,
     ai_state: &'static AiState,
+    //ai_behavior: &'static AiBehaviorParams,
+
     pos: &'static WorldPosition,
     facing: &'static Facing,
+
     follower_state: Option<&'static FollowerState>,
+    home: Option<&'static NpcHome>,
 }
 
 const ATTACK_RANGE: f32 = 1.0;
@@ -44,6 +50,19 @@ fn update_ai(
 
     for components in npc_query {
         let mut check_for_aggro = true;
+
+        /*
+        if let Some(leash_distance) = components.ai_behavior.leash_distance()
+            && let Some(home) = components.home
+        {
+            let distance = components.pos.0.distance(home.pos.0);
+
+            if distance > leash_distance {
+                commands.trigger(SetStateEvent::new(components.entity, AiStateKind::BackHome));
+                continue;
+            }
+        }
+        */
 
         match components.ai_state.current {
             AiStateKind::Idle => {}
@@ -81,6 +100,22 @@ fn update_ai(
                 }
 
                 check_for_aggro = false;
+            }
+            AiStateKind::BackHome => {
+                let Some(home) = components.home else {
+                    commands.trigger(SetStateEvent::new(components.entity, AiStateKind::Idle));
+                    error!("Back home state behavior called for character without a home!");
+                    return;
+                };
+
+                let distance = components.pos.0.distance(home.pos.0);
+
+                // TODO: Better threshold distance checking
+                if distance < DEFAULT_TARGET_REACHED_THRESHOLD {
+                    commands.trigger(SetStateEvent::new(components.entity, AiStateKind::Idle));
+                }
+
+                // TODO: Add minimum time and/or distance in BackHome to prevent oscillation
             }
         }
 

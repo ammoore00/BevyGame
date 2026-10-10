@@ -6,10 +6,7 @@ use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
 use crate::{WriteError, create_dir, write_data};
 use assets::codec::{ActionStateCodec, AiCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, DamageModifierCodec, FrameDataCodec, HealthCodec, KeyFrameCodec, TextureAtlasCodec};
-use assets::resource::characters::{
-    AnimationResource, AttackResource, AttackSetResource, CharacterResource,
-    CharacterSpriteResource,
-};
+use assets::resource::characters::{AiResource, AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
 use data::prelude::*;
 use std::collections::HashMap;
 
@@ -85,7 +82,7 @@ struct CharacterData {
     
     attack_set: Option<AttackSetData>,
     
-    ai_params: Option<AiCodec>
+    ai_params: Option<ResourceLocation<AiResource>>,
 }
 impl CharacterData {
     fn new(loc: &str, collider: ColliderDataCodec) -> Self {

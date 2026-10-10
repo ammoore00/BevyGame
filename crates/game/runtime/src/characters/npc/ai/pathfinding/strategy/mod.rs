@@ -5,9 +5,10 @@ use std::fmt::Debug;
 
 pub mod follow;
 pub mod wander;
+pub mod position;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((follow::plugin, wander::plugin));
+    app.add_plugins((follow::plugin, position::plugin, wander::plugin));
 
     app.register_pathfind_strategy::<NoPathfinding>();
 }
@@ -25,7 +26,8 @@ impl PathfindStrategyRegistry for App {
 #[reflect_trait]
 pub trait PathfindStrategy: Reflect + Debug + Send + Sync + 'static {}
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Reflect)]
+#[reflect(Component, PathfindStrategy)]
 pub struct NoPathfinding;
 impl PathfindStrategy for NoPathfinding {}
 

@@ -35,7 +35,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 #[derive(SceneComponent, Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Reflect)]
-#[reflect(PathfindStrategy)]
+#[reflect(Component, PathfindStrategy)]
 #[scene(FollowerProps)]
 pub struct Following;
 impl Following {

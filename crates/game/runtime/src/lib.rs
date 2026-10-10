@@ -13,21 +13,19 @@ pub mod prelude {
         characters::{
             attack::AttackHitbox,
             health::Health,
-            player::Player,
-            stamina::Stamina,
             npc::ai::{
                 pathfinding::{
                     pathfinder::Waypoints,
                     strategy::{
-                        wander::Wandering,
+                        ReflectPathfindStrategy,
                         follow::{Following, GainedTarget},
-                    }
+                        wander::Wandering,
+                    },
                 },
-                state::{
-                    AiState, AiStateKind,
-                    transition::SetStateEvent,
-                },
-            }
+                state::{AiState, AiStateKind, transition::SetStateEvent},
+            },
+            player::Player,
+            stamina::Stamina,
         },
         level::grid::{nav::TileNavMap, tile::Tile},
     };

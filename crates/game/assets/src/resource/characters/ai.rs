@@ -1,6 +1,7 @@
 use crate::codec::{AiCodec, AiHearingCodec, AiSensesCodec, AiSightCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use bevy::prelude::*;
+use getset::CopyGetters;
 use data::prelude::resource_kind;
 
 pub(super) fn plugin(app: &mut App) {
@@ -89,11 +90,13 @@ impl From<AiSensesCodec> for AiSenseParams {
     }
 }
 
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, CopyGetters)]
 pub struct AiSightParams {
     /// Range in meters of the sight cone
+    #[getset(get_copy = "pub")]
     range: f32,
     /// Angle in degrees from the center of the sight cone to the edge
+    #[getset(get_copy = "pub")]
     half_angle: f32,
 }
 impl AiSightParams {
@@ -116,7 +119,7 @@ impl From<AiSightCodec> for AiSightParams {
     }
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Copy, CopyGetters)]
 pub struct AiHearingParams {}
 impl Default for AiHearingParams {
     fn default() -> Self {
@@ -131,8 +134,9 @@ impl From<AiHearingCodec> for AiHearingParams {
 
 const DEFAULT_LEASH_DISTANCE: f32 = 10.0;
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Copy, CopyGetters)]
 pub struct AiBehaviorParams {
+    #[getset(get_copy = "pub")]
     leash_distance: Option<f32>,
 }
 impl AiBehaviorParams {

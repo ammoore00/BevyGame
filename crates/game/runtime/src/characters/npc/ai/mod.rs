@@ -2,7 +2,7 @@ use crate::LevelLoadedSystems;
 use crate::characters::npc::ai::pathfinding::pathfinder_scene;
 use crate::characters::npc::ai::state::state_scene;
 use bevy::prelude::*;
-use common::{AppSystems, GameplaySystems, PausableSystems};
+use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords};
 
 mod movement;
 // TODO: Remove this pub
@@ -23,10 +23,11 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-pub(super) fn ai_scene() -> impl Scene {
+pub(super) fn ai_scene(pos: Vec3) -> impl Scene {
     bsn! {
         @pathfinder_scene()
         @state_scene()
+        NpcHome { pos }
     }
 }
 
@@ -35,4 +36,10 @@ enum AiSystems {
     Calculate,
     Execute,
     Cleanup,
+}
+
+#[derive(Component, Debug, Clone, Copy, Default)]
+struct NpcHome {
+    pos: WorldCoords,
+    facing: Facing,
 }

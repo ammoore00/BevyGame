@@ -4,7 +4,7 @@ use crate::characters::CharacterPrototype;
 use crate::characters::npc::ai::ai_scene;
 use assets::resource::characters::CharacterResource;
 use bevy::prelude::*;
-use common::marker;
+use common::{marker, WorldPosition, Facing};
 use data::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
@@ -14,7 +14,7 @@ pub(super) fn plugin(app: &mut App) {
 pub fn npc_bundle(data_loc: ResourceLocation<CharacterResource>, position: Vec3) -> impl Scene {
     bsn! {
         Npc
-        @ai_scene()
+        @ai_scene(position)
         @CharacterPrototype {
             @position,
             @data_loc,

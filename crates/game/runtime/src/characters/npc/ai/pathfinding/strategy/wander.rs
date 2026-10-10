@@ -23,7 +23,7 @@ const DEFAULT_MAX_IDLE_TIME: u64 = 1;
 const DEFAULT_MAX_MOVEMENT_TIME: u64 = 10;
 
 #[derive(Component, Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Reflect)]
-#[reflect(PathfindStrategy)]
+#[reflect(Component, PathfindStrategy)]
 pub struct Wandering;
 impl PathfindStrategy for Wandering {}
 

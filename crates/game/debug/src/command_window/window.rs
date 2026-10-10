@@ -5,6 +5,7 @@ use bevy::input::common_conditions::input_just_pressed;
 use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::prelude::*;
 use bevy::text::{EditableText, TextCursorStyle};
+use bevy::ui_widgets::TextInput;
 use common::{GameState, Pause, marker};
 use widgets::text::{TINY_FONT_SIZE, TextFormatting, text};
 use widgets::theme::palette::{ERROR_TEXT, PRIMARY_TEXT, SEPIA_2};
@@ -115,6 +116,7 @@ fn command_input() -> impl Scene {
         EditableText {
             allow_newlines: false,
         }
+        TextInput
         BorderColor::from(SEPIA_2)
         TextCursorStyle
         TextColor(PRIMARY_TEXT)

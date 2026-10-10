@@ -5,6 +5,8 @@ use crate::characters::npc::ai::pathfinding::strategy::wander::Wandering;
 use crate::characters::npc::ai::state::{AiState, AiStateKind};
 use crate::prelude::{GainedTarget, Player};
 use bevy::prelude::*;
+use crate::characters::npc::ai::NpcHome;
+use crate::characters::npc::ai::pathfinding::strategy::position::MoveToPosEvent;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_set_state);
@@ -42,6 +44,7 @@ struct StateTransitionEvent {
 // TODO: Replace temporary logic with real data-driven logic
 fn on_state_transition(
     event: On<StateTransitionEvent>,
+    home_query: Query<Option<&NpcHome>>,
     player: Single<Entity, With<Player>>,
     mut commands: Commands,
 ) {
@@ -59,6 +62,14 @@ fn on_state_transition(
             commands.entity(event.entity).apply_scene(bsn! { @Following });
             // TODO: Proper detection
             commands.trigger(GainedTarget::new(event.entity, player.entity()));
+        }
+        AiStateKind::BackHome => {
+            let Some(home) = home_query.get(event.entity).unwrap() else {
+                commands.trigger(SetStateEvent::new(event.entity, AiStateKind::Idle));
+                error!("Back home state triggered for character without a home!");
+                return;
+            };
+            commands.trigger(MoveToPosEvent::new(event.entity, home.pos))
         }
     }
 }
