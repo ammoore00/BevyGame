@@ -44,6 +44,7 @@ const fn color(code: u32) -> Color {
 }
 
 pub const PRIMARY_TEXT: Color = SEPIA_7;
+pub const SECONDARY_TEXT: Color = SEPIA_6;
 pub const ERROR_TEXT: Color = RED_3;
 
 /// #ddd369

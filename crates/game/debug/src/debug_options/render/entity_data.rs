@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use common::dev_tools::DebugState;
 use common::marker;
 use runtime::prelude::Health;
-use widgets::theme::palette::{PRIMARY_TEXT, SEPIA_6};
+use widgets::theme::palette::{PRIMARY_TEXT, SECONDARY_TEXT};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_health_label);
@@ -34,7 +34,7 @@ fn update_health_label(
                 name_color: PRIMARY_TEXT,
 
                 text: health.current.to_string(),
-                text_color: SEPIA_6,
+                text_color: SECONDARY_TEXT,
             },
             DebugLabelAttachedTo(character_entity),
         ));

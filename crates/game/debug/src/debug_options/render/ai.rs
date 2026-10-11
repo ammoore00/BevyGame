@@ -7,7 +7,7 @@ use common::dev_tools::DebugState;
 use common::{GameState, Scale, WorldPosition, marker};
 use runtime::characters::Character;
 use runtime::prelude::{AiState, Player, ReflectPathfindStrategy, Waypoints};
-use widgets::theme::palette::{PRIMARY_TEXT, RED_3, SEPIA_6};
+use widgets::theme::palette::{ERROR_TEXT, PRIMARY_TEXT, SECONDARY_TEXT};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -80,22 +80,23 @@ fn update_pathfind_strategy_label(world: &mut World) {
     let mut label_query_state = world.query_filtered::<Entity, With<PathfindStrategyLabel>>();
     let label_query = label_query_state.query(world);
     let label_entities = label_query.into_iter().collect::<Vec<_>>();
-    
+
     for label_entity in label_entities {
         world.despawn(label_entity);
     }
-    
+
     if !world.resource::<PathfindStrategyRes>().get() {
         return;
     }
-    
-    let mut character_query_state = world.query_filtered::<Entity, (With<Character>, Without<Player>)>();
+
+    let mut character_query_state =
+        world.query_filtered::<Entity, (With<Character>, Without<Player>)>();
     let character_query = character_query_state.query(world);
     let character_entities = character_query.into_iter().collect::<Vec<_>>();
 
     for character_entity in character_entities {
         let strategy_components = get_strategy_reflect(world, character_entity);
-        
+
         match strategy_components.len() {
             0 => continue,
             1 => {
@@ -106,7 +107,7 @@ fn update_pathfind_strategy_label(world: &mut World) {
                         name_color: PRIMARY_TEXT,
 
                         text: format!("{}", strategy_components[0]),
-                        text_color: SEPIA_6,
+                        text_color: SECONDARY_TEXT,
                     },
                     DebugLabelAttachedTo(character_entity),
                 ));
@@ -117,9 +118,9 @@ fn update_pathfind_strategy_label(world: &mut World) {
                     DebugLabel {
                         name: "Pathfinder".to_string(),
                         name_color: PRIMARY_TEXT,
-                        
+
                         text: "ERROR: Multiple strategies".to_string(),
-                        text_color: RED_3,
+                        text_color: ERROR_TEXT,
                     },
                     DebugLabelAttachedTo(character_entity),
                 ));
@@ -152,7 +153,7 @@ fn get_strategy_reflect(world: &World, entity: Entity) -> Vec<String> {
                 .next()
                 .map(|s| s.to_string())
                 .unwrap_or(component_info.name().to_string());
-            
+
             strategies.push(short_name.to_string());
         }
     }
@@ -186,7 +187,7 @@ fn update_state_label(
                 name_color: PRIMARY_TEXT,
 
                 text: format!("{:?}", ai_state.current()),
-                text_color: SEPIA_6,
+                text_color: SECONDARY_TEXT,
             },
             DebugLabelAttachedTo(character_entity),
         ));
