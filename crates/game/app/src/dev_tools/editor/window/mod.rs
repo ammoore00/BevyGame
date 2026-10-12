@@ -47,98 +47,85 @@ fn spawn_editor() -> impl Scene {
             row_gap: px(0),
         }
         Children [
-            (
-                #EditorContentRoot
-                EditorContentRoot
-                Node {
-                    flex_direction: FlexDirection::Column,
+            #EditorContentRoot
+            EditorContentRoot
+            Node {
+                flex_direction: FlexDirection::Column,
 
-                    position_type: PositionType::Absolute,
-                    top: px(MENU_BAR_TOTAL_HEIGHT),
-                    left: px(0),
-                    right: px(0),
-                    bottom: px(0),
+                position_type: PositionType::Absolute,
+                top: px(MENU_BAR_TOTAL_HEIGHT),
+                left: px(0),
+                right: px(0),
+                bottom: px(0),
+            }
+            Pickable::IGNORE
+            Children [
+                #CenterPanelsRoot
+                Node {
+                    width: percent(100),
+                    height: percent(CENTER_PANEL_HEIGHT),
+                    padding: UiRect::horizontal(px(2)),
                 }
                 Pickable::IGNORE
                 Children [
-                    (
-                        #CenterPanelsRoot
-                        Node {
-                            width: percent(100),
-                            height: percent(CENTER_PANEL_HEIGHT),
-                            padding: UiRect::horizontal(px(2)),
-                        }
-                        Pickable::IGNORE
-                        Children [
-                            (
-                                #LeftPanel
-                                EditorLeftPanel
-                                @widgets::background::scrollable_ui_root()
-                                Node {
-                                    position_type: PositionType::Relative,
-                                    width: percent(LEFT_PANEL_WIDTH_TARGET),
-                                    max_width: px(LEFT_PANEL_MAX_WIDTH),
-                                    padding: px(PANEL_PADDING),
-                                }
-                                Pickable::IGNORE
-                                Children [
-                                    (
-                                        #LeftPanelBackground
-                                        @background()
-                                    ),
-                                    @spawn_file_browser(),
-                                ]
-                            ),
-                            (
-                                #CenterPanel
-                                EditorCenterPanel
-                                @widgets::background::ui_root()
-                                Node {
-                                    position_type: PositionType::Relative,
-                                    flex_grow: 1.0,
-                                }
-                                Pickable::IGNORE
-                                Children [
-                                    @spawn_editor_port(),
-                                ]
-                            ),
-                            (
-                                #RightPanel
-                                EditorRightPanel
-                                @widgets::background::scrollable_ui_root()
-                                Node {
-                                    position_type: PositionType::Relative,
-                                    width: percent(RIGHT_PANEL_WIDTH_TARGET),
-                                    max_width: px(RIGHT_PANEL_MAX_WIDTH),
-                                    padding: px(PANEL_PADDING),
-                                }
-                                Pickable::IGNORE
-                                Children [
-                                    (
-                                        #RightPanelBackground
-                                        @background()
-                                    ),
-                                    @spawn_details_screen()
-                                ]
-                            ),
-                        ]
-                    ),
-                    (
-                        #BottomPanel
-                        EditorBottomPanel
-                        @widgets::background::ui_background(UiBackgroundStyle::Main)
-                        Node {
-                            width: percent(100),
-                            height: percent(LOWER_PANEL_HEIGHT),
-                        }
-                        Pickable::IGNORE
-                    ),
+                    #LeftPanel
+                    EditorLeftPanel
+                    @widgets::background::scrollable_ui_root()
+                    Node {
+                        position_type: PositionType::Relative,
+                        width: percent(LEFT_PANEL_WIDTH_TARGET),
+                        max_width: px(LEFT_PANEL_MAX_WIDTH),
+                        padding: px(PANEL_PADDING),
+                    }
+                    Pickable::IGNORE
+                    Children [
+                        #LeftPanelBackground
+                        @background()
+                        --
+                        @spawn_file_browser()
+                    ]
+                    --
+                    #CenterPanel
+                    EditorCenterPanel
+                    @widgets::background::ui_root()
+                    Node {
+                        position_type: PositionType::Relative,
+                        flex_grow: 1.0,
+                    }
+                    Pickable::IGNORE
+                    Children [
+                        @spawn_editor_port()
+                    ]
+                    --
+                    #RightPanel
+                    EditorRightPanel
+                    @widgets::background::scrollable_ui_root()
+                    Node {
+                        position_type: PositionType::Relative,
+                        width: percent(RIGHT_PANEL_WIDTH_TARGET),
+                        max_width: px(RIGHT_PANEL_MAX_WIDTH),
+                        padding: px(PANEL_PADDING),
+                    }
+                    Pickable::IGNORE
+                    Children [
+                        #RightPanelBackground
+                        @background()
+                        --
+                        @spawn_details_screen()
+                    ]
                 ]
-            ),
-            // Menu Bar
-            (
-                @spawn_menu_bar()
-            ),
+                --
+                #BottomPanel
+                EditorBottomPanel
+                @widgets::background::ui_background(UiBackgroundStyle::Main)
+                Node {
+                    width: percent(100),
+                    height: percent(LOWER_PANEL_HEIGHT),
+                }
+                Pickable::IGNORE
+            ]
+            --
+            @spawn_menu_bar()
         ]
     }
 }

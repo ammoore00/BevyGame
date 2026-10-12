@@ -31,8 +31,9 @@ pub(super) fn spawn_editor_port() -> impl Scene {
             justify_content: JustifyContent::FlexStart,
         }
         Children [
-            @file_tabs(),
-            @editor_port_content(),
+            @file_tabs()
+            --
+            @editor_port_content()
         ]
     }
 }

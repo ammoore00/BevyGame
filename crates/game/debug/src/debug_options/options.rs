@@ -94,32 +94,43 @@ fn debug_category(display: &str) -> impl Scene {
     }
 }
 
-macro_rules! debug_option_list {
-    ($($option:expr),* $(,)?) => {
-        bsn! {
-            Children [
-                Node {
-                    padding: {UiRect::left(px(24)).with_right(px(16))},
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::Start,
-                }
-                Children [
-                    $(
-                        @{$option},
-                    )*
-                ]
-            ]
+fn debug_option_entry<T>(display: &'static str) -> impl Scene
+where
+    T: DebugOption<Mutability = Mutable> + Unpin,
+{
+    bsn! {
+        @DebugEntry<T> {
+            @display: display
         }
-    };
+        Node
+    }
 }
 
-macro_rules! debug_option {
-    ($option:ident, $display:literal) => {
-        bsn! {
-            @DebugEntry<$option> {
-                @display: $display
+macro_rules! debug_option_list {
+    (
+        ($first_option:ty, $first_display:literal)
+        $(, ($option:ty, $display:literal))*
+        $(,)?
+    ) => {
+        // TODO(bevy-0.20): `bsn!` fails to parse `--` separators generated from `macro_rules!`
+        //  repetitions here. Keep comma syntax until the upstream parser bug is fixed.
+        #[allow(deprecated)]
+        {
+            bsn! {
+                Children [
+                    Node {
+                        padding: {UiRect::left(px(24)).with_right(px(16))},
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Start,
+                    }
+                    Children [
+                        (@debug_option_entry::<$first_option>($first_display)),
+                        $(
+                            (@debug_option_entry::<$option>($display)),
+                        )*
+                    ]
+                ]
             }
-            Node
         }
     };
 }
@@ -311,8 +322,8 @@ fn navigation() -> impl Scene {
         #NavigationDebug
         @debug_category("Navigation")
         @{debug_option_list!(
-            debug_option!(NavMapNodes, "Render Navigation Nodes"),
-            debug_option!(NavMapEdges, "Render Navigation Edges"),
+            (NavMapNodes, "Render Navigation Nodes"),
+            (NavMapEdges, "Render Navigation Edges"),
         )}
     }
 }
@@ -332,9 +343,9 @@ fn physics() -> impl Scene {
         #PhysicsDebug
         @debug_category("Physics")
         @{debug_option_list!(
-            debug_option!(CharacterCollision, "Render Character Collision"),
-            debug_option!(TileCollision, "Render Tile Collision"),
-            debug_option!(AttackCollision, "Render Attack Collision"),
+            (CharacterCollision, "Render Character Collision"),
+            (TileCollision, "Render Tile Collision"),
+            (AttackCollision, "Render Attack Collision"),
         )}
     }
 }
@@ -358,7 +369,7 @@ fn entities() -> impl Scene {
         #EntityDebug
         @debug_category("Entity Info")
         @{debug_option_list!(
-            debug_option!(CharacterHealth, "Display Character Health"),
+            (CharacterHealth, "Display Character Health"),
         )}
     }
 }
@@ -374,9 +385,9 @@ fn ai() -> impl Scene {
         #AiDebug
         @debug_category("AI")
         @{debug_option_list!(
-            debug_option!(Paths, "Render NPC Paths"),
-            debug_option!(PathfindStrategy, "Display Pathfinding Strategy"),
-            debug_option!(AiState, "Display AI State"),
+            (Paths, "Render NPC Paths"),
+            (PathfindStrategy, "Display Pathfinding Strategy"),
+            (AiState, "Display AI State"),
         )}
     }
 }
@@ -400,7 +411,7 @@ fn ui() -> impl Scene {
         #UiDebug
         @debug_category("User Interface")
         @{debug_option_list!(
-            debug_option!(UiRender, "Render User Interface Debug"),
+            (UiRender, "Render User Interface Debug"),
         )}
     }
 }

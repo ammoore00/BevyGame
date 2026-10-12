@@ -7,7 +7,6 @@ use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use std::time::Duration;
-use common::MainCamera;
 use widgets::button::ButtonImpl;
 use widgets::theme::palette::SpriteInteractionPalette;
 
@@ -171,7 +170,6 @@ fn interact_with_focused_button(
     input_focus: Res<InputFocus>,
     children: Query<&Children>,
     mut button_query: Query<(&mut ImageNode, &SpriteInteractionPalette), With<ButtonImpl>>,
-    camera: Single<&Camera, With<MainCamera>>,
     mut commands: Commands,
 ) {
     if action_state

@@ -29,7 +29,7 @@ impl TextFormatting {
     }
 
     fn into_scene(self) -> impl Scene {
-        bsn! [
+        bsn! {
             TextColor({self.color})
             TextLayout {
                 justify: Justify::Center
@@ -37,7 +37,7 @@ impl TextFormatting {
             TextFont {
                 font_size: {self.font_size}
             }
-        ]
+        }
     }
 }
 
@@ -82,9 +82,9 @@ impl TextContent {
 
     fn into_scene(self) -> Box<dyn Scene> {
         match self {
-            TextContent::Raw(_) => Box::new(bsn![]),
+            TextContent::Raw(_) => Box::new(bsn! {}),
             TextContent::Localized { loc, translator } => {
-                Box::new(bsn![LocalizableText { loc, translator }])
+                Box::new(bsn! { LocalizableText { loc, translator } })
             }
         }
     }

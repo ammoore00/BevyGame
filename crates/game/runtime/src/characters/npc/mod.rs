@@ -4,7 +4,7 @@ use crate::characters::CharacterPrototype;
 use crate::characters::npc::ai::ai_scene;
 use assets::resource::characters::CharacterResource;
 use bevy::prelude::*;
-use common::{marker, WorldPosition, Facing};
+use common::marker;
 use data::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {

@@ -18,11 +18,11 @@ pub struct Music;
 
 /// A music audio instance.
 pub fn music(handle: impl Into<HandleTemplate<AudioSource>>) -> impl Scene {
-    bsn![
+    bsn! {
         AudioPlayer(handle)
         PlaybackSettings::LOOP
         Music
-    ]
+    }
 }
 
 /// An organizational marker component that should be added to a spawned [`AudioPlayer`] if it's in the

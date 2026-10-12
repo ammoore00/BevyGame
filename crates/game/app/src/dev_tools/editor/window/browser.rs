@@ -129,7 +129,8 @@ fn collapsible_menu(text: impl Into<String>, font_size: impl Into<FontSize>) -> 
                             error!("Failed to get collapsed component for menu");
                         }
                     }
-                }),
+                })
+                --
                 @text::text(text, TextFormatting {
                     font_size: font_size.into(),
                     color: HEADER_TEXT,

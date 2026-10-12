@@ -46,25 +46,30 @@ fn spawn_credits_menu() -> impl Scene {
 
 macro_rules! grid {
     ($([$label:expr, $text:expr $(,)*]),* $(,)?) => {
-        bsn! {
-            Node {
-                display: Display::Grid,
-                row_gap: px(10),
-                column_gap: px(30),
-                grid_template_columns: RepeatedGridTrack::px::<Vec<RepeatedGridTrack>>(2, 500.0),
+        // TODO(bevy-0.20): `bsn!` fails to parse `--` separators generated from `macro_rules!`
+        //  repetitions here. Keep comma syntax until the upstream parser bug is fixed.
+        #[allow(deprecated)]
+        {
+            bsn! {
+                Node {
+                    display: Display::Grid,
+                    row_gap: px(10),
+                    column_gap: px(30),
+                    grid_template_columns: RepeatedGridTrack::px::<Vec<RepeatedGridTrack>>(2, 500.0),
+                }
+                Children [
+                    $(
+                        @text::label($label)
+                        TextLayout {
+                            justify: Justify::Right
+                        },
+                        @text::label($text)
+                        TextLayout {
+                            justify: Justify::Left
+                        },
+                    )*
+                ]
             }
-            Children [
-                $(
-                    @text::label($label)
-                    TextLayout {
-                        justify: Justify::Right
-                    },
-                    @text::label($text)
-                    TextLayout {
-                        justify: Justify::Left
-                    },
-                )*
-            ]
         }
     };
 }
