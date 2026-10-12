@@ -28,7 +28,7 @@ fn calculate_intent(npc_query: Query<&mut AiState>, time: Res<Time>) {
 struct AiComponents {
     entity: Entity,
     ai_state: &'static AiState,
-    //ai_behavior: &'static AiBehaviorParams,
+    ai_behavior: &'static AiBehaviorParams,
 
     pos: &'static WorldPosition,
     facing: &'static Facing,
@@ -51,7 +51,6 @@ fn update_ai(
     for components in npc_query {
         let mut check_for_aggro = true;
 
-        /*
         if let Some(leash_distance) = components.ai_behavior.leash_distance()
             && let Some(home) = components.home
         {
@@ -62,7 +61,6 @@ fn update_ai(
                 continue;
             }
         }
-        */
 
         match components.ai_state.current {
             AiStateKind::Idle => {}

@@ -15,6 +15,9 @@ pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(AnimationResource::ROOT_DIR)?;
     create_dir(AttackResource::ROOT_DIR)?;
     create_dir(AttackSetResource::ROOT_DIR)?;
+    create_dir(AiResource::ROOT_DIR)?;
+
+    write_data("default".parse::<ResourceLocation<AiResource>>().unwrap(), &AiCodec::default())?;
 
     generate_player()?;
     generate_test_npc()?;

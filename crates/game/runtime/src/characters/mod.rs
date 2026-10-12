@@ -2,9 +2,7 @@ use crate::action_state_scene;
 use crate::prelude::{Health, Player};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
-use assets::resource::characters::{
-    AiResource, AnimationResource, CharacterData, CharacterResource,
-};
+use assets::resource::characters::{AiParams, AiResource, AnimationResource, CharacterData, CharacterResource};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -168,10 +166,23 @@ impl PrototypeBuilder for CharacterBuilder {
         let ai_context = context.ai_context();
         let ai_params_scene = data
             .ai_params()
-            .map(|loc| ai_context.get_asset(&loc))
+            .map(|loc| {
+                let asset = ai_context.get_asset(loc);
+                if asset.is_none() {
+                    error!("Failed to find AI params: {}", loc);
+                }
+                info!("AI params: {:?}", asset);
+                asset
+            })
             .flatten()
-            .map(|params| Box::new(params.as_scene()) as Box<dyn Scene>)
-            .unwrap_or_else(|| Box::new(()) as Box<dyn Scene>);
+            .map(|params| {
+                info!("AI params: {:?}", params);
+                Box::new(params.as_scene()) as Box<dyn Scene>
+            })
+            .unwrap_or_else(|| {
+                info!("No AI params present");
+                Box::new(()) as Box<dyn Scene>
+            });
 
         commands
             .entity(entity)

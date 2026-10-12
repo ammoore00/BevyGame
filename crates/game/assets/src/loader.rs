@@ -492,6 +492,7 @@ impl<T: Serialize + Default> MaybeOrDefault<T> {
 
 impl<T: Serialize + Default> Default for MaybeOrDefault<T> {
     fn default() -> Self {
+        info!("Creating default MaybeOrDefault for {}", std::any::type_name::<T>());
         Self::Default
     }
 }

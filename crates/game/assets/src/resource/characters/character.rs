@@ -59,7 +59,8 @@ impl From<CharacterCodec> for CharacterData {
 
         let attack_set = codec.attack_set.into_inner();
         
-        let ai_params = codec.ai_params.into_inner();
+        info!("Parsing ai from codec: {:?}", codec.ai_params);
+        let ai_params = codec.ai_params.into_option();
 
         CharacterData {
             state_capabilities,
