@@ -112,8 +112,13 @@ fn update_ai(
                 if distance < DEFAULT_TARGET_REACHED_THRESHOLD {
                     commands.trigger(SetStateEvent::new(components.entity, AiStateKind::Idle));
                 }
-
-                // TODO: Add minimum time and/or distance in BackHome to prevent oscillation
+                
+                // Do not re-aggro until we get closer to home
+                if let Some(leash_distance) = components.ai_behavior.leash_distance()
+                    && distance > leash_distance / 2.0
+                {
+                    check_for_aggro = false;
+                }
             }
         }
 
