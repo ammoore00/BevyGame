@@ -1,4 +1,4 @@
-use crate::characters::attack::TryAttackEvent;
+use crate::characters::attack::{AttackSuccessEvent, TryAttackEvent};
 use crate::characters::npc::ai::pathfinding::pathfinder::DEFAULT_TARGET_REACHED_THRESHOLD;
 use crate::characters::npc::ai::pathfinding::strategy::follow::FollowerState;
 use crate::characters::npc::ai::{AiSystems, NpcHome};
@@ -7,6 +7,7 @@ use assets::resource::characters::AiBehaviorParams;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::{Facing, WorldPosition};
+use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -16,11 +17,17 @@ pub(super) fn plugin(app: &mut App) {
             update_ai.in_set(AiSystems::Execute),
         ),
     );
+    
+    app.add_observer(on_successful_attack);
 }
 
 fn calculate_intent(npc_query: Query<&mut AiState>, time: Res<Time>) {
     for mut ai_state in npc_query {
         ai_state.time_in_state += time.delta();
+        
+        if let Some(time_since_last_attack) = ai_state.time_since_last_attack.as_mut() {
+            *time_since_last_attack += time.delta();
+        }
     }
 }
 
@@ -38,6 +45,7 @@ struct AiComponents {
 }
 
 const ATTACK_RANGE: f32 = 1.0;
+const ATTACK_DELAY: f32 = 1.0;
 const FOLLOW_RANGE: f32 = 5.0;
 
 fn update_ai(
@@ -67,6 +75,13 @@ fn update_ai(
             AiStateKind::Wander => {}
             AiStateKind::Alert => {}
             AiStateKind::Attack => {
+                let time_since_last_attack = components.ai_state.time_since_last_attack;
+                if let Some(time) = time_since_last_attack
+                    && time.as_secs_f32() < ATTACK_DELAY
+                {
+                    continue;
+                }
+
                 let Some(follower_state) = components.follower_state else {
                     commands.trigger(SetStateEvent::new(components.entity, AiStateKind::Idle));
                     error!("Entity in attack state without follower data!");
@@ -112,7 +127,7 @@ fn update_ai(
                 if distance < DEFAULT_TARGET_REACHED_THRESHOLD {
                     commands.trigger(SetStateEvent::new(components.entity, AiStateKind::Idle));
                 }
-                
+
                 // Do not re-aggro until we get closer to home
                 if let Some(leash_distance) = components.ai_behavior.leash_distance()
                     && distance > leash_distance / 2.0
@@ -130,4 +145,13 @@ fn update_ai(
             }
         }
     }
+}
+
+fn on_successful_attack(event: On<AttackSuccessEvent>, mut ai_query: Query<&mut AiState>) {
+    let Ok(mut ai_state) = ai_query.get_mut(event.entity) else {
+        return;
+    };
+
+    ai_state.last_attack = Some(event.attack().clone());
+    ai_state.time_since_last_attack = Some(Duration::ZERO);
 }

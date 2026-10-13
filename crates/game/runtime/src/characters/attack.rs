@@ -17,6 +17,7 @@ use physics::{
 use std::collections::HashMap;
 use std::slice;
 use std::time::Duration;
+use getset::Getters;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -63,8 +64,7 @@ fn on_try_attack(event: On<TryAttackEvent>, context: AttackContext, mut commands
     let attack_event = TrySetStateEvent::new(event.entity, attack_state).with_callback(
         move |entity, mut commands: Commands, result: Result<_, _>| {
             if result.is_ok() {
-                info!("Attack success!");
-                commands.trigger(AttackSuccessEvent::new(entity, facing, attack.clone()));
+                commands.trigger(ValidAttackEvent::new(entity, facing, attack.clone()));
             }
         },
     );
@@ -72,14 +72,14 @@ fn on_try_attack(event: On<TryAttackEvent>, context: AttackContext, mut commands
 }
 
 #[derive(EntityEvent, derive_new::new)]
-struct AttackSuccessEvent {
+struct ValidAttackEvent {
     entity: Entity,
     facing: Facing,
     attack: ResourceLocation<AttackResource>,
 }
 
 fn on_attack_success(
-    event: On<AttackSuccessEvent>,
+    event: On<ValidAttackEvent>,
     context: AttackContext,
     mut commands: Commands,
 ) {
@@ -125,6 +125,19 @@ fn on_attack_success(
     ));
 
     commands.trigger(StaminaEvent::new(event.entity, attack_def.stamina_cost()));
+    
+    commands.trigger(AttackSuccessEvent {
+        entity: event.entity,
+        attack: event.attack.clone(),
+    });
+}
+
+/// Event triggered on the successful execution of an attack
+#[derive(EntityEvent, Debug, Clone, Getters)]
+pub struct AttackSuccessEvent {
+    pub entity: Entity,
+    #[getset(get = "pub")]
+    attack: ResourceLocation<AttackResource>,
 }
 
 /// Store the current attack definition location, and the current progress value
@@ -346,8 +359,6 @@ fn process_attack_hits(
                 collision_message.colliding_entity,
                 *key_frame.health_event(),
             ));
-
-            info!("Attack hit!");
         }
     }
 }
