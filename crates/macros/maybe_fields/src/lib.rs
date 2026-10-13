@@ -33,7 +33,7 @@ pub fn maybe_fields(_args: TokenStream, input: TokenStream) -> TokenStream {
             }
         }
         
-        if is_type(&field.ty, "MaybeOrDefault") {
+        if is_type(&field.ty, "DefaultOption") {
             if !has_serde_default(field.attrs.as_slice()) {
                 field.attrs.push(parse_quote! {
                     #[serde(default)]
@@ -42,7 +42,7 @@ pub fn maybe_fields(_args: TokenStream, input: TokenStream) -> TokenStream {
             
             if !has_serde_skip_serializing_if(field.attrs.as_slice()) {
                 field.attrs.push(parse_quote! {
-                    #[serde(skip_serializing_if = "MaybeOrDefault::is_default")]
+                    #[serde(skip_serializing_if = "DefaultOption::is_default")]
                 });
             }
         }

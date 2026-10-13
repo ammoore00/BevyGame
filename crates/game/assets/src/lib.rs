@@ -8,7 +8,11 @@ pub(crate) mod state;
 pub mod action_states;
 pub mod codec;
 pub mod resource;
+mod maybe;
+
 pub use crate::state::AssetLoadState;
+// TODO: Lock this re-export behind a datagen feature flag
+pub use maybe::DefaultOption;
 
 pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {

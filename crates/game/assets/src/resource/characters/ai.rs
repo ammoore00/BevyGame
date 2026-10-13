@@ -1,8 +1,8 @@
 use crate::codec::{AiCodec, AiHearingCodec, AiSensesCodec, AiSightCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use bevy::prelude::*;
+use data::prelude::resource_kind;
 use getset::CopyGetters;
-use data::prelude::{resource_kind, ResourceLocation, DefaultResourceLocation};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<AiResource>();
@@ -12,9 +12,6 @@ pub(super) fn plugin(app: &mut App) {
 
 #[resource_kind(path = "characters/ai", asset_kind = AiParams)]
 pub struct AiResource;
-impl DefaultResourceLocation for AiResource {
-    const DEFAULT: &'static str = "default";
-}
 
 macro_rules! optional_scene {
     ($option:expr) => {
@@ -42,7 +39,7 @@ impl AiParams {
     pub fn as_scene(&self) -> impl Scene {
         let senses = self.senses.as_scene();
         let behavior = self.behavior.clone();
-        
+
         bsn! {
             @senses
             behavior
@@ -53,7 +50,7 @@ impl From<AiCodec> for AiParams {
     fn from(value: AiCodec) -> Self {
         let senses = value.senses.unwrap_or_default();
         let behavior = value.clone().into();
-        
+
         Self {
             senses: senses.into(),
             behavior,
@@ -85,8 +82,8 @@ impl Default for AiSenseParams {
 impl From<AiSensesCodec> for AiSenseParams {
     fn from(value: AiSensesCodec) -> Self {
         Self {
-            sight: value.sight.into_option().map(Into::into),
-            hearing: value.hearing.into_option().map(Into::into),
+            sight: value.sight.resolve().map(Into::into),
+            hearing: value.hearing.resolve().map(Into::into),
         }
     }
 }

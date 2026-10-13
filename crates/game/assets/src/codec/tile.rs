@@ -1,4 +1,4 @@
-use crate::loader::Maybe;
+use crate::maybe::Maybe;
 use crate::resource::level::{TileShape, TileSpriteResource};
 use bevy::prelude::TypePath;
 use data::prelude::*;

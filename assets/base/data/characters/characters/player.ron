@@ -12,10 +12,10 @@
     ),
     allowed_states: Default,
     animations: {
-        Running: "base:player/running",
         Sprinting: "base:player/sprinting",
         Walking: "base:player/walking",
         Idle: "base:player/idle",
+        Running: "base:player/running",
     },
     attack_set: "base:player/basic_attack",
     ai_params: None,

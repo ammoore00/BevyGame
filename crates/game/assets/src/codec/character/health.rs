@@ -1,4 +1,4 @@
-use crate::loader::Maybe;
+use crate::maybe::Maybe;
 use bevy::prelude::TypePath;
 use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};

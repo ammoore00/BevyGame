@@ -2,7 +2,9 @@ use crate::action_state_scene;
 use crate::prelude::{Health, Player};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
-use assets::resource::characters::{AiParams, AiResource, AnimationResource, CharacterData, CharacterResource};
+use assets::resource::characters::{
+    AiResource, AnimationResource, CharacterData, CharacterResource,
+};
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -164,23 +166,24 @@ impl PrototypeBuilder for CharacterBuilder {
         let collider = data.collider().make_collider(position.as_vec3());
 
         let ai_context = context.ai_context();
+        
+        info!("Resolving AI params: {:?}", data.ai_params());
+        
         let ai_params_scene = data
             .ai_params()
-            .map(|loc| {
-                let asset = ai_context.get_asset(loc);
-                if asset.is_none() {
+            // Resolve the asset location, if present, or if it isn't, then use the default
+            .map_or_default(|loc| {
+                // Get the named asset. If it doesn't exist, log an error then use the default params
+                ai_context.get_asset(&loc).cloned().unwrap_or_else(|| {
                     error!("Failed to find AI params: {}", loc);
-                }
-                info!("AI params: {:?}", asset);
-                asset
+                    Default::default()
+                })
             })
-            .flatten()
-            .map(|params| {
-                info!("AI params: {:?}", params);
-                Box::new(params.as_scene()) as Box<dyn Scene>
-            })
+            // Convert the parameters into a scene to be applied to the character
+            .map(|params| Box::new(params.as_scene()) as Box<dyn Scene>)
+            // If there are no parameters, use an empty scene that does nothing
             .unwrap_or_else(|| {
-                info!("No AI params present");
+                info!("No AI params found");
                 Box::new(()) as Box<dyn Scene>
             });
 

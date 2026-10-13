@@ -2,14 +2,12 @@ use crate::state::{AssetLoadState, AssetSystems};
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
-use bevy::reflect::erased_serde::__private::serde::Deserializer;
 use data::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
-use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use walkdir::WalkDir;
 
@@ -389,164 +387,6 @@ where
         }
     }
 }
-
-/// Wrapper around Option<T> to be used as an optional value within a codec
-/// Used instead of Option to avoid Option enum values being included in
-/// output files
-pub struct Maybe<T: Serialize>(pub Option<T>);
-impl<T: Serialize> Maybe<T> {
-    pub fn into_inner(self) -> Option<T> {
-        self.0
-    }
-}
-impl<T: Serialize> Default for Maybe<T> {
-    fn default() -> Self {
-        Self(None)
-    }
-}
-
-impl<T: Serialize> Deref for Maybe<T> {
-    type Target = Option<T>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: Serialize> Serialize for Maybe<T> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match &self.0 {
-            Some(value) => value.serialize(serializer),
-            None => serializer.serialize_none(),
-        }
-    }
-}
-impl<'de, T> Deserialize<'de> for Maybe<T>
-where
-    T: Deserialize<'de> + Serialize,
-{
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let result = T::deserialize(deserializer);
-        let opt = Some(result?);
-        Ok(Maybe(opt))
-    }
-}
-
-impl<T: Serialize> From<Option<T>> for Maybe<T> {
-    fn from(opt: Option<T>) -> Self {
-        Maybe(opt)
-    }
-}
-impl<T: Serialize> From<Maybe<T>> for Option<T> {
-    fn from(maybe: Maybe<T>) -> Self {
-        maybe.0
-    }
-}
-
-impl<T: Serialize + Debug> Debug for Maybe<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Maybe").field(&self.0).finish()
-    }
-}
-impl<T: Serialize + Clone> Clone for Maybe<T> {
-    fn clone(&self) -> Self {
-        Maybe(self.0.clone())
-    }
-}
-impl<T: Serialize + Copy> Copy for Maybe<T> {}
-
-/// Variant of Option<T> to be used when an absent value means the default should be used,
-/// while still allowing for explicit declaration of None
-#[derive(Debug)]
-pub enum MaybeOrDefault<T: Serialize + Default> {
-    Some(T),
-    Default,
-    None,
-}
-impl<T: Serialize + Default> MaybeOrDefault<T> {
-    pub fn into_option(self) -> Option<T> {
-        match self {
-            MaybeOrDefault::Some(value) => Some(value),
-            MaybeOrDefault::Default => Some(T::default()),
-            MaybeOrDefault::None => None,
-        }
-    }
-    
-    pub fn is_some(&self) -> bool {
-        matches!(self, MaybeOrDefault::Some(_))
-    }
-    
-    pub fn is_default(&self) -> bool {
-        matches!(self, MaybeOrDefault::Default)
-    }
-
-    pub fn is_none(&self) -> bool {
-        matches!(self, MaybeOrDefault::None)
-    }
-}
-
-impl<T: Serialize + Default> Default for MaybeOrDefault<T> {
-    fn default() -> Self {
-        info!("Creating default MaybeOrDefault for {}", std::any::type_name::<T>());
-        Self::Default
-    }
-}
-
-impl<T: Serialize + Default> Serialize for MaybeOrDefault<T> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match self {
-            Self::Some(value) => value.serialize(serializer),
-            Self::Default => Err(serde::ser::Error::custom(
-                "Serializing `MaybeOrDefault::Default` is not supported. \
-                 Ensure struct is annotated with `#[maybe_fields]` or \
-                 field is annotated `#[serde(skip_serializing_if = MaybeOrDefault::is_default)]`"
-            )),
-            Self::None => serializer.serialize_none(),
-        }
-    }
-}
-impl<'de, T> Deserialize<'de> for MaybeOrDefault<T>
-where
-    T: Deserialize<'de> + Serialize + Default,
-{
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Option::<T>::deserialize(deserializer).map(|opt| match opt {
-            Some(val) => MaybeOrDefault::Some(val),
-            None => MaybeOrDefault::None,
-        })
-    }
-}
-
-impl<T: Serialize + Default> From<Option<T>> for MaybeOrDefault<T> {
-    fn from(value: Option<T>) -> Self {
-        match value {
-            Some(value) => MaybeOrDefault::Some(value),
-            None => MaybeOrDefault::None,
-        }
-    }
-}
-
-impl<T: Serialize + Default + Clone> Clone for MaybeOrDefault<T> {
-    fn clone(&self) -> Self {
-        match self {
-            MaybeOrDefault::Some(val) => MaybeOrDefault::Some(val.clone()),
-            MaybeOrDefault::Default => MaybeOrDefault::Default,
-            MaybeOrDefault::None => MaybeOrDefault::None,
-        }
-    }
-}
-impl<T: Serialize + Default + Copy> Copy for MaybeOrDefault<T> {}
 
 /// A type which allows either inline data, or a reference to an asset
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]

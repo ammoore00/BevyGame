@@ -1,4 +1,4 @@
-use crate::loader::{Maybe, MaybeOrDefault};
+use crate::maybe::{Maybe, DefaultOption};
 use bevy::prelude::*;
 use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
@@ -17,8 +17,8 @@ impl AiCodec {
 #[maybe_fields]
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, TypePath)]
 pub struct AiSensesCodec {
-    pub sight: MaybeOrDefault<AiSightCodec>,
-    pub hearing: MaybeOrDefault<AiHearingCodec>,
+    pub sight: DefaultOption<AiSightCodec>,
+    pub hearing: DefaultOption<AiHearingCodec>,
 }
 
 #[maybe_fields]

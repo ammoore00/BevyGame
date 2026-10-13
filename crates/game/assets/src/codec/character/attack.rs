@@ -1,5 +1,5 @@
 use crate::codec::{ColliderCodec, HealthEventKind};
-use crate::loader::Maybe;
+use crate::maybe::Maybe;
 use crate::resource::characters::{AnimationResource, AttackResource, CharacterSpriteResource};
 use bevy::prelude::*;
 use data::prelude::*;

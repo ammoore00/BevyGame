@@ -1,6 +1,7 @@
 use crate::action_states::{ActionStateCapabilities, DEFAULT_STATES};
 use crate::codec::{CharacterCodec, ColliderCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
+use crate::maybe::DefaultOption;
 use crate::resource::characters::{AiResource, AnimationResource, AttackSetResource};
 use bevy::prelude::*;
 use data::loc::ResourceLocation;
@@ -22,23 +23,23 @@ pub(super) fn plugin(app: &mut App) {
 pub struct CharacterData {
     #[getset(get = "pub")]
     state_capabilities: ActionStateCapabilities,
-    
+
     #[getset(get = "pub")]
     animations: HashMap<TypeId, ResourceLocation<AnimationResource>>,
-    
+
     #[getset(get = "pub")]
     collider: ColliderCodec,
-    
+
     attack_set: Option<ResourceLocation<AttackSetResource>>,
-    
-    ai_params: Option<ResourceLocation<AiResource>>,
+
+    ai_params: DefaultOption<ResourceLocation<AiResource>>,
 }
 impl CharacterData {
     pub fn attack_set(&self) -> Option<&ResourceLocation<AttackSetResource>> {
         self.attack_set.as_ref()
     }
-    
-    pub fn ai_params(&self) -> Option<&ResourceLocation<AiResource>> {
+
+    pub fn ai_params(&self) -> DefaultOption<&ResourceLocation<AiResource>> {
         self.ai_params.as_ref()
     }
 }
@@ -58,16 +59,14 @@ impl From<CharacterCodec> for CharacterData {
         let state_capabilities = ActionStateCapabilities::new(states);
 
         let attack_set = codec.attack_set.into_inner();
-        
-        info!("Parsing ai from codec: {:?}", codec.ai_params);
-        let ai_params = codec.ai_params.into_option();
+        info!("Loading AI params: {:?}", codec.ai_params);
 
         CharacterData {
             state_capabilities,
             animations,
             attack_set,
             collider: codec.collider,
-            ai_params,
+            ai_params: codec.ai_params,
         }
     }
 }

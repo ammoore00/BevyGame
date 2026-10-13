@@ -1,4 +1,4 @@
-use crate::loader::Maybe;
+use crate::maybe::Maybe;
 use bevy::image::TextureAtlasLayout;
 use bevy::math::UVec2;
 use bevy::prelude::TypePath;

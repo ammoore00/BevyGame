@@ -176,15 +176,6 @@ impl<T: ResourceKind> FromStr for ResourceLocation<T> {
     }
 }
 
-pub trait DefaultResourceLocation: ResourceKind {
-    const DEFAULT: &'static str;
-}
-impl<T: DefaultResourceLocation> Default for ResourceLocation<T> {
-    fn default() -> Self {
-        T::DEFAULT.parse().unwrap()
-    }
-}
-
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Getters, Reflect)]
 pub struct AnyResourceLocation {
     #[getset(get = "pub")]

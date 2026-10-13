@@ -3,7 +3,7 @@ use crate::action_states::{
 };
 use crate::codec::character::health::HealthCodec;
 use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec};
-use crate::loader::{Maybe, MaybeOrDefault};
+use crate::maybe::{Maybe, DefaultOption};
 use crate::resource::characters::{AiResource, AnimationResource, AttackSetResource};
 use bevy::prelude::TypePath;
 use data::prelude::*;
@@ -43,7 +43,7 @@ pub struct CharacterCodec {
     /// AI related parameters. See `AiCodec` for more.
     ///
     /// Optional - defaults to no AI
-    pub ai_params: MaybeOrDefault<ResourceLocation<AiResource>>,
+    pub ai_params: DefaultOption<ResourceLocation<AiResource>>,
 }
 impl CharacterCodec {
     pub const LATEST_FORMAT: u8 = 1;
@@ -66,14 +66,14 @@ impl Default for CharacterCodec {
 
             attack_set: None.into(),
 
-            ai_params: None.into(),
+            ai_params: Default::default(),
         }
     }
 }
 
 /// Codec for allowed character action states.
 ///
-/// This is not the same as AI state: see `AiCodec` for AI parameters.
+/// This is different from AI state: see `AiCodec` for AI parameters.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TypePath)]
 pub enum AllowedStatesCodec {
     /// Default to allow all states.

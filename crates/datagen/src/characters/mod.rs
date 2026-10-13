@@ -5,8 +5,16 @@ use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
 use crate::{WriteError, create_dir, write_data};
-use assets::codec::{ActionStateCodec, AiCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, DamageModifierCodec, FrameDataCodec, HealthCodec, KeyFrameCodec, TextureAtlasCodec};
-use assets::resource::characters::{AiResource, AnimationResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource};
+use assets::DefaultOption;
+use assets::codec::{
+    ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec,
+    CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HealthCodec, KeyFrameCodec,
+    TextureAtlasCodec,
+};
+use assets::resource::characters::{
+    AiResource, AnimationResource, AttackResource, AttackSetResource, CharacterResource,
+    CharacterSpriteResource,
+};
 use data::prelude::*;
 use std::collections::HashMap;
 
@@ -17,7 +25,12 @@ pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(AttackSetResource::ROOT_DIR)?;
     create_dir(AiResource::ROOT_DIR)?;
 
-    write_data("default".parse::<ResourceLocation<AiResource>>().unwrap(), &AiCodec::default())?;
+    /*
+    write_data(
+        "default".parse::<ResourceLocation<AiResource>>().unwrap(),
+        &AiCodec::default(),
+    )?;
+    */
 
     generate_player()?;
     generate_test_npc()?;
@@ -75,37 +88,44 @@ fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
 #[derive(getset::WithSetters)]
 struct CharacterData {
     loc: ResourceLocation<CharacterResource>,
-    
+
     collider: ColliderDataCodec,
     health_params: HealthCodec,
     #[getset(set_with)]
     allowed_states: AllowedStatesCodec,
     #[getset(set_with)]
     animations: HashMap<ActionStateCodec, AnimationData>,
-    
+
     attack_set: Option<AttackSetData>,
-    
-    ai_params: Option<ResourceLocation<AiResource>>,
+
+    ai_params: DefaultOption<ResourceLocation<AiResource>>,
 }
 impl CharacterData {
     fn new(loc: &str, collider: ColliderDataCodec) -> Self {
         Self {
             loc: loc.parse().unwrap(),
-            
+
             collider,
             health_params: HealthCodec::default(),
             allowed_states: AllowedStatesCodec::default(),
             animations: HashMap::new(),
-            
+
             attack_set: None,
-            
-            ai_params: None,
+
+            ai_params: DefaultOption::Default,
         }
     }
 
     pub fn with_attack_set(self, attack_set: AttackSetData) -> Self {
         Self {
             attack_set: Some(attack_set),
+            ..self
+        }
+    }
+
+    pub fn with_ai_params(self, ai_params: Option<ResourceLocation<AiResource>>) -> Self {
+        Self {
+            ai_params: ai_params.into(),
             ..self
         }
     }
@@ -127,15 +147,15 @@ impl From<CharacterData> for CharacterCodec {
 
         Self {
             format: LATEST_CHARACTER_FORMAT,
-            
+
             collider,
             health_params: value.health_params,
             allowed_states: Some(value.allowed_states).into(),
             animations,
-            
+
             attack_set: attack_set.into(),
-            
-            ai_params: value.ai_params.into(),
+
+            ai_params: value.ai_params,
         }
     }
 }
