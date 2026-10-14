@@ -64,6 +64,7 @@ fn on_state_transition(
             commands.trigger(GainedTarget::new(event.entity, player.entity()));
         }
         AiStateKind::BackHome => {
+            info!("Back home event!");
             let Some(home) = home_query.get(event.entity).unwrap() else {
                 commands.trigger(SetStateEvent::new(event.entity, AiStateKind::Idle));
                 error!("Back home state triggered for character without a home!");

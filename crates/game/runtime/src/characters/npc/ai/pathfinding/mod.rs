@@ -4,7 +4,6 @@ use crate::characters::npc::ai::pathfinding::pathfinder::{
 };
 use crate::characters::npc::ai::pathfinding::strategy::follow::FollowerData;
 use crate::characters::npc::ai::pathfinding::strategy::wander::WanderData;
-use crate::characters::npc::ai::pathfinding::target::TargetGoal;
 use crate::characters::npc::ai::state::AiState;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
@@ -13,10 +12,12 @@ use common::WorldCoords;
 use common::WorldPosition;
 use physics::Collider;
 
-// TODO: Remove this pub
+// TODO: Rework exports
 pub mod pathfinder;
 pub mod strategy;
 mod target;
+
+pub use target::TargetGoal;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((pathfinder::plugin, strategy::plugin, target::plugin));

@@ -1,4 +1,5 @@
 use crate::characters::attack::{AttackSuccessEvent, TryAttackEvent};
+use crate::characters::npc::ai::pathfinding::TargetGoal;
 use crate::characters::npc::ai::pathfinding::pathfinder::DEFAULT_TARGET_REACHED_THRESHOLD;
 use crate::characters::npc::ai::pathfinding::strategy::follow::FollowerState;
 use crate::characters::npc::ai::{AiSystems, NpcHome};
@@ -17,14 +18,14 @@ pub(super) fn plugin(app: &mut App) {
             update_ai.in_set(AiSystems::Execute),
         ),
     );
-    
+
     app.add_observer(on_successful_attack);
 }
 
 fn calculate_intent(npc_query: Query<&mut AiState>, time: Res<Time>) {
     for mut ai_state in npc_query {
         ai_state.time_in_state += time.delta();
-        
+
         if let Some(time_since_last_attack) = ai_state.time_since_last_attack.as_mut() {
             *time_since_last_attack += time.delta();
         }
@@ -40,13 +41,18 @@ struct AiComponents {
     pos: &'static WorldPosition,
     facing: &'static Facing,
 
+    target_goal: Option<&'static TargetGoal>,
     follower_state: Option<&'static FollowerState>,
+
     home: Option<&'static NpcHome>,
 }
 
 const ATTACK_RANGE: f32 = 1.0;
 const ATTACK_DELAY: f32 = 1.0;
 const FOLLOW_RANGE: f32 = 5.0;
+
+const MAX_IDLE_TIME: Duration = Duration::from_millis(5000);
+const IDLE_BACK_HOME_DIST: f32 = 1.0;
 
 fn update_ai(
     npc_query: Query<AiComponents>,
@@ -71,7 +77,19 @@ fn update_ai(
         }
 
         match components.ai_state.current {
-            AiStateKind::Idle => {}
+            AiStateKind::Idle => {
+                if components.ai_state.time_in_state > MAX_IDLE_TIME {
+                    if let Some(home) = components.home {
+                        let distance = components.pos.0.distance(home.pos.0);
+                        if distance > IDLE_BACK_HOME_DIST {
+                            commands.trigger(SetStateEvent::new(
+                                components.entity,
+                                AiStateKind::BackHome,
+                            ));
+                        }
+                    }
+                }
+            }
             AiStateKind::Wander => {}
             AiStateKind::Alert => {}
             AiStateKind::Attack => {
@@ -121,10 +139,16 @@ fn update_ai(
                     return;
                 };
 
-                let distance = components.pos.0.distance(home.pos.0);
+                let threshold_dist =
+                    if let Some(TargetGoal::Position(target_pos)) = components.target_goal {
+                        target_pos.threshold_dist()
+                    } else {
+                        error!("Back home state set for entity without a target position!");
+                        DEFAULT_TARGET_REACHED_THRESHOLD
+                    };
 
-                // TODO: Better threshold distance checking
-                if distance < DEFAULT_TARGET_REACHED_THRESHOLD {
+                let distance = components.pos.0.distance(home.pos.0);
+                if distance < threshold_dist {
                     commands.trigger(SetStateEvent::new(components.entity, AiStateKind::Idle));
                 }
 
