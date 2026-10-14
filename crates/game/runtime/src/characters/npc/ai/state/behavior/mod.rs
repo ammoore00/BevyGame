@@ -1,3 +1,6 @@
+mod goal;
+mod sense;
+
 use crate::characters::attack::{AttackSuccessEvent, TryAttackEvent};
 use crate::characters::npc::ai::pathfinding::TargetGoal;
 use crate::characters::npc::ai::pathfinding::pathfinder::DEFAULT_TARGET_REACHED_THRESHOLD;
@@ -11,18 +14,20 @@ use common::{Facing, WorldPosition};
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((goal::plugin, sense::plugin));
+    
     app.add_systems(
         Update,
         (
-            calculate_intent.in_set(AiSystems::Calculate),
-            update_ai.in_set(AiSystems::Execute),
+            update_timers.in_set(AiSystems::PreUpdate),
+            set_ai_state.in_set(AiSystems::Execute),
         ),
     );
 
     app.add_observer(on_successful_attack);
 }
 
-fn calculate_intent(npc_query: Query<&mut AiState>, time: Res<Time>) {
+fn update_timers(npc_query: Query<&mut AiState>, time: Res<Time>) {
     for mut ai_state in npc_query {
         ai_state.time_in_state += time.delta();
 
@@ -54,7 +59,7 @@ const FOLLOW_RANGE: f32 = 5.0;
 const MAX_IDLE_TIME: Duration = Duration::from_millis(5000);
 const IDLE_BACK_HOME_DIST: f32 = 1.0;
 
-fn update_ai(
+fn set_ai_state(
     npc_query: Query<AiComponents>,
     player_query: Single<(Entity, &WorldPosition), With<Player>>,
     target_query: Query<&WorldPosition>,
