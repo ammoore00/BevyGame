@@ -1,4 +1,4 @@
-use bevy::asset::uuid::Uuid;
+use crate::DebugPickable;
 use crate::command_window::window::{AddTextEvent, CommandsWindowOpen};
 use bevy::prelude::*;
 
@@ -13,17 +13,9 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_picked.run_if(in_state(CommandsWindowOpen(true))));
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct CommandPickable(pub Uuid);
-impl CommandPickable {
-    pub fn new() -> Self {
-        Self(Uuid::new_v4())
-    }
-}
-
 fn on_picked(
     event: On<PointerPress>,
-    pickable_query: Query<&CommandPickable>,
+    pickable_query: Query<&DebugPickable>,
     mut commands: Commands,
 ) {
     if let Ok(command_id) = pickable_query.get(event.entity) {

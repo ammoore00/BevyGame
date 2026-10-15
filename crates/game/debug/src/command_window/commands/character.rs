@@ -1,4 +1,4 @@
-use crate::command_window::CommandPickable;
+use crate::DebugPickable;
 use crate::command_window::commands::basic_parsers::{parse_digits, parse_uuid};
 use crate::command_window::commands::{CommandRegistrar, DebugCommand};
 use bevy::asset::uuid::Uuid;
@@ -140,7 +140,7 @@ impl CharacterCommandTarget {
     fn get_entity(&self, world: &mut World) -> Option<Entity> {
         match self {
             CharacterCommandTarget::Uuid(uuid) => {
-                let mut query = world.query::<(Entity, &CommandPickable)>();
+                let mut query = world.query::<(Entity, &DebugPickable)>();
                 query
                     .iter(world)
                     .filter(|(_, u)| u.0 == *uuid)
@@ -150,7 +150,7 @@ impl CharacterCommandTarget {
             CharacterCommandTarget::Identifier(id) => match id {
                 CharacterCommandIdentifier::Player => {
                     let mut query =
-                        world.query_filtered::<Entity, (With<CommandPickable>, With<Player>)>();
+                        world.query_filtered::<Entity, (With<DebugPickable>, With<Player>)>();
                     query.single(world).ok()
                 }
             },

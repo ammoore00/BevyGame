@@ -1,4 +1,4 @@
-use crate::command_window::CommandPickable;
+use crate::DebugPickable;
 use crate::command_window::commands::basic_parsers::parse_prefix;
 use bevy::prelude::*;
 #[cfg(test)]
@@ -37,11 +37,11 @@ impl CommandRegistrar for App {
     }
 }
 
-fn add_pickable<T: Component>(query: Query<Entity, (With<T>, Without<CommandPickable>)>, mut commands: Commands) {
+fn add_pickable<T: Component>(query: Query<Entity, (With<T>, Without<DebugPickable>)>, mut commands: Commands) {
     for entity in query {
         commands
             .entity(entity)
-            .insert((Pickable::default(), CommandPickable::new()));
+            .insert((Pickable::default(), DebugPickable::new()));
     }
 }
 
@@ -107,7 +107,7 @@ pub fn parse_command<'s>(
 mod test {
     use super::*;
     use std::convert::Infallible;
-
+    
     fn registry() -> CommandRegistry {
         let mut registry = CommandRegistry(HashMap::new());
 
