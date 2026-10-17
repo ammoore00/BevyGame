@@ -22,4 +22,4 @@ pub fn npc_bundle(data_loc: ResourceLocation<CharacterResource>, position: Vec3)
     }
 }
 
-marker!(Npc);
+marker!(pub Npc);

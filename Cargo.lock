@@ -2848,10 +2848,12 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "common",
+ "getset",
  "physics",
  "runtime",
  "strum",
  "strum_macros",
+ "thiserror 2.0.18",
  "widgets",
  "winnow",
 ]
