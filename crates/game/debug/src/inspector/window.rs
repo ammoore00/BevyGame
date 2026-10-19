@@ -1,6 +1,7 @@
 use crate::inspector::{InspectorRegistry, InspectorWindowOpen};
 use crate::{DebugPickable, window};
 use bevy::asset::uuid::Uuid;
+use bevy::ecs::world::DeferredWorld;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::scene::Ready;
@@ -58,7 +59,8 @@ fn inspector_window() -> impl Scene {
 }
 
 const SECTION_GAP: u32 = 20;
-const ITEM_GAP: u32 = 8;
+const HEADER_GAP: u32 = 8;
+const ITEM_GAP: u32 = 2;
 
 fn inspector() -> impl Scene {
     bsn! {
@@ -87,7 +89,7 @@ fn header() -> impl Scene {
             flex_direction: FlexDirection::Column,
             justify_content: JustifyContent::Start,
             justify_self: JustifySelf::Start,
-            row_gap: px(ITEM_GAP),
+            row_gap: px(HEADER_GAP),
         }
         Children [
             Node
@@ -197,7 +199,15 @@ fn update_inspector_data(world: &mut World) {
 
     let inspector_registry = world.resource::<InspectorRegistry>().clone();
     let inspector_output = match inspector_registry.get_matching(inspected_entity, &world.into()) {
-        Ok(data) => (data.inspector_fn)(inspected_entity, &world.into()).into_data(),
+        Ok(data) => {
+            let deferred_world: DeferredWorld = world.into();
+            
+            if let Ok(inspected_entity) = deferred_world.get_entity(inspected_entity) {
+                (data.inspector_fn)(inspected_entity, &deferred_world).into_data()
+            } else {
+                vec!["Entity not found".to_string()]
+            }
+        },
         Err(err) => {
             let msg = format!("Failed to inspect entity: {err}");
             vec![msg]

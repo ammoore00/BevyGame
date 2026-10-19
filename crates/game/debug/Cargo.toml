@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+assets = { workspace = true }
 common = { workspace = true, features = ["dev"] }
 physics = { workspace = true, features = ["dev"] }
 runtime = { workspace = true, features = ["dev"] }

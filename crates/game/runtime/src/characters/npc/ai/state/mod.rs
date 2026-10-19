@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use data::prelude::ResourceLocation;
 use getset::{CopyGetters, Getters};
 use std::time::Duration;
+use strum_macros::Display;
 
 mod behavior;
 pub mod transition;
@@ -33,7 +34,7 @@ pub struct AiState {
     time_since_last_attack: Option<Duration>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Display)]
 pub enum AiStateKind {
     #[default]
     Idle,

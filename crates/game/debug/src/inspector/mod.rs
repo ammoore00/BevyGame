@@ -18,13 +18,13 @@ struct InspectorWindowOpen(bool);
 trait InspectorRegistrar {
     fn add_data_inspector<F: ArchetypeFilter>(
         &mut self,
-        inspector_fn: fn(Entity, &DeferredWorld) -> InspectorReadout,
+        inspector_fn: fn(EntityRef, &DeferredWorld) -> InspectorReadout,
     );
 }
 impl InspectorRegistrar for App {
     fn add_data_inspector<F: ArchetypeFilter>(
         &mut self,
-        inspector_fn: fn(Entity, &DeferredWorld) -> InspectorReadout,
+        inspector_fn: fn(EntityRef, &DeferredWorld) -> InspectorReadout,
     ) {
         // Get or create the inspector registry
         let mut registry = match self.world_mut().get_resource_mut::<InspectorRegistry>() {
@@ -80,11 +80,11 @@ struct DataInspector {
     /// Given the current world, does the provided entity trigger the inspector?
     condition_fn: fn(Entity, &DeferredWorld) -> bool,
     /// Retrieve all data from the entity for this inspector and return it as a list of strings to display in debug
-    inspector_fn: fn(Entity, &DeferredWorld) -> InspectorReadout,
+    inspector_fn: fn(EntityRef, &DeferredWorld) -> InspectorReadout,
 }
 impl DataInspector {
     fn new<F: ArchetypeFilter>(
-        inspector_fn: fn(Entity, &DeferredWorld) -> InspectorReadout,
+        inspector_fn: fn(EntityRef, &DeferredWorld) -> InspectorReadout,
     ) -> Self {
         Self {
             condition_fn: inspector_matches::<F>,
