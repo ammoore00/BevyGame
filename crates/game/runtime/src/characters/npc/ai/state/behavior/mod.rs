@@ -141,15 +141,16 @@ fn set_ai_state(
                 let Some(home) = components.home else {
                     commands.trigger(SetStateEvent::new(components.entity, AiStateKind::Idle));
                     error!("Back home state behavior called for character without a home!");
-                    return;
+                    continue;
                 };
 
                 let threshold_dist =
                     if let Some(TargetGoal::Position(target_pos)) = components.target_goal {
                         target_pos.threshold_dist()
                     } else {
-                        error!("Back home state set for entity without a target position!");
-                        DEFAULT_TARGET_REACHED_THRESHOLD
+                        // TODO: This currently takes one frame from BackHome being set to there being an actual target.
+                        //  Theoretically there is nothing wrong with that, but it should probably be investigated.
+                        continue;
                     };
 
                 let distance = components.pos.0.distance(home.pos.0);

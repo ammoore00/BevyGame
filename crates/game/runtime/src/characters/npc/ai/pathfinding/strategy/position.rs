@@ -25,10 +25,13 @@ pub struct MoveToPosEvent {
     pub pos: WorldCoords,
 }
 
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+struct MoveTargetPos(WorldCoords);
+
 fn on_move_to_pos(event: On<MoveToPosEvent>, mut commands: Commands) {
     commands.entity(event.entity).insert((
         MovingToPos,
-        TargetGoal::position(event.pos, DEFAULT_TARGET_REACHED_THRESHOLD),
+        MoveTargetPos(event.pos),
     ));
 }
 
@@ -38,25 +41,33 @@ struct MovingToPos;
 impl PathfindStrategy for MovingToPos {}
 
 fn position_dispatch(
-    pathfinder_query: Query<PathfinderData, (With<MovingToPos>, Without<Waypoints>)>,
+    pathfinder_query: Query<(PathfinderData, &MoveTargetPos), (With<MovingToPos>, Without<Waypoints>)>,
     mut commands: Commands,
 ) {
-    for pathfinder_data in pathfinder_query {
+    for (pathfinder_data, move_target_pos) in pathfinder_query {
         if pathfinder_data.pathfinder.state() != PathfinderState::Dispatch {
             continue;
         }
-        
-        if pathfinder_data.target_goal.is_none() {
-            continue;
-        }
 
-        let Some(ref target_goal) = pathfinder_data.target_goal else {
-            continue;
-        };
+        let target_goal = pathfinder_data.target_goal
+            .as_ref()
+            .and_then(|target_goal| {
+                if let TargetGoal::Position(current_target) = **target_goal
+                    && current_target.pos() == move_target_pos.0
+                {
+                    Some(**target_goal)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(|| {
+                let target_goal = TargetGoal::position(move_target_pos.0, DEFAULT_TARGET_REACHED_THRESHOLD);
+                commands.entity(pathfinder_data.entity).insert(target_goal);
+                target_goal
+            });
 
-        let TargetGoal::Position(target_pos) = **target_goal else {
-            error!("Non-position target goal for character in position targeting mode");
-            continue;
+        let TargetGoal::Position(target_pos) = target_goal else {
+            unreachable!("If the target goal was not a position, it would be overwritten above");
         };
 
         let start_loc = WorldCoords::from(pathfinder_data.pos.0 - Vec3::Y);
