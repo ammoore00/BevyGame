@@ -462,7 +462,7 @@ fn apply_movement(query: Query<(&PhysicsData, &mut WorldPosition)>, time: Res<Ti
             if let PhysicsData::Kinematic(KinematicData { next_velocity, .. }) = *physics {
                 pos.as_vec3() + next_velocity * time.delta_secs()
             } else {
-                return;
+                continue;
             };
         pos.set(new_position);
     }
