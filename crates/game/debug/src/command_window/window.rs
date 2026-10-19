@@ -6,7 +6,7 @@ use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::prelude::*;
 use bevy::text::{EditableText, TextCursorStyle};
 use bevy::ui_widgets::TextInput;
-use common::{GameState, Pause, marker};
+use common::{marker, GameState, InputBlocker, Pause};
 use widgets::text::{TINY_FONT_SIZE, TextFormatting, text};
 use widgets::theme::palette::{ERROR_TEXT, PRIMARY_TEXT, SEPIA_2};
 
@@ -51,6 +51,7 @@ fn spawn_command_window() -> impl Scene {
         #CommandWindow
         CommandsWindow
         @window()
+        InputBlocker
         Node {
             top: percent(70),
             height: percent(30),

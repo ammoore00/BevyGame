@@ -4,7 +4,6 @@ mod inspector;
 
 use bevy::asset::uuid::Uuid;
 use bevy::prelude::*;
-use common::InputBlocker;
 use widgets::background::UiBackgroundStyle;
 
 pub struct DebugPlugin;
@@ -22,7 +21,6 @@ fn window() -> impl Scene {
     bsn! {
         @widgets::background::ui_root()
         @widgets::background::ui_background(UiBackgroundStyle::Transparent)
-        InputBlocker
         GlobalZIndex(100)
     }
 }
