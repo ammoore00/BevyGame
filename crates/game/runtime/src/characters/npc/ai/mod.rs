@@ -14,7 +14,13 @@ pub(super) fn plugin(app: &mut App) {
 
     app.configure_sets(
         Update,
-        (AiSystems::PreUpdate, AiSystems::Calculate, AiSystems::Execute, AiSystems::Cleanup)
+        (
+            AiSystems::PreUpdate,
+            AiSystems::Sense,
+            AiSystems::Calculate,
+            AiSystems::Execute,
+            AiSystems::Cleanup,
+        )
             .chain()
             .in_set(GameplaySystems)
             .in_set(PausableSystems)
@@ -35,6 +41,8 @@ pub(super) fn ai_scene(pos: Vec3) -> impl Scene {
 enum AiSystems {
     /// Update data like timers before calculations are performed
     PreUpdate,
+    /// Gather data about the world
+    Sense,
     /// Calculate AI goals and intent
     Calculate,
     /// Execute intent

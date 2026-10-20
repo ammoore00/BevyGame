@@ -6,7 +6,7 @@ use getset::{CopyGetters, Getters};
 use std::time::Duration;
 use strum_macros::Display;
 
-mod behavior;
+pub mod behavior;
 pub mod transition;
 
 pub(super) fn plugin(app: &mut App) {

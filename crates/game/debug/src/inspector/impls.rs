@@ -2,7 +2,7 @@ use crate::inspector::{InspectorReadout, InspectorRegistrar};
 use assets::action_states::ReflectActionState;
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
-use runtime::prelude::{AiState, Health, Npc, Player, ReflectPathfindStrategy};
+use runtime::prelude::{AiState, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_data_inspector::<With<Npc>>(inspect_npc);
@@ -17,6 +17,9 @@ fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
     });
     append_inspection::<AiState>(entity, &mut npc_out, |ai_state| {
         format!("AI State: {}", ai_state.current())
+    });
+    append_inspection::<SensedTargets>(entity, &mut npc_out, |targets| {
+        format!("Sensed Target Count: {}", targets.targets().len())
     });
 
     let mut total_out = inspect_character(entity, world);

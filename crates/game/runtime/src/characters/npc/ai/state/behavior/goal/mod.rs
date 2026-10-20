@@ -1,8 +1,7 @@
 mod attack;
 
+use crate::characters::npc::ai::state::behavior::sense::SensedTargets;
 use crate::characters::npc::ai::{AiSystems, NpcHome};
-use crate::characters::npc::ai::state::behavior::sense::{SensedBy, SensedTargets};
-use crate::prelude::Player;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::fmt::Debug;
@@ -20,10 +19,7 @@ pub(super) fn plugin(app: &mut App) {
 struct GoalSystemData<'w, 's> {
     /// Entities that this entity has detected
     sensed_targets: Query<'w, 's, (Entity, &'static SensedTargets)>,
-    
-    /// Other entities that are detecting this entity
-    sensed_by: Query<'w, 's, (Entity, &'static SensedBy)>,
-    
+
     homes: Query<'w, 's, &'static NpcHome>,
 }
 

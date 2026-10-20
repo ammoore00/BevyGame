@@ -1,9 +1,8 @@
 mod goal;
-mod sense;
+pub mod sense;
 
 use crate::characters::attack::{AttackSuccessEvent, TryAttackEvent};
 use crate::characters::npc::ai::pathfinding::TargetGoal;
-use crate::characters::npc::ai::pathfinding::pathfinder::DEFAULT_TARGET_REACHED_THRESHOLD;
 use crate::characters::npc::ai::pathfinding::strategy::follow::FollowerState;
 use crate::characters::npc::ai::{AiSystems, NpcHome};
 use crate::prelude::*;

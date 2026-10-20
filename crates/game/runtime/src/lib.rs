@@ -24,14 +24,14 @@ pub mod prelude {
                             wander::Wandering,
                         },
                     },
-                    state::{AiState, AiStateKind, transition::SetStateEvent},
-                }
+                    state::{
+                        AiState, AiStateKind, behavior::sense::SensedTargets,
+                        transition::SetStateEvent,
+                    },
+                },
             },
             player::Player,
             stamina::Stamina,
-            state::{
-            
-            }
         },
         level::grid::{nav::TileNavMap, tile::Tile},
     };
