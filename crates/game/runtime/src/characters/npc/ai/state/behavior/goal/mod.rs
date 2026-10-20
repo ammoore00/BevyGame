@@ -1,5 +1,6 @@
-mod attack;
+mod impls;
 
+use std::fmt::{Display, Formatter, Write};
 use crate::characters::npc::ai::state::behavior::sense::SensedTargets;
 use crate::characters::npc::ai::{AiSystems, NpcHome};
 use bevy::ecs::system::SystemParam;
@@ -9,7 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(attack::plugin);
+    app.add_plugins(impls::plugin);
 
     app.add_systems(Update, update_timers.in_set(AiSystems::PreUpdate));
     app.add_systems(Update, update_ai_goal.in_set(AiSystems::Calculate));
@@ -18,17 +19,37 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(SystemParam)]
 struct GoalSystemData<'w, 's> {
     /// Entities that this entity has detected
-    sensed_targets: Query<'w, 's, (Entity, &'static SensedTargets)>,
+    sensed_targets: Query<'w, 's, &'static SensedTargets>,
 
     homes: Query<'w, 's, &'static NpcHome>,
 }
 
 /// Information relevant to the current goal decisions of the AI
-struct GoalData {}
-impl GoalData {
-    fn from_system_data(entity: Entity, goal_data: &GoalSystemData) -> Self {
-        todo!()
+struct GoalData<'a> {
+    sensed_targets: &'a SensedTargets,
+
+    home: Option<NpcHome>,
+}
+impl<'a> GoalData<'a> {
+    fn from_system_data(entity: Entity, goal_data: &'a GoalSystemData<'_, '_>) -> Result<Self, GoalDataError> {
+        let sensed_targets = goal_data
+            .sensed_targets
+            .get(entity)
+            .map_err(|_| GoalDataError::NoData(entity, "sensed_targets".to_string()))?;
+
+        let home = goal_data.homes.get(entity).cloned().ok();
+
+        Ok(Self {
+            sensed_targets,
+            home,
+        })
     }
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+enum GoalDataError {
+    #[error("No data for entity {0} for entry {1}")]
+    NoData(Entity, String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -51,6 +72,11 @@ trait Goal: Debug + Send + Sync + 'static {
     ///
     /// Returns None if the goal is not applicable
     fn get_score(&self, data: &GoalData) -> Option<u32>;
+}
+impl Display for dyn Goal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.id().0)
+    }
 }
 
 #[derive(Component, Debug)]
@@ -84,9 +110,15 @@ fn update_ai_goal(
     goal_data: GoalSystemData,
 ) {
     for (entity, mut state, goals) in state_query {
-        let goal_info = GoalData::from_system_data(entity, &goal_data);
+        let goal_data = match GoalData::from_system_data(entity, &goal_data) {
+            Ok(goal_data) => goal_data,
+            Err(err) => {
+                error!("{}", err);
+                continue;
+            }
+        };
 
-        let best_goal = goals.get_best_goal(&goal_info);
+        let best_goal = goals.get_best_goal(&goal_data);
 
         if let Some(best_goal) = best_goal {
             state.active_goal = Some(best_goal.clone());

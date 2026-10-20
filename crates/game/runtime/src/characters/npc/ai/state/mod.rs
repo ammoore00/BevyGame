@@ -5,6 +5,7 @@ use data::prelude::ResourceLocation;
 use getset::{CopyGetters, Getters};
 use std::time::Duration;
 use strum_macros::Display;
+use crate::characters::npc::ai::state::behavior::behavior_scene;
 
 pub mod behavior;
 pub mod transition;
@@ -16,7 +17,10 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 pub fn state_scene() -> impl Scene {
-    bsn! { AiState }
+    bsn! {
+        AiState
+        @behavior_scene()
+    }
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Eq, Hash, Default, Getters, CopyGetters)]

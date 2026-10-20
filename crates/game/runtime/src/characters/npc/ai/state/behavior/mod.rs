@@ -26,6 +26,12 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_successful_attack);
 }
 
+pub fn behavior_scene() -> impl Scene {
+    bsn! {
+        SensedTargets
+    }
+}
+
 fn update_timers(npc_query: Query<&mut AiState>, time: Res<Time>) {
     for mut ai_state in npc_query {
         ai_state.time_in_state += time.delta();
