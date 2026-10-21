@@ -8,8 +8,12 @@ use runtime::prelude::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_data_inspector::<With<Npc>>(inspect_npc);
     app.add_data_inspector::<With<Player>>(inspect_player);
+    app.add_data_inspector::<With<Npc>>(inspect_npc);
+}
+
+fn inspect_player(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
+    inspect_character(entity, world).with_title("Player")
 }
 
 fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
@@ -34,28 +38,25 @@ fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
                 )
                 .subsection({
                     let goal_list = entity.get::<GoalList>();
+                    
+                    let goal_display = goal_list.map(|goals| format!("List: {}", goals));
+                    let scores = goal_list
+                        .map(|goals| {
+                            goals
+                                .goals()
+                                .iter()
+                                .map(|goal| {
+                                    format!("{}: <score>", goal)
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .map(|scores| format!("Scores: {:#?}", scores));
 
                     ReadoutSection::new("Goals")
-                        .maybe_item(goal_list.map(|goals| format!("List: {}", goals)))
-                        .maybe_item(
-                            goal_list
-                                .map(|goals| {
-                                    goals
-                                        .goals()
-                                        .iter()
-                                        .map(|goal| {
-                                            format!("{}: <score>", goal)
-                                        })
-                                        .collect::<Vec<_>>()
-                                })
-                                .map(|scores| format!("Scores: {:#?}", scores))
-                        )
+                        .maybe_item(goal_display)
+                        .maybe_item(scores)
                 })
         })
-}
-
-fn inspect_player(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
-    inspect_character(entity, world).with_title("Player")
 }
 
 fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
@@ -64,13 +65,12 @@ fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReado
             let health = entity
                 .get::<Health>()
                 .expect("Character created without Health component");
-            ReadoutSection::new("Health")
-                .item(format!("Current: {} / {}", health.current, health.max))
-        })
-        .section({
             let action_state = reflected_trait_component_name::<ReflectActionState>(entity, world)
                 .expect("Character without action state");
-            ReadoutSection::new("Action State").item(action_state)
+            
+            ReadoutSection::new("Generic")
+                .item(format!("Health: {} / {}", health.current, health.max))
+                .item(format!("Action State: {}", action_state))
         })
 }
 
