@@ -1,4 +1,5 @@
-use crate::inspector::{InspectorReadout, InspectorRegistrar};
+use crate::inspector::InspectorRegistrar;
+use crate::inspector::readout::{InspectorReadout, ReadoutSection};
 use assets::action_states::ReflectActionState;
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
@@ -10,59 +11,46 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
-    let mut npc_out = Vec::new();
-
-    append_reflected_component::<ReflectPathfindStrategy>(entity, world, &mut npc_out, |name| {
-        format!("Pathfind Strategy: {}", name)
-    });
-    append_inspection::<AiState>(entity, &mut npc_out, |ai_state| {
-        format!("AI State: {}", ai_state.current())
-    });
-    append_inspection::<SensedTargets>(entity, &mut npc_out, |targets| {
-        format!("Sensed Target Count: {}", targets.targets().len())
-    });
-
-    let mut total_out = inspect_character(entity, world);
-    total_out.append(&mut npc_out);
-    total_out.into()
+    InspectorReadout::new("NPC")
+        .section({
+            ReadoutSection::new("AI")
+                .maybe_item(
+                    reflected_trait_component_name::<ReflectPathfindStrategy>(entity, world)
+                        .map(|strategy| format!("Pathfinding Strategy: {}", strategy)),
+                )
+                .maybe_item(
+                    entity
+                        .get::<AiState>()
+                        .map(|ai_state| format!("State: {}", ai_state.current())),
+                )
+                .maybe_item(
+                    entity
+                        .get::<SensedTargets>()
+                        .map(|targets| targets.targets().len())
+                        .map(|count| format!("Sensed Target Count: {}", count)),
+                )
+        })
+        .with_extension(inspect_character(entity, world))
 }
 
 fn inspect_player(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
-    inspect_character(entity, world).into()
+    inspect_character(entity, world).with_title("Player")
 }
 
-fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> Vec<String> {
-    let mut out = Vec::new();
-
-    append_inspection::<Name>(entity, &mut out, |name| {
-        format!("Name: {}", name.to_string())
-    });
-    append_inspection::<Health>(entity, &mut out, |health| {
-        format!("Health: {} (max {})", health.current, health.max)
-    });
-    append_reflected_component::<ReflectActionState>(entity, world, &mut out, |name| {
-        format!("Action State: {}", name)
-    });
-
-    out
-}
-
-fn append_inspection<T: Component>(
-    entity: EntityRef,
-    out: &mut Vec<String>,
-    op: impl FnOnce(&T) -> String,
-) {
-    entity.get::<T>().inspect(|value| out.push(op(value)));
-}
-
-fn append_reflected_component<TraitRegistration: Clone + Send + Sync + 'static>(
-    entity: EntityRef,
-    world: &DeferredWorld,
-    out: &mut Vec<String>,
-    op: impl FnOnce(String) -> String,
-) {
-    reflected_trait_component_name::<TraitRegistration>(entity, world)
-        .inspect(|name| out.push(op(name.clone())));
+fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
+    InspectorReadout::new("Character")
+        .section({
+            let health = entity
+                .get::<Health>()
+                .expect("Character created without Health component");
+            ReadoutSection::new("Health")
+                .item(format!("Current: {} / {}", health.current, health.max))
+        })
+        .section({
+            let action_state = reflected_trait_component_name::<ReflectActionState>(entity, world)
+                .expect("Character without action state");
+            ReadoutSection::new("Action State").item(action_state)
+        })
 }
 
 fn reflected_trait_component_name<TraitRegistration: Clone + Send + Sync + 'static>(

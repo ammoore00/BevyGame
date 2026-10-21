@@ -1,10 +1,11 @@
 mod impls;
+mod readout;
 mod window;
 
+use crate::inspector::readout::InspectorReadout;
 use bevy::ecs::query::ArchetypeFilter;
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
-use getset::Getters;
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_plugins((impls::plugin, window::plugin));
@@ -51,14 +52,13 @@ impl InspectorRegistry {
         entity: Entity,
         world: &DeferredWorld,
     ) -> Result<DataInspector, InspectorMatchError> {
-        let matched = self.registry
+        let matched = self
+            .registry
             .iter()
-            .filter(|inspector| {
-                (inspector.condition_fn)(entity, world)
-            })
+            .filter(|inspector| (inspector.condition_fn)(entity, world))
             .cloned()
             .collect::<Vec<_>>();
-        
+
         match matched.len() {
             0 => Err(InspectorMatchError::NoMatch),
             1 => Ok(matched[0]),
@@ -103,20 +103,4 @@ fn inspector_matches<F: ArchetypeFilter>(entity: Entity, world: &DeferredWorld) 
     };
 
     F::matches_component_set(&state, &|component_id| entity_ref.contains_id(component_id))
-}
-
-#[derive(Debug, Clone, Getters)]
-struct InspectorReadout {
-    #[getset(get = "pub")]
-    data: Vec<String>,
-}
-impl InspectorReadout {
-    fn into_data(self) -> Vec<String> {
-        self.data
-    }
-}
-impl From<Vec<String>> for InspectorReadout {
-    fn from(data: Vec<String>) -> Self {
-        Self { data }
-    }
 }

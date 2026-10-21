@@ -8,6 +8,7 @@ use bevy::scene::Ready;
 use common::marker;
 use widgets::text::{MEDIUM_FONT_SIZE, TINY_FONT_SIZE, TextContent, TextFormatting};
 use widgets::theme::palette::PRIMARY_TEXT;
+use crate::inspector::readout::InspectorReadout;
 
 pub(crate) fn plugin(app: &mut App) {
     app.init_resource::<InspectorSelection>();
@@ -160,21 +161,15 @@ fn on_picked(
 }
 
 marker!(InspectorData);
-marker!(InspectorDataEntry);
+marker!(pub InspectorDataReadoutMarker);
 
-fn inspector_data_entry(text: impl Into<TextContent>) -> impl Scene {
+pub fn data_node() -> impl Scene {
     bsn! {
-        InspectorDataEntry
-        Node
-        @widgets::text::text(
-            text,
-            TextFormatting {
-                font_size: TINY_FONT_SIZE,
-                color: PRIMARY_TEXT,
-            }
-        )
-        TextLayout {
-            justify: Justify::Start
+        Node {
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Start,
+            justify_self: JustifySelf::Start,
+            row_gap: px(ITEM_GAP),
         }
     }
 }
@@ -183,12 +178,7 @@ fn data() -> impl Scene {
     bsn! {
         #InspectorData
         InspectorData
-        Node {
-            flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Start,
-            justify_self: JustifySelf::Start,
-            row_gap: px(ITEM_GAP),
-        }
+        @data_node()
     }
 }
 
@@ -203,14 +193,14 @@ fn update_inspector_data(world: &mut World) {
             let deferred_world: DeferredWorld = world.into();
             
             if let Ok(inspected_entity) = deferred_world.get_entity(inspected_entity) {
-                (data.inspector_fn)(inspected_entity, &deferred_world).into_data()
+                (data.inspector_fn)(inspected_entity, &deferred_world)
             } else {
-                vec!["Entity not found".to_string()]
+                InspectorReadout::new("Entity not found".to_string())
             }
         },
         Err(err) => {
             let msg = format!("Failed to inspect entity: {err}");
-            vec![msg]
+            InspectorReadout::new(msg)
         }
     };
 
@@ -224,15 +214,17 @@ fn update_inspector_data(world: &mut World) {
     };
 
     // Despawn existing entries
-    let mut data_entries = world.query_filtered::<Entity, With<InspectorDataEntry>>();
-    let existing = data_entries.query(world).iter().collect::<Vec<_>>();
-    existing.iter().for_each(|entry| {
-        world.despawn(*entry);
-    });
+    let mut data_entries = world.query_filtered::<Entity, With<InspectorDataReadoutMarker>>();
+    if let Ok(existing) = data_entries.single(world) {
+        world.despawn(existing);
+    }
 
     // Add new entries
-    for entry in inspector_output {
-        let entry = world.spawn_scene(inspector_data_entry(entry)).unwrap().id();
-        world.entity_mut(inspector_display).add_child(entry);
+    match world.spawn_scene(inspector_output.as_scene()) {
+        Ok(scene) => {
+            let scene = scene.id();
+            world.get_entity_mut(inspector_display).unwrap().add_child(scene);
+        }
+        Err(err) => error!("Failed to spawn inspector output: {err}"),
     }
 }
