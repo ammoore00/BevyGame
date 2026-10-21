@@ -3,7 +3,9 @@ use crate::inspector::readout::{InspectorReadout, ReadoutSection};
 use assets::action_states::ReflectActionState;
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
-use runtime::prelude::{AiState, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets};
+use runtime::prelude::{
+    AiState, GoalList, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets,
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_data_inspector::<With<Npc>>(inspect_npc);
@@ -12,6 +14,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
     InspectorReadout::new("NPC")
+        .with_extension(inspect_character(entity, world))
         .section({
             ReadoutSection::new("AI")
                 .maybe_item(
@@ -29,8 +32,26 @@ fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
                         .map(|targets| targets.targets().len())
                         .map(|count| format!("Sensed Target Count: {}", count)),
                 )
+                .subsection({
+                    let goal_list = entity.get::<GoalList>();
+
+                    ReadoutSection::new("Goals")
+                        .maybe_item(goal_list.map(|goals| format!("List: {}", goals)))
+                        .maybe_item(
+                            goal_list
+                                .map(|goals| {
+                                    goals
+                                        .goals()
+                                        .iter()
+                                        .map(|goal| {
+                                            format!("{}: <score>", goal)
+                                        })
+                                        .collect::<Vec<_>>()
+                                })
+                                .map(|scores| format!("Scores: {:#?}", scores))
+                        )
+                })
         })
-        .with_extension(inspect_character(entity, world))
 }
 
 fn inspect_player(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {

@@ -8,6 +8,8 @@ use bevy::prelude::*;
 use std::fmt::Debug;
 use std::sync::Arc;
 use std::time::Duration;
+use getset::Getters;
+use crate::characters::npc::ai::state::behavior::goal::impls::{AttackGoal, BackHomeGoal};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(impls::plugin);
@@ -16,8 +18,22 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_ai_goal.in_set(AiSystems::Calculate));
 }
 
+// TODO: Change this to pull from character data
+pub fn goals_scene() -> impl Scene {
+    let goal_list = GoalList {
+        goals: vec![
+            Arc::new(AttackGoal),
+            Arc::new(BackHomeGoal),
+        ],
+    };
+    
+    bsn! {
+        goal_list
+    }
+}
+
 #[derive(SystemParam)]
-struct GoalSystemData<'w, 's> {
+pub struct GoalSystemData<'w, 's> {
     /// Entities that this entity has detected
     sensed_targets: Query<'w, 's, &'static SensedTargets>,
 
@@ -25,13 +41,13 @@ struct GoalSystemData<'w, 's> {
 }
 
 /// Information relevant to the current goal decisions of the AI
-struct GoalData<'a> {
+pub struct GoalData<'a> {
     sensed_targets: &'a SensedTargets,
 
     home: Option<NpcHome>,
 }
 impl<'a> GoalData<'a> {
-    fn from_system_data(entity: Entity, goal_data: &'a GoalSystemData<'_, '_>) -> Result<Self, GoalDataError> {
+    fn try_from_system_data(entity: Entity, goal_data: &'a GoalSystemData<'_, '_>) -> Result<Self, GoalDataError> {
         let sensed_targets = goal_data
             .sensed_targets
             .get(entity)
@@ -48,12 +64,12 @@ impl<'a> GoalData<'a> {
 
 #[derive(Debug, Clone, thiserror::Error)]
 enum GoalDataError {
-    #[error("No data for entity {0} for entry {1}")]
+    #[error("No data on entity {0} for entry '{1}'")]
     NoData(Entity, String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct GoalId(String);
+pub struct GoalId(String);
 impl From<&str> for GoalId {
     fn from(value: &str) -> Self {
         Self(value.to_string())
@@ -65,7 +81,7 @@ impl From<String> for GoalId {
     }
 }
 
-trait Goal: Debug + Send + Sync + 'static {
+pub trait Goal: Debug + Send + Sync + 'static {
     fn id(&self) -> GoalId;
 
     /// Based on the current state of the AI, how important is this goal
@@ -79,8 +95,9 @@ impl Display for dyn Goal {
     }
 }
 
-#[derive(Component, Debug)]
-struct GoalList {
+#[derive(Component, Debug, Clone, Getters)]
+pub struct GoalList {
+    #[getset(get = "pub")]
     goals: Vec<Arc<dyn Goal>>,
 }
 impl GoalList {
@@ -90,6 +107,11 @@ impl GoalList {
             .filter_map(|goal| goal.get_score(data).map(|score| (goal, score)))
             .max_by_key(|(_, score)| *score)
             .map(|(goal, _)| goal.clone())
+    }
+}
+impl Display for GoalList {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.goals)
     }
 }
 
@@ -110,7 +132,7 @@ fn update_ai_goal(
     goal_data: GoalSystemData,
 ) {
     for (entity, mut state, goals) in state_query {
-        let goal_data = match GoalData::from_system_data(entity, &goal_data) {
+        let goal_data = match GoalData::try_from_system_data(entity, &goal_data) {
             Ok(goal_data) => goal_data,
             Err(err) => {
                 error!("{}", err);

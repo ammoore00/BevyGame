@@ -4,7 +4,7 @@ use bevy::prelude::*;
 pub(super) fn plugin(_app: &mut App) {}
 
 #[derive(Debug)]
-struct AttackGoal;
+pub struct AttackGoal;
 impl Goal for AttackGoal {
     fn id(&self) -> GoalId {
         "Attack".into()
@@ -17,8 +17,8 @@ impl Goal for AttackGoal {
 }
 
 #[derive(Debug)]
-struct BackHome;
-impl Goal for BackHome {
+pub struct BackHomeGoal;
+impl Goal for BackHomeGoal {
     fn id(&self) -> GoalId {
         "BackHome".into()
     }

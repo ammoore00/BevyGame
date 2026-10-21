@@ -25,7 +25,11 @@ pub mod prelude {
                         },
                     },
                     state::{
-                        AiState, AiStateKind, behavior::sense::SensedTargets,
+                        AiState, AiStateKind,
+                        behavior::{
+                            goal::{GoalData, GoalList, GoalSystemData},
+                            sense::SensedTargets,
+                        },
                         transition::SetStateEvent,
                     },
                 },

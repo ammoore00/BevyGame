@@ -1,4 +1,4 @@
-mod goal;
+pub mod goal;
 pub mod sense;
 
 use crate::characters::attack::{AttackSuccessEvent, TryAttackEvent};
@@ -11,6 +11,7 @@ use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::{Facing, WorldPosition};
 use std::time::Duration;
+use crate::characters::npc::ai::state::behavior::goal::goals_scene;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((goal::plugin, sense::plugin));
@@ -29,6 +30,7 @@ pub(super) fn plugin(app: &mut App) {
 pub fn behavior_scene() -> impl Scene {
     bsn! {
         SensedTargets
+        @goals_scene()
     }
 }
 
