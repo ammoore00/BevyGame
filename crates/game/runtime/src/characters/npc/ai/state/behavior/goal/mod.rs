@@ -1,11 +1,13 @@
 mod impls;
 
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Write};
 use crate::characters::npc::ai::state::behavior::sense::SensedTargets;
 use crate::characters::npc::ai::{AiSystems, NpcHome};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::time::Duration;
 use getset::Getters;
@@ -25,6 +27,8 @@ pub fn goals_scene() -> impl Scene {
             Arc::new(AttackGoal),
             Arc::new(BackHomeGoal),
         ],
+        score_cache: HashMap::new(),
+        last_cached: Duration::ZERO,
     };
     
     bsn! {
@@ -94,11 +98,19 @@ impl Display for dyn Goal {
         write!(f, "{}", self.id().0)
     }
 }
+impl Hash for dyn Goal {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id().hash(state)
+    }
+}
 
 #[derive(Component, Debug, Clone, Getters)]
 pub struct GoalList {
     #[getset(get = "pub")]
     goals: Vec<Arc<dyn Goal>>,
+    #[getset(get = "pub")]
+    score_cache: HashMap<Arc<dyn Goal>, u32>,
+    last_cached: Duration,
 }
 impl GoalList {
     fn get_best_goal(&self, data: &GoalData) -> Option<Arc<dyn Goal>> {
