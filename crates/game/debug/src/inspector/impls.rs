@@ -3,9 +3,7 @@ use crate::inspector::readout::{InspectorReadout, ReadoutSection};
 use assets::action_states::ReflectActionState;
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
-use runtime::prelude::{
-    AiState, GoalList, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets,
-};
+use runtime::prelude::{AiState, GoalList, GoalState, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_data_inspector::<With<Player>>(inspect_player);
@@ -38,15 +36,21 @@ fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
                 )
                 .subsection({
                     let goal_list = entity.get::<GoalList>();
+                    let goal_state = entity.get::<GoalState>();
                     
                     let goal_display = goal_list.map(|goals| format!("List: {}", goals));
-                    let scores = goal_list
-                        .map(|goals| {
-                            goals
-                                .goals()
+                    let scores = goal_state
+                        .map(|goal_state| {
+                            goal_state
+                                .scores()
                                 .iter()
-                                .map(|goal| {
-                                    format!("{}: <score>", goal)
+                                .map(|(goal, score)| {
+                                    let score_out = match score {
+                                        Some(score) => score.to_string(),
+                                        None => "None".to_string(),
+                                    };
+                                    
+                                    format!("{}: {}", goal, score_out)
                                 })
                                 .collect::<Vec<_>>()
                         })

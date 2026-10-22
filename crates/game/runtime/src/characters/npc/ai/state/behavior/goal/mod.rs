@@ -27,12 +27,11 @@ pub fn goals_scene() -> impl Scene {
             Arc::new(AttackGoal),
             Arc::new(BackHomeGoal),
         ],
-        score_cache: HashMap::new(),
-        last_cached: Duration::ZERO,
     };
     
     bsn! {
         goal_list
+        GoalState
     }
 }
 
@@ -98,6 +97,12 @@ impl Display for dyn Goal {
         write!(f, "{}", self.id().0)
     }
 }
+impl PartialEq for dyn Goal {
+    fn eq(&self, other: &dyn Goal) -> bool {
+        self.id() == other.id()
+    }
+}
+impl Eq for dyn Goal {}
 impl Hash for dyn Goal {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id().hash(state)
@@ -108,18 +113,6 @@ impl Hash for dyn Goal {
 pub struct GoalList {
     #[getset(get = "pub")]
     goals: Vec<Arc<dyn Goal>>,
-    #[getset(get = "pub")]
-    score_cache: HashMap<Arc<dyn Goal>, u32>,
-    last_cached: Duration,
-}
-impl GoalList {
-    fn get_best_goal(&self, data: &GoalData) -> Option<Arc<dyn Goal>> {
-        self.goals
-            .iter()
-            .filter_map(|goal| goal.get_score(data).map(|score| (goal, score)))
-            .max_by_key(|(_, score)| *score)
-            .map(|(goal, _)| goal.clone())
-    }
 }
 impl Display for GoalList {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -127,10 +120,30 @@ impl Display for GoalList {
     }
 }
 
-#[derive(Component, Debug)]
-struct GoalState {
+#[derive(Component, Debug, Clone, Default, Getters)]
+pub struct GoalState {
+    #[getset(get = "pub")]
     active_goal: Option<Arc<dyn Goal>>,
+    #[getset(get = "pub")]
     time_in_goal: Duration,
+    #[getset(get = "pub")]
+    scores: HashMap<Arc<dyn Goal>, Option<u32>>,
+}
+impl GoalState {
+    fn populate_scores(&mut self, goals: &[Arc<dyn Goal>], data: &GoalData) {
+        self.scores.clear();
+        goals.iter().for_each(|goal| {
+            self.scores.insert(goal.clone(), goal.get_score(data));
+        });
+        
+        let best_goal = goals
+            .iter()
+            .filter_map(|goal| goal.get_score(data).map(|score| (goal, score)))
+            .max_by_key(|(_, score)| *score)
+            .map(|(goal, _)| goal.clone());
+        
+        self.active_goal = best_goal;
+    }
 }
 
 fn update_timers(mut state_query: Query<&mut GoalState>, time: Res<Time>) {
@@ -143,7 +156,7 @@ fn update_ai_goal(
     state_query: Query<(Entity, &mut GoalState, &GoalList)>,
     goal_data: GoalSystemData,
 ) {
-    for (entity, mut state, goals) in state_query {
+    for (entity, mut state, mut goals) in state_query {
         let goal_data = match GoalData::try_from_system_data(entity, &goal_data) {
             Ok(goal_data) => goal_data,
             Err(err) => {
@@ -151,11 +164,7 @@ fn update_ai_goal(
                 continue;
             }
         };
-
-        let best_goal = goals.get_best_goal(&goal_data);
-
-        if let Some(best_goal) = best_goal {
-            state.active_goal = Some(best_goal.clone());
-        }
+        
+        state.populate_scores(&goals.goals, &goal_data);
     }
 }
