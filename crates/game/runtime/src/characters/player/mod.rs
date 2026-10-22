@@ -12,7 +12,7 @@ use data::prelude::*;
 
 mod input;
 
-pub use input::{AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent};
+pub use input::{AimInputEvent, AttackInputEvent, DodgeInputEvent, JumpInputEvent, MoveInputEvent};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(input::plugin);

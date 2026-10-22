@@ -1,4 +1,5 @@
 use crate::characters::attack::TryAttackEvent;
+use crate::characters::dodge::TryDodgeEvent;
 use crate::characters::player::{AimFacing, Player};
 use crate::characters::stamina::Stamina;
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
@@ -17,11 +18,12 @@ pub(super) fn plugin(app: &mut App) {
         FixedUpdate,
         camera_follow_player.in_set(AppSystems::Respond),
     );
-
-    app.add_observer(on_movement_input);
-    app.add_observer(on_jump_input);
-    app.add_observer(on_attack_input);
+    
     app.add_observer(on_aim_input);
+    app.add_observer(on_attack_input);
+    app.add_observer(on_dodge_input);
+    app.add_observer(on_jump_input);
+    app.add_observer(on_movement_input);
 }
 
 const COYOTE_TIME: f32 = 0.2;
@@ -181,11 +183,11 @@ impl AttackInputEvent {
 
 fn on_attack_input(
     event: On<AttackInputEvent>,
-    mut player_query: Query<(Entity, &mut Facing, &Stamina), (With<Player>, With<Children>)>,
+    mut player_query: Query<(Entity, &mut Facing), (With<Player>, With<Children>)>,
     aim_facing_query: Query<(&AimFacing, &ChildOf)>,
     mut commands: Commands,
 ) {
-    let (player_entity, mut facing, stamina) = player_query
+    let (player_entity, mut facing) = player_query
         .get_mut(event.entity)
         .expect("Failed to get player entity");
     let (aim_facing, child_of) = aim_facing_query.single().expect("Failed to get aim facing");
@@ -195,22 +197,50 @@ fn on_attack_input(
         return;
     }
 
-    // TODO: Make this check better
-    if stamina.current > 0 {
-        let facing = {
-            if let Some(aim_facing) = aim_facing.0 {
-                *facing = aim_facing;
-            }
-            *facing
-        };
+    let facing = {
+        if let Some(aim_facing) = aim_facing.0 {
+            *facing = aim_facing;
+        }
+        *facing
+    };
 
-        let attack_loc: ResourceLocation<AttackResource> = "player/basic_attack".parse().unwrap();
-        commands.trigger(TryAttackEvent::new(
-            player_entity,
-            facing,
-            attack_loc.clone(),
-        ));
+    let attack_loc: ResourceLocation<AttackResource> = "player/basic_attack".parse().unwrap();
+    commands.trigger(TryAttackEvent::new(
+        player_entity,
+        facing,
+        attack_loc.clone(),
+    ));
+}
+
+#[derive(EntityEvent, Debug, Clone, derive_new::new)]
+pub struct DodgeInputEvent {
+    entity: Entity,
+}
+
+fn on_dodge_input(
+    event: On<DodgeInputEvent>,
+    mut player_query: Query<(Entity, &mut Facing), (With<Player>, With<Children>)>,
+    aim_facing_query: Query<(&AimFacing, &ChildOf)>,
+    mut commands: Commands,
+) {
+    let (player_entity, mut facing) = player_query
+        .get_mut(event.entity)
+        .expect("Failed to get player entity");
+    let (aim_facing, child_of) = aim_facing_query.single().expect("Failed to get aim facing");
+
+    if child_of.0 != player_entity {
+        error!("AimFacing is not a child of the player entity!");
+        return;
     }
+
+    let facing = {
+        if let Some(aim_facing) = aim_facing.0 {
+            *facing = aim_facing;
+        }
+        *facing
+    };
+
+    commands.trigger(TryDodgeEvent::new(player_entity, facing));
 }
 
 #[derive(EntityEvent, Debug, Clone, derive_new::new)]

@@ -7,7 +7,7 @@ use input::gamepad::{GamepadStick, get_stick_with_deadzone};
 use input::{InputReader, LastInputMode};
 use runtime::LevelLoadedSystems;
 use runtime::characters::player::{
-    AimInputEvent, AttackInputEvent, JumpInputEvent, MoveInputEvent, Player,
+    AimInputEvent, AttackInputEvent, DodgeInputEvent, JumpInputEvent, MoveInputEvent, Player,
 };
 
 // TODO: Remappable controls
@@ -16,27 +16,28 @@ use runtime::characters::player::{
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        ((
+        (
             record_aim_input,
-            record_movement_input,
-            record_jump_input,
             record_attack_input,
+            record_dodge_input,
+            record_jump_input,
+            record_movement_input,
         )
             .in_set(GameplaySystems)
             .in_set(PausableSystems)
             .in_set(LevelLoadedSystems)
             .in_set(GameInputSystems)
-            .in_set(AppSystems::RecordInput),),
+            .in_set(AppSystems::RecordInput),
     );
 }
 
 fn record_aim_input(
-    player_query: Query<(Entity, &WorldPosition), With<Player>>,
+    player: Single<(Entity, &WorldPosition), With<Player>>,
     window: Query<&Window>,
     mut input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let (player_entity, position) = player_query.single().expect("Failed to find player entity");
+    let (player_entity, position) = player.into_inner();
     let window = window.single().expect("Failed to find window");
 
     if let Some(gamepad) = input_reader.gamepad()
@@ -75,12 +76,10 @@ fn record_aim_input(
 }
 
 fn record_movement_input(
-    player_query: Query<Entity, With<Player>>,
+    player: Single<Entity, With<Player>>,
     input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let player_entity = player_query.single().expect("Failed to find player entity");
-
     let mut intent = Vec3::ZERO;
     let mut toggle_sprint = false;
 
@@ -123,16 +122,16 @@ fn record_movement_input(
         intent = rotate_screen_space_to_movement(intent);
     }
 
-    commands.trigger(MoveInputEvent::new(player_entity, intent, toggle_sprint));
+    commands.trigger(MoveInputEvent::new(player.entity(), intent, toggle_sprint));
 }
 
+// TODO: Consolidate these event trigger functions to reduce code duplication
+
 fn record_jump_input(
-    player_query: Query<Entity, With<Player>>,
+    player: Single<Entity, With<Player>>,
     input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let player_entity = player_query.single().expect("Failed to find player entity");
-
     let jump = if let Some(gamepad) = input_reader.gamepad()
         && **input_reader.last_input_mode() == LastInputMode::Gamepad
         && gamepad.just_pressed(GamepadButton::South)
@@ -144,17 +143,15 @@ fn record_jump_input(
     };
 
     if jump {
-        commands.trigger(JumpInputEvent::new(player_entity));
+        commands.trigger(JumpInputEvent::new(player.entity()));
     }
 }
 
 fn record_attack_input(
-    player_query: Query<Entity, With<Player>>,
+    player: Single<Entity, With<Player>>,
     input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let player_entity = player_query.single().expect("Failed to find player entity");
-
     let attack = if let Some(gamepad) = input_reader.gamepad()
         && **input_reader.last_input_mode() == LastInputMode::Gamepad
         && gamepad.just_pressed(GamepadButton::RightTrigger)
@@ -166,6 +163,29 @@ fn record_attack_input(
     };
 
     if attack {
-        commands.trigger(AttackInputEvent::new(player_entity, "player/basic_attack"));
+        commands.trigger(AttackInputEvent::new(
+            player.entity(),
+            "player/basic_attack",
+        ));
+    }
+}
+
+fn record_dodge_input(
+    player: Single<Entity, With<Player>>,
+    input_reader: InputReader,
+    mut commands: Commands,
+) {
+    let dodge = if let Some(gamepad) = input_reader.gamepad()
+        && **input_reader.last_input_mode() == LastInputMode::Gamepad
+        && gamepad.just_pressed(GamepadButton::East)
+    {
+        true
+    } else {
+        input_reader.mouse_buttons().just_pressed(MouseButton::Middle)
+            && **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
+    };
+    
+    if dodge {
+        commands.trigger(DodgeInputEvent::new(player.entity()));
     }
 }

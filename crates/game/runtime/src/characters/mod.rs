@@ -24,11 +24,13 @@ pub(crate) mod npc;
 pub mod player;
 pub(crate) mod stamina;
 pub(crate) mod state;
+mod dodge;
 
 pub(crate) fn plugin(app: &mut App) {
     app.add_plugins((
         animation::plugin,
         attack::plugin,
+        dodge::plugin,
         health::plugin,
         npc::plugin,
         player::plugin,

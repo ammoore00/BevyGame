@@ -41,7 +41,7 @@ pub(super) fn plugin(app: &mut App) {
 pub const ON_HIT_IFRAMES: Duration = Duration::from_millis(250);
 
 /// Initiate an attack from the entity to the provided facing
-#[derive(EntityEvent, Debug, Clone, Reflect, derive_new::new)]
+#[derive(EntityEvent, Debug, Clone, derive_new::new)]
 pub struct TryAttackEvent {
     entity: Entity,
     facing: Facing,

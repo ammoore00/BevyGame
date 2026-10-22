@@ -23,12 +23,12 @@ fn update_timed_state(
         let Some(registration) = type_registry.get(tracker.state_type_id()) else {
             continue;
         };
-        let Some(_) = registration.data::<ReflectTimedActionState>() else {
+        
+        if registration.data::<ReflectTimedActionState>().is_none()
+            || registration.data::<ReflectComponent>().is_none()
+        {
             continue;
-        };
-        let Some(_) = registration.data::<ReflectComponent>() else {
-            continue;
-        };
+        }
 
         let type_id = tracker.state_type_id();
 
@@ -46,7 +46,8 @@ fn update_timed_state(
                 && let Some(reflect_data) = reflect_component.reflect_mut(&mut entity_mut)
                 && let Some(timed_state) = reflect_timed_state.get_mut(reflect_data.into_inner())
             {
-                let new_time = timed_state.time_left() - delta;
+                let time_left = timed_state.time_left();
+                let new_time = time_left - delta.min(time_left);
                 timed_state.set_time(new_time);
 
                 if new_time > Duration::ZERO {
