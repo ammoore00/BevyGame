@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::characters::Character;
 use crate::characters::state::tracking::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{Idle, ReflectTimedActionState};
@@ -14,7 +15,7 @@ fn update_timed_state(
     registry: Res<AppTypeRegistry>,
     mut commands: Commands,
 ) {
-    let delta = time.delta_secs();
+    let delta = time.delta();
     let type_registry = registry.read();
 
     for (entity, tracker) in &query {
@@ -48,7 +49,7 @@ fn update_timed_state(
                 let new_time = timed_state.time_left() - delta;
                 timed_state.set_time(new_time);
 
-                if new_time > 0.0 {
+                if new_time > Duration::ZERO {
                     return;
                 }
 

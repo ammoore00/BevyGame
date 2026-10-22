@@ -58,6 +58,18 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
     .with_image("player/running");
     animation_map.insert(ActionStateCodec::Sprinting, sprinting);
 
+    let dodging = AnimationData::new(
+        "player/rolling",
+        64,
+        64,
+        FrameDataCodec::FixedInterval {
+            num_frames: 11,
+            interval: 50,
+        },
+    )
+        .with_image("player/rolling");
+    animation_map.insert(ActionStateCodec::Dodging, dodging);
+
     // Attacks
 
     let mut attacks = Vec::new();

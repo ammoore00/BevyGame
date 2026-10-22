@@ -1,4 +1,4 @@
-use crate::action_states::{ActionStateCapabilities, DEFAULT_STATES};
+use crate::action_states::{ActionStateCapabilities, ALL_STATES};
 use crate::codec::{CharacterCodec, ColliderCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::maybe::DefaultOption;
@@ -55,7 +55,7 @@ impl From<CharacterCodec> for CharacterData {
             .allowed_states
             .into_inner()
             .map(|allowed_states| allowed_states.into_type_ids())
-            .unwrap_or_else(|| DEFAULT_STATES.clone());
+            .unwrap_or_else(|| ALL_STATES.clone());
         let state_capabilities = ActionStateCapabilities::new(states);
 
         let attack_set = codec.attack_set.into_inner();

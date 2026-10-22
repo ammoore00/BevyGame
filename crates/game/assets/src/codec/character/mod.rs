@@ -1,6 +1,4 @@
-use crate::action_states::{
-    Attacking, DEFAULT_STATES, DEFAULT_STATES_NON_ATTACKING, Idle, Running, Sprinting, Walking,
-};
+use crate::action_states::{Attacking, ALL_STATES, MOVEMENT_STATES, Idle, Running, Sprinting, Walking, Dodging};
 use crate::codec::character::health::HealthCodec;
 use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec};
 use crate::maybe::{Maybe, DefaultOption};
@@ -88,8 +86,8 @@ pub enum AllowedStatesCodec {
 impl AllowedStatesCodec {
     pub fn into_type_ids(self) -> Vec<TypeId> {
         match self {
-            AllowedStatesCodec::Default => DEFAULT_STATES.clone(),
-            AllowedStatesCodec::Passive => DEFAULT_STATES_NON_ATTACKING.clone(),
+            AllowedStatesCodec::Default => ALL_STATES.clone(),
+            AllowedStatesCodec::Passive => MOVEMENT_STATES.clone(),
             AllowedStatesCodec::Custom(states) => states
                 .into_iter()
                 .map(|state| state.into_type_id())
@@ -106,6 +104,7 @@ pub enum ActionStateCodec {
     Running,
     Sprinting,
     Attacking,
+    Dodging,
 }
 impl ActionStateCodec {
     pub fn into_type_id(self) -> TypeId {
@@ -115,6 +114,7 @@ impl ActionStateCodec {
             ActionStateCodec::Running => TypeId::of::<Running>(),
             ActionStateCodec::Sprinting => TypeId::of::<Sprinting>(),
             ActionStateCodec::Attacking => TypeId::of::<Attacking>(),
+            ActionStateCodec::Dodging => TypeId::of::<Dodging>(),
         }
     }
 }

@@ -18,19 +18,21 @@ pub(super) fn register_states(app: &mut App) {
     app.register_type::<Running>();
     app.register_type::<Sprinting>();
     app.register_type::<Attacking>();
+    app.register_type::<Dodging>();
 }
 
-pub static DEFAULT_STATES: LazyLock<Vec<TypeId>> = LazyLock::new(|| {
+pub static ALL_STATES: LazyLock<Vec<TypeId>> = LazyLock::new(|| {
     vec![
         TypeId::of::<Idle>(),
         TypeId::of::<Walking>(),
         TypeId::of::<Running>(),
         TypeId::of::<Sprinting>(),
         TypeId::of::<Attacking>(),
+        TypeId::of::<Dodging>(),
     ]
 });
 
-pub static DEFAULT_STATES_NON_ATTACKING: LazyLock<Vec<TypeId>> = LazyLock::new(|| {
+pub static MOVEMENT_STATES: LazyLock<Vec<TypeId>> = LazyLock::new(|| {
     vec![
         TypeId::of::<Idle>(),
         TypeId::of::<Walking>(),
@@ -71,8 +73,8 @@ pub trait MovementActionState: ActionState {}
 
 #[reflect_trait]
 pub trait TimedActionState: ActionState {
-    fn time_left(&self) -> f32;
-    fn set_time(&mut self, time: f32);
+    fn time_left(&self) -> Duration;
+    fn set_time(&mut self, time: Duration);
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect, Default)]
@@ -120,13 +122,13 @@ pub struct Attacking {
     #[getset(get = "pub")]
     attack: ResourceLocation<AttackResource>,
     #[getset(get = "pub", set = "pub")]
-    time_left: f32,
+    time_left: Duration,
 }
 impl Attacking {
     pub fn new(attack: &ResourceLocation<AttackResource>, duration: Duration) -> Self {
         Self {
             attack: attack.clone(),
-            time_left: duration.as_secs_f32(),
+            time_left: duration,
         }
     }
 }
@@ -136,10 +138,37 @@ impl ActionStateMarker for Attacking {
     }
 }
 impl TimedActionState for Attacking {
-    fn time_left(&self) -> f32 {
+    fn time_left(&self) -> Duration {
         self.time_left
     }
-    fn set_time(&mut self, time: f32) {
+    fn set_time(&mut self, time: Duration) {
+        self.time_left = time;
+    }
+}
+
+#[derive(Component, Debug, Clone, Reflect, Getters, Setters)]
+#[reflect(Component, ActionState, TimedActionState)]
+pub struct Dodging {
+    #[getset(get = "pub", set = "pub")]
+    time_left: Duration,
+}
+impl Dodging {
+    pub fn new(duration: Duration) -> Self {
+        Self {
+            time_left: duration,
+        }
+    }
+}
+impl ActionStateMarker for Dodging {
+    fn is_movement() -> bool {
+        false
+    }
+}
+impl TimedActionState for Dodging {
+    fn time_left(&self) -> Duration {
+        self.time_left
+    }
+    fn set_time(&mut self, time: Duration) {
         self.time_left = time;
     }
 }
@@ -149,20 +178,25 @@ pub static DEFAULT_TRANSITIONS: LazyLock<Vec<StateTransitionRule>> = LazyLock::n
         // Constructor automatically ignores self-transition rules,
         // so duplicates here are fine
         StateTransitionRule::always(
-            StateMatcher::Multiple(DEFAULT_STATES_NON_ATTACKING.clone()),
-            StateMatcher::Multiple(DEFAULT_STATES.clone()),
+            StateMatcher::Multiple(MOVEMENT_STATES.clone()),
+            StateMatcher::Multiple(ALL_STATES.clone()),
         ),
         StateTransitionRule::new(
             StateMatcher::Single(TypeId::of::<Attacking>()),
-            StateMatcher::Multiple(DEFAULT_STATES_NON_ATTACKING.clone()),
-            StateTransitionChecker::custom(Box::new(can_transition_from_attacking)),
+            StateMatcher::Multiple(MOVEMENT_STATES.clone()),
+            Box::new(timed_state_transition_checker::<Attacking>),
+        ),
+        StateTransitionRule::new(
+            StateMatcher::Single(TypeId::of::<Dodging>()),
+            StateMatcher::Multiple(MOVEMENT_STATES.clone()),
+            Box::new(timed_state_transition_checker::<Dodging>),
         ),
     ]
 });
 
-fn can_transition_from_attacking(prev: &dyn ActionState, _: &dyn ActionState) -> bool {
-    if let Some(attacking) = ActionState::as_any(prev).downcast_ref::<Attacking>()
-        && attacking.time_left > 0.0
+fn timed_state_transition_checker<T: TimedActionState>(prev: &dyn ActionState, _: &dyn ActionState) -> bool {
+    if let Some(timed_state) = ActionState::as_any(prev).downcast_ref::<T>()
+        && timed_state.time_left() > Duration::ZERO
     {
         false
     } else {
@@ -182,12 +216,12 @@ impl StateTransitionRule {
     pub fn new(
         prev_matcher: StateMatcher,
         next_matcher: StateMatcher,
-        transition_checker: StateTransitionChecker,
+        transition_checker: Box<StateTransitionFn>,
     ) -> Self {
         Self {
             prev_matcher,
             next_matcher,
-            transition_checker,
+            transition_checker: StateTransitionChecker::custom(transition_checker),
         }
     }
 
@@ -389,6 +423,6 @@ impl ActionStateCapabilities {
 }
 impl Default for ActionStateCapabilities {
     fn default() -> Self {
-        Self::new(DEFAULT_STATES.clone())
+        Self::new(ALL_STATES.clone())
     }
 }
