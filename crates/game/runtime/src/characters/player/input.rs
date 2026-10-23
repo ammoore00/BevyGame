@@ -1,7 +1,6 @@
 use crate::characters::attack::TryAttackEvent;
 use crate::characters::dodge::TryDodgeEvent;
 use crate::characters::player::{AimFacing, Player};
-use crate::characters::stamina::Stamina;
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{
     ActionState, ActionStateCapabilities, Idle, Running, Sprinting, Walking,
@@ -217,26 +216,15 @@ pub struct DodgeInputEvent {
 
 fn on_dodge_input(
     _: On<DodgeInputEvent>,
-    player: Single<(Entity, &mut Facing), (With<Player>, With<Children>)>,
-    aim_facing: Single<(&AimFacing, &ChildOf)>,
+    player: Single<(Entity, &MovementController), With<Player>>,
     mut commands: Commands,
 ) {
-    let (player_entity, mut facing) = player.into_inner();
-    let (aim_facing, child_of) = aim_facing.into_inner();
-
-    if child_of.0 != player_entity {
-        error!("AimFacing is not a child of the player entity!");
-        return;
-    }
-
-    let facing = {
-        if let Some(aim_facing) = aim_facing.0 {
-            *facing = aim_facing;
-        }
-        *facing
-    };
-
-    commands.trigger(TryDodgeEvent::new(player_entity, facing));
+    let (player_entity, movement_controller) = player.into_inner();
+    
+    let mut direction = movement_controller.intent;
+    direction.y = 0.0;
+    
+    commands.trigger(TryDodgeEvent::new(player_entity, direction));
 }
 
 #[derive(EntityEvent, Debug, Clone, derive_new::new)]

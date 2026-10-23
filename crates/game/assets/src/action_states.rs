@@ -151,12 +151,15 @@ pub struct Dodging {
     time_left: Duration,
     #[getset(get = "pub")]
     total_time: Duration,
+    #[getset(get = "pub")]
+    direction: Vec3,
 }
 impl Dodging {
-    pub fn new(duration: Duration) -> Self {
+    pub fn new(duration: Duration, direction: Vec3) -> Self {
         Self {
             time_left: duration,
             total_time: duration,
+            direction,
         }
     }
     

@@ -83,16 +83,16 @@ const DODGE_SPEED_START: f32 = 2.0;
 const DODGE_SPEED_PEAK: f32 = 10.0;
 
 fn apply_dodge_movement(
-    player: Single<(Entity, &Facing, Option<&Dodging>), With<Player>>,
+    player: Single<(Entity, Option<&Dodging>), With<Player>>,
     mut commands: Commands,
 ) {
-    let (player, facing, dodging) = player.into_inner();
+    let (player, dodging) = player.into_inner();
     
     if let Some(dodge_state) = dodging {
         let ease_multiplier = (dodge_state.completion() * PI).sin();
         let speed = DODGE_SPEED_START + ease_multiplier * (DODGE_SPEED_PEAK - DODGE_SPEED_START);
         
-        let target_velocity = Vec3::from(*facing) * speed;
+        let target_velocity = dodge_state.direction() * speed;
         let force = Force::target_velocity(target_velocity);
         commands.trigger(ApplyForce::new::<PlayerDodgeForce>(player, force));
     } else {
