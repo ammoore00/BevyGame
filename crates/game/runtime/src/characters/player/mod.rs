@@ -7,15 +7,19 @@ use assets::resource::characters::{CharacterResource, CharacterSpriteResource};
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::prelude::*;
-use common::Facing;
+use assets::action_states::Dodging;
+use common::{marker, Facing};
 use data::prelude::*;
 
 mod input;
 
 pub use input::{AimInputEvent, AttackInputEvent, DodgeInputEvent, JumpInputEvent, MoveInputEvent};
+use physics::{ApplyForce, Force, RemoveForce};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(input::plugin);
+    
+    app.add_systems(FixedUpdate, apply_dodge_movement);
 }
 
 pub(crate) fn player(position: Vec3) -> impl Scene {
@@ -71,3 +75,23 @@ impl Player {
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Default, Eq)]
 pub struct AimFacing(pub Option<Facing>);
+
+marker!(PlayerDodgeForce);
+
+const DODGE_FORCE: f32 = 8.0;
+
+fn apply_dodge_movement(
+    player: Single<(Entity, &Facing, Option<&Dodging>), With<Player>>,
+    mut commands: Commands,
+) {
+    let (player, facing, dodging) = player.into_inner();
+    let is_dodging = dodging.is_some();
+    
+    if is_dodging {
+        let target_velocity = Vec3::from(*facing) * DODGE_FORCE;
+        let force = Force::target_velocity(target_velocity);
+        commands.trigger(ApplyForce::new::<PlayerDodgeForce>(player, force));
+    } else {
+        commands.trigger(RemoveForce::new::<PlayerDodgeForce>(player))
+    }
+}
