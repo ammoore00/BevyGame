@@ -1,7 +1,7 @@
 use crate::resource::characters::AttackResource;
 use bevy::prelude::*;
 use data::prelude::ResourceLocation;
-use getset::{Getters, Setters};
+use getset::Getters;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -116,12 +116,11 @@ impl ActionStateMarker for Sprinting {
 }
 impl MovementActionState for Sprinting {}
 
-#[derive(Component, Debug, Clone, Reflect, Getters, Setters)]
+#[derive(Component, Debug, Clone, Reflect, Getters)]
 #[reflect(Component, ActionState, TimedActionState)]
 pub struct Attacking {
     #[getset(get = "pub")]
     attack: ResourceLocation<AttackResource>,
-    #[getset(get = "pub", set = "pub")]
     time_left: Duration,
 }
 impl Attacking {
@@ -146,17 +145,23 @@ impl TimedActionState for Attacking {
     }
 }
 
-#[derive(Component, Debug, Clone, Reflect, Getters, Setters)]
+#[derive(Component, Debug, Clone, Reflect, Getters)]
 #[reflect(Component, ActionState, TimedActionState)]
 pub struct Dodging {
-    #[getset(get = "pub", set = "pub")]
     time_left: Duration,
+    #[getset(get = "pub")]
+    total_time: Duration,
 }
 impl Dodging {
     pub fn new(duration: Duration) -> Self {
         Self {
             time_left: duration,
+            total_time: duration,
         }
+    }
+    
+    pub fn completion(&self) -> f32 {
+        1.0 - self.time_left.as_secs_f32() / self.total_time.as_secs_f32()
     }
 }
 impl ActionStateMarker for Dodging {
@@ -194,7 +199,10 @@ pub static DEFAULT_TRANSITIONS: LazyLock<Vec<StateTransitionRule>> = LazyLock::n
     ]
 });
 
-fn timed_state_transition_checker<T: TimedActionState>(prev: &dyn ActionState, _: &dyn ActionState) -> bool {
+fn timed_state_transition_checker<T: TimedActionState>(
+    prev: &dyn ActionState,
+    _: &dyn ActionState,
+) -> bool {
     if let Some(timed_state) = ActionState::as_any(prev).downcast_ref::<T>()
         && timed_state.time_left() > Duration::ZERO
     {

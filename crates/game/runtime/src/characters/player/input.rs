@@ -182,15 +182,13 @@ impl AttackInputEvent {
 }
 
 fn on_attack_input(
-    event: On<AttackInputEvent>,
-    mut player_query: Query<(Entity, &mut Facing), (With<Player>, With<Children>)>,
-    aim_facing_query: Query<(&AimFacing, &ChildOf)>,
+    _: On<AttackInputEvent>,
+    player: Single<(Entity, &mut Facing), (With<Player>, With<Children>)>,
+    aim_facing_query: Single<(&AimFacing, &ChildOf)>,
     mut commands: Commands,
 ) {
-    let (player_entity, mut facing) = player_query
-        .get_mut(event.entity)
-        .expect("Failed to get player entity");
-    let (aim_facing, child_of) = aim_facing_query.single().expect("Failed to get aim facing");
+    let (player_entity, mut facing) = player.into_inner();
+    let (aim_facing, child_of) = aim_facing_query.into_inner();
 
     if child_of.0 != player_entity {
         error!("AimFacing is not a child of the player entity!");
@@ -218,15 +216,13 @@ pub struct DodgeInputEvent {
 }
 
 fn on_dodge_input(
-    event: On<DodgeInputEvent>,
-    mut player_query: Query<(Entity, &mut Facing), (With<Player>, With<Children>)>,
-    aim_facing_query: Query<(&AimFacing, &ChildOf)>,
+    _: On<DodgeInputEvent>,
+    player: Single<(Entity, &mut Facing), (With<Player>, With<Children>)>,
+    aim_facing: Single<(&AimFacing, &ChildOf)>,
     mut commands: Commands,
 ) {
-    let (player_entity, mut facing) = player_query
-        .get_mut(event.entity)
-        .expect("Failed to get player entity");
-    let (aim_facing, child_of) = aim_facing_query.single().expect("Failed to get aim facing");
+    let (player_entity, mut facing) = player.into_inner();
+    let (aim_facing, child_of) = aim_facing.into_inner();
 
     if child_of.0 != player_entity {
         error!("AimFacing is not a child of the player entity!");
@@ -251,12 +247,9 @@ pub struct AimInputEvent {
 
 fn on_aim_input(
     event: On<AimInputEvent>,
-    mut query: Query<(&mut AimFacing, &mut Sprite, &mut Visibility, &ChildOf)>,
+    aim_facing: Single<(&mut AimFacing, &mut Sprite, &mut Visibility, &ChildOf)>,
 ) {
-    let Ok((mut aim_facing, mut sprite, mut visibility, child_of)) = query.single_mut() else {
-        error!("Failed to get aim facing query!");
-        return;
-    };
+    let (mut aim_facing, mut sprite, mut visibility, child_of) = aim_facing.into_inner();
 
     if child_of.0 != event.entity {
         error!("Aim facing event received for wrong entity!");
@@ -281,18 +274,11 @@ fn on_aim_input(
     }
 }
 
+/// Update the camera position to match the player position
+// TODO: Move this somewhere more appropriate
 fn camera_follow_player(
-    player_query: Query<&mut Transform, (With<Player>, Without<Camera2d>)>,
-    mut camera_query: Query<&mut Transform, With<Camera2d>>,
+    player_transform: Single<&mut Transform, (With<Player>, Without<Camera2d>)>,
+    mut camera: Single<&mut Transform, With<Camera2d>>,
 ) {
-    let Ok(player_transform) = player_query.single() else {
-        return;
-    };
-
-    let Ok(mut camera_transform) = camera_query.single_mut() else {
-        return;
-    };
-
-    // Update camera position to match player position
-    camera_transform.translation = player_transform.translation * Vec3::new(1.0, 1.0, 0.0);
+    camera.translation = player_transform.translation * Vec3::new(1.0, 1.0, 0.0);
 }

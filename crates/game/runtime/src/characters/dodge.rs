@@ -17,13 +17,11 @@ pub struct TryDodgeEvent {
 const DODGE_DURATION: Duration = Duration::from_millis(11 * 35);
 
 fn on_try_dodge(event: On<TryDodgeEvent>, mut commands: Commands) {
-    let facing = event.facing;
-
     commands.trigger(
         TrySetStateEvent::new(event.entity, Box::new(Dodging::new(DODGE_DURATION))).with_callback(
             move |entity, mut commands: Commands, result: Result<_, _>| {
                 if result.is_ok() {
-                    commands.trigger(ValidDodgeEvent::new(entity, facing));
+                    commands.trigger(ValidDodgeEvent::new(entity));
                 }
             },
         ),
@@ -33,10 +31,9 @@ fn on_try_dodge(event: On<TryDodgeEvent>, mut commands: Commands) {
 #[derive(EntityEvent, Debug, Clone)]
 pub struct ValidDodgeEvent {
     entity: Entity,
-    facing: Facing,
 }
 impl ValidDodgeEvent {
-    fn new(entity: Entity, facing: Facing) -> Self {
-        Self { entity, facing }
+    fn new(entity: Entity) -> Self {
+        Self { entity }
     }
 }

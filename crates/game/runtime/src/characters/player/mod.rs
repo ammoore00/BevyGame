@@ -1,5 +1,6 @@
 //! Player-specific behavior.
 
+use std::f32::consts::PI;
 use crate::characters::CharacterPrototype;
 use crate::characters::health::Health;
 use crate::characters::stamina::Stamina;
@@ -78,20 +79,23 @@ pub struct AimFacing(pub Option<Facing>);
 
 marker!(PlayerDodgeForce);
 
-const DODGE_FORCE: f32 = 8.0;
+const DODGE_SPEED_START: f32 = 2.0;
+const DODGE_SPEED_PEAK: f32 = 10.0;
 
 fn apply_dodge_movement(
     player: Single<(Entity, &Facing, Option<&Dodging>), With<Player>>,
     mut commands: Commands,
 ) {
     let (player, facing, dodging) = player.into_inner();
-    let is_dodging = dodging.is_some();
     
-    if is_dodging {
-        let target_velocity = Vec3::from(*facing) * DODGE_FORCE;
+    if let Some(dodge_state) = dodging {
+        let ease_multiplier = (dodge_state.completion() * PI).sin();
+        let speed = DODGE_SPEED_START + ease_multiplier * (DODGE_SPEED_PEAK - DODGE_SPEED_START);
+        
+        let target_velocity = Vec3::from(*facing) * speed;
         let force = Force::target_velocity(target_velocity);
         commands.trigger(ApplyForce::new::<PlayerDodgeForce>(player, force));
     } else {
-        commands.trigger(RemoveForce::new::<PlayerDodgeForce>(player))
+        commands.trigger(RemoveForce::new::<PlayerDodgeForce>(player));
     }
 }
