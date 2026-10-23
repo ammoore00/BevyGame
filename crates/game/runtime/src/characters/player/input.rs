@@ -183,11 +183,11 @@ impl AttackInputEvent {
 fn on_attack_input(
     _: On<AttackInputEvent>,
     player: Single<(Entity, &mut Facing), (With<Player>, With<Children>)>,
-    aim_facing_query: Single<(&AimFacing, &ChildOf)>,
+    aim_facing: Single<(&AimFacing, &ChildOf)>,
     mut commands: Commands,
 ) {
     let (player_entity, mut facing) = player.into_inner();
-    let (aim_facing, child_of) = aim_facing_query.into_inner();
+    let (aim_facing, child_of) = aim_facing.into_inner();
 
     if child_of.0 != player_entity {
         error!("AimFacing is not a child of the player entity!");
@@ -216,13 +216,35 @@ pub struct DodgeInputEvent {
 
 fn on_dodge_input(
     _: On<DodgeInputEvent>,
-    player: Single<(Entity, &MovementController), With<Player>>,
+    player: Single<(Entity, &MovementController, &mut Facing), (With<Player>, With<Children>)>,
+    aim_facing: Single<(&AimFacing, &ChildOf)>,
     mut commands: Commands,
 ) {
-    let (player_entity, movement_controller) = player.into_inner();
+    let (player_entity, movement_controller, mut facing) = player.into_inner();
     
+    // Base dodge direction on current movement
     let mut direction = movement_controller.intent;
     direction.y = 0.0;
+    
+    // If the player is not moving, dodge in the direction of their aiming
+    if direction == Vec3::ZERO {
+        let (aim_facing, child_of) = aim_facing.into_inner();
+        
+        if child_of.0 != player_entity {
+            error!("AimFacing is not a child of the player entity!");
+            return;
+        }
+        
+        // If the player is not aiming, dodge in the direction of their facing
+        let facing = {
+            if let Some(aim_facing) = aim_facing.0 {
+                *facing = aim_facing;
+            }
+            *facing
+        };
+        
+        direction = Vec3::from(facing);
+    }
     
     commands.trigger(TryDodgeEvent::new(player_entity, direction));
 }
