@@ -3,12 +3,12 @@
     image: "base:player/rolling",
     atlas: (
         format: 1,
-        size: (64, 64),
+        size: (48, 48),
         columns: 11,
         rows: 8,
     ),
     frame_data: (
         num_frames: 11,
-        interval: 50,
+        interval: 35,
     ),
 )

@@ -12,10 +12,10 @@
     ),
     allowed_states: Default,
     animations: {
-        Idle: "base:test/idle",
         Walking: "base:test/walking",
-        Running: "base:test/running",
+        Idle: "base:test/idle",
         Sprinting: "base:test/sprinting",
+        Running: "base:test/running",
     },
     attack_set: "base:test/basic_attack",
 )

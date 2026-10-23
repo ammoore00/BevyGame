@@ -60,11 +60,11 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let dodging = AnimationData::new(
         "player/rolling",
-        64,
-        64,
+        48,
+        48,
         FrameDataCodec::FixedInterval {
             num_frames: 11,
-            interval: 50,
+            interval: 35,
         },
     )
         .with_image("player/rolling");
