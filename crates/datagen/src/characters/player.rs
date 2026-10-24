@@ -76,7 +76,7 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
 
     let basic_attack_loc = "player/basic_attack";
 
-    let basic_attack_length: u64 = 350;
+    let basic_attack_length: u64 = 420;
     let basic_attack_frames: u32 = 7;
     let basic_attack_interval = basic_attack_length / basic_attack_frames as u64;
 
@@ -91,10 +91,13 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
     );
 
     let basic_attack_stamina_cost = 20;
+    
+    let hitbox_start_time = 300;
+    let hitbox_length = 120;
 
     let basic_attack_key_frames = vec![KeyFrameCodec {
-        start_time: 0,
-        end_time: basic_attack_length,
+        start_time: hitbox_start_time,
+        end_time: hitbox_start_time + hitbox_length,
         hitbox: HitboxCodec::Static {
             collider: ColliderCodec {
                 format: ColliderCodec::LATEST_FORMAT,

@@ -1,6 +1,7 @@
+use std::any::TypeId;
 use crate::inspector::InspectorRegistrar;
 use crate::inspector::readout::{InspectorReadout, ReadoutSection};
-use assets::action_states::ReflectActionState;
+use assets::action_states::{ReflectActionState, ReflectTimedActionState};
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
 use runtime::prelude::{AiState, GoalList, GoalState, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets};
@@ -20,7 +21,7 @@ fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
         .section({
             ReadoutSection::new("AI")
                 .maybe_item(
-                    reflected_trait_component_name::<ReflectPathfindStrategy>(entity, world)
+                    get_reflected_name::<ReflectPathfindStrategy>(entity, world)
                         .map(|strategy| format!("Pathfinding Strategy: {}", strategy)),
                 )
                 .maybe_item(
@@ -69,16 +70,47 @@ fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReado
             let health = entity
                 .get::<Health>()
                 .expect("Character created without Health component");
-            let action_state = reflected_trait_component_name::<ReflectActionState>(entity, world)
+            let action_state = get_reflected_name::<ReflectActionState>(entity, world)
                 .expect("Character without action state");
+            let timed_action_state = get_reflected_component::<ReflectTimedActionState>(entity, world)
+                .and_then(|reflect| {
+                    let type_registry = world.resource::<AppTypeRegistry>().clone();
+                    let type_registry = type_registry.read();
+                    
+                    for component_id in entity.archetype().components() {
+                        // Get the component's info
+                        if let Some(info) = world.components().get_info(*component_id)
+                            // Get the component's type id
+                            && let Some(type_id) = info.type_id()
+                            // Get the registration tied to that type id
+                            && let Some(registration) = type_registry.get(type_id)
+                            // Get the registration for general Components
+                            && let Some(reflect_component) = registration.data::<ReflectComponent>()
+                            // Get the registration for our specific reflected trait
+                            && let Some(reflect_timed_state) = registration.data::<ReflectTimedActionState>()
+                            // Get the component itself as a Reflect reference
+                            && let Some(reflected_component) = reflect_component.reflect(entity)
+                            // Downcast the generic Reflect into the actual trait we are trying to check for
+                            && let Some(timed_state) = reflect_timed_state.get(reflected_component)
+                        {
+                            let time_left = timed_state.time_left().as_secs_f32();
+                            let total_time = timed_state.total_time().as_secs_f32();
+                            
+                            return Some((time_left, total_time))
+                        }
+                    }
+                    
+                    None
+                });
             
             ReadoutSection::new("Generic")
                 .item(format!("Health: {} / {}", health.current, health.max))
                 .item(format!("Action State: {}", action_state))
+                .maybe_item(timed_action_state.map(|time_left| format!("Time Left in Action: {:.3} / {:.3}", time_left.0, time_left.1)))
         })
 }
 
-fn reflected_trait_component_name<TraitRegistration: Clone + Send + Sync + 'static>(
+fn get_reflected_name<TraitRegistration: Clone + Send + Sync + 'static>(
     entity: EntityRef,
     world: &DeferredWorld,
 ) -> Option<String> {
@@ -101,5 +133,24 @@ fn reflected_trait_component_name<TraitRegistration: Clone + Send + Sync + 'stat
         }
     }
 
+    None
+}
+
+fn get_reflected_component<TraitRegistration: Clone + Send + Sync + 'static>(
+    entity: EntityRef,
+    world: &DeferredWorld,
+) -> Option<TraitRegistration> {
+    let type_registry = world.resource::<AppTypeRegistry>().read();
+    
+    for component_id in entity.archetype().components() {
+        if let Some(info) = world.components().get_info(*component_id)
+            && let Some(type_id) = info.type_id()
+            && let Some(registration) = type_registry.get(type_id)
+            && let Some(data) = registration.data::<TraitRegistration>()
+        {
+            return Some(data.clone());
+        }
+    }
+    
     None
 }

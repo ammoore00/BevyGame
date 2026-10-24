@@ -14,8 +14,8 @@
     animations: {
         Walking: "base:player/walking",
         Sprinting: "base:player/sprinting",
-        Idle: "base:player/idle",
         Running: "base:player/running",
+        Idle: "base:player/idle",
         Dodging: "base:player/rolling",
     },
     attack_set: "base:player/basic_attack",

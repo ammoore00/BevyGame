@@ -75,6 +75,7 @@ pub trait MovementActionState: ActionState {}
 pub trait TimedActionState: ActionState {
     fn time_left(&self) -> Duration;
     fn set_time(&mut self, time: Duration);
+    fn total_time(&self) -> Duration;
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Reflect, Default)]
@@ -121,13 +122,16 @@ impl MovementActionState for Sprinting {}
 pub struct Attacking {
     #[getset(get = "pub")]
     attack: ResourceLocation<AttackResource>,
+    
     time_left: Duration,
+    total_time: Duration,
 }
 impl Attacking {
     pub fn new(attack: &ResourceLocation<AttackResource>, duration: Duration) -> Self {
         Self {
             attack: attack.clone(),
             time_left: duration,
+            total_time: duration,
         }
     }
 }
@@ -143,16 +147,19 @@ impl TimedActionState for Attacking {
     fn set_time(&mut self, time: Duration) {
         self.time_left = time;
     }
+    fn total_time(&self) -> Duration {
+        self.total_time
+    }
 }
 
 #[derive(Component, Debug, Clone, Reflect, Getters)]
 #[reflect(Component, ActionState, TimedActionState)]
 pub struct Dodging {
-    time_left: Duration,
-    #[getset(get = "pub")]
-    total_time: Duration,
     #[getset(get = "pub")]
     direction: Vec3,
+    
+    time_left: Duration,
+    total_time: Duration,
 }
 impl Dodging {
     pub fn new(duration: Duration, direction: Vec3) -> Self {
@@ -178,6 +185,9 @@ impl TimedActionState for Dodging {
     }
     fn set_time(&mut self, time: Duration) {
         self.time_left = time;
+    }
+    fn total_time(&self) -> Duration {
+        self.total_time
     }
 }
 
