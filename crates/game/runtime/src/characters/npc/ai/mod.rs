@@ -3,6 +3,7 @@ use crate::characters::npc::ai::pathfinding::pathfinder_scene;
 use crate::characters::npc::ai::state::state_scene;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems, WorldCoords};
+use crate::characters::npc::ai::movement::AiMovementIntent;
 
 mod movement;
 // TODO: Remove this pub
@@ -34,6 +35,7 @@ pub(super) fn ai_scene(pos: Vec3) -> impl Scene {
         @pathfinder_scene()
         @state_scene()
         NpcHome { pos }
+        AiMovementIntent
     }
 }
 
