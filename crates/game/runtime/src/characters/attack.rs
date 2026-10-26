@@ -21,16 +21,14 @@ use getset::Getters;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        Update,
-        update_attack_key_frames
-            .in_set(AppSystems::TickTimers)
-            .in_set(GameplaySystems)
-            .in_set(PausableSystems),
-    );
-
-    app.add_systems(
         FixedUpdate,
-        process_attack_hits.in_set(DetectorCollisionResponse),
+        (
+            update_attack_key_frames
+                .in_set(AppSystems::TickTimers)
+                .in_set(GameplaySystems)
+                .in_set(PausableSystems),
+            process_attack_hits.in_set(DetectorCollisionResponse),
+        )
     );
 
     app.add_observer(on_try_attack);

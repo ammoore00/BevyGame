@@ -250,7 +250,7 @@ impl KeyFrame {
         let normalized_start_time = *self.active_frames[0];
         let normalized_end_time = *self.active_frames[1];
 
-        if !(normalized_start_time..=normalized_end_time).contains(&attack_progress) {
+        if !(normalized_start_time..normalized_end_time).contains(&attack_progress) {
             return None;
         }
 

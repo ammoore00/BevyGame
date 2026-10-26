@@ -47,16 +47,16 @@ fn update_timed_state(
                 && let Some(timed_state) = reflect_timed_state.get_mut(reflect_data.into_inner())
             {
                 let time_left = timed_state.time_left();
-                let new_time = time_left - delta.min(time_left);
-                timed_state.set_time(new_time);
-
-                if new_time > Duration::ZERO {
+                
+                if time_left == Duration::ZERO {
+                    world
+                        .commands()
+                        .trigger(TrySetStateEvent::new(entity, Box::new(Idle)));
                     return;
                 }
-
-                world
-                    .commands()
-                    .trigger(TrySetStateEvent::new(entity, Box::new(Idle)));
+                
+                let new_time = time_left - delta.min(time_left);
+                timed_state.set_time(new_time);
             }
         });
     }
