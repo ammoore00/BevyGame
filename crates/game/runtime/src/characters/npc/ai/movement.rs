@@ -67,6 +67,11 @@ fn update_movement_state(
         };
 
         if (*new_state).type_id() == state.state_type_id() {
+            // If we didn't have to change states, then just trigger the event to update movement values if they changed
+            commands.trigger(MovementAttemptEvent {
+                entity,
+                success: true,
+            });
             continue;
         }
 
