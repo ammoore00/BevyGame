@@ -68,25 +68,19 @@ fn update_movement_state(
 
         if (*new_state).type_id() == state.state_type_id() {
             // If we didn't have to change states, then just trigger the event to update movement values if they changed
-            commands.trigger(MovementAttemptEvent {
-                entity,
-                success: true,
-            });
+            commands.trigger(MovementAttemptEvent::new(entity, true));
             continue;
         }
 
         commands.trigger(TrySetStateEvent::new(entity, new_state).with_callback(
             |entity, mut commands: Commands, result: Result<_, _>| {
-                commands.trigger(MovementAttemptEvent {
-                    entity,
-                    success: result.is_ok(),
-                })
+                commands.trigger(MovementAttemptEvent::new(entity, result.is_ok()))
             },
         ));
     }
 }
 
-#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_new::new)]
 struct MovementAttemptEvent {
     entity: Entity,
     success: bool,
@@ -99,10 +93,7 @@ fn on_movement_attempt(
     let (intent, mut controller) = match query.get_mut(event.entity) {
         Ok((intent, controller)) => (intent, controller),
         Err(err) => {
-            error!(
-                "Failed to get movement intent and controller for entity: {:?}",
-                err
-            );
+            error!("Failed to get movement intent and controller for entity: {err:?}");
             return;
         }
     };
