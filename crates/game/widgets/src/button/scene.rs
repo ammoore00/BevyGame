@@ -33,7 +33,6 @@ impl ButtonImpl {
             #Button
             ButtonImpl
             ui_widgets::Button
-            AutoDirectionalNavigation
             Hovered
             @style
             Children [

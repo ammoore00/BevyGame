@@ -16,20 +16,20 @@ fn spawn_main_menu() -> impl Scene {
         GlobalZIndex(2)
         DespawnOnExit<Menu>(Menu::Main)
         Children [
-            @button::with_text("Play", enter_loading_or_gameplay_screen)
+            @{button::with_text("Play", enter_loading_or_gameplay_screen).with_automatic_navigation_focused()}
             --
             @{
                 #[cfg(feature = "dev")]
-                bsn! { @button::with_text("Editor", enter_loading_or_editor_screen) }
+                bsn! { @{button::with_text("Editor", enter_loading_or_editor_screen).with_automatic_navigation()} }
             }
             --
-            @button::with_text("Settings", open_settings_menu)
+            @{button::with_text("Settings", open_settings_menu).with_automatic_navigation()}
             --
-            @button::with_text("Credits", open_credits_menu)
+            @{button::with_text("Credits", open_credits_menu).with_automatic_navigation()}
             --
             @{
                 #[cfg(not(target_family = "wasm"))]
-                bsn! { @button::with_text("Exit", exit_app) }
+                bsn! { @{button::with_text("Exit", exit_app).with_automatic_navigation()} }
             }
         ]
     }

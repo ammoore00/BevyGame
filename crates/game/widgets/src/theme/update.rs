@@ -32,7 +32,7 @@ fn apply_sprite_interaction_palette(
             &Hovered,
             Option<&Pressed>,
             &SpriteInteractionPalette,
-            &mut ImageNode
+            &mut ImageNode,
         ),
         Or<(Changed<Hovered>, Changed<Pressed>)>,
     >,
@@ -69,19 +69,15 @@ fn apply_gamepad_sprite_interaction_palette(
 ) {
     for (entity, hovered, pressed, palette, mut image) in palette_query.iter_mut() {
         let is_none = !hovered.get() && pressed.is_none();
-        
+
         if input_focus_visible.0 {
-            let mut focused = false;
-            button_query.iter().for_each(|(parent, children)| {
-                if input_focus.get() == Some(parent) {
-                    children.iter().for_each(|child| {
-                        if child == entity {
-                            focused = true;
-                        }
-                    });
-                }
-            });
-            
+            let focused_entity = input_focus.get();
+
+            let focused = focused_entity == Some(entity)
+                || button_query.iter().any(|(parent, children)| {
+                    focused_entity == Some(parent) && children.contains(&entity)
+                });
+
             if focused {
                 image.texture_atlas.as_mut().unwrap().index = palette.hovered;
             } else {
@@ -99,7 +95,7 @@ fn apply_background_interaction_palette(
             &Hovered,
             Option<&Pressed>,
             &BackgroundInteractionPalette,
-            &mut BackgroundColor
+            &mut BackgroundColor,
         ),
         Or<(Changed<Hovered>, Changed<Pressed>)>,
     >,
@@ -117,7 +113,7 @@ fn apply_background_interaction_palette(
         } else {
             palette.none
         };
-        
+
         *color = BackgroundColor(new_color);
     }
 }
@@ -137,19 +133,15 @@ fn apply_gamepad_background_interaction_palette(
     // For everything with a background color palette
     for (entity, hovered, pressed, palette, mut color) in palette_query.iter_mut() {
         let is_none = !hovered.get() && pressed.is_none();
-        
+
         if input_focus_visible.0 {
-            let mut focused = false;
-            button_query.iter().for_each(|(parent, children)| {
-                if input_focus.get() == Some(parent) {
-                    children.iter().for_each(|child| {
-                        if child == entity {
-                            focused = true;
-                        }
-                    });
-                }
-            });
-            
+            let focused_entity = input_focus.get();
+
+            let focused = focused_entity == Some(entity)
+                || button_query.iter().any(|(parent, children)| {
+                    focused_entity == Some(parent) && children.contains(&entity)
+                });
+
             if focused {
                 *color = BackgroundColor(palette.hovered);
             } else {

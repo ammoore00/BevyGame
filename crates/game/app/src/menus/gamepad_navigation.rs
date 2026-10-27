@@ -7,6 +7,7 @@ use bevy::picking::pointer::{Location, PointerId};
 use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use std::time::Duration;
+use bevy::ui::auto_directional_navigation::AutoDirectionalNavigator;
 use widgets::button::ButtonImpl;
 use widgets::theme::palette::SpriteInteractionPalette;
 
@@ -107,6 +108,7 @@ fn process_inputs(
         for action in DirectionalNavigationAction::variants() {
             // Unlike keyboard input, gamepads are bound to a specific controller
             if gamepad.just_pressed(action.gamepad_button()) {
+                commands.insert_resource(InputFocusVisible(true));
                 action_state.pressed_actions.insert(action);
             }
         }
@@ -115,8 +117,7 @@ fn process_inputs(
 
 fn navigate(
     action_state: Res<ActionState>,
-    mut directional_navigation: DirectionalNavigation,
-    mut _commands: Commands,
+    mut directional_navigation: AutoDirectionalNavigator,
 ) {
     // If the user is pressing both left and right, or up and down,
     // we should not move in either direction.
@@ -153,12 +154,12 @@ fn navigate(
             // In a real game, you would likely want to play a sound or show a visual effect
             // on both successful and unsuccessful navigation attempts
             Ok(entity) => {
-                println!("Navigated {direction:?} successfully. {entity} is now focused.");
+                info!("Navigated {direction:?} successfully. {entity} is now focused.");
 
                 // TODO: Fix this once audio is its own crate
                 //if let Some(ref interaction_assets) = interaction_assets { command_window.spawn(sound_effect(interaction_assets.hover.clone())); }
             }
-            Err(e) => println!("Navigation failed: {e}"),
+            Err(e) => error!("Navigation failed: {e}"),
         }
     }
 }

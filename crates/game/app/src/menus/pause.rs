@@ -29,11 +29,11 @@ fn spawn_pause_menu() -> impl Scene {
         Children [
             @text::header("Game paused")
             --
-            @button::with_text("Continue", close_menu)
+            @{button::with_text("Continue", close_menu).with_automatic_navigation_focused()}
             --
-            @button::with_text("Settings", open_settings_menu)
+            @{button::with_text("Settings", open_settings_menu).with_automatic_navigation()}
             --
-            @button::with_text("Quit to Title", quit_to_title)
+            @{button::with_text("Quit to Title", quit_to_title).with_automatic_navigation()}
         ]
     }
 }

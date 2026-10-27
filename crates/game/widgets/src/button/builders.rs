@@ -3,7 +3,10 @@ use crate::button::style::ButtonStyle;
 use crate::text::LARGE_FONT_SIZE;
 use crate::theme::palette::{BackgroundInteractionPalette, PRIMARY_TEXT};
 use bevy::ecs::system::IntoObserverSystem;
+use bevy::input_focus::AutoFocus;
 use bevy::prelude::*;
+use bevy::scene::{ResolveContext, ResolveSceneError, ResolvedScene};
+use bevy::ui::auto_directional_navigation::AutoDirectionalNavigation;
 
 #[derive(Debug, Clone)]
 pub struct ButtonWithTextOptions {
@@ -29,7 +32,49 @@ impl Default for ButtonWithTextOptions {
     }
 }
 
-pub fn with_text<E, M, I>(text: impl Into<String>, action: I) -> impl Scene
+pub struct ButtonScene {
+    inner: Box<dyn Scene>,
+}
+impl ButtonScene {
+    pub fn new(scene: impl Scene + 'static) -> Self {
+        Self {
+            inner: Box::new(scene),
+        }
+    }
+    
+    pub fn with_automatic_navigation(self) -> Self {
+        Self {
+            inner: Box::new(bsn! {
+                @{self.inner}
+                AutoDirectionalNavigation
+            })
+        }
+    }
+    
+    pub fn with_automatic_navigation_focused(self) -> Self {
+        Self {
+            inner: Box::new(bsn! {
+                @{self.inner}
+                AutoDirectionalNavigation
+                AutoFocus
+            })
+        }
+    }
+}
+impl Scene for ButtonScene {
+    fn resolve(self, context: &mut ResolveContext, scene: &mut ResolvedScene) -> Result<(), ResolveSceneError> {
+        self.inner.resolve(context, scene)
+    }
+}
+impl From<Box<dyn Scene>> for ButtonScene {
+    fn from(inner: Box<dyn Scene>) -> Self {
+        Self {
+            inner
+        }
+    }
+}
+
+pub fn with_text<E, M, I>(text: impl Into<String>, action: I) -> ButtonScene
 where
     E: EntityEvent,
     M: 'static,
@@ -42,7 +87,7 @@ pub fn with_text_ext<E, M, I>(
     text: impl Into<String>,
     options: ButtonWithTextOptions,
     action: I,
-) -> impl Scene
+) -> ButtonScene
 where
     E: EntityEvent,
     M: 'static,
@@ -66,7 +111,7 @@ pub fn with_text_inline<E, M, I>(
     options: ButtonWithTextOptions,
     palette: BackgroundInteractionPalette,
     action: I,
-) -> impl Scene
+) -> ButtonScene
 where
     E: EntityEvent,
     M: 'static,
@@ -85,7 +130,7 @@ where
     base(config, action)
 }
 
-pub fn with_style<E, M, I>(style: ButtonStyle, scale: usize, action: I) -> impl Scene
+pub fn with_style<E, M, I>(style: ButtonStyle, scale: usize, action: I) -> ButtonScene
 where
     E: EntityEvent,
     M: 'static,
@@ -106,16 +151,16 @@ where
     base(config, action)
 }
 
-fn base<E, M, I>(config: ButtonConfig, action: I) -> impl Scene
+fn base<E, M, I>(config: ButtonConfig, action: I) -> ButtonScene
 where
     E: EntityEvent,
     M: 'static,
     I: IntoObserverSystem<E, M> + Clone + Send + Sync,
 {
-    bsn! {
+    ButtonScene::new(bsn! {
         @ButtonImpl {
             @config
         }
         on(action)
-    }
+    })
 }
