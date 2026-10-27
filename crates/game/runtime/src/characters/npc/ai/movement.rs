@@ -65,42 +65,44 @@ fn update_movement_state(
         } else {
             Box::new(Idle)
         };
+        
+        let intent = intent.0;
 
         if (*new_state).type_id() == state.state_type_id() {
             // If we didn't have to change states, then just trigger the event to update movement values if they changed
-            commands.trigger(MovementAttemptEvent::new(entity, true));
+            commands.trigger(AIMovementInput::new(entity, intent));
             continue;
         }
 
         commands.trigger(TrySetStateEvent::new(entity, new_state).with_callback(
-            |entity, mut commands: Commands, result: Result<_, _>| {
-                commands.trigger(MovementAttemptEvent::new(entity, result.is_ok()))
+            move |entity, mut commands: Commands, result: Result<_, _>| {
+                if result.is_ok() {
+                    commands.trigger(AIMovementInput::new(entity, intent));
+                } else {
+                    commands.trigger(AIMovementInput::new(entity, Vec3::ZERO));
+                }
             },
         ));
     }
 }
 
-#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_new::new)]
-struct MovementAttemptEvent {
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, derive_new::new)]
+struct AIMovementInput {
     entity: Entity,
-    success: bool,
+    intent: Vec3,
 }
 
 fn on_movement_attempt(
-    event: On<MovementAttemptEvent>,
-    mut query: Query<(&AiMovementIntent, &mut MovementController)>,
+    event: On<AIMovementInput>,
+    mut query: Query<&mut MovementController>,
 ) {
-    let (intent, mut controller) = match query.get_mut(event.entity) {
-        Ok((intent, controller)) => (intent, controller),
+    let mut controller = match query.get_mut(event.entity) {
+        Ok(controller) => controller,
         Err(err) => {
             error!("Failed to get movement intent and controller for entity: {err:?}");
             return;
         }
     };
-
-    if event.success {
-        controller.intent = intent.0;
-    } else {
-        controller.intent = Vec3::ZERO;
-    }
+    
+    controller.intent = event.intent;
 }
