@@ -54,6 +54,7 @@ bevy = { version = "0.20.0", default-features = false, features = [
 ] }
 const_format = "0.2.36"
 derive-new = "0.7.0"
+enum-map = "3.1.0"
 serde = "1.0.228"
 getset = "0.1.6"
 paste = "1.0.15"
