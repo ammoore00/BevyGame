@@ -7,6 +7,7 @@ use assets::codec::{
     HealthEventKind, HitboxCodec, KeyFrameCodec,
 };
 use std::collections::HashMap;
+use crate::characters::attack::basic_attack;
 
 pub(super) fn generate_test_npc() -> Result<(), WriteError> {
     let mut animation_map = HashMap::new();
@@ -62,57 +63,15 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
     animation_map.insert(ActionStateCodec::Sprinting, sprinting);
 
     // Attacks
-
-    let mut attacks = Vec::new();
-
-    let basic_attack_loc = "test/basic_attack";
-
-    let basic_attack_length: u64 = 560;
-    let basic_attack_frames: u32 = 7;
-    let basic_attack_interval = basic_attack_length / basic_attack_frames as u64;
-
-    let basic_attack_animation = AnimationData::new(
-        "player/basic_attack",
-        96,
-        96,
-        FrameDataCodec::FixedInterval {
-            num_frames: basic_attack_frames as usize,
-            interval: basic_attack_interval,
-        },
-    );
-
-    let basic_attack_stamina_cost = 20;
     
-    let hitbox_start_time = 380;
-    let hitbox_length = 160;
-
-    let basic_attack_key_frames = vec![KeyFrameCodec {
-        start_time: hitbox_start_time,
-        end_time: hitbox_start_time + hitbox_length,
-        hitbox: HitboxCodec::Static {
-            collider: ColliderCodec {
-                format: ColliderCodec::LATEST_FORMAT,
-                collider: ColliderDataCodec::Sphere(1.0),
-            },
-            offset: (0., 0., 1.).into(),
-        },
-
-        health_event: HealthEventKind::Damage(30, DamageKind::Generic),
-        disable_on_hit_iframes: None.into(),
-
-        exclusion_group: None.into(),
-    }];
-
-    let basic_attack = AttackData::new(
-        basic_attack_loc,
-        basic_attack_length,
-        basic_attack_stamina_cost,
-        basic_attack_animation,
-        format!("{}_particle", basic_attack_loc).as_str(),
-        basic_attack_key_frames,
-    );
+    let mut attacks = Vec::new();
+    
+    let basic_attack_loc = "test/basic_attack";
+    let basic_attack_image = "player/basic_attack";
+    
+    let basic_attack = basic_attack(basic_attack_loc, basic_attack_image);
     attacks.push(basic_attack);
-
+    
     let attack_set = AttackSetData::new(basic_attack_loc, attacks);
 
     let collider = ColliderDataCodec::Capsule(CapsuleCodec::Vertical {

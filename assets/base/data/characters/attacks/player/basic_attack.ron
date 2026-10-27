@@ -1,17 +1,17 @@
 (
     format: 1,
-    duration: 560,
+    duration: 500,
     stamina_cost: 20,
     animation: "base:player/basic_attack",
     particle_sprite: "base:player/basic_attack_particle",
     key_frames: [
         (
-            start_time: 280,
-            end_time: 440,
+            start_time: 250,
+            end_time: 350,
             hitbox: Static(
                 collider: (
                     format: 1,
-                    collider: Sphere(1.0),
+                    collider: Sphere(0.75),
                 ),
                 offset: (0.0, 0.0, 1.0),
             ),

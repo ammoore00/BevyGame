@@ -12,8 +12,8 @@
     ),
     allowed_states: Default,
     animations: {
-        Dodging: "base:player/rolling",
         Running: "base:player/running",
+        Dodging: "base:player/rolling",
         Idle: "base:player/idle",
         Sprinting: "base:player/sprinting",
         Walking: "base:player/walking",

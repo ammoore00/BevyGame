@@ -114,7 +114,10 @@ impl ParticleAnimation {
 
         self.current_frame += 1;
         self.timer
-            .set_duration(self.frame_data.frame_duration(self.current_frame).unwrap());
+            .set_duration(self.frame_data.frame_duration(self.current_frame).unwrap_or_else(|| {
+                error!("Particle animation frame duration not found");
+                Duration::ZERO
+            }));
     }
 
     fn has_expired(&self) -> bool {

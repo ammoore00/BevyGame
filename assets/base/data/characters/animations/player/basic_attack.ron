@@ -8,7 +8,6 @@
         rows: 8,
     ),
     frame_data: (
-        num_frames: 7,
-        interval: 80,
+        intervals: [50, 200, 50, 50, 50, 50, 50],
     ),
 )

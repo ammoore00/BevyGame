@@ -1,5 +1,6 @@
 mod player;
 mod test_npc;
+mod attack;
 
 use crate::characters::player::generate_player;
 use crate::characters::test_npc::generate_test_npc;

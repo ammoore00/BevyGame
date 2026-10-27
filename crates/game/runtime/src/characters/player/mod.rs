@@ -79,8 +79,8 @@ pub struct AimFacing(pub Option<Facing>);
 
 marker!(PlayerDodgeForce);
 
-const DODGE_SPEED_START: f32 = 2.0;
-const DODGE_SPEED_PEAK: f32 = 10.0;
+const DODGE_SPEED_START: f32 = 1.0;
+const DODGE_SPEED_PEAK: f32 = 7.0;
 
 fn apply_dodge_movement(
     player: Single<(Entity, Option<&Dodging>), With<Player>>,
