@@ -5,6 +5,7 @@ use crate::theme::palette::BackgroundInteractionPalette;
 use assets::resource::UiSpriteResource;
 use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
+use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
 use bevy::ui::auto_directional_navigation::AutoDirectionalNavigation;
 use bevy::ui_widgets;
@@ -33,6 +34,7 @@ impl ButtonImpl {
             ButtonImpl
             ui_widgets::Button
             AutoDirectionalNavigation
+            Hovered
             @style
             Children [
                 #ButtonChildren

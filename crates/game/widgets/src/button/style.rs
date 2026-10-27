@@ -1,6 +1,8 @@
 use crate::button::scene::ButtonImpl;
 use crate::theme::palette::SpriteInteractionPalette;
+use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
+use bevy::ui::Pressed;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_button_style);
@@ -81,17 +83,22 @@ fn update_button_style(
     mut button_query: Query<
         (
             &ButtonStyle,
-            &Interaction,
+            &Hovered,
+            Option<&Pressed>,
             &mut ImageNode,
             &mut SpriteInteractionPalette,
         ),
         (With<ButtonImpl>, Changed<ButtonStyle>),
     >,
 ) {
-    for (style, interaction, mut image_node, mut interaction_palette) in &mut button_query {
+    for (style, hovered, pressed, mut image_node, mut interaction_palette) in &mut button_query {
+        let hovered = hovered.0;
+        let pressed = pressed.is_some();
+
         apply_button_style(
             *style,
-            *interaction,
+            hovered,
+            pressed,
             &mut texture_atlas_layouts,
             &mut image_node,
             &mut interaction_palette,
@@ -101,7 +108,8 @@ fn update_button_style(
 
 fn apply_button_style(
     style: ButtonStyle,
-    interaction: Interaction,
+    hovered: bool,
+    pressed: bool,
     texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
     image_node: &mut ImageNode,
     interaction_palette: &mut SpriteInteractionPalette,
@@ -109,10 +117,12 @@ fn apply_button_style(
     let layout = texture_atlas_layouts.add(style.make_layout());
     let palette = style.get_palette();
 
-    let index = match interaction {
-        Interaction::None => palette.none,
-        Interaction::Hovered => palette.hovered,
-        Interaction::Pressed => palette.pressed,
+    let index = if pressed {
+        palette.pressed
+    } else if hovered {
+        palette.hovered
+    } else {
+        palette.none
     };
 
     image_node.image_mode = NodeImageMode::Sliced(style.make_slicer());
