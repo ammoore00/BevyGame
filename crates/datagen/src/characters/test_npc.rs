@@ -67,7 +67,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
 
     let basic_attack_loc = "test/basic_attack";
 
-    let basic_attack_length: u64 = 420;
+    let basic_attack_length: u64 = 560;
     let basic_attack_frames: u32 = 7;
     let basic_attack_interval = basic_attack_length / basic_attack_frames as u64;
 
@@ -83,8 +83,8 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
 
     let basic_attack_stamina_cost = 20;
     
-    let hitbox_start_time = 300;
-    let hitbox_length = 120;
+    let hitbox_start_time = 380;
+    let hitbox_length = 160;
 
     let basic_attack_key_frames = vec![KeyFrameCodec {
         start_time: hitbox_start_time,

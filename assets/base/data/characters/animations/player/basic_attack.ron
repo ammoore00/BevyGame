@@ -9,6 +9,6 @@
     ),
     frame_data: (
         num_frames: 7,
-        interval: 60,
+        interval: 80,
     ),
 )
