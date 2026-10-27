@@ -1,8 +1,5 @@
 use bevy::prelude::*;
-use common::{
-    AppSystems, Facing, GameInputSystems, GameplaySystems, PausableSystems, ScreenCoords,
-    WorldPosition, rotate_screen_space_to_facing, rotate_screen_space_to_movement,
-};
+use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameInputSystems, GameplaySystems, MainCamera, PausableSystems, ScreenCoords, WorldPosition};
 use input::gamepad::{GamepadStick, get_stick_with_deadzone};
 use input::{InputReader, LastInputMode};
 use runtime::LevelLoadedSystems;
@@ -63,14 +60,15 @@ fn record_aim_input(
         let Some(last_cursor) = input_reader.mouse_cursor_mut().read().last() else {
             return;
         };
-
-        let cursor_position = last_cursor.position
-            - Vec2::from((window.resolution.width(), window.resolution.height())) / 2.0;
-
-        let mut delta = cursor_position - ScreenCoords::from(position.0).xz();
+        
+        let window_center =
+            Vec2::new(window.resolution.width(), window.resolution.height()) / 2.0;
+        
+        let mut delta = last_cursor.position - window_center;
         delta.y /= 0.707; // Scale to isometric
+        
         let new_facing = Some(Facing::from(rotate_screen_space_to_facing(delta, false)));
-
+        
         commands.trigger(AimInputEvent::new(player_entity, new_facing));
     }
 }
