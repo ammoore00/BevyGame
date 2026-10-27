@@ -56,5 +56,5 @@ enum AiSystems {
 #[derive(Component, Debug, Clone, Copy, Default)]
 struct NpcHome {
     pos: WorldCoords,
-    facing: Facing,
+    _facing: Facing,
 }

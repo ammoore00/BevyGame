@@ -6,7 +6,7 @@ use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::scene::Ready;
 use common::marker;
-use widgets::text::{MEDIUM_FONT_SIZE, TINY_FONT_SIZE, TextContent, TextFormatting};
+use widgets::text::{MEDIUM_FONT_SIZE, TINY_FONT_SIZE, TextFormatting};
 use widgets::theme::palette::PRIMARY_TEXT;
 use crate::inspector::readout::InspectorReadout;
 

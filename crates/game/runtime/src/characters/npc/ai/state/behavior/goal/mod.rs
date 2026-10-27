@@ -1,7 +1,7 @@
 mod impls;
 
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Write};
+use std::fmt::{Display, Formatter};
 use crate::characters::npc::ai::state::behavior::sense::SensedTargets;
 use crate::characters::npc::ai::{AiSystems, NpcHome};
 use bevy::ecs::system::SystemParam;
@@ -156,7 +156,7 @@ fn update_ai_goal(
     state_query: Query<(Entity, &mut GoalState, &GoalList)>,
     goal_data: GoalSystemData,
 ) {
-    for (entity, mut state, mut goals) in state_query {
+    for (entity, mut state, goals) in state_query {
         let goal_data = match GoalData::try_from_system_data(entity, &goal_data) {
             Ok(goal_data) => goal_data,
             Err(err) => {

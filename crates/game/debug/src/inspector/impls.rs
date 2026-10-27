@@ -1,4 +1,3 @@
-use std::any::TypeId;
 use crate::inspector::InspectorRegistrar;
 use crate::inspector::readout::{InspectorReadout, ReadoutSection};
 use assets::action_states::{ReflectActionState, ReflectTimedActionState};
@@ -72,8 +71,9 @@ fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReado
                 .expect("Character created without Health component");
             let action_state = get_reflected_name::<ReflectActionState>(entity, world)
                 .expect("Character without action state");
+            // TODO: Fix this travesty
             let timed_action_state = get_reflected_component::<ReflectTimedActionState>(entity, world)
-                .and_then(|reflect| {
+                .and_then(|_| {
                     let type_registry = world.resource::<AppTypeRegistry>().clone();
                     let type_registry = type_registry.read();
                     

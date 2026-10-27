@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameInputSystems, GameplaySystems, MainCamera, PausableSystems, ScreenCoords, WorldPosition};
+use common::{rotate_screen_space_to_facing, rotate_screen_space_to_movement, AppSystems, Facing, GameInputSystems, GameplaySystems, PausableSystems};
 use input::gamepad::{GamepadStick, get_stick_with_deadzone};
 use input::{InputReader, LastInputMode};
 use runtime::LevelLoadedSystems;
@@ -29,12 +29,12 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn record_aim_input(
-    player: Single<(Entity, &WorldPosition), With<Player>>,
+    player: Single<Entity, With<Player>>,
     window: Query<&Window>,
     mut input_reader: InputReader,
     mut commands: Commands,
 ) {
-    let (player_entity, position) = player.into_inner();
+    let player_entity = player.into_inner();
     let window = window.single().expect("Failed to find window");
 
     if let Some(gamepad) = input_reader.gamepad()

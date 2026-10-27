@@ -35,12 +35,12 @@ impl InspectorReadout {
         self
     }
     
-    pub fn push_sections(mut self, sections: Vec<ReadoutSection>) -> Self {
+    pub fn _push_sections(mut self, sections: Vec<ReadoutSection>) -> Self {
         self.sections.extend(sections);
         self
     }
     
-    pub fn extend(&mut self, other: Self) {
+    pub fn _extend(&mut self, other: Self) {
         self.sections.extend(other.sections);
     }
     

@@ -10,7 +10,7 @@ pub struct TranslationCodec {
     pub ui: TranslationList<UiTextResource>,
 }
 impl TranslationCodec {
-    const LATEST_FORMAT: u8 = 1;
+    const _LATEST_FORMAT: u8 = 1;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

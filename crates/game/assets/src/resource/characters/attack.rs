@@ -354,13 +354,13 @@ pub struct HitboxData {
 #[derive(Debug, Clone, Getters, derive_new::new)]
 pub struct InterpolatedHitbox {
     #[getset(get = "pub")]
-    collider_start: ColliderCodec,
+    _collider_start: ColliderCodec,
     #[getset(get = "pub")]
-    collider_end: ColliderCodec,
+    _collider_end: ColliderCodec,
     #[getset(get = "pub")]
-    offset_start: WorldCoords,
+    _offset_start: WorldCoords,
     #[getset(get = "pub")]
-    offset_end: WorldCoords,
+    _offset_end: WorldCoords,
 }
 impl InterpolatedHitbox {
     fn get_current_interpolated_hitbox(&self, _frame_progress: FrameProgress) -> HitboxData {
