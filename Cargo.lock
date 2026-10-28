@@ -2611,6 +2611,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "common",
+ "derive-new",
  "enum-map",
  "input",
  "runtime",

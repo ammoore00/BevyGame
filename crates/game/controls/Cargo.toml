@@ -9,6 +9,7 @@ input = { workspace = true }
 runtime = { workspace = true }
 
 bevy = { workspace = true }
+derive-new = { workspace = true }
 enum-map = { workspace = true }
 
 [lints]

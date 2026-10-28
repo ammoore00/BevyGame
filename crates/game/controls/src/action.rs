@@ -1,7 +1,7 @@
+use crate::buffer::{InputKind, InsertBuffer};
 use crate::{PlayerControlSystems, last_input_gamepad, last_input_keyboard};
 use bevy::prelude::*;
 use input::InputReader;
-use runtime::characters::player::{AttackInputEvent, DodgeInputEvent, JumpInputEvent, Player};
 
 pub(super) fn plugin(app: &mut App) {
     let gamepad_inputs = (attack_gamepad, dodge_gamepad, jump_gamepad);
@@ -39,11 +39,10 @@ impl From<MouseButton> for InputButton {
 }
 
 fn action_input(
-    player: Single<Entity, With<Player>>,
     input_reader: InputReader,
-    commands: Commands,
+    mut commands: Commands,
     input: impl Into<InputButton>,
-    event_callback: Box<dyn FnOnce(Commands, Entity)>,
+    input_kind: InputKind,
 ) {
     let input = input.into();
 
@@ -57,41 +56,29 @@ fn action_input(
     };
 
     if trigger {
-        event_callback(commands, player.entity());
+        commands.trigger(InsertBuffer::new(input_kind));
     }
 }
 
 macro_rules! input {
-    ($fn_name:ident, $input:expr, $event_callback:expr) => {
-        fn $fn_name(
-            player: Single<Entity, With<Player>>,
-            input_reader: InputReader,
-            commands: Commands,
-        ) {
-            action_input(
-                player,
-                input_reader,
-                commands,
-                $input,
-                Box::new(|mut commands, entity| {
-                    commands.entity(entity).trigger($event_callback);
-                }),
-            );
+    ($fn_name:ident, $input:expr, $input_kind:expr) => {
+        fn $fn_name(input_reader: InputReader, commands: Commands) {
+            action_input(input_reader, commands, $input, $input_kind);
         }
     };
 }
 
 // TODO: Remappable controls
 
-input!(jump_gamepad, GamepadButton::South, JumpInputEvent);
-input!(jump_keyboard, KeyCode::Space, JumpInputEvent);
+input!(jump_gamepad, GamepadButton::South, InputKind::Jump);
+input!(jump_keyboard, KeyCode::Space, InputKind::Jump);
 
 input!(
     attack_gamepad,
     GamepadButton::RightTrigger,
-    AttackInputEvent
+    InputKind::Attack
 );
-input!(attack_keyboard, MouseButton::Left, AttackInputEvent);
+input!(attack_keyboard, MouseButton::Left, InputKind::Attack);
 
-input!(dodge_gamepad, GamepadButton::LeftTrigger, DodgeInputEvent);
-input!(dodge_keyboard, MouseButton::Middle, DodgeInputEvent);
+input!(dodge_gamepad, GamepadButton::LeftTrigger, InputKind::Dodge);
+input!(dodge_keyboard, MouseButton::Middle, InputKind::Dodge);

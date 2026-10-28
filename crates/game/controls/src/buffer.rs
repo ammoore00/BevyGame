@@ -1,14 +1,15 @@
-use std::sync::Arc;
 use bevy::prelude::*;
-use enum_map::{Enum, EnumMap};
-use std::time::Duration;
 use common::AppSystems;
+use enum_map::{Enum, EnumMap};
+use runtime::characters::player::{AttackInputEvent, DodgeInputEvent, JumpInputEvent};
+use runtime::prelude::Player;
+use std::time::Duration;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<InputBuffer>();
-    
+
     app.add_systems(Update, update_input_buffer.in_set(AppSystems::RecordInput));
-    
+
     app.add_observer(on_insert_buffer);
     app.add_observer(on_clear_buffer);
 }
@@ -21,12 +22,19 @@ pub enum InputKind {
     Attack,
     Jump,
 }
-
-type InputEvent = dyn Fn(Commands) + Send + Sync;
+impl InputKind {
+    fn trigger_event(&self, entity: Entity, mut commands: Commands) {
+        let mut entity = commands.entity(entity);
+        match self {
+            InputKind::Dodge => entity.trigger(DodgeInputEvent),
+            InputKind::Attack => entity.trigger(AttackInputEvent),
+            InputKind::Jump => entity.trigger(JumpInputEvent),
+        };
+    }
+}
 
 #[derive(Clone)]
 struct BufferedInput {
-    event: Arc<InputEvent>,
     expiration_timestamp: Duration,
 }
 
@@ -35,8 +43,10 @@ struct InputBuffer {
     inputs: EnumMap<InputKind, Option<BufferedInput>>,
 }
 
-/// For each input in the buffer, trigger the event for it every frame until either the event succeeds or the input expires
+/// For each input in the buffer, trigger the event for it every frame
+/// until either the event succeeds or the input expires
 fn update_input_buffer(
+    player: Single<Entity, With<Player>>,
     input_buffer: Res<InputBuffer>,
     time: Res<Time>,
     mut commands: Commands,
@@ -45,41 +55,40 @@ fn update_input_buffer(
         let Some(input) = input else {
             continue;
         };
-        
+
         if input.expiration_timestamp < time.elapsed() {
             commands.trigger(ClearBuffer { kind });
             continue;
         }
-        
-        (input.event)(commands.reborrow());
+
+        kind.trigger_event(player.entity(), commands.reborrow());
     }
 }
 
-#[derive(Event, Clone)]
+#[derive(Event, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_new::new)]
 pub struct InsertBuffer {
     kind: InputKind,
-    event: Arc<InputEvent>
 }
 
-#[derive(Event, Debug, Clone)]
+#[derive(Event, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_new::new)]
 pub struct ClearBuffer {
     kind: InputKind,
 }
 
 fn on_insert_buffer(
     event: On<InsertBuffer>,
-    mut input_buffer: ResMut<InputBuffer>,
-    time: Res<Time>,
+    _input_buffer: ResMut<InputBuffer>,
+    _time: Res<Time>,
+
+    mut commands: Commands,
+    player: Single<Entity, With<Player>>,
 ) {
-    input_buffer.inputs[event.kind] = Some(BufferedInput {
-        event: event.event.clone(),
-        expiration_timestamp: time.elapsed() + INPUT_BUFFER_DURATION,
-    });
+    event.kind.trigger_event(player.entity(), commands.reborrow())
+    //input_buffer.inputs[event.kind] = Some(BufferedInput {
+    //    expiration_timestamp: time.elapsed() + INPUT_BUFFER_DURATION,
+    //});
 }
 
-fn on_clear_buffer(
-    event: On<ClearBuffer>,
-    mut input_buffer: ResMut<InputBuffer>,
-) {
+fn on_clear_buffer(event: On<ClearBuffer>, mut input_buffer: ResMut<InputBuffer>) {
     input_buffer.inputs[event.kind] = None;
 }

@@ -34,9 +34,9 @@ impl Plugin for ControlsPlugin {
 struct PlayerControlSystems;
 
 fn last_input_gamepad(input_reader: InputReader) -> bool {
-    **input_reader.last_input_mode() != LastInputMode::Gamepad
+    **input_reader.last_input_mode() == LastInputMode::Gamepad
 }
 
 fn last_input_keyboard(input_reader: InputReader) -> bool {
-    **input_reader.last_input_mode() != LastInputMode::MouseAndKeyboard
+    **input_reader.last_input_mode() == LastInputMode::MouseAndKeyboard
 }
