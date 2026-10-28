@@ -107,10 +107,8 @@ fn on_movement_input(
     controller.intent.y = prev_y;
 }
 
-#[derive(EntityEvent, derive_new::new)]
-pub struct JumpInputEvent {
-    entity: Entity,
-}
+#[derive(EntityEvent)]
+pub struct JumpInputEvent(pub Entity);
 
 // TODO: Convert jumping to use its own state
 fn on_jump_input(
@@ -127,7 +125,7 @@ fn on_jump_input(
     >,
     mut commands: Commands,
 ) {
-    let Ok((entity, tracker, physics, position, idle)) = player_query.get_mut(event.entity) else {
+    let Ok((entity, tracker, physics, position, idle)) = player_query.get_mut(event.0) else {
         error!("Failed to get player movement info");
         return;
     };
@@ -162,23 +160,7 @@ fn on_jump_input(
 }
 
 #[derive(EntityEvent)]
-pub struct AttackInputEvent {
-    entity: Entity,
-    _attack: ResourceLocation<AttackResource>,
-}
-impl AttackInputEvent {
-    pub fn new(entity: Entity, attack_loc: impl AsRef<str>) -> Self {
-        Self {
-            entity,
-            _attack: loc::<AttackResource>(attack_loc.as_ref()).unwrap_or_else(|_| {
-                panic!(
-                    "Failed to parse attack resource location: {}",
-                    attack_loc.as_ref()
-                )
-            }),
-        }
-    }
-}
+pub struct AttackInputEvent(pub Entity);
 
 fn on_attack_input(
     _: On<AttackInputEvent>,
@@ -209,10 +191,8 @@ fn on_attack_input(
     ));
 }
 
-#[derive(EntityEvent, Debug, Clone, derive_new::new)]
-pub struct DodgeInputEvent {
-    entity: Entity,
-}
+#[derive(EntityEvent, Debug, Clone)]
+pub struct DodgeInputEvent(pub Entity);
 
 fn on_dodge_input(
     _: On<DodgeInputEvent>,
