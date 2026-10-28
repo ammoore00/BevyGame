@@ -39,12 +39,35 @@ pub(super) fn plugin(app: &mut App) {
 pub const ON_HIT_IFRAMES: Duration = Duration::from_millis(250);
 
 /// Initiate an attack from the entity to the provided facing
-#[derive(EntityEvent, Debug, Clone, derive_new::new)]
+#[derive(EntityEvent, Debug, Clone)]
 pub struct TryAttackEvent {
     entity: Entity,
     facing: Facing,
     attack: ResourceLocation<AttackResource>,
+    
+    send_confirmation: bool,
 }
+impl TryAttackEvent {
+    pub fn new(entity: Entity, facing: Facing, attack: ResourceLocation<AttackResource>) -> Self {
+        Self {
+            entity,
+            facing,
+            attack,
+            send_confirmation: false,
+        }
+    }
+    
+    pub fn with_confirmation(self) -> Self {
+        Self {
+            send_confirmation: true,
+            ..self
+        }
+    }
+}
+
+/// If `send_confirmation` in `TryAttackEvent` is true, this event is emitted if the attack was successful
+#[derive(EntityEvent, Debug, Clone)]
+pub struct AttackConfirmationEvent(Entity);
 
 /// Initiate attack in response to an attack event request
 fn on_try_attack(event: On<TryAttackEvent>, context: AttackContext, mut commands: Commands) {
@@ -56,13 +79,17 @@ fn on_try_attack(event: On<TryAttackEvent>, context: AttackContext, mut commands
         return;
     };
 
-    let TryAttackEvent { facing, attack, .. } = event.clone();
+    let TryAttackEvent { facing, attack, send_confirmation, .. } = event.clone();
 
     let attack_state = Box::new(Attacking::new(&event.attack, *attack_def.duration()));
     let attack_event = TrySetStateEvent::new(event.entity, attack_state).with_callback(
         move |entity, mut commands: Commands, result: Result<_, _>| {
             if result.is_ok() {
                 commands.trigger(ValidAttackEvent::new(entity, facing, attack.clone()));
+                
+                if send_confirmation {
+                    commands.entity(entity).trigger(AttackConfirmationEvent);
+                }
             }
         },
     );
