@@ -190,7 +190,7 @@ fn add_objects(
     let player = player(Vec3::new(3.0, 1.0, 3.0));
     let player = commands.spawn_scene(player).id();
     
-    let test_npc = npc_bundle("test".parse().unwrap(), Vec3::new(5.0, 1.0, 3.0));
+    let test_npc = npc_bundle("test".parse().unwrap(), Vec3::new(10.0, 1.0, 10.0));
     let test_npc = commands.spawn_scene(test_npc).id();
 
     let children = &[

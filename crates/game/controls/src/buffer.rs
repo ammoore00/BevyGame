@@ -17,8 +17,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_clear_buffer);
 }
 
-const INPUT_BUFFER_DURATION: Duration = Duration::from_millis(100);
-
 #[derive(Enum, Debug, Clone, Copy, PartialEq, Eq, Hash, ConstParamTy, Display)]
 pub enum InputKind {
     Dodge,
@@ -46,6 +44,13 @@ pub struct BufferedInput {
 pub struct InputBuffer {
     #[getset(get = "pub")]
     inputs: EnumMap<InputKind, Option<BufferedInput>>,
+}
+impl InputBuffer {
+    const INPUT_BUFFER_DURATION: Duration = Duration::from_millis(200);
+    
+    fn buffer_duration(&self) -> Duration {
+        Self::INPUT_BUFFER_DURATION
+    }
 }
 
 /// For each input in the buffer, trigger the event for it every frame
@@ -86,7 +91,7 @@ fn on_insert_buffer(
     time: Res<Time>,
 ) {
     input_buffer.inputs[event.kind] = Some(BufferedInput {
-        expiration_timestamp: time.elapsed() + INPUT_BUFFER_DURATION,
+        expiration_timestamp: time.elapsed() + input_buffer.buffer_duration(),
     });
 }
 
