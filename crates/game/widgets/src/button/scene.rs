@@ -7,7 +7,6 @@ use bevy::ecs::template::OptionTemplate;
 use bevy::image::TextureAtlasTemplate;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
-use bevy::ui::auto_directional_navigation::AutoDirectionalNavigation;
 use bevy::ui_widgets;
 use data::loc::loc;
 

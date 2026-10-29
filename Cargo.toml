@@ -196,3 +196,6 @@ nonstandard_macro_braces = "warn"
 [package.metadata.bevy_lint]
 # panicking_methods = "deny"
 # pedantic = "warn"
+
+[lints]
+workspace = true

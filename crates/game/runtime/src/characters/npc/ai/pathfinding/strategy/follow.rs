@@ -271,10 +271,6 @@ fn on_lost_target(
 mod test {
     use super::*;
 
-    mod follow_state {
-        use super::*;
-    }
-
     pub use target_events::GainLoseTargetError;
 
     mod target_events {
@@ -313,12 +309,12 @@ mod test {
 
             let follower = app
                 .world_mut()
-                .spawn_scene(bsn![
+                .spawn_scene(bsn! {
                     FollowerData
                     @Following {
                         @target
                     }
-                ])
+                })
                 .unwrap()
                 .id();
 

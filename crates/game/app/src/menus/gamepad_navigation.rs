@@ -1,5 +1,4 @@
 use bevy::camera::NormalizedRenderTarget;
-use bevy::input_focus::directional_navigation::DirectionalNavigation;
 use bevy::input_focus::{InputFocus, InputFocusVisible};
 use bevy::math::CompassOctant;
 use bevy::picking::backend::HitData;

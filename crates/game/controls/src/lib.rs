@@ -1,6 +1,5 @@
 #![feature(adt_const_params)]
 #![feature(min_adt_const_params)]
-#![feature(const_param_ty_trait)]
 
 use bevy::prelude::*;
 use common::{AppSystems, GameInputSystems, GameplaySystems, PausableSystems};
