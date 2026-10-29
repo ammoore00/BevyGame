@@ -85,5 +85,5 @@ input!(
 );
 input!(attack_keyboard, MouseButton::Left, InputKind::Attack);
 
-input!(dodge_gamepad, GamepadButton::LeftTrigger, InputKind::Dodge);
+input!(dodge_gamepad, GamepadButton::LeftTrigger2, InputKind::Dodge);
 input!(dodge_keyboard, MouseButton::Middle, InputKind::Dodge);
