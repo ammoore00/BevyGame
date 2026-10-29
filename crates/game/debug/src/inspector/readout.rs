@@ -44,7 +44,7 @@ impl InspectorReadout {
         self.sections.extend(other.sections);
     }
     
-    pub fn with_extension(mut self, other: Self) -> Self {
+    pub fn _with_extension(mut self, other: Self) -> Self {
         self.sections.extend(other.sections);
         self
     }

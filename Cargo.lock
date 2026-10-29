@@ -2613,8 +2613,10 @@ dependencies = [
  "common",
  "derive-new",
  "enum-map",
+ "getset",
  "input",
  "runtime",
+ "strum_macros",
 ]
 
 [[package]]
@@ -2851,10 +2853,10 @@ dependencies = [
  "assets",
  "bevy",
  "common",
+ "controls",
  "getset",
  "physics",
  "runtime",
- "strum",
  "strum_macros",
  "thiserror 2.0.18",
  "widgets",

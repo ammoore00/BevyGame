@@ -1,12 +1,18 @@
+#![feature(adt_const_params)]
+#![feature(min_adt_const_params)]
+#![feature(const_param_ty_trait)]
+
 use bevy::prelude::*;
 use common::{AppSystems, GameInputSystems, GameplaySystems, PausableSystems};
 use input::{InputReader, LastInputMode};
 use runtime::LevelLoadedSystems;
 
+mod action;
 mod aim;
 mod buffer;
 mod movement;
-mod action;
+
+pub use buffer::{BufferedInput, InputBuffer};
 
 pub struct ControlsPlugin;
 impl Plugin for ControlsPlugin {

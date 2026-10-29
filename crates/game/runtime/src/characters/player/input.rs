@@ -1,5 +1,5 @@
-use crate::characters::attack::TryAttackEvent;
-use crate::characters::dodge::TryDodgeEvent;
+use crate::characters::attack::{AttackValidated, TryAttackEvent};
+use crate::characters::dodge::{DodgeValidated, TryDodgeEvent};
 use crate::characters::player::{AimFacing, Player};
 use crate::characters::state::{ActionStateTracker, TrySetStateEvent};
 use assets::action_states::{
@@ -17,12 +17,17 @@ pub(super) fn plugin(app: &mut App) {
         FixedUpdate,
         camera_follow_player.in_set(AppSystems::Respond),
     );
-    
+
     app.add_observer(on_aim_input);
-    app.add_observer(on_attack_input);
-    app.add_observer(on_dodge_input);
-    app.add_observer(on_jump_input);
     app.add_observer(on_movement_input);
+
+    app.add_observer(on_attack_input);
+    app.add_observer(on_attack_validated);
+
+    app.add_observer(on_dodge_input);
+    app.add_observer(on_dodge_validated);
+
+    app.add_observer(on_jump_input);
 }
 
 const COYOTE_TIME: f32 = 0.2;
@@ -108,11 +113,14 @@ fn on_movement_input(
 }
 
 #[derive(EntityEvent)]
-pub struct JumpInputEvent(pub Entity);
+pub struct JumpInput(pub Entity);
+
+#[derive(EntityEvent)]
+pub struct JumpInputConfirmed(pub Entity);
 
 // TODO: Convert jumping to use its own state
 fn on_jump_input(
-    event: On<JumpInputEvent>,
+    event: On<JumpInput>,
     mut player_query: Query<
         (
             Entity,
@@ -153,17 +161,19 @@ fn on_jump_input(
         commands.trigger(ApplyImpulse {
             entity,
             impulse: Impulse::from(Vec3::Y * JUMP_VELOCITY),
-        })
+        });
+        
+        commands.entity(entity).trigger(JumpInputConfirmed);
     } else {
         info!("Cannot jump, player is not grounded!");
     }
 }
 
 #[derive(EntityEvent)]
-pub struct AttackInputEvent(pub Entity);
+pub struct AttackInput(pub Entity);
 
 fn on_attack_input(
-    _: On<AttackInputEvent>,
+    _: On<AttackInput>,
     player: Single<(Entity, &mut Facing), (With<Player>, With<Children>)>,
     aim_facing: Single<(&AimFacing, &ChildOf)>,
     mut commands: Commands,
@@ -184,37 +194,49 @@ fn on_attack_input(
     };
 
     let attack_loc: ResourceLocation<AttackResource> = "player/basic_attack".parse().unwrap();
-    commands.trigger(TryAttackEvent::new(
-        player_entity,
-        facing,
-        attack_loc.clone(),
-    ));
+    let event = TryAttackEvent::new(player_entity, facing, attack_loc);
+    commands.trigger(event);
+}
+
+#[derive(EntityEvent)]
+pub struct AttackInputConfirmed(pub Entity);
+
+fn on_attack_validated(
+    event: On<AttackValidated>,
+    player: Single<Entity, With<Player>>,
+    mut commands: Commands,
+) {
+    if event.entity() == player.entity() {
+        commands
+            .entity(event.entity())
+            .trigger(AttackInputConfirmed);
+    }
 }
 
 #[derive(EntityEvent, Debug, Clone)]
-pub struct DodgeInputEvent(pub Entity);
+pub struct DodgeInput(pub Entity);
 
 fn on_dodge_input(
-    _: On<DodgeInputEvent>,
+    _: On<DodgeInput>,
     player: Single<(Entity, &MovementController, &mut Facing), (With<Player>, With<Children>)>,
     aim_facing: Single<(&AimFacing, &ChildOf)>,
     mut commands: Commands,
 ) {
     let (player_entity, movement_controller, mut facing) = player.into_inner();
-    
+
     // Base dodge direction on current movement
     let mut direction = movement_controller.intent;
     direction.y = 0.0;
-    
+
     // If the player is not moving, dodge in the direction of their aiming
     if direction == Vec3::ZERO {
         let (aim_facing, child_of) = aim_facing.into_inner();
-        
+
         if child_of.0 != player_entity {
             error!("AimFacing is not a child of the player entity!");
             return;
         }
-        
+
         // If the player is not aiming, dodge in the direction of their facing
         let facing = {
             if let Some(aim_facing) = aim_facing.0 {
@@ -222,11 +244,24 @@ fn on_dodge_input(
             }
             *facing
         };
-        
+
         direction = Vec3::from(facing);
     }
-    
+
     commands.trigger(TryDodgeEvent::new(player_entity, direction));
+}
+
+#[derive(EntityEvent)]
+pub struct DodgeInputConfirmed(pub Entity);
+
+fn on_dodge_validated(
+    event: On<DodgeValidated>,
+    player: Single<Entity, With<Player>>,
+    mut commands: Commands,
+) {
+    if event.entity() == player.entity() {
+        commands.entity(event.entity()).trigger(DodgeInputConfirmed);
+    }
 }
 
 #[derive(EntityEvent, Debug, Clone, derive_new::new)]

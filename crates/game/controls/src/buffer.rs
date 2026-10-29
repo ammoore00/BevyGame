@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use common::AppSystems;
 use enum_map::{Enum, EnumMap};
-use runtime::characters::player::{AttackInputEvent, DodgeInputEvent, JumpInputEvent};
+use getset::Getters;
+use runtime::characters::player::{AttackInput, DodgeInput, JumpInput};
 use runtime::prelude::Player;
+use std::marker::ConstParamTy;
 use std::time::Duration;
+use strum_macros::Display;
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<InputBuffer>();
@@ -16,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
 
 const INPUT_BUFFER_DURATION: Duration = Duration::from_millis(100);
 
-#[derive(Enum, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Enum, Debug, Clone, Copy, PartialEq, Eq, Hash, ConstParamTy, Display)]
 pub enum InputKind {
     Dodge,
     Attack,
@@ -26,20 +29,22 @@ impl InputKind {
     fn trigger_event(&self, entity: Entity, mut commands: Commands) {
         let mut entity = commands.entity(entity);
         match self {
-            InputKind::Dodge => entity.trigger(DodgeInputEvent),
-            InputKind::Attack => entity.trigger(AttackInputEvent),
-            InputKind::Jump => entity.trigger(JumpInputEvent),
+            InputKind::Dodge => entity.trigger(DodgeInput),
+            InputKind::Attack => entity.trigger(AttackInput),
+            InputKind::Jump => entity.trigger(JumpInput),
         };
     }
 }
 
-#[derive(Clone)]
-struct BufferedInput {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Getters)]
+pub struct BufferedInput {
+    #[getset(get = "pub")]
     expiration_timestamp: Duration,
 }
 
-#[derive(Resource, Default)]
-struct InputBuffer {
+#[derive(Resource, Default, Getters)]
+pub struct InputBuffer {
+    #[getset(get = "pub")]
     inputs: EnumMap<InputKind, Option<BufferedInput>>,
 }
 
@@ -77,18 +82,18 @@ pub struct ClearBuffer {
 
 fn on_insert_buffer(
     event: On<InsertBuffer>,
-    _input_buffer: ResMut<InputBuffer>,
-    _time: Res<Time>,
-
-    mut commands: Commands,
-    player: Single<Entity, With<Player>>,
+    mut input_buffer: ResMut<InputBuffer>,
+    time: Res<Time>,
 ) {
-    event.kind.trigger_event(player.entity(), commands.reborrow())
-    //input_buffer.inputs[event.kind] = Some(BufferedInput {
-    //    expiration_timestamp: time.elapsed() + INPUT_BUFFER_DURATION,
-    //});
+    input_buffer.inputs[event.kind] = Some(BufferedInput {
+        expiration_timestamp: time.elapsed() + INPUT_BUFFER_DURATION,
+    });
 }
 
 fn on_clear_buffer(event: On<ClearBuffer>, mut input_buffer: ResMut<InputBuffer>) {
     input_buffer.inputs[event.kind] = None;
+}
+
+pub fn on_input_success<E: EventPattern, const KIND: InputKind>(_: On<E>, mut commands: Commands) {
+    commands.trigger(ClearBuffer::new(KIND));
 }

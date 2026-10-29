@@ -1,7 +1,8 @@
-use crate::buffer::{InputKind, InsertBuffer};
+use crate::buffer::{InputKind, InsertBuffer, on_input_success};
 use crate::{PlayerControlSystems, last_input_gamepad, last_input_keyboard};
 use bevy::prelude::*;
 use input::InputReader;
+use runtime::characters::player::{AttackInputConfirmed, DodgeInputConfirmed, JumpInputConfirmed};
 
 pub(super) fn plugin(app: &mut App) {
     let gamepad_inputs = (attack_gamepad, dodge_gamepad, jump_gamepad);
@@ -15,6 +16,10 @@ pub(super) fn plugin(app: &mut App) {
         )
             .in_set(PlayerControlSystems),
     );
+
+    app.add_observer(on_input_success::<AttackInputConfirmed, { InputKind::Attack }>);
+    app.add_observer(on_input_success::<DodgeInputConfirmed, { InputKind::Dodge }>);
+    app.add_observer(on_input_success::<JumpInputConfirmed, { InputKind::Jump }>);
 }
 
 enum InputButton {

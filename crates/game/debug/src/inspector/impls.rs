@@ -3,6 +3,7 @@ use crate::inspector::readout::{InspectorReadout, ReadoutSection};
 use assets::action_states::{ReflectActionState, ReflectTimedActionState};
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
+use controls::InputBuffer;
 use runtime::prelude::{AiState, GoalList, GoalState, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets};
 
 pub(super) fn plugin(app: &mut App) {
@@ -11,12 +12,40 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn inspect_player(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
-    inspect_character(entity, world).with_title("Player")
+    inspect_character(entity, world)
+        .with_title("Player")
+        .section({
+            let time = world.resource::<Time>();
+            
+            let input_buffer = world
+                .resource::<InputBuffer>()
+                .inputs()
+                .iter()
+                .filter_map(|(kind, buffer)| buffer.map(|buffer| {
+                    let expiration = *buffer.expiration_timestamp();
+                    let remaining = expiration - time.elapsed().min(expiration);
+                    
+                    format!("{kind}: {}", remaining.as_secs_f32())
+                }))
+                .collect::<Vec<_>>();
+            
+            let mut section = ReadoutSection::new("Input Buffer");
+            
+            if input_buffer.is_empty() {
+                section = section.item("Empty");
+            }
+            
+            for input in input_buffer {
+                section = section.item(input);
+            }
+            
+            section
+        })
 }
 
 fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
-    InspectorReadout::new("NPC")
-        .with_extension(inspect_character(entity, world))
+    inspect_character(entity, world)
+        .with_title("NPC")
         .section({
             ReadoutSection::new("AI")
                 .maybe_item(
