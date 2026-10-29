@@ -11,7 +11,7 @@ use strum_macros::Display;
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<InputBuffer>();
 
-    app.add_systems(Update, update_input_buffer.in_set(AppSystems::RecordInput));
+    app.add_systems(Update, update_input_buffer.in_set(AppSystems::ProcessInput));
 
     app.add_observer(on_insert_buffer);
     app.add_observer(on_clear_buffer);

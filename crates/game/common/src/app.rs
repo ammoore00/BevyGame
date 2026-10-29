@@ -9,6 +9,7 @@ pub(super) fn plugin(app: &mut App) {
             AppSystems::PreUpdate,
             AppSystems::TickTimers,
             AppSystems::RecordInput,
+            AppSystems::ProcessInput,
             AppSystems::Update,
             AppSystems::Respond,
         )
@@ -21,6 +22,7 @@ pub(super) fn plugin(app: &mut App) {
             AppSystems::PreUpdate,
             AppSystems::TickTimers,
             AppSystems::RecordInput,
+            AppSystems::ProcessInput,
             AppSystems::Update,
             AppSystems::Respond,
         )
@@ -55,6 +57,8 @@ pub enum AppSystems {
     TickTimers,
     /// Record player input.
     RecordInput,
+    /// Process input, for things like input buffering.
+    ProcessInput,
     /// Do everything else (consider splitting this into further variants).
     Update,
     /// Respond to changes in update
