@@ -4,9 +4,13 @@ use assets::codec::{
     KeyFrameCodec,
 };
 
-pub fn basic_attack(basic_attack_loc: &str, basic_attack_image: &str) -> AttackData {
+pub fn basic_attack(
+    basic_attack_loc: &str,
+    basic_attack_image: &str,
+    delay_second_frame: bool,
+) -> AttackData {
     let first_frame = 50;
-    let second_frame = 200;
+    let second_frame = if delay_second_frame { 200 } else { 50 };
     let attack_frame = 50;
 
     let start_interval = first_frame + second_frame;
@@ -24,13 +28,13 @@ pub fn basic_attack(basic_attack_loc: &str, basic_attack_image: &str) -> AttackD
     let basic_attack_length: u64 = intervals.iter().sum();
 
     let basic_attack_animation = AnimationData::new(
-        basic_attack_image,
+        basic_attack_loc,
         96,
         96,
         FrameDataCodec::Distinct {
             intervals: intervals.clone(),
         },
-    );
+    ).with_image(basic_attack_image);
 
     let start_time = start_interval;
     let end_time = start_time + attack_frame * 2;
@@ -51,7 +55,7 @@ pub fn basic_attack(basic_attack_loc: &str, basic_attack_image: &str) -> AttackD
 
         exclusion_group: None.into(),
     }];
-    
+
     let basic_attack_stamina_cost = 20;
 
     AttackData::new(

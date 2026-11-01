@@ -69,7 +69,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
     let basic_attack_loc = "test/basic_attack";
     let basic_attack_image = "player/basic_attack";
     
-    let basic_attack = basic_attack(basic_attack_loc, basic_attack_image);
+    let basic_attack = basic_attack(basic_attack_loc, basic_attack_image, true);
     attacks.push(basic_attack);
     
     let attack_set = AttackSetData::new(basic_attack_loc, attacks);

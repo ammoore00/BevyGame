@@ -78,7 +78,7 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
     let basic_attack_loc = "player/basic_attack";
     let basic_attack_image = "player/basic_attack";
 
-    let basic_attack = basic_attack(basic_attack_loc, basic_attack_image);
+    let basic_attack = basic_attack(basic_attack_loc, basic_attack_image, false);
     attacks.push(basic_attack);
 
     let attack_set = AttackSetData::new(basic_attack_loc, attacks);
