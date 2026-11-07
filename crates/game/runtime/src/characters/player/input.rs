@@ -13,11 +13,6 @@ use physics::{ApplyImpulse, Impulse, KinematicData, MovementController, PhysicsD
 use std::any::TypeId;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        FixedUpdate,
-        camera_follow_player.in_set(AppSystems::Respond),
-    );
-
     app.add_observer(on_aim_input);
     app.add_observer(on_movement_input);
 
@@ -297,13 +292,4 @@ fn on_aim_input(
             .set(Box::new(Visibility::Hidden))
             .expect("Failed to set visibility");
     }
-}
-
-/// Update the camera position to match the player position
-// TODO: Move this somewhere more appropriate
-fn camera_follow_player(
-    player_transform: Single<&mut Transform, (With<Player>, Without<Camera2d>)>,
-    mut camera: Single<&mut Transform, With<Camera2d>>,
-) {
-    camera.translation = player_transform.translation * Vec3::new(1.0, 1.0, 0.0);
 }

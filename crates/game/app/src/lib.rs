@@ -8,10 +8,10 @@ use bevy::feathers::FeathersPlugins;
 use bevy::input_focus::directional_navigation::DirectionalNavigationPlugin;
 use bevy::window::ExitCondition;
 use bevy::{asset::AssetMetaCheck, prelude::*};
-use common::MainCamera;
 use controls::ControlsPlugin;
 use debug::DebugPlugin;
 use input::InputPlugin;
+use render::RenderPlugin;
 use runtime::RuntimePlugin;
 use settings::GameSettingsPlugin;
 use widgets::WidgetsPlugin;
@@ -57,6 +57,7 @@ impl Plugin for AppPlugin {
             ControlsPlugin,
             GameSettingsPlugin,
             InputPlugin,
+            RenderPlugin,
             RuntimePlugin,
             WidgetsPlugin,
             asset_tracking::plugin,
@@ -67,26 +68,10 @@ impl Plugin for AppPlugin {
 
         app.insert_resource(Time::<Fixed>::from_hz(240.0));
 
-        // Spawn the main camera.
-        app.add_systems(Startup, spawn_camera);
-
         #[cfg(feature = "dev")]
         {
             info!("Dev tools enabled");
             app.add_plugins((FeathersPlugins, DebugPlugin, dev_tools::plugin));
         }
     }
-}
-
-fn spawn_camera(mut commands: Commands) {
-    commands.spawn((
-        Name::new("Camera"),
-        MainCamera,
-        Camera2d,
-        Projection::Orthographic(OrthographicProjection {
-            near: -10000000.0,
-            far: 10000000.0,
-            ..OrthographicProjection::default_2d()
-        }),
-    ));
 }

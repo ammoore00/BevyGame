@@ -10,6 +10,7 @@ controls = { workspace = true }
 data = { workspace = true }
 input = { workspace = true }
 settings = { workspace = true }
+render = { workspace = true }
 runtime = { workspace = true }
 widgets = { workspace = true }
 

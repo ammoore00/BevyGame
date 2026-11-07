@@ -15,7 +15,7 @@ members = [
     "crates/game/data",
     "crates/game/debug",
     "crates/game/input",
-    "crates/game/physics",
+    "crates/game/physics", "crates/game/render",
     "crates/game/runtime",
     "crates/game/settings",
     "crates/game/widgets",
@@ -81,6 +81,7 @@ debug = { path = "crates/game/debug" }
 input = { path = "crates/game/input" }
 physics = { path = "crates/game/physics" }
 settings = { path = "crates/game/settings" }
+render = { path = "crates/game/render" }
 runtime = { path = "crates/game/runtime" }
 widgets = { path = "crates/game/widgets" }
 

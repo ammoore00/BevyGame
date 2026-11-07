@@ -266,6 +266,7 @@ dependencies = [
  "getrandom 0.4.3",
  "getset",
  "input",
+ "render",
  "ron",
  "runtime",
  "serde",
@@ -5525,6 +5526,18 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
+
+[[package]]
+name = "render"
+version = "0.1.0"
+dependencies = [
+ "assets",
+ "bevy",
+ "common",
+ "derive-new",
+ "getset",
+ "runtime",
+]
 
 [[package]]
 name = "renderdoc-sys"

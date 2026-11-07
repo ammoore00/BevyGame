@@ -20,6 +20,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/macros/asset_visitor/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/macros/define_resource/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/game/translate/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/game/render/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/crates/datagen/target" />
     </content>

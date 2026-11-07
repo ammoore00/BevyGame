@@ -1,0 +1,16 @@
+[package]
+name = "render"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+assets = { workspace = true }
+common = { workspace = true }
+runtime = { workspace = true }
+
+bevy = { workspace = true }
+derive-new = { workspace = true }
+getset = { workspace = true }
+
+[lints]
+workspace = true
