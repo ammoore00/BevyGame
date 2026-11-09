@@ -1,10 +1,11 @@
-use crate::codec::{AnimationCodec, FrameDataCodec};
+use crate::codec::{AnimationCodec, DistinctCodec, FixedIntervalCodec, FrameDataCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::resource::characters::{CharacterSpriteRegistry, CharacterSpriteResource};
 use bevy::prelude::*;
 use data::prelude::*;
 use data::resource::{ResourceVisitError, resource_kind};
 use getset::{CloneGetters, Getters};
+use std::collections::HashMap;
 use std::time::Duration;
 use tracing::info;
 
@@ -104,24 +105,24 @@ pub struct ResolvedAnimationData {
     frame_data: FrameData,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Reflect)]
+#[derive(Debug, Clone, PartialEq, Eq, Reflect)]
 pub enum FrameData {
-    FixedInterval { frames: usize, interval: Duration },
-    Distinct { intervals: Vec<Duration> },
+    FixedInterval(FixedInterval),
+    Distinct(Distinct),
 }
 
 impl FrameData {
     pub fn num_frames(&self) -> usize {
         match self {
-            FrameData::FixedInterval { frames, .. } => *frames,
-            FrameData::Distinct { intervals } => intervals.len(),
+            FrameData::FixedInterval(fixed_interval) => fixed_interval.indices.len(),
+            FrameData::Distinct(distinct) => distinct.indices.len(),
         }
     }
 
     pub fn frame_duration(&self, frame: usize) -> Option<Duration> {
         match self {
-            FrameData::FixedInterval { interval, .. } => Some(*interval),
-            FrameData::Distinct { intervals } => intervals.get(frame).copied(),
+            FrameData::FixedInterval(fixed_interval) => Some(fixed_interval.interval),
+            FrameData::Distinct(distinct) => distinct.indices.get(&frame).copied(),
         }
     }
 }
@@ -129,16 +130,40 @@ impl FrameData {
 impl From<FrameDataCodec> for FrameData {
     fn from(value: FrameDataCodec) -> Self {
         match value {
-            FrameDataCodec::FixedInterval {
-                num_frames: frames,
-                interval,
-            } => FrameData::FixedInterval {
-                frames,
-                interval: Duration::from_millis(interval),
-            },
-            FrameDataCodec::Distinct { intervals } => FrameData::Distinct {
-                intervals: intervals.into_iter().map(Duration::from_millis).collect(),
-            },
+            FrameDataCodec::FixedInterval(fixed_interval) => {
+                FrameData::FixedInterval(fixed_interval.into())
+            }
+            FrameDataCodec::Distinct(distinct) => FrameData::Distinct(distinct.into()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Reflect)]
+pub struct FixedInterval {
+    interval: Duration,
+    indices: Vec<usize>,
+}
+impl From<FixedIntervalCodec> for FixedInterval {
+    fn from(value: FixedIntervalCodec) -> Self {
+        FixedInterval {
+            interval: Duration::from_millis(value.interval),
+            indices: value.indices,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Reflect)]
+pub struct Distinct {
+    indices: HashMap<usize, Duration>,
+}
+impl From<DistinctCodec> for Distinct {
+    fn from(value: DistinctCodec) -> Self {
+        Distinct {
+            indices: value
+                .indices
+                .into_iter()
+                .map(|(k, v)| (k, Duration::from_millis(v)))
+                .collect(),
         }
     }
 }

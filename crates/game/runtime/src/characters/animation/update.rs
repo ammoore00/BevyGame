@@ -61,7 +61,7 @@ fn update_animation_state(
         // Update animation tracker state if the animation has changed
         animation_tracker.current_animation = animation_handle.clone();
         let animation = animation_context
-            .get_asset_from_handle(animation_handle.clone())
+            .get_asset_from_handle(&animation_handle)
             .unwrap();
 
         let interval = animation.unwrap().frame_data().frame_duration(0).unwrap();
@@ -101,7 +101,7 @@ fn update_animation_atlas(
         };
 
         let animation = animation_context
-            .get_asset_from_handle(animation_handle)
+            .get_asset_from_handle(&animation_handle)
             .unwrap();
 
         sprite.image = animation.unwrap().image().clone();

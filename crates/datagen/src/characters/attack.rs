@@ -1,8 +1,5 @@
 use crate::characters::{AnimationData, AttackData};
-use assets::codec::{
-    ColliderCodec, ColliderDataCodec, DamageKind, FrameDataCodec, HealthEventKind, HitboxCodec,
-    KeyFrameCodec,
-};
+use assets::codec::{ColliderCodec, ColliderDataCodec, DamageKind, DistinctCodec, FrameDataCodec, HealthEventKind, HitboxCodec, KeyFrameCodec};
 
 pub fn basic_attack(
     basic_attack_loc: &str,
@@ -31,9 +28,7 @@ pub fn basic_attack(
         basic_attack_loc,
         96,
         96,
-        FrameDataCodec::Distinct {
-            intervals: intervals.clone(),
-        },
+        FrameDataCodec::Distinct(DistinctCodec::new(intervals.clone())),
     ).with_image(basic_attack_image);
 
     let start_time = start_interval;

@@ -1,0 +1,16 @@
+[package]
+name = "render_api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+assets = { workspace = true }
+common = { workspace = true }
+data = { workspace = true }
+
+bevy = { workspace = true }
+derive-new = { workspace = true }
+getset = { workspace = true }
+
+[lints]
+workspace = true

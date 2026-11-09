@@ -2,10 +2,7 @@ use crate::WriteError;
 use crate::characters::{
     AnimationData, AttackData, AttackSetData, CharacterData, create_character,
 };
-use assets::codec::{
-    ActionStateCodec, CapsuleCodec, ColliderCodec, ColliderDataCodec, DamageKind, FrameDataCodec,
-    HealthEventKind, HitboxCodec, KeyFrameCodec,
-};
+use assets::codec::{ActionStateCodec, CapsuleCodec, ColliderCodec, ColliderDataCodec, DamageKind, FixedIntervalCodec, FrameDataCodec, HealthEventKind, HitboxCodec, KeyFrameCodec};
 use std::collections::HashMap;
 use crate::characters::attack::basic_attack;
 
@@ -18,10 +15,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
         "test/idle",
         64,
         64,
-        FrameDataCodec::FixedInterval {
-            num_frames: 12,
-            interval: 150,
-        },
+        FrameDataCodec::FixedInterval(FixedIntervalCodec::new(12, 150)),
     )
     .with_image("player/idle");
     animation_map.insert(ActionStateCodec::Idle, idle);
@@ -30,10 +24,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
         "test/walking",
         64,
         64,
-        FrameDataCodec::FixedInterval {
-            num_frames: 8,
-            interval: 50,
-        },
+        FrameDataCodec::FixedInterval(FixedIntervalCodec::new(8, 50)),
     )
     .with_image("player/walking");
     animation_map.insert(ActionStateCodec::Walking, walking);
@@ -42,10 +33,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
         "test/running",
         64,
         64,
-        FrameDataCodec::FixedInterval {
-            num_frames: 8,
-            interval: 50,
-        },
+        FrameDataCodec::FixedInterval(FixedIntervalCodec::new(8, 50)),
     )
     .with_image("player/running");
     animation_map.insert(ActionStateCodec::Running, running);
@@ -54,10 +42,7 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
         "test/sprinting",
         64,
         64,
-        FrameDataCodec::FixedInterval {
-            num_frames: 8,
-            interval: 35,
-        },
+        FrameDataCodec::FixedInterval(FixedIntervalCodec::new(8, 35)),
     )
     .with_image("player/running");
     animation_map.insert(ActionStateCodec::Sprinting, sprinting);

@@ -107,13 +107,13 @@ macro_rules! registry_impl {
                 id: &ResourceLocation<$type_param>,
             ) -> Option<&$type_param::AssetKind> {
                 let handle = self.$handle_fn(id);
-                handle.and_then(|handle| self.$asset_from_handle_fn(handle))
+                handle.and_then(|handle| self.$asset_from_handle_fn(&handle))
             }
 
             #[allow(unused)]
             pub fn $asset_from_handle_fn(
                 &self,
-                handle: Handle<$type_param::AssetKind>,
+                handle: &Handle<$type_param::AssetKind>,
             ) -> Option<&$type_param::AssetKind> {
                 self.assets.get(handle.id())
             }

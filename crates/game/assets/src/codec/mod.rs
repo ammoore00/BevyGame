@@ -1,3 +1,4 @@
+pub mod animation;
 mod character;
 mod collider;
 mod room;
@@ -6,10 +7,10 @@ mod tile;
 mod translation;
 
 pub use crate::codec::{
+    animation::{AnimationCodec, DistinctCodec, FixedIntervalCodec, FrameDataCodec},
     character::{
         ActionStateCodec, AllowedStatesCodec, CharacterCodec,
         ai::{AiCodec, AiHearingCodec, AiSensesCodec, AiSightCodec},
-        animation::{AnimationCodec, FrameDataCodec},
         attack::{AttackCodec, AttackSetCodec, HitboxCodec, KeyFrameCodec},
         health::{
             DamageKind, DamageModifierCodec, DamageModifierKind, DamageModifierList, HealthCodec,

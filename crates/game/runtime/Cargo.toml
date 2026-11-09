@@ -8,6 +8,7 @@ assets = { workspace = true }
 common = { workspace = true }
 data = { workspace = true }
 physics = { workspace = true }
+render_api = { workspace = true }
 
 bevy = { workspace = true }
 derive-new = { workspace = true }

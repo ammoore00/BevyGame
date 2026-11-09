@@ -21,7 +21,7 @@ members = [
     "crates/game/widgets",
     "crates/macros/debug_option_derive",
     "crates/macros/define_resource",
-    "crates/macros/maybe_fields",
+    "crates/macros/maybe_fields", "crates/game/render_api",
 ]
 resolver = "2"
 
@@ -82,6 +82,7 @@ input = { path = "crates/game/input" }
 physics = { path = "crates/game/physics" }
 settings = { path = "crates/game/settings" }
 render = { path = "crates/game/render" }
+render_api = { path = "crates/game/render_api" }
 runtime = { path = "crates/game/runtime" }
 widgets = { path = "crates/game/widgets" }
 

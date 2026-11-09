@@ -5534,9 +5534,24 @@ dependencies = [
  "assets",
  "bevy",
  "common",
+ "data",
  "derive-new",
  "getset",
+ "render_api",
  "runtime",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "render_api"
+version = "0.1.0"
+dependencies = [
+ "assets",
+ "bevy",
+ "common",
+ "data",
+ "derive-new",
+ "getset",
 ]
 
 [[package]]
@@ -5602,6 +5617,7 @@ dependencies = [
  "getset",
  "physics",
  "rand 0.10.2",
+ "render_api",
  "strum",
  "strum_macros",
  "thiserror 2.0.18",

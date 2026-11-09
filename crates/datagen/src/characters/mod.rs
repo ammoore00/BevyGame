@@ -170,7 +170,7 @@ struct AnimationData {
 }
 impl AnimationData {
     fn new(loc: &str, width: u32, height: u32, frame_data: FrameDataCodec) -> Self {
-        let atlas = TextureAtlasData::new(width, height, frame_data.num_frames(), ANIMATION_ROWS);
+        let atlas = TextureAtlasData::new(width, height, frame_data.num_frames() as u32, ANIMATION_ROWS);
 
         Self {
             loc: loc.parse().unwrap(),
