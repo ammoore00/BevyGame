@@ -2,6 +2,7 @@ use assets::resource::characters::AnimationResource;
 use bevy::prelude::*;
 use data::loc::ResourceLocation;
 
+/// Used to request an animation to be played on an entity
 #[derive(EntityEvent, Debug, Clone, derive_new::new)]
 pub struct PlayAnimation {
     pub entity: Entity,
@@ -58,12 +59,7 @@ impl AnimationSettings {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AnimationKind {
-    Gameplay,
-    UI,
-}
-
+/// Used to stop an animation from playing on an entity, optionally filtering by animation name
 #[derive(EntityEvent, Debug, Clone)]
 pub struct StopAnimation {
     pub entity: Entity,

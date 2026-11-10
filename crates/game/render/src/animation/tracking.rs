@@ -1,9 +1,10 @@
 use crate::animation::AnimationSystems;
-use assets::resource::characters::{AnimationData, AnimationResource};
+use assets::resource::characters::{AnimationData, AnimationResource, ResolvedAnimationData};
 use bevy::prelude::*;
 use data::prelude::{ResourceLocation, SystemRegistry};
-use getset::Getters;
+use getset::{CopyGetters, Getters};
 use render_api::animation::{AnimationSettings, PlayAnimation, StopAnimation};
+use std::fmt::{Display, Formatter};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_tracking.in_set(AnimationSystems::Tracking));
@@ -12,18 +13,20 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_stop_animation);
 }
 
-#[derive(Component, Debug, Clone, Getters)]
+#[derive(Component, Debug, Clone, Getters, CopyGetters)]
 pub struct AnimationTracker {
     /// The handle for the current animation asset.
     #[getset(get = "pub")]
     handle: Handle<AnimationData>,
 
     /// The current tile sheet index to set the sprite.
-    #[getset(get = "pub")]
+    #[getset(get_copy = "pub")]
     current_index: usize,
 
     /// A cache of the resource location corresponding to the animation asset.
-    /// Used only as a comparison for event triggers. Favor `handle` for all other purposes.
+    /// Used only as a comparison for event triggers or for debug display.
+    ///
+    /// Favor `handle` for all other purposes.
     loc: ResourceLocation<AnimationResource>,
 
     /// Timer for tracking the current frame.
@@ -84,6 +87,30 @@ impl AnimationTracker {
             settings,
         })
     }
+
+    /// Gets the animation data for this tracker.
+    pub fn animation<'a>(
+        &self,
+        registry: &'a SystemRegistry<AnimationResource>,
+    ) -> &'a ResolvedAnimationData {
+        registry
+            .get_asset_from_handle(&self.handle)
+            .map(|a| a.as_resolved())
+            .flatten()
+            .unwrap_or_else(|| {
+                // Invariant: AnimationTracker::try_new only constructs trackers with a valid,
+                // resolved animation handle. Reaching this means tracker state was somehow invalid.
+                unreachable!(
+                    "Invalid animation handle stored in tracker for animation: {}",
+                    self.loc
+                )
+            })
+    }
+}
+impl Display for AnimationTracker {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.loc)
+    }
 }
 
 #[derive(Debug, Clone, thiserror::Error)]
@@ -108,18 +135,7 @@ fn update_tracking(
         tracker.frame_timer.tick(time.delta());
 
         if tracker.frame_timer.just_finished() {
-            let animation = registry
-                .get_asset_from_handle(tracker.handle())
-                .map(|a| a.as_resolved())
-                .flatten()
-                .unwrap_or_else(|| {
-                    // This indicates a bug in the code and not invalid data,
-                    // so it's fine if we panic
-                    panic!(
-                        "Invalid animation handle stored in tracker for animation: {}",
-                        tracker.loc
-                    )
-                });
+            let animation = tracker.animation(&registry);
 
             // Increment the frame counter, looping to the beginning as needed
             tracker.frame_counter += 1;
@@ -129,14 +145,10 @@ fn update_tracking(
             }
 
             // Update the current frame index
-            tracker.current_index = animation
-                .frame_data()
-                .frame_index(tracker.frame_counter);
+            tracker.current_index = animation.frame_data().frame_index(tracker.frame_counter);
 
             // If the next frame has a different duration, update the timer
-            let next_frame_duration = animation
-                .frame_data()
-                .frame_duration(tracker.frame_counter);
+            let next_frame_duration = animation.frame_data().frame_duration(tracker.frame_counter);
 
             if tracker.frame_timer.duration() != next_frame_duration {
                 tracker.frame_timer.set_duration(next_frame_duration);

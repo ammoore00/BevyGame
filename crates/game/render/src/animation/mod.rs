@@ -1,13 +1,14 @@
 mod tracking;
+mod sprite;
 
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(tracking::plugin);
+    app.add_plugins((sprite::plugin, tracking::plugin));
 
     app.configure_sets(
         Update,
-        (AnimationSystems::Tracking, AnimationSystems::Update)
+        (AnimationSystems::Tracking, AnimationSystems::Sprite)
             .chain(),
     );
 }
@@ -17,5 +18,5 @@ enum AnimationSystems {
     /// Track timers
     Tracking,
     /// Update sprites
-    Update,
+    Sprite,
 }
