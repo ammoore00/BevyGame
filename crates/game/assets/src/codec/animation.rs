@@ -81,26 +81,26 @@ impl FixedIntervalCodec {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DistinctCodec {
-    pub indices: HashMap<usize, u64>,
+    pub indices: Vec<(usize, u64)>,
 }
 impl DistinctCodec {
     pub fn new(intervals: Vec<u64>) -> Self {
-        let mut indices = HashMap::new();
+        let mut indices = Vec::new();
         for (index, interval) in intervals.into_iter().enumerate() {
-            indices.insert(index, interval);
+            indices.push((index, interval));
         }
         Self { indices }
     }
     
     pub fn with_range(intervals: Vec<u64>, start_index: usize, num_frames: usize) -> Self {
-        let mut indices = HashMap::new();
+        let mut indices = Vec::new();
         for index in start_index..start_index + num_frames {
-            indices.insert(index, intervals[index - start_index]);
+            indices.push((index, intervals[index - start_index]));
         }
         Self { indices }
     }
     
-    pub fn with_indices(indices: HashMap<usize, u64>) -> Self {
+    pub fn with_indices(indices: Vec<(usize, u64)>) -> Self {
         Self { indices }
     }
 }

@@ -64,7 +64,7 @@ fn update_animation_state(
             .get_asset_from_handle(&animation_handle)
             .unwrap();
 
-        let interval = animation.unwrap().frame_data().frame_duration(0).unwrap();
+        let interval = animation.unwrap().frame_data().get_frame_duration(0).unwrap();
 
         if animation_tracker.prev_animation != animation_tracker.current_animation {
             animation_tracker.timer = Timer::new(interval, TimerMode::Repeating);

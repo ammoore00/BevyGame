@@ -21,7 +21,7 @@ pub struct CharacterAnimationTracker {
 impl CharacterAnimationTracker {
     pub fn new(default: Handle<AnimationData>, assets: &Assets<AnimationData>) -> Self {
         let frame_data = assets.get(default.id()).unwrap().unwrap().frame_data();
-        let interval = frame_data.frame_duration(0).unwrap();
+        let interval = frame_data.get_frame_duration(0).unwrap();
 
         Self {
             current_animation: default.clone(),
@@ -55,7 +55,7 @@ impl CharacterAnimationTracker {
             animation
                 .unwrap()
                 .frame_data()
-                .frame_duration(self.frame)
+                .get_frame_duration(self.frame)
                 .unwrap(),
         );
     }

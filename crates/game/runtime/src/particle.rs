@@ -98,7 +98,7 @@ pub struct ParticleAnimation {
 impl ParticleAnimation {
     pub fn new(start_index: usize, frame_data: FrameData) -> Self {
         Self {
-            timer: Timer::new(frame_data.frame_duration(0).unwrap(), TimerMode::Repeating),
+            timer: Timer::new(frame_data.get_frame_duration(0).unwrap(), TimerMode::Repeating),
             frame_data,
             start_index,
             current_frame: 0,
@@ -114,7 +114,7 @@ impl ParticleAnimation {
 
         self.current_frame += 1;
         self.timer
-            .set_duration(self.frame_data.frame_duration(self.current_frame).unwrap_or_else(|| {
+            .set_duration(self.frame_data.get_frame_duration(self.current_frame).unwrap_or_else(|| {
                 error!("Particle animation frame duration not found");
                 Duration::ZERO
             }));

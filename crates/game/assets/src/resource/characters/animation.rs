@@ -119,11 +119,41 @@ impl FrameData {
         }
     }
 
-    pub fn frame_duration(&self, frame: usize) -> Option<Duration> {
+    /// Get the duration of the given frame
+    pub fn get_frame_duration(&self, frame: usize) -> Option<Duration> {
         match self {
-            FrameData::FixedInterval(fixed_interval) => Some(fixed_interval.interval),
-            FrameData::Distinct(distinct) => distinct.indices.get(&frame).copied(),
+            FrameData::FixedInterval(fixed_interval) => fixed_interval
+                .indices
+                .get(frame)
+                .map(|_| fixed_interval.interval),
+            FrameData::Distinct(distinct) => {
+                distinct.indices.get(frame).map(|(_, interval)| *interval)
+            }
         }
+    }
+
+    /// Get the duration of the given frame
+    ///
+    /// # Panics
+    /// If the frame index is out of bounds
+    pub fn frame_duration(&self, frame: usize) -> Duration {
+        self.get_frame_duration(frame).expect("Frame index out of bounds")
+    }
+
+    /// Get the frame index of the given frame
+    pub fn get_frame_index(&self, frame: usize) -> Option<usize> {
+        match self {
+            FrameData::FixedInterval(fixed_interval) => fixed_interval.indices.get(frame).copied(),
+            FrameData::Distinct(distinct) => distinct.indices.get(frame).map(|(index, _)| *index),
+        }
+    }
+
+    /// Get the frame index of the given frame
+    ///
+    /// # Panics
+    /// If the frame index is out of bounds
+    pub fn frame_index(&self, frame: usize) -> usize {
+        self.get_frame_index(frame).expect("Frame index out of bounds")
     }
 }
 
@@ -154,7 +184,7 @@ impl From<FixedIntervalCodec> for FixedInterval {
 
 #[derive(Debug, Clone, PartialEq, Eq, Reflect)]
 pub struct Distinct {
-    indices: HashMap<usize, Duration>,
+    indices: Vec<(usize, Duration)>,
 }
 impl From<DistinctCodec> for Distinct {
     fn from(value: DistinctCodec) -> Self {
