@@ -63,6 +63,8 @@ impl AnimationSettings {
 #[derive(EntityEvent, Debug, Clone)]
 pub struct StopAnimation {
     pub entity: Entity,
+    
+    /// If the filter is set, this event will only stop the current animation if it matches the filter
     pub filter: Option<ResourceLocation<AnimationResource>>,
 }
 impl StopAnimation {
@@ -79,4 +81,16 @@ impl StopAnimation {
             filter: Some(filter),
         }
     }
+}
+
+/// Emitted whenever an animation finishes playing on an entity
+#[derive(EntityEvent, Debug, Clone, derive_new::new)]
+pub struct AnimationFinished {
+    pub entity: Entity,
+    
+    /// The animation that just finished playing
+    pub animation: ResourceLocation<AnimationResource>,
+    
+    /// Whether this animation is repeating or stopped
+    pub repeat: bool,
 }

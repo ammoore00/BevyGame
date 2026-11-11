@@ -3,7 +3,7 @@ use assets::resource::characters::{AnimationData, AnimationResource, ResolvedAni
 use bevy::prelude::*;
 use data::prelude::{ResourceLocation, SystemRegistry};
 use getset::{CopyGetters, Getters};
-use render_api::animation::{AnimationSettings, PlayAnimation, StopAnimation};
+use render_api::animation::{AnimationFinished, AnimationSettings, PlayAnimation, StopAnimation};
 use std::fmt::{Display, Formatter};
 
 pub(super) fn plugin(app: &mut App) {
@@ -130,8 +130,9 @@ fn update_tracking(
     tracker_query: Query<(Entity, &mut AnimationTracker)>,
     registry: SystemRegistry<AnimationResource>,
     time: Res<Time>,
+    mut commands: Commands,
 ) {
-    for (_, mut tracker) in tracker_query {
+    for (entity, mut tracker) in tracker_query {
         tracker.frame_timer.tick(time.delta());
 
         if tracker.frame_timer.just_finished() {
@@ -142,6 +143,8 @@ fn update_tracking(
             if tracker.frame_counter >= animation.frame_data().num_frames() {
                 // TODO: Account for repeat setting
                 tracker.frame_counter = 0;
+                
+                commands.trigger(AnimationFinished::new(entity, tracker.loc.clone(), tracker.settings.repeat));
             }
 
             // Update the current frame index
