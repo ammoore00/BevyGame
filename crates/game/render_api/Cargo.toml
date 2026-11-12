@@ -11,7 +11,7 @@ data = { workspace = true }
 bevy = { workspace = true }
 derive-new = { workspace = true }
 getset = { workspace = true }
-thiserror = "2.0.18"
+thiserror = { workspace = true }
 
 [lints]
 workspace = true
