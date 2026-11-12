@@ -1,11 +1,12 @@
 mod camera;
-mod animation;
 
 use bevy::prelude::*;
+use render_api::RenderBackendPlugin;
 
 pub struct RenderPlugin;
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((animation::plugin, camera::plugin));
+        app.add_plugins(RenderBackendPlugin);
+        app.add_plugins(camera::plugin);
     }
 }

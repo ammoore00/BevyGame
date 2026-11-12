@@ -1,9 +1,10 @@
-use crate::animation::AnimationSystems;
+use crate::animation::events::{AnimationFinished, AnimationSettings, PlayAnimation, StopAnimation};
+use crate::animation::
+AnimationSystems;
 use assets::resource::characters::{AnimationData, AnimationResource, ResolvedAnimationData};
 use bevy::prelude::*;
 use data::prelude::{ResourceLocation, SystemRegistry};
 use getset::{CopyGetters, Getters};
-use render_api::animation::{AnimationFinished, AnimationSettings, PlayAnimation, StopAnimation};
 use std::fmt::{Display, Formatter};
 
 pub(super) fn plugin(app: &mut App) {
@@ -143,8 +144,12 @@ fn update_tracking(
             if tracker.frame_counter >= animation.frame_data().num_frames() {
                 // TODO: Account for repeat setting
                 tracker.frame_counter = 0;
-                
-                commands.trigger(AnimationFinished::new(entity, tracker.loc.clone(), tracker.settings.repeat));
+
+                commands.trigger(AnimationFinished::new(
+                    entity,
+                    tracker.loc.clone(),
+                    tracker.settings.repeat,
+                ));
             }
 
             // Update the current frame index

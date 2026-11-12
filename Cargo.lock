@@ -5552,6 +5552,7 @@ dependencies = [
  "data",
  "derive-new",
  "getset",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
