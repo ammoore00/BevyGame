@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::codec::sprite::TextureAtlasCodec;
 use crate::resource::characters::CharacterSpriteResource;
 use bevy::math::UVec2;

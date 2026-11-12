@@ -7,7 +7,7 @@ use assets::action_states::{
 };
 use assets::resource::characters::AttackResource;
 use bevy::prelude::*;
-use common::{AppSystems, Facing, WorldPosition};
+use common::{Facing, WorldPosition};
 use data::prelude::*;
 use physics::{ApplyImpulse, Impulse, KinematicData, MovementController, PhysicsData};
 use std::any::TypeId;
@@ -157,7 +157,7 @@ fn on_jump_input(
             entity,
             impulse: Impulse::from(Vec3::Y * JUMP_VELOCITY),
         });
-        
+
         commands.entity(entity).trigger(JumpInputConfirmed);
     } else {
         info!("Cannot jump, player is not grounded!");

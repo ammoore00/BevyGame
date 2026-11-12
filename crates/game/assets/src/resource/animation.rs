@@ -5,7 +5,6 @@ use bevy::prelude::*;
 use data::prelude::*;
 use data::resource::{ResourceVisitError, resource_kind};
 use getset::{CloneGetters, Getters};
-use std::collections::HashMap;
 use std::time::Duration;
 use tracing::info;
 
@@ -15,7 +14,7 @@ pub(in crate::resource) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<AnimationResource>();
 }
 
-#[resource_kind(path = "characters/animations", asset_kind = AnimationData, visit_override = true)]
+#[resource_kind(path = "animations", asset_kind = AnimationData, visit_override = true)]
 pub struct AnimationResource;
 impl AnimationResource {
     fn visit(
