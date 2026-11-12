@@ -2,8 +2,9 @@ use crate::action_state_scene;
 use crate::prelude::{Health, Player};
 use animation::{AnimationStateMap, CharacterAnimationTracker};
 use assets::action_states::Idle;
+use assets::resource::AnimationResource;
 use assets::resource::characters::{
-    AiResource, AnimationResource, CharacterData, CharacterResource,
+    AiResource, CharacterData, CharacterResource,
 };
 use bevy::ecs::query::{QueryData, QueryItem};
 use bevy::ecs::system::SystemParam;

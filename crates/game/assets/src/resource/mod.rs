@@ -6,7 +6,12 @@ mod ui;
 
 pub mod characters;
 pub mod level;
+mod animation;
+
 pub use {
+    animation::{
+        AnimationData, AnimationRegistry, AnimationResource, FrameData, ResolvedAnimationData,
+    },
     audio::{AudioRegistry, AudioResource},
     font::FontBuilder,
     ui::{
@@ -17,6 +22,7 @@ pub use {
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
+        animation::plugin,
         audio::plugin,
         characters::plugin,
         font::plugin,

@@ -1,7 +1,8 @@
 use crate::dev_tools::editor::window::properties::EditorCodec;
 use crate::screens::Screen;
 use assets::codec::{AnimationCodec, AttackCodec, CharacterCodec};
-use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
+use assets::resource::AnimationResource;
+use assets::resource::characters::{AttackResource, CharacterResource};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::tasks::IoTaskPool;

@@ -2,7 +2,8 @@ use crate::dev_tools::editor::file_manager::{
     EditorResourceKind, FileKind, FileManager, FileTaskChannelSet,
 };
 use crate::screens::Screen;
-use assets::resource::characters::{AnimationResource, AttackResource, CharacterResource};
+use assets::resource::AnimationResource;
+use assets::resource::characters::{AttackResource, CharacterResource};
 use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::relationship::Relationship;
 use bevy::ecs::system::SystemParam;

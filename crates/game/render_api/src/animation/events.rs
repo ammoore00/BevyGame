@@ -1,5 +1,5 @@
 use crate::{Entity, EntityEvent};
-use assets::resource::characters::AnimationResource;
+use assets::resource::AnimationResource;
 use data::loc::ResourceLocation;
 
 /// Used to request an animation to be played on an entity

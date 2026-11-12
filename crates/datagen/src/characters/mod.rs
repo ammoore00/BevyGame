@@ -12,8 +12,9 @@ use assets::codec::{
     CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HealthCodec, KeyFrameCodec,
     TextureAtlasCodec,
 };
+use assets::resource::AnimationResource;
 use assets::resource::characters::{
-    AiResource, AnimationResource, AttackResource, AttackSetResource, CharacterResource,
+    AiResource, AttackResource, AttackSetResource, CharacterResource,
     CharacterSpriteResource,
 };
 use data::prelude::*;

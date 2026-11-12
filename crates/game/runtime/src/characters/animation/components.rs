@@ -1,4 +1,4 @@
-use assets::resource::characters::{AnimationData, AnimationResource};
+use assets::resource::{AnimationData, AnimationResource};
 use bevy::prelude::*;
 use common::Facing;
 use data::loc::ResourceLocation;

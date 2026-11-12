@@ -2,13 +2,14 @@ use crate::action_states::{ALL_STATES, Attacking, Dodging, Idle, MOVEMENT_STATES
 use crate::codec::character::health::HealthCodec;
 use crate::codec::collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec};
 use crate::maybe::{DefaultOption, Maybe};
-use crate::resource::characters::{AiResource, AnimationResource, AttackSetResource};
+use crate::resource::characters::{AiResource, AttackSetResource};
 use bevy::prelude::TypePath;
 use data::prelude::*;
 use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::HashMap;
+use crate::resource::AnimationResource;
 
 pub mod attack;
 pub mod health;

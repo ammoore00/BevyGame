@@ -1,7 +1,7 @@
 use crate::animation::events::{AnimationFinished, AnimationSettings, PlayAnimation, StopAnimation};
 use crate::animation::
 AnimationSystems;
-use assets::resource::characters::{AnimationData, AnimationResource, ResolvedAnimationData};
+use assets::resource::{AnimationData, AnimationResource, ResolvedAnimationData};
 use bevy::prelude::*;
 use data::prelude::{ResourceLocation, SystemRegistry};
 use getset::{CopyGetters, Getters};

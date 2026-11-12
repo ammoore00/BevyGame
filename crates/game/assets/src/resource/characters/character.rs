@@ -1,8 +1,9 @@
-use crate::action_states::{ActionStateCapabilities, ALL_STATES};
+use crate::action_states::{ALL_STATES, ActionStateCapabilities};
 use crate::codec::{CharacterCodec, ColliderCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::maybe::DefaultOption;
-use crate::resource::characters::{AiResource, AnimationResource, AttackSetResource};
+use crate::resource::AnimationResource;
+use crate::resource::characters::{AiResource, AttackSetResource};
 use bevy::prelude::*;
 use data::loc::ResourceLocation;
 use data::prelude::ResourceFileType;

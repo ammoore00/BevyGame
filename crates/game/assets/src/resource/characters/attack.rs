@@ -2,7 +2,8 @@ use crate::codec::{
     AttackCodec, AttackSetCodec, ColliderCodec, HealthEventKind, HitboxCodec, KeyFrameCodec,
 };
 use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::resource::characters::{AnimationResource, CharacterSpriteResource};
+use crate::resource::AnimationResource;
+use crate::resource::characters::CharacterSpriteResource;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::WorldCoords;

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tracing::info;
 
-pub(super) fn plugin(app: &mut App) {
+pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<AnimationData>();
     app.init_asset_loader::<RonAssetLoader<AnimationCodec, AnimationData>>();
     app.add_registry_with_discovery::<AnimationResource>();

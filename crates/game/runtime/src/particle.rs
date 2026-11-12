@@ -1,4 +1,4 @@
-use assets::resource::characters::FrameData;
+use assets::resource::FrameData;
 use bevy::prelude::*;
 use common::{AppSystems, PausableSystems};
 use std::time::Duration;
