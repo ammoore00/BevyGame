@@ -7,11 +7,7 @@ use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
 use crate::{WriteError, create_dir, write_data};
 use assets::DefaultOption;
-use assets::codec::{
-    ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec,
-    CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HealthCodec, KeyFrameCodec,
-    TextureAtlasCodec,
-};
+use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterAnimationSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HealthCodec, KeyFrameCodec, TextureAtlasCodec};
 use assets::resource::AnimationResource;
 use assets::resource::characters::{
     AiResource, AttackResource, AttackSetResource, CharacterResource,
@@ -139,7 +135,20 @@ impl From<CharacterData> for CharacterCodec {
         let animations = value
             .animations
             .into_iter()
-            .map(|(action, animation)| (action, animation.loc))
+            .map(|(action, animation)| {
+                let character_animation_set = CharacterAnimationSetData {
+                    northwest: format!("{}_northwest", animation.loc),
+                    west: format!("{}_west", animation.loc),
+                    southwest: format!("{}_southwest", animation.loc),
+                    south: format!("{}_south", animation.loc),
+                    southeast: format!("{}_southeast", animation.loc),
+                    east: format!("{}_east", animation.loc),
+                    northeast: format!("{}_northeast", animation.loc),
+                    north: format!("{}_north", animation.loc),
+                };
+
+                (action, character_animation_set.into())
+            })
             .collect();
 
         let collider = ColliderCodec {
@@ -158,6 +167,31 @@ impl From<CharacterData> for CharacterCodec {
             attack_set: attack_set.into(),
 
             ai_params: value.ai_params,
+        }
+    }
+}
+
+struct CharacterAnimationSetData {
+    northwest: String,
+    west: String,
+    southwest: String,
+    south: String,
+    southeast: String,
+    east: String,
+    northeast: String,
+    north: String,
+}
+impl From<CharacterAnimationSetData> for CharacterAnimationSetCodec {
+    fn from(value: CharacterAnimationSetData) -> Self {
+        Self {
+            northwest: value.northwest.parse().unwrap(),
+            west: value.west.parse().unwrap(),
+            southwest: value.southwest.parse().unwrap(),
+            south: value.south.parse().unwrap(),
+            southeast: value.southeast.parse().unwrap(),
+            east: value.east.parse().unwrap(),
+            northeast: value.northeast.parse().unwrap(),
+            north: value.north.parse().unwrap(),
         }
     }
 }

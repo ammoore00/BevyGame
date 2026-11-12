@@ -1,3 +1,4 @@
+use assets::codec::CharacterAnimationSetCodec;
 use assets::resource::{AnimationData, AnimationResource};
 use bevy::prelude::*;
 use common::Facing;
@@ -5,6 +6,7 @@ use data::loc::ResourceLocation;
 use data::prelude::SystemRegistry;
 use std::any::TypeId;
 use std::collections::HashMap;
+use std::convert::Infallible;
 use std::time::Duration;
 
 #[derive(Component, Debug, Clone, Reflect)]
@@ -92,21 +94,62 @@ impl CharacterAnimationTracker {
 
 /// Maps characters states to animation data
 #[derive(Component, Debug, Clone, Reflect)]
-pub struct AnimationStateMap(HashMap<TypeId, Handle<AnimationData>>);
+pub struct AnimationStateMap(HashMap<TypeId, CharacterAnimationSet>);
 impl AnimationStateMap {
     pub fn new(
-        map: &HashMap<TypeId, ResourceLocation<AnimationResource>>,
+        map: &HashMap<TypeId, CharacterAnimationSetCodec>,
         context: &SystemRegistry<AnimationResource>,
     ) -> Self {
         let map = map
             .iter()
-            .map(|(type_id, location)| (*type_id, context.get_handle(location).unwrap().clone()))
+            //.map(|(type_id, location)| (*type_id, context.get_handle(location).unwrap().clone()))
+            .map(|(type_id, set)| {
+                (
+                    *type_id,
+                    // TODO: Proper error handling, since this is something that could originate from data
+                    CharacterAnimationSet::try_from_codec(set, context).unwrap()
+                )
+            })
             .collect();
         AnimationStateMap(map)
     }
 
-    pub fn get(&self) -> &HashMap<TypeId, Handle<AnimationData>> {
+    pub fn get(&self) -> &HashMap<TypeId, CharacterAnimationSet> {
         &self.0
+    }
+}
+
+#[derive(Debug, Clone, Reflect)]
+pub struct CharacterAnimationSet {
+    pub northwest: Handle<AnimationData>,
+    pub west: Handle<AnimationData>,
+    pub southwest: Handle<AnimationData>,
+    pub south: Handle<AnimationData>,
+    pub southeast: Handle<AnimationData>,
+    pub east: Handle<AnimationData>,
+    pub northeast: Handle<AnimationData>,
+    pub north: Handle<AnimationData>,
+}
+impl CharacterAnimationSet {
+    fn try_from_codec(
+        codec: &CharacterAnimationSetCodec,
+        context: &SystemRegistry<AnimationResource>,
+    ) -> Result<Self, Infallible> {
+        // TODO: Proper error handling, since this is something that could originate from data
+        let get_handle = |loc: &ResourceLocation<AnimationResource>| {
+            context.get_handle(loc).unwrap().clone()
+        };
+
+        Ok(Self {
+            northwest: get_handle(&codec.northwest),
+            west: get_handle(&codec.west),
+            southwest: get_handle(&codec.southwest),
+            south: get_handle(&codec.south),
+            southeast: get_handle(&codec.southeast),
+            east: get_handle(&codec.east),
+            northeast: get_handle(&codec.northeast),
+            north: get_handle(&codec.north),
+        })
     }
 }
 

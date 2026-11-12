@@ -31,7 +31,7 @@ pub struct CharacterCodec {
     /// Optional - defaults to all states allowed.
     pub allowed_states: Maybe<AllowedStatesCodec>,
     /// Map of animations to states. Does not include attack animations.
-    pub animations: HashMap<ActionStateCodec, ResourceLocation<AnimationResource>>,
+    pub animations: HashMap<ActionStateCodec, CharacterAnimationSetCodec>,
 
     /// The attack set to use for this character. See `AttackSetCodec` for more.
     ///
@@ -117,4 +117,16 @@ impl ActionStateCodec {
             ActionStateCodec::Dodging => TypeId::of::<Dodging>(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+pub struct CharacterAnimationSetCodec {
+    pub northwest: ResourceLocation<AnimationResource>,
+    pub west: ResourceLocation<AnimationResource>,
+    pub southwest: ResourceLocation<AnimationResource>,
+    pub south: ResourceLocation<AnimationResource>,
+    pub southeast: ResourceLocation<AnimationResource>,
+    pub east: ResourceLocation<AnimationResource>,
+    pub northeast: ResourceLocation<AnimationResource>,
+    pub north: ResourceLocation<AnimationResource>,
 }

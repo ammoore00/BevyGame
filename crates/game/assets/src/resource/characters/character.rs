@@ -1,5 +1,5 @@
 use crate::action_states::{ALL_STATES, ActionStateCapabilities};
-use crate::codec::{CharacterCodec, ColliderCodec};
+use crate::codec::{CharacterAnimationSetCodec, CharacterCodec, ColliderCodec};
 use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::maybe::DefaultOption;
 use crate::resource::AnimationResource;
@@ -26,7 +26,7 @@ pub struct CharacterData {
     state_capabilities: ActionStateCapabilities,
 
     #[getset(get = "pub")]
-    animations: HashMap<TypeId, ResourceLocation<AnimationResource>>,
+    animations: HashMap<TypeId, CharacterAnimationSetCodec>,
 
     #[getset(get = "pub")]
     collider: ColliderCodec,
