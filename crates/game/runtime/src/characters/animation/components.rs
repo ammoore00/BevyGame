@@ -11,9 +11,9 @@ use std::time::Duration;
 
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct CharacterAnimationTracker {
-    pub default_animation: Handle<AnimationData>,
-    pub current_animation: Handle<AnimationData>,
-    pub prev_animation: Handle<AnimationData>,
+    pub default_animation: CharacterAnimationSet,
+    pub current_animation: CharacterAnimationSet,
+    pub prev_animation: CharacterAnimationSet,
 
     pub facing: Facing,
     pub timer: Timer,
@@ -21,8 +21,12 @@ pub struct CharacterAnimationTracker {
 }
 
 impl CharacterAnimationTracker {
-    pub fn new(default: Handle<AnimationData>, assets: &Assets<AnimationData>) -> Self {
-        let frame_data = assets.get(default.id()).unwrap().unwrap().frame_data();
+    pub fn new(default: CharacterAnimationSet, assets: &Assets<AnimationData>) -> Self {
+        let frame_data = assets
+            .get(default.get(Facing::default()).id())
+            .unwrap()
+            .resolved()
+            .frame_data();
         let interval = frame_data.get_frame_duration(0).unwrap();
 
         Self {
@@ -50,12 +54,14 @@ impl CharacterAnimationTracker {
             return;
         }
 
-        let animation = assets.get(self.current_animation.id()).unwrap();
+        let animation = assets
+            .get(self.current_animation.get(self.facing).id())
+            .unwrap();
 
-        self.frame = (self.frame + 1) % animation.unwrap().frame_data().num_frames();
+        self.frame = (self.frame + 1) % animation.resolved().frame_data().num_frames();
         self.timer.set_duration(
             animation
-                .unwrap()
+                .resolved()
                 .frame_data()
                 .get_frame_duration(self.frame)
                 .unwrap(),
@@ -64,18 +70,18 @@ impl CharacterAnimationTracker {
 
     fn get_image(&self, assets: &Assets<AnimationData>) -> Handle<Image> {
         assets
-            .get(self.current_animation.id())
+            .get(self.current_animation.get(self.facing).id())
             .unwrap()
-            .unwrap()
+            .resolved()
             .image()
             .clone()
     }
 
     fn get_atlas(&self, assets: &Assets<AnimationData>) -> TextureAtlas {
         assets
-            .get(self.current_animation.id())
+            .get(self.current_animation.get(self.facing).id())
             .unwrap()
-            .unwrap()
+            .resolved()
             .atlas()
             .clone()
     }
@@ -84,9 +90,9 @@ impl CharacterAnimationTracker {
         self.frame
             + self.facing as usize
                 * assets
-                    .get(self.current_animation.id())
+                    .get(self.current_animation.get(self.facing).id())
                     .unwrap()
-                    .unwrap()
+                    .resolved()
                     .frame_data()
                     .num_frames()
     }
@@ -107,7 +113,7 @@ impl AnimationStateMap {
                 (
                     *type_id,
                     // TODO: Proper error handling, since this is something that could originate from data
-                    CharacterAnimationSet::try_from_codec(set, context).unwrap()
+                    CharacterAnimationSet::try_from_codec(set, context).unwrap(),
                 )
             })
             .collect();
@@ -119,16 +125,16 @@ impl AnimationStateMap {
     }
 }
 
-#[derive(Debug, Clone, Reflect)]
+#[derive(Debug, Clone, PartialEq, Eq, Reflect)]
 pub struct CharacterAnimationSet {
-    pub northwest: Handle<AnimationData>,
-    pub west: Handle<AnimationData>,
-    pub southwest: Handle<AnimationData>,
-    pub south: Handle<AnimationData>,
-    pub southeast: Handle<AnimationData>,
-    pub east: Handle<AnimationData>,
-    pub northeast: Handle<AnimationData>,
-    pub north: Handle<AnimationData>,
+    northwest: Handle<AnimationData>,
+    west: Handle<AnimationData>,
+    southwest: Handle<AnimationData>,
+    south: Handle<AnimationData>,
+    southeast: Handle<AnimationData>,
+    east: Handle<AnimationData>,
+    northeast: Handle<AnimationData>,
+    north: Handle<AnimationData>,
 }
 impl CharacterAnimationSet {
     fn try_from_codec(
@@ -136,9 +142,8 @@ impl CharacterAnimationSet {
         context: &SystemRegistry<AnimationResource>,
     ) -> Result<Self, Infallible> {
         // TODO: Proper error handling, since this is something that could originate from data
-        let get_handle = |loc: &ResourceLocation<AnimationResource>| {
-            context.get_handle(loc).unwrap().clone()
-        };
+        let get_handle =
+            |loc: &ResourceLocation<AnimationResource>| context.get_handle(loc).unwrap().clone();
 
         Ok(Self {
             northwest: get_handle(&codec.northwest),
@@ -150,6 +155,19 @@ impl CharacterAnimationSet {
             northeast: get_handle(&codec.northeast),
             north: get_handle(&codec.north),
         })
+    }
+
+    pub fn get(&self, facing: Facing) -> Handle<AnimationData> {
+        match facing {
+            Facing::NorthWest => self.northwest.clone(),
+            Facing::West => self.west.clone(),
+            Facing::SouthWest => self.southwest.clone(),
+            Facing::South => self.south.clone(),
+            Facing::SouthEast => self.southeast.clone(),
+            Facing::East => self.east.clone(),
+            Facing::NorthEast => self.northeast.clone(),
+            Facing::North => self.north.clone(),
+        }
     }
 }
 

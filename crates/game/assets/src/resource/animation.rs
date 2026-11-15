@@ -82,7 +82,9 @@ impl AnimationData {
         }
     }
 
-    pub fn unwrap(&self) -> &ResolvedAnimationData {
+    /// #Panics
+    /// If the animation data is not resolved
+    pub fn resolved(&self) -> &ResolvedAnimationData {
         self.as_resolved()
             .expect("Cannot unwrap unresolved animation data")
     }

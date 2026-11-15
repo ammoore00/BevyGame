@@ -92,7 +92,7 @@ fn on_attack_success(
         );
         return;
     };
-    let animation = animation.unwrap();
+    let animation = animation.resolved();
 
     let Some(particle_sprite) = context
         .character_sprite_registry

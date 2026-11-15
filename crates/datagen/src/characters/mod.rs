@@ -137,14 +137,14 @@ impl From<CharacterData> for CharacterCodec {
             .into_iter()
             .map(|(action, animation)| {
                 let character_animation_set = CharacterAnimationSetData {
-                    northwest: format!("{}_northwest", animation.loc),
-                    west: format!("{}_west", animation.loc),
-                    southwest: format!("{}_southwest", animation.loc),
-                    south: format!("{}_south", animation.loc),
-                    southeast: format!("{}_southeast", animation.loc),
-                    east: format!("{}_east", animation.loc),
-                    northeast: format!("{}_northeast", animation.loc),
-                    north: format!("{}_north", animation.loc),
+                    northwest: format!("{}/northwest", animation.loc),
+                    west: format!("{}/west", animation.loc),
+                    southwest: format!("{}/southwest", animation.loc),
+                    south: format!("{}/south", animation.loc),
+                    southeast: format!("{}/southeast", animation.loc),
+                    east: format!("{}/east", animation.loc),
+                    northeast: format!("{}/northeast", animation.loc),
+                    north: format!("{}/north", animation.loc),
                 };
 
                 (action, character_animation_set.into())
