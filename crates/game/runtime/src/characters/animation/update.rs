@@ -8,7 +8,6 @@ use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems};
 use data::prelude::*;
-use tracing::warn;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -151,7 +150,7 @@ pub fn get_animation_set(
         };
 
         // TODO: Improve error handling
-        let Some(animation_handle) = animation_context.get_handle(attack.animation()) else {
+        let Some(_animation_handle) = animation_context.get_handle(attack.animation()) else {
             error!(
                 "Could not find animation definition for attack: {}!",
                 attacking_state.attack()

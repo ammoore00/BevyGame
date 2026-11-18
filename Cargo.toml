@@ -105,7 +105,7 @@ dev = [
     "bevy/bevy_ui_debug",
     "bevy/bevy_feathers",
     "bevy/debug",
-    "bevy_mod_debugdump",
+    #"bevy_mod_debugdump",
     "graphviz-rust",
 ]
 dev_native = [
@@ -119,7 +119,7 @@ dev_native = [
 [dependencies]
 bevy = { workspace = true }
 
-bevy_mod_debugdump = { version = "0.16.0", optional = true }
+#bevy_mod_debugdump = { version = "0.16.0", optional = true }
 graphviz-rust = { version = "0.9.8", optional = true }
 
 app = { path = "crates/game/app" }

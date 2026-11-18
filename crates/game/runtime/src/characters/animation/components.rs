@@ -10,7 +10,7 @@ use std::time::Duration;
 
 #[derive(Component, Debug, Clone)]
 pub struct CharacterAnimationTracker {
-    pub default_animation: CharacterAnimationSet,
+    pub _default_animation: CharacterAnimationSet,
     pub current_animation: CharacterAnimationSet,
     pub prev_animation: CharacterAnimationSet,
 
@@ -31,7 +31,7 @@ impl CharacterAnimationTracker {
         Self {
             current_animation: default.clone(),
             prev_animation: default.clone(),
-            default_animation: default,
+            _default_animation: default,
 
             facing: Facing::default(),
             timer: Timer::new(interval, TimerMode::Repeating),
