@@ -5,8 +5,10 @@ edition = "2024"
 
 [dependencies]
 assets = { workspace = true }
+common = { workspace = true }
 data = { workspace = true }
 
+enum-map = { workspace = true }
 getset = { workspace = true }
 ron = { workspace = true }
 serde = { workspace = true }

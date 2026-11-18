@@ -14,6 +14,7 @@ maybe_fields = { path = "../../macros/maybe_fields" }
 bevy = { workspace = true }
 const_format = { workspace = true }
 derive-new = { workspace = true }
+enum-map = { workspace = true }
 getset = { workspace = true }
 paste = { workspace = true }
 ron = { workspace = true }

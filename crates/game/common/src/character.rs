@@ -1,8 +1,25 @@
 use crate::WorldCoords;
 use bevy::math::ops::sin_cos;
 use bevy::prelude::*;
+use enum_map::Enum;
+use serde::{Deserialize, Serialize};
+use strum_macros::EnumIter;
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
+#[derive(
+    Component,
+    Enum,
+    EnumIter,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Default,
+    Serialize,
+    Deserialize,
+    Reflect,
+)]
 pub enum Facing {
     NorthWest = 0,
     West = 1,

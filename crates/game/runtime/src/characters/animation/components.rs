@@ -2,14 +2,13 @@ use assets::codec::CharacterAnimationSetCodec;
 use assets::resource::{AnimationData, AnimationResource};
 use bevy::prelude::*;
 use common::Facing;
-use data::loc::ResourceLocation;
 use data::prelude::SystemRegistry;
+use enum_map::EnumMap;
 use std::any::TypeId;
 use std::collections::HashMap;
-use std::convert::Infallible;
 use std::time::Duration;
 
-#[derive(Component, Debug, Clone, Reflect)]
+#[derive(Component, Debug, Clone)]
 pub struct CharacterAnimationTracker {
     pub default_animation: CharacterAnimationSet,
     pub current_animation: CharacterAnimationSet,
@@ -99,7 +98,7 @@ impl CharacterAnimationTracker {
 }
 
 /// Maps characters states to animation data
-#[derive(Component, Debug, Clone, Reflect)]
+#[derive(Component, Debug, Clone)]
 pub struct AnimationStateMap(HashMap<TypeId, CharacterAnimationSet>);
 impl AnimationStateMap {
     pub fn new(
@@ -125,61 +124,36 @@ impl AnimationStateMap {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Reflect)]
-pub struct CharacterAnimationSet {
-    northwest: Handle<AnimationData>,
-    west: Handle<AnimationData>,
-    southwest: Handle<AnimationData>,
-    south: Handle<AnimationData>,
-    southeast: Handle<AnimationData>,
-    east: Handle<AnimationData>,
-    northeast: Handle<AnimationData>,
-    north: Handle<AnimationData>,
-}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CharacterAnimationSet(EnumMap<Facing, Handle<AnimationData>>);
 impl CharacterAnimationSet {
     fn try_from_codec(
         codec: &CharacterAnimationSetCodec,
         context: &SystemRegistry<AnimationResource>,
-    ) -> Result<Self, Infallible> {
-        // TODO: Proper error handling, since this is something that could originate from data
-        let get_handle =
-            |loc: &ResourceLocation<AnimationResource>| context.get_handle(loc).unwrap().clone();
-
-        Ok(Self {
-            northwest: get_handle(&codec.northwest),
-            west: get_handle(&codec.west),
-            southwest: get_handle(&codec.southwest),
-            south: get_handle(&codec.south),
-            southeast: get_handle(&codec.southeast),
-            east: get_handle(&codec.east),
-            northeast: get_handle(&codec.northeast),
-            north: get_handle(&codec.north),
-        })
+    ) -> Result<Self, AnimationSetError> {
+        let map = codec
+            .0
+            .iter()
+            .map(|(facing, loc)| {
+                let handle = context
+                    .get_handle(loc)
+                    .ok_or(AnimationSetError::FailedToGetHandle)?
+                    .clone();
+                
+                Ok((facing, handle))
+            })
+            .collect::<Result<EnumMap<Facing, Handle<AnimationData>>, AnimationSetError>>()?;
+        
+        Ok(Self(map))
     }
 
     pub fn get(&self, facing: Facing) -> Handle<AnimationData> {
-        match facing {
-            Facing::NorthWest => self.northwest.clone(),
-            Facing::West => self.west.clone(),
-            Facing::SouthWest => self.southwest.clone(),
-            Facing::South => self.south.clone(),
-            Facing::SouthEast => self.southeast.clone(),
-            Facing::East => self.east.clone(),
-            Facing::NorthEast => self.northeast.clone(),
-            Facing::North => self.north.clone(),
-        }
+        self.0[facing].clone()
     }
 }
 
-/*
-impl AnimationStateMap {
-    pub fn _from_resource_location_map(level: &HashMap<TypeId, ResourceLocation<AnimationResource>>, registry: &ResolvedResourceRegistry<AnimationResource>) -> Self {
-        let resolved_map = level.iter()
-            .level(|(type_id, location)| {
-                (*type_id, registry.get(location).unwrap().clone())
-            })
-            .collect();
-        AnimationStateMap(resolved_map)
-    }
+#[derive(Debug, Clone, thiserror::Error)]
+enum AnimationSetError {
+    #[error("Failed to get handle for animation data")]
+    FailedToGetHandle,
 }
- */

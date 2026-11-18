@@ -7,7 +7,10 @@ edition = "2024"
 debug_option_derive = { path = "../../macros/debug_option_derive", optional = true }
 
 bevy = { workspace = true }
+enum-map = { workspace = true }
 serde = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 
 [lints]
 workspace = true

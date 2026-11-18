@@ -349,6 +349,7 @@ dependencies = [
  "const_format",
  "data",
  "derive-new",
+ "enum-map",
  "getset",
  "maybe_fields",
  "paste",
@@ -2526,7 +2527,10 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "debug_option_derive",
+ "enum-map",
  "serde",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]
@@ -2839,7 +2843,9 @@ name = "datagen"
 version = "0.1.0"
 dependencies = [
  "assets",
+ "common",
  "data",
+ "enum-map",
  "getset",
  "ron",
  "serde",
@@ -5615,6 +5621,7 @@ dependencies = [
  "common",
  "data",
  "derive-new",
+ "enum-map",
  "getset",
  "physics",
  "rand 0.10.2",

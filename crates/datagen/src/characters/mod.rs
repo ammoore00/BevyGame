@@ -15,6 +15,8 @@ use assets::resource::characters::{
 };
 use data::prelude::*;
 use std::collections::HashMap;
+use enum_map::{enum_map, EnumMap};
+use common::Facing;
 
 pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(CharacterResource::ROOT_DIR)?;
@@ -136,17 +138,18 @@ impl From<CharacterData> for CharacterCodec {
             .animations
             .into_iter()
             .map(|(action, animation)| {
-                let character_animation_set = CharacterAnimationSetData {
-                    northwest: format!("{}/northwest", animation.loc),
-                    west: format!("{}/west", animation.loc),
-                    southwest: format!("{}/southwest", animation.loc),
-                    south: format!("{}/south", animation.loc),
-                    southeast: format!("{}/southeast", animation.loc),
-                    east: format!("{}/east", animation.loc),
-                    northeast: format!("{}/northeast", animation.loc),
-                    north: format!("{}/north", animation.loc),
+                let map = enum_map! {
+                    Facing::NorthWest => format!("{}/northwest", animation.loc),
+                    Facing::West => format!("{}/west", animation.loc),
+                    Facing::SouthWest => format!("{}/southwest", animation.loc),
+                    Facing::South => format!("{}/south", animation.loc),
+                    Facing::SouthEast => format!("{}/southeast", animation.loc),
+                    Facing::East => format!("{}/east", animation.loc),
+                    Facing::NorthEast => format!("{}/northeast", animation.loc),
+                    Facing::North => format!("{}/north", animation.loc),
                 };
-
+                
+                let character_animation_set = CharacterAnimationSetData(map);
                 (action, character_animation_set.into())
             })
             .collect();
@@ -171,28 +174,10 @@ impl From<CharacterData> for CharacterCodec {
     }
 }
 
-struct CharacterAnimationSetData {
-    northwest: String,
-    west: String,
-    southwest: String,
-    south: String,
-    southeast: String,
-    east: String,
-    northeast: String,
-    north: String,
-}
+struct CharacterAnimationSetData(EnumMap<Facing, String>);
 impl From<CharacterAnimationSetData> for CharacterAnimationSetCodec {
     fn from(value: CharacterAnimationSetData) -> Self {
-        Self {
-            northwest: value.northwest.parse().unwrap(),
-            west: value.west.parse().unwrap(),
-            southwest: value.southwest.parse().unwrap(),
-            south: value.south.parse().unwrap(),
-            southeast: value.southeast.parse().unwrap(),
-            east: value.east.parse().unwrap(),
-            northeast: value.northeast.parse().unwrap(),
-            north: value.north.parse().unwrap(),
-        }
+        Self(value.0.map(|facing, loc| loc.parse().unwrap()))
     }
 }
 
