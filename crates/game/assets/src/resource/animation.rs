@@ -7,6 +7,7 @@ use data::resource::{ResolvableData, ResourceVisitError, resource_kind};
 use getset::{CloneGetters, Getters};
 use std::time::Duration;
 use tracing::info;
+use data::loc::AnyResourceLocation;
 
 pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<AnimationData>();
@@ -46,6 +47,7 @@ impl AnimationResource {
 
         let resolved_animation = ResolvedAnimationData {
             image,
+            image_loc: animation.image.clone().into(),
             atlas,
             frame_data,
         };
@@ -66,6 +68,8 @@ impl From<AnimationCodec> for AnimationData {
 pub struct ResolvedAnimationData {
     #[getset(get_clone = "pub")]
     image: Handle<Image>,
+    #[getset(get = "pub")]
+    image_loc: AnyResourceLocation,
     #[getset(get = "pub")]
     atlas: TextureAtlas,
     #[getset(get = "pub")]

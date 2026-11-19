@@ -144,6 +144,7 @@ fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReado
                 .maybe_item(animation.map(|animation| format!("Animation: {}", animation.loc())))
                 .maybe_item(animation.map(|animation| format!("Frame Counter: {}", animation.frame_counter())))
                 .maybe_item(animation.map(|animation| format!("Atlas Index: {}", animation.current_index())))
+                .maybe_item(animation.map(|animation| format!("Sprite: {}", animation.image())))
         })
 }
 
