@@ -1,6 +1,7 @@
-use crate::animation::events::{AnimationFinished, AnimationSettings, PlayAnimation, StopAnimation};
-use crate::animation::
-AnimationSystems;
+use crate::animation::AnimationSystems;
+use crate::animation::events::{
+    AnimationFinished, AnimationSettings, PlayAnimation, StopAnimation,
+};
 use assets::resource::{AnimationData, AnimationResource, ResolvedAnimationData};
 use bevy::prelude::*;
 use data::prelude::{ResourceLocation, SystemRegistry};
@@ -179,8 +180,19 @@ fn on_play_animation(
         return;
     }
 
+    // If we're already playing an animation, and we should use the existing progress, store it for later
+    let existing_data = if let Ok(tracker) = tracker_query.get(event.entity)
+        && event.settings.continue_progress
+    {
+        let current_frame = tracker.frame_counter;
+        let current_timer = tracker.frame_timer.clone();
+        Some((current_frame, current_timer))
+    } else {
+        None
+    };
+
     // Otherwise, create a new animation tracker
-    let tracker =
+    let mut tracker =
         match AnimationTracker::try_new(&event.animation, &animation_registry, event.settings) {
             Ok(tracker) => tracker,
             Err(err) => {
@@ -188,6 +200,12 @@ fn on_play_animation(
                 return;
             }
         };
+    
+    if let Some((current_frame, current_timer)) = existing_data {
+        tracker.frame_counter = current_frame;
+        tracker.frame_timer = current_timer;
+    }
+    
     commands.entity(event.entity).insert(tracker);
 }
 
