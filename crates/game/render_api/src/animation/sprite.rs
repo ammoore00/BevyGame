@@ -26,6 +26,8 @@ fn update_sprites(
             continue;
         };
         
+        let prev_image = sprite.image.clone();
+        
         let Some(ref mut atlas) = sprite.texture_atlas else {
             error!(
                 "Animation {} applied to sprite without texture atlas! Removing animation.",
@@ -35,7 +37,11 @@ fn update_sprites(
             continue;
         };
         
-        atlas.index = tracker.current_index();
-        sprite.image = animation.image();
+        if prev_image == animation.image() {
+            atlas.index = tracker.current_index();
+            continue;
+        }
+        
+        *sprite = Sprite::from_atlas_image(animation.image(), animation.atlas().clone());
     }
 }
