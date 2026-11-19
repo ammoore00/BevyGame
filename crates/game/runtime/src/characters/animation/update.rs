@@ -1,158 +1,93 @@
 use crate::characters::animation::{AnimationStateMap, CharacterAnimationTracker};
+use crate::characters::attack::CurrentAttack;
 use crate::characters::state::ActionStateTracker;
-use assets::action_states::Attacking;
-use assets::resource::characters::{AttackResource, CharacterAnimationSet};
-use assets::resource::{AnimationData, AnimationResource};
+use assets::resource::AnimationResource;
+use assets::resource::characters::CharacterAnimationSet;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use common::{AppSystems, Facing, GameplaySystems, PausableSystems};
 use data::prelude::*;
+use render_api::animation::{AnimationSettings, PlayAnimation};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (
-            update_animation_timer.in_set(AppSystems::TickTimers),
-            (update_animation_state, update_animation_atlas)
-                .chain()
-                .in_set(AppSystems::Respond),
-        )
+        update_animation_state
+            .in_set(AppSystems::Respond)
             .in_set(GameplaySystems)
             .in_set(PausableSystems),
     );
 }
 
-fn update_animation_timer(
-    time: Res<Time>,
-    assets: Res<Assets<AnimationData>>,
-    mut query: Query<&mut CharacterAnimationTracker>,
-) {
-    for mut animation in &mut query {
-        animation.update_timer(time.delta(), &assets);
-    }
-}
-
 #[derive(QueryData)]
 #[query_data(mutable)]
 struct AnimationQueryData {
+    entity: Entity,
     action_tracker: &'static ActionStateTracker,
     animation_tracker: &'static mut CharacterAnimationTracker,
     animation_state_map: &'static AnimationStateMap,
     facing: &'static Facing,
-    sprite: &'static mut Sprite,
-    attacking: Option<&'static Attacking>,
+    current_attack: Option<&'static CurrentAttack>,
 }
 
 fn update_animation_state(
     animation_query: Query<AnimationQueryData>,
-    attack_context: SystemRegistry<AttackResource>,
-    animation_context: SystemRegistry<AnimationResource>,
+    mut commands: Commands,
 ) {
     for animation_data in animation_query {
         let AnimationQueryDataItem {
+            entity,
             action_tracker,
             mut animation_tracker,
             animation_state_map,
             facing,
-            attacking,
-            ..
+            current_attack,
         } = animation_data;
-        
-        animation_tracker.facing = *facing;
 
-        let Some(animation_set) = get_animation_set(
-            action_tracker,
-            animation_state_map,
-            attacking,
-            &attack_context,
-            &animation_context,
-        ) else {
+        let Some(animation_set) =
+            get_animation_set(action_tracker, animation_state_map, current_attack)
+        else {
             error!("Failed to get animation handle!");
             return;
         };
 
-        // Update animation tracker state if the animation has changed
-        animation_tracker.current_animation = animation_set.clone();
-        let animation = animation_context
-            .get_asset_from_handle(&animation_set.get(*facing))
-            .unwrap();
-
-        let interval = animation
-            .resolved()
-            .frame_data()
-            .get_frame_duration(0)
-            .unwrap();
-
-        if animation_tracker.prev_animation != animation_tracker.current_animation {
-            animation_tracker.timer = Timer::new(interval, TimerMode::Repeating);
-            animation_tracker.frame = 0;
+        // If the animation set has not changed, and we still have the same facing, do nothing
+        let set_unchanged = animation_tracker.current_animation == animation_set;
+        if set_unchanged && animation_tracker.last_facing == Some(*facing) {
+            continue;
         }
 
-        animation_tracker.prev_animation = animation_set;
-    }
-}
-
-fn update_animation_atlas(
-    animation_query: Query<AnimationQueryData>,
-    attack_context: SystemRegistry<AttackResource>,
-    animation_context: SystemRegistry<AnimationResource>,
-) {
-    for animation_data in animation_query
-    {
-        let AnimationQueryDataItem {
-            action_tracker,
-            animation_tracker,
-            animation_state_map,
-            facing,
-            mut sprite,
-            attacking,
-        } = animation_data;
+        // Update the tracker
+        animation_tracker.current_animation = animation_set.clone();
+        animation_tracker.last_facing = Some(*facing);
         
-        let Some(animation_set) = get_animation_set(
-            action_tracker,
-            animation_state_map,
-            attacking,
-            &attack_context,
-            &animation_context,
-        ) else {
-            error!("Failed to get animation handle!");
-            return;
-        };
-
-        let animation = animation_context
-            .get_asset_from_handle(&animation_set.get(*facing))
-            .unwrap();
-
-        sprite.image = animation.resolved().image().clone();
-
-        let mut atlas = animation.resolved().atlas().clone();
-        // Calculate index: (Direction Row * Frames per row) + Current Frame
-        atlas.index = animation_tracker.get_atlas_index(animation_context.assets());
-        sprite.texture_atlas = Some(atlas);
+        commands.trigger(PlayAnimation {
+            entity,
+            animation: animation_set.get(*facing).clone(),
+            settings: AnimationSettings {
+                // If the animation set did not change, but the facing did,
+                // start the new animation from the current frame of the previous animation
+                continue_progress: set_unchanged,
+                ..AnimationSettings::default_gameplay()
+            },
+        })
     }
 }
 
 pub fn get_animation_set(
     state_tracker: &ActionStateTracker,
     animation_state_map: &AnimationStateMap,
-    attacking_state: Option<&Attacking>,
-    attack_context: &SystemRegistry<AttackResource>,
-    animation_context: &SystemRegistry<AnimationResource>,
+    attacking_state: Option<&CurrentAttack>,
 ) -> Option<CharacterAnimationSet> {
-    if let Some(attacking_state) = attacking_state {
-        let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
-            error!(
-                "Could not find attack definition for {}!",
-                attacking_state.attack()
-            );
-            return None;
-        };
-
-        // TODO: Fix this code to work with new animation systems
-        //Some(animation_handle)
-        None
+    if let Some(attack) = attacking_state
+        && let Some(animation_handle) = animation_state_map
+            .attack_animations()
+            .get(attack.loc())
+            .cloned()
+    {
+        Some(animation_handle)
     } else if let Some(animation_handle) = animation_state_map
-        .get()
+        .standard_animations()
         .get(&state_tracker.state_type_id())
         .cloned()
     {

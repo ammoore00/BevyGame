@@ -15,63 +15,35 @@ pub struct CharacterAnimationList {
     pub standard_animations: HashMap<TypeId, CharacterAnimationSet>,
     pub attack_animations: HashMap<ResourceLocation<AttackResource>, CharacterAnimationSet>,
 }
-impl CharacterAnimationList {
-    pub fn try_from_codec(
-        codec: CharacterAnimationListCodec,
-        context: &SystemRegistry<AnimationResource>,
-    ) -> Result<Self, AnimationSetError> {
-        let standard_animations = codec
+impl From<CharacterAnimationListCodec> for CharacterAnimationList {
+    fn from(value: CharacterAnimationListCodec) -> Self {
+        let standard_animations = value
             .standard_animations
             .into_iter()
-            .map(|(k, v)| {
-                Ok((
-                    k.into_type_id(),
-                    CharacterAnimationSet::try_from_codec(v, context)?,
-                ))
-            })
-            .collect::<Result<_, _>>()?;
-        let attack_animations = codec
+            .map(|(k, v)| (k.into_type_id(), v.into()))
+            .collect();
+        let attack_animations = value
             .attack_animations
             .into_iter()
-            .map(|(k, v)| Ok((k, CharacterAnimationSet::try_from_codec(v, context)?)))
-            .collect::<Result<_, _>>()?;
-
-        Ok(Self {
+            .map(|(k, v)| (k, v.into()))
+            .collect();
+        
+        Self {
             standard_animations,
             attack_animations,
-        })
+        }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CharacterAnimationSet(EnumMap<Facing, Handle<AnimationData>>);
+pub struct CharacterAnimationSet(EnumMap<Facing, ResourceLocation<AnimationResource>>);
 impl CharacterAnimationSet {
-    pub fn try_from_codec(
-        codec: CharacterAnimationSetCodec,
-        context: &SystemRegistry<AnimationResource>,
-    ) -> Result<Self, AnimationSetError> {
-        let map = codec
-            .0
-            .into_iter()
-            .map(|(facing, loc)| {
-                let handle = context
-                    .get_handle(&loc)
-                    .ok_or(AnimationSetError::FailedToGetHandle)?
-                    .clone();
-                Ok((facing, handle))
-            })
-            .collect::<Result<EnumMap<Facing, Handle<AnimationData>>, AnimationSetError>>()?;
-
-        Ok(Self(map))
-    }
-
-    pub fn get(&self, facing: Facing) -> Handle<AnimationData> {
-        self.0[facing].clone()
+    pub fn get(&self, facing: Facing) -> &ResourceLocation<AnimationResource> {
+        &self.0[facing]
     }
 }
-
-#[derive(Debug, Clone, thiserror::Error)]
-pub enum AnimationSetError {
-    #[error("Failed to get handle for animation data")]
-    FailedToGetHandle,
+impl From<CharacterAnimationSetCodec> for CharacterAnimationSet {
+    fn from(codec: CharacterAnimationSetCodec) -> Self {
+        Self(codec.0)
+    }
 }

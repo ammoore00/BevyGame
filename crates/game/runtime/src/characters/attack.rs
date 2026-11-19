@@ -108,8 +108,9 @@ pub struct AttackSuccessEvent {
 }
 
 /// Store the current attack definition location, and the current progress value
-#[derive(Component, Debug)]
-struct CurrentAttack {
+#[derive(Component, Debug, Getters)]
+pub struct CurrentAttack {
+    #[getset(get = "pub")]
     loc: ResourceLocation<AttackResource>,
     progress: AttackProgress,
     interacted_entities: HashMap<ExclusionGroup, Vec<Entity>>,

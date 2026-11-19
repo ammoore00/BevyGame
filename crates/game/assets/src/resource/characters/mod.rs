@@ -10,7 +10,7 @@ pub use {
         AiBehaviorParams, AiHearingParams, AiParams, AiRegistry, AiResource, AiSenseParams,
         AiSightParams,
     },
-    animation::{CharacterAnimationSet,},
+    animation::{CharacterAnimationSet, CharacterAnimationList},
     attack::{
         AttackContext, AttackDefinition, AttackProgress, AttackRegistry, AttackResource, AttackSet,
         AttackSetRegistry, AttackSetResource, ExclusionGroup, KeyFrame,

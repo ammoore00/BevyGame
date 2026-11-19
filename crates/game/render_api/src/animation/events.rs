@@ -40,6 +40,11 @@ pub struct AnimationSettings {
 
     /// Whether the animation should pause if gameplay is paused
     pub pause_on_game_pause: bool,
+    
+    /// Whether the animation should use the frame progress from the previous animation
+    /// 
+    /// This should only be used in cases where the animation is a variant of the current animation
+    pub continue_progress: bool,
 }
 
 impl AnimationSettings {
@@ -48,6 +53,7 @@ impl AnimationSettings {
             repeat: true,
             restart_if_present: false,
             pause_on_game_pause: true,
+            continue_progress: false,
         }
     }
 
@@ -56,6 +62,7 @@ impl AnimationSettings {
             repeat: false,
             restart_if_present: false,
             pause_on_game_pause: false,
+            continue_progress: false,
         }
     }
 }

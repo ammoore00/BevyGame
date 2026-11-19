@@ -153,19 +153,24 @@ impl PrototypeBuilder for CharacterBuilder {
             .as_resolved()
             .ok_or(BevyError::error(format!("Character data was not resolved: {}", data_loc.0)))?;
 
-        let animation_map = AnimationStateMap::new(data.animations().standard_animations.clone());
+        let animation_map = AnimationStateMap::new(data.animations().clone());
 
         let state_capabilities = data.state_capabilities().clone();
 
         let idle_animation = animation_map
-            .get()
+            .standard_animations()
             .get(&TypeId::of::<Idle>())
             .cloned()
             .expect("Failed to find idle animation for player characters");
-
-        let animation_assets = context.animation_context().assets();
-        let animation_tracker = CharacterAnimationTracker::new(idle_animation, animation_assets);
-        let sprite = animation_tracker.default_sprite(animation_assets);
+        
+        let idle_animation_loc = idle_animation.get(Facing::default());
+        let idle_animation_asset = context.animation_context.get_asset(idle_animation_loc)
+            .ok_or(BevyError::error(format!("Unknown animation! {}", idle_animation_loc)))?
+            .as_resolved()
+            .ok_or(BevyError::error(format!("Unresolved animation! {}", idle_animation_loc)))?;
+        let sprite = Sprite::from_atlas_image(idle_animation_asset.image(), idle_animation_asset.atlas().clone());
+        
+        let animation_tracker = CharacterAnimationTracker::new(idle_animation);
 
         let collider = data.collider().make_collider(position.as_vec3());
 

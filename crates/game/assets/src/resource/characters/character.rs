@@ -4,8 +4,6 @@ use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::maybe::DefaultOption;
 use crate::resource::characters::animation::CharacterAnimationList;
 use crate::resource::characters::{AiResource, AttackSetResource};
-use crate::resource::AnimationResource;
-use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use data::loc::ResourceLocation;
 use data::prelude::{ResourceFileType, ResourceKind, SystemRegistry};
@@ -20,13 +18,14 @@ pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<CharacterSpriteResource>();
 }
 
+// TODO: This no longer needs to be visited, so change this
 #[resource_kind(path = "characters/characters", asset_kind = CharacterData, visit_override = true)]
 pub struct CharacterResource;
 impl CharacterResource {
     fn visit(
         loc: ResourceLocation<Self>,
         character: CharacterData,
-        world: &mut World,
+        _: &mut World,
     ) -> Result<<Self as ResourceKind>::AssetKind, ResourceVisitError> {
         info!("Resolving character: {}", loc);
         
@@ -34,16 +33,9 @@ impl CharacterResource {
             "Character has already been resolved".to_string(),
         ))?;
         
-        let mut state = SystemState::<SystemRegistry<AnimationResource>>::new(world);
-        let context = state
-            .get(world)
-            .map_err(|error| ResourceVisitError(error.to_string()))?;
-        let animations = CharacterAnimationList::try_from_codec(partial.animations, &context)
-            .map_err(|error| ResourceVisitError(error.to_string()))?;
-
         Ok (CharacterData::Resolved(ResolvedCharacterData {
             state_capabilities: partial.state_capabilities,
-            animations,
+            animations: partial.animations.into(),
             collider: partial.collider,
             attack_set: partial.attack_set,
             ai_params: partial.ai_params,
