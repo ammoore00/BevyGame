@@ -1,6 +1,0 @@
-(
-    format: 1,
-    attacks: [
-        "base:test/basic_attack",
-    ],
-)

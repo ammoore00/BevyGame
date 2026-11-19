@@ -1,0 +1,14 @@
+(
+    format: 1,
+    image: "base:player/idle",
+    atlas: (
+        format: 1,
+        size: (64, 64),
+        columns: 12,
+        rows: 8,
+    ),
+    frame_data: (
+        interval: 150,
+        indices: [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83],
+    ),
+)
