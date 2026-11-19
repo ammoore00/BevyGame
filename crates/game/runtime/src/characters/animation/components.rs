@@ -1,9 +1,7 @@
-use assets::codec::CharacterAnimationSetCodec;
-use assets::resource::{AnimationData, AnimationResource};
+use assets::resource::AnimationData;
+use assets::resource::characters::CharacterAnimationSet;
 use bevy::prelude::*;
 use common::Facing;
-use data::prelude::SystemRegistry;
-use enum_map::EnumMap;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -98,62 +96,10 @@ impl CharacterAnimationTracker {
 }
 
 /// Maps characters states to animation data
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, derive_new::new)]
 pub struct AnimationStateMap(HashMap<TypeId, CharacterAnimationSet>);
 impl AnimationStateMap {
-    pub fn new(
-        map: &HashMap<TypeId, CharacterAnimationSetCodec>,
-        context: &SystemRegistry<AnimationResource>,
-    ) -> Self {
-        let map = map
-            .iter()
-            //.map(|(type_id, location)| (*type_id, context.get_handle(location).unwrap().clone()))
-            .map(|(type_id, set)| {
-                (
-                    *type_id,
-                    // TODO: Proper error handling, since this is something that could originate from data
-                    CharacterAnimationSet::try_from_codec(set, context).unwrap(),
-                )
-            })
-            .collect();
-        AnimationStateMap(map)
-    }
-
     pub fn get(&self) -> &HashMap<TypeId, CharacterAnimationSet> {
         &self.0
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CharacterAnimationSet(EnumMap<Facing, Handle<AnimationData>>);
-impl CharacterAnimationSet {
-    fn try_from_codec(
-        codec: &CharacterAnimationSetCodec,
-        context: &SystemRegistry<AnimationResource>,
-    ) -> Result<Self, AnimationSetError> {
-        let map = codec
-            .0
-            .iter()
-            .map(|(facing, loc)| {
-                let handle = context
-                    .get_handle(loc)
-                    .ok_or(AnimationSetError::FailedToGetHandle)?
-                    .clone();
-                
-                Ok((facing, handle))
-            })
-            .collect::<Result<EnumMap<Facing, Handle<AnimationData>>, AnimationSetError>>()?;
-        
-        Ok(Self(map))
-    }
-
-    pub fn get(&self, facing: Facing) -> Handle<AnimationData> {
-        self.0[facing].clone()
-    }
-}
-
-#[derive(Debug, Clone, thiserror::Error)]
-enum AnimationSetError {
-    #[error("Failed to get handle for animation data")]
-    FailedToGetHandle,
 }

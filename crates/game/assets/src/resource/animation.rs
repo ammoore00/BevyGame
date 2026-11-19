@@ -3,7 +3,7 @@ use crate::loader::{LoaderJobManager, RonAssetLoader};
 use crate::resource::characters::{CharacterSpriteRegistry, CharacterSpriteResource};
 use bevy::prelude::*;
 use data::prelude::*;
-use data::resource::{ResourceVisitError, resource_kind};
+use data::resource::{ResolvableData, ResourceVisitError, resource_kind};
 use getset::{CloneGetters, Getters};
 use std::time::Duration;
 use tracing::info;
@@ -24,23 +24,19 @@ impl AnimationResource {
     ) -> Result<<Self as ResourceKind>::AssetKind, ResourceVisitError> {
         info!("Resolving animation: {}", loc);
 
-        let animation = match animation {
-            AnimationData::Resolved(_) => {
-                error!("Visited animation which has already been resolved! {}", loc);
-                return Err(ResourceVisitError(
-                    "Animation has already been resolved".to_string(),
-                ));
-            }
-            AnimationData::Partial(animation) => animation,
-        };
+        let animation = animation.into_partial().ok_or(ResourceVisitError(
+            "Animation has already been resolved".to_string(),
+        ))?;
 
         let sprite_registry = world.resource::<CharacterSpriteRegistry>();
-        let Some(image) = sprite_registry.get(&animation.image).cloned() else {
-            return Err(ResourceVisitError(format!(
+
+        let image = sprite_registry
+            .get(&animation.image)
+            .cloned()
+            .ok_or(ResourceVisitError(format!(
                 "Failed to find image for animation: {:?}",
                 animation.image.clone()
-            )));
-        };
+            )))?;
 
         let mut atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
         let layout = atlas_layouts.add(animation.atlas.clone());
@@ -58,40 +54,10 @@ impl AnimationResource {
     }
 }
 
-#[derive(Asset, Debug, Clone, PartialEq, TypePath)]
-pub enum AnimationData {
-    Resolved(ResolvedAnimationData),
-    Partial(PartialAnimationData),
-}
-impl AnimationData {
-    pub fn is_resolved(&self) -> bool {
-        matches!(self, AnimationData::Resolved(_))
-    }
-
-    pub fn as_resolved(&self) -> Option<&ResolvedAnimationData> {
-        match self {
-            AnimationData::Resolved(data) => Some(data),
-            AnimationData::Partial(_) => None,
-        }
-    }
-
-    pub fn as_partial(&self) -> Option<&PartialAnimationData> {
-        match self {
-            AnimationData::Resolved(_) => None,
-            AnimationData::Partial(data) => Some(data),
-        }
-    }
-
-    /// #Panics
-    /// If the animation data is not resolved
-    pub fn resolved(&self) -> &ResolvedAnimationData {
-        self.as_resolved()
-            .expect("Cannot unwrap unresolved animation data")
-    }
-}
+pub type AnimationData = ResolvableData<ResolvedAnimationData, PartialAnimationData>;
 impl From<AnimationCodec> for AnimationData {
     fn from(codec: AnimationCodec) -> Self {
-        AnimationData::Partial(PartialAnimationData::from(codec))
+        Self::Partial(PartialAnimationData::from(codec))
     }
 }
 
@@ -138,7 +104,8 @@ impl FrameData {
     /// # Panics
     /// If the frame index is out of bounds
     pub fn frame_duration(&self, frame: usize) -> Duration {
-        self.get_frame_duration(frame).expect("Frame index out of bounds")
+        self.get_frame_duration(frame)
+            .expect("Frame index out of bounds")
     }
 
     /// Get the frame index of the given frame
@@ -154,7 +121,8 @@ impl FrameData {
     /// # Panics
     /// If the frame index is out of bounds
     pub fn frame_index(&self, frame: usize) -> usize {
-        self.get_frame_index(frame).expect("Frame index out of bounds")
+        self.get_frame_index(frame)
+            .expect("Frame index out of bounds")
     }
 }
 

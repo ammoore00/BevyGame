@@ -149,10 +149,11 @@ impl PrototypeBuilder for CharacterBuilder {
     ) -> Result<(), BevyError> {
         let data = context
             .get_character_data(&data_loc.0)
-            .ok_or(BevyError::error("Failed to find characters data"))?;
+            .ok_or(BevyError::error(format!("Failed to find character data: {}", data_loc.0)))?
+            .as_resolved()
+            .ok_or(BevyError::error(format!("Character data was not resolved: {}", data_loc.0)))?;
 
-        let animation_context = context.animation_context();
-        let animation_map = AnimationStateMap::new(data.animations(), animation_context);
+        let animation_map = AnimationStateMap::new(data.animations().standard_animations.clone());
 
         let state_capabilities = data.state_capabilities().clone();
 

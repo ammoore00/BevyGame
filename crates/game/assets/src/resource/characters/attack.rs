@@ -2,8 +2,6 @@ use crate::codec::{
     AttackCodec, AttackSetCodec, ColliderCodec, HealthEventKind, HitboxCodec, KeyFrameCodec,
 };
 use crate::loader::{LoaderJobManager, RonAssetLoader};
-use crate::resource::AnimationResource;
-use crate::resource::characters::CharacterSpriteResource;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use common::WorldCoords;
@@ -28,8 +26,6 @@ pub(super) fn plugin(app: &mut App) {
 pub struct AttackContext<'w> {
     pub attack_registry: SystemRegistry<'w, AttackResource>,
     pub attack_set_registry: SystemRegistry<'w, AttackSetResource>,
-    pub animation_context: SystemRegistry<'w, AnimationResource>,
-    pub character_sprite_registry: SystemRegistry<'w, CharacterSpriteResource>,
 }
 
 #[resource_kind(path = "characters/attacks", asset_kind = AttackDefinition)]
@@ -41,10 +37,6 @@ pub struct AttackDefinition {
     duration: Duration,
     #[getset(get_copy = "pub")]
     stamina_cost: u32,
-    #[getset(get = "pub")]
-    animation: ResourceLocation<AnimationResource>,
-    #[getset(get = "pub")]
-    particle_sprite: ResourceLocation<CharacterSpriteResource>,
 
     #[getset(get = "pub")]
     key_frames: KeyFrameList,
@@ -66,8 +58,6 @@ impl TryFrom<AttackCodec> for AttackDefinition {
         Ok(AttackDefinition {
             duration: Duration::from_millis(value.duration),
             stamina_cost: value.stamina_cost,
-            animation: value.animation,
-            particle_sprite: value.particle_sprite,
 
             key_frames,
             exclusion_groups,

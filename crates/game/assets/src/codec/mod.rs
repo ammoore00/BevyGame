@@ -9,8 +9,9 @@ mod translation;
 pub use crate::codec::{
     animation::{AnimationCodec, DistinctCodec, FixedIntervalCodec, FrameDataCodec},
     character::{
-        ActionStateCodec, AllowedStatesCodec, CharacterCodec, CharacterAnimationSetCodec,
+        ActionStateCodec, AllowedStatesCodec, CharacterCodec,
         ai::{AiCodec, AiHearingCodec, AiSensesCodec, AiSightCodec},
+        animation::{CharacterAnimationListCodec, CharacterAnimationSetCodec},
         attack::{AttackCodec, AttackSetCodec, HitboxCodec, KeyFrameCodec},
         health::{
             DamageKind, DamageModifierCodec, DamageModifierKind, DamageModifierList, HealthCodec,

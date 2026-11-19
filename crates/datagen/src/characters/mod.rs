@@ -7,16 +7,16 @@ use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
 use crate::{WriteError, create_dir, write_data};
 use assets::DefaultOption;
-use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterAnimationSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HealthCodec, KeyFrameCodec, TextureAtlasCodec};
+use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterAnimationListCodec, CharacterAnimationSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HealthCodec, KeyFrameCodec, TextureAtlasCodec};
 use assets::resource::AnimationResource;
 use assets::resource::characters::{
     AiResource, AttackResource, AttackSetResource, CharacterResource,
     CharacterSpriteResource,
 };
-use data::prelude::*;
-use std::collections::HashMap;
-use enum_map::{enum_map, EnumMap};
 use common::Facing;
+use data::prelude::*;
+use enum_map::{EnumMap, enum_map};
+use std::collections::HashMap;
 
 pub fn generate_characters() -> Result<(), WriteError> {
     create_dir(CharacterResource::ROOT_DIR)?;
@@ -46,13 +46,15 @@ fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
 
     if let Some(attack_set) = attack_set {
         // Add attack animations to the list of animations which need to be registered
+        /*
         let mut attack_animations = attack_set
             .attacks
             .iter()
             .map(|attack_data| attack_data.animation.clone())
             .collect::<Vec<_>>();
         animations_list.append(&mut attack_animations);
-
+         */
+        
         // Write attack set data to disk
         let loc = attack_set.loc.clone();
         let codec = AttackSetCodec::from(attack_set.clone());
@@ -153,6 +155,9 @@ impl From<CharacterData> for CharacterCodec {
                 (action, character_animation_set.into())
             })
             .collect();
+        
+        let mut animation_list = CharacterAnimationListCodec::new();
+        animation_list.standard_animations = animations;
 
         let collider = ColliderCodec {
             format: LATEST_COLLIDER_FORMAT,
@@ -165,7 +170,7 @@ impl From<CharacterData> for CharacterCodec {
             collider,
             health_params: value.health_params,
             allowed_states: Some(value.allowed_states).into(),
-            animations,
+            animations: animation_list,
 
             attack_set: attack_set.into(),
 
@@ -177,7 +182,7 @@ impl From<CharacterData> for CharacterCodec {
 struct CharacterAnimationSetData(EnumMap<Facing, String>);
 impl From<CharacterAnimationSetData> for CharacterAnimationSetCodec {
     fn from(value: CharacterAnimationSetData) -> Self {
-        Self(value.0.map(|facing, loc| loc.parse().unwrap()))
+        CharacterAnimationSetCodec(value.0.map(|facing, loc| loc.parse().unwrap()))
     }
 }
 
@@ -223,8 +228,6 @@ struct AttackData {
     loc: ResourceLocation<AttackResource>,
     duration: u64,
     stamina_cost: u32,
-    animation: AnimationData,
-    particle_sprite: ResourceLocation<CharacterSpriteResource>,
     key_frames: Vec<KeyFrameCodec>,
 }
 impl From<AttackData> for AttackCodec {
@@ -233,8 +236,6 @@ impl From<AttackData> for AttackCodec {
             format: LATEST_ATTACK_FORMAT,
             duration: value.duration,
             stamina_cost: value.stamina_cost,
-            animation: value.animation.loc,
-            particle_sprite: value.particle_sprite,
             key_frames: value.key_frames,
         }
     }
@@ -244,16 +245,12 @@ impl AttackData {
         loc: &str,
         duration: u64,
         stamina_cost: u32,
-        animation: AnimationData,
-        particle_sprite: &str,
         key_frames: Vec<KeyFrameCodec>,
     ) -> Self {
         Self {
             loc: loc.parse().unwrap(),
             duration,
             stamina_cost,
-            animation,
-            particle_sprite: particle_sprite.parse().unwrap(),
             key_frames,
         }
     }

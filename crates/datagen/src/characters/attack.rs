@@ -57,8 +57,6 @@ pub fn basic_attack(
         basic_attack_loc,
         basic_attack_length,
         basic_attack_stamina_cost,
-        basic_attack_animation,
-        format!("{}_particle", basic_attack_image).as_str(),
         basic_attack_key_frames,
     )
 }

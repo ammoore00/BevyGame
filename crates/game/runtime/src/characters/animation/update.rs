@@ -1,8 +1,7 @@
-use crate::characters::animation::components::CharacterAnimationSet;
 use crate::characters::animation::{AnimationStateMap, CharacterAnimationTracker};
 use crate::characters::state::ActionStateTracker;
 use assets::action_states::Attacking;
-use assets::resource::characters::AttackResource;
+use assets::resource::characters::{AttackResource, CharacterAnimationSet};
 use assets::resource::{AnimationData, AnimationResource};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
@@ -144,15 +143,6 @@ pub fn get_animation_set(
         let Some(attack) = attack_context.get_asset(attacking_state.attack()) else {
             error!(
                 "Could not find attack definition for {}!",
-                attacking_state.attack()
-            );
-            return None;
-        };
-
-        // TODO: Improve error handling
-        let Some(_animation_handle) = animation_context.get_handle(attack.animation()) else {
-            error!(
-                "Could not find animation definition for attack: {}!",
                 attacking_state.attack()
             );
             return None;

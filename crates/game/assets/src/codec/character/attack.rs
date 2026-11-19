@@ -1,19 +1,16 @@
 use crate::codec::{ColliderCodec, HealthEventKind};
 use crate::maybe::Maybe;
-use crate::resource::characters::{AttackResource, CharacterSpriteResource};
+use crate::resource::characters::AttackResource;
 use bevy::prelude::*;
 use data::prelude::*;
 use maybe_fields::maybe_fields;
 use serde::{Deserialize, Serialize};
-use crate::resource::AnimationResource;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 pub struct AttackCodec {
     pub format: u8,
     pub duration: u64,
     pub stamina_cost: u32,
-    pub animation: ResourceLocation<AnimationResource>,
-    pub particle_sprite: ResourceLocation<CharacterSpriteResource>,
     pub key_frames: Vec<KeyFrameCodec>,
 }
 
@@ -27,8 +24,6 @@ impl Default for AttackCodec {
             format: AttackCodec::LATEST_FORMAT,
             duration: 150,
             stamina_cost: 0,
-            animation: "untitled".parse().unwrap(),
-            particle_sprite: "untitled".parse().unwrap(),
             key_frames: Vec::new(),
         }
     }

@@ -1,14 +1,12 @@
 use crate::loc::ResourceLocation;
 use bevy::asset::Asset;
-use bevy::prelude::{Reflect, World};
+use bevy::prelude::{Reflect, TypePath, World};
 use std::fmt::Debug;
 use std::hash::Hash;
 
 pub use define_resource::resource_kind;
 
-pub trait ResourceKind:
-    Debug + Reflect + Clone + Hash + Eq + Send + Sync + 'static
-{
+pub trait ResourceKind: Debug + Reflect + Clone + Hash + Eq + Send + Sync + 'static {
     type AssetKind: Asset + Clone + Send + Sync + 'static;
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
@@ -48,5 +46,52 @@ impl ResourceFileType {
             ResourceFileType::Other(s) => s,
             ResourceFileType::None => "",
         }
+    }
+}
+
+#[derive(Asset, Debug, Clone, PartialEq, TypePath)]
+pub enum ResolvableData<Resolved, Partial>
+where
+    Resolved: TypePath + Send + Sync + 'static,
+    Partial: TypePath + Send + Sync + 'static,
+{
+    Resolved(Resolved),
+    Partial(Partial),
+}
+impl<R, P> ResolvableData<R, P>
+where
+    R: TypePath + Send + Sync + 'static,
+    P: TypePath + Send + Sync + 'static,
+{
+    pub fn is_resolved(&self) -> bool {
+        matches!(self, Self::Resolved(_))
+    }
+
+    pub fn as_resolved(&self) -> Option<&R> {
+        match self {
+            Self::Resolved(data) => Some(data),
+            Self::Partial(_) => None,
+        }
+    }
+
+    pub fn as_partial(&self) -> Option<&P> {
+        match self {
+            Self::Resolved(_) => None,
+            Self::Partial(data) => Some(data),
+        }
+    }
+    
+    pub fn into_partial(self) -> Option<P> {
+        match self {
+            Self::Resolved(_) => None,
+            Self::Partial(data) => Some(data),
+        }
+    }
+
+    /// #Panics
+    /// If the animation data is not resolved
+    pub fn resolved(&self) -> &R {
+        self.as_resolved()
+            .expect("Cannot unwrap unresolved data!")
     }
 }

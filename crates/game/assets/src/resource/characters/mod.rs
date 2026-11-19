@@ -3,12 +3,14 @@ use bevy::prelude::*;
 mod ai;
 mod attack;
 mod character;
+mod animation;
 
 pub use {
     ai::{
         AiBehaviorParams, AiHearingParams, AiParams, AiRegistry, AiResource, AiSenseParams,
         AiSightParams,
     },
+    animation::{CharacterAnimationSet,},
     attack::{
         AttackContext, AttackDefinition, AttackProgress, AttackRegistry, AttackResource, AttackSet,
         AttackSetRegistry, AttackSetResource, ExclusionGroup, KeyFrame,

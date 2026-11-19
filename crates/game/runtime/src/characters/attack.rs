@@ -1,7 +1,6 @@
 use crate::characters::health::{AddIFrames, HealthEvent};
 use crate::characters::stamina::StaminaEvent;
 use crate::characters::state::TrySetStateEvent;
-use crate::particle::{ParticleAnimation, ParticleSpawnEvent};
 use assets::action_states::Attacking;
 use assets::resource::characters::{
     AttackContext, AttackProgress, AttackResource, ExclusionGroup, KeyFrame,
@@ -85,42 +84,11 @@ fn on_attack_success(
     // Unwrap is safe because this event is only triggered if the checks from `on_try_attack` pass
     let attack_def = context.attack_registry.get_asset(&event.attack).unwrap();
 
-    let Some(animation) = context.animation_context.get_asset(attack_def.animation()) else {
-        error!(
-            "Invalid attack definition: animation {} does not exist!",
-            attack_def.animation()
-        );
-        return;
-    };
-    let animation = animation.resolved();
-
-    let Some(particle_sprite) = context
-        .character_sprite_registry
-        .get_handle(attack_def.particle_sprite())
-    else {
-        error!(
-            "Invalid attack definition: particle sprite {} does not exist!",
-            attack_def.particle_sprite()
-        );
-        return;
-    };
-
-    let particle_atlas = animation.atlas().clone().with_index(event.facing as usize);
-    let particle_sprite = Sprite::from_atlas_image(particle_sprite, particle_atlas);
-    let particle_animation = ParticleAnimation::new(
-        event.facing as usize * animation.frame_data().num_frames(),
-        animation.frame_data().clone(),
-    );
+    // TODO: Trigger animation and particle event
 
     commands.entity(event.entity).insert(CurrentAttack::new(
         event.attack.clone(),
         attack_def.exclusion_groups(),
-    ));
-
-    commands.trigger(ParticleSpawnEvent::with_parent(
-        particle_sprite,
-        particle_animation,
-        event.entity,
     ));
 
     commands.trigger(StaminaEvent::new(event.entity, attack_def.stamina_cost()));
