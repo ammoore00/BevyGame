@@ -252,8 +252,7 @@ pub fn write_animation_set_with_image(
         Facing::South => "south",
         Facing::SouthWest => "southwest",
         Facing::West => "west",
-    }
-        .map(|_, s| format!("{}/{}", loc, s));
+    };
 
     map.iter().try_for_each(|(facing, ext)| {
         let frame_data = frame_data.clone_with_offset(facing as usize * num_frames);
@@ -265,5 +264,5 @@ pub fn write_animation_set_with_image(
         write_data(animation.loc.clone(), &AnimationCodec::from(animation))
     })?;
 
-    Ok(CharacterAnimationSetData(map))
+    Ok(CharacterAnimationSetData(map.map(|_, s| format!("{}/{}", loc, s))))
 }

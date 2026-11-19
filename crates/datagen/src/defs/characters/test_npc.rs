@@ -19,19 +19,19 @@ pub fn generate_test_npc() -> Result<(), WriteError> {
     };
 
     let idle =
-        write_animation_set_with_image("test_npc/idle", "player/idle", 64, 64, fixed(12, 150))?;
+        write_animation_set_with_image("test/idle", "player/idle", 64, 64, fixed(12, 150))?;
     animation_map.insert(ActionStateCodec::Idle, idle.into());
 
     let walking =
-        write_animation_set_with_image("test_npc/walking", "player/walking", 64, 64, fixed(8, 50))?;
+        write_animation_set_with_image("test/walking", "player/walking", 64, 64, fixed(8, 50))?;
     animation_map.insert(ActionStateCodec::Walking, walking.into());
 
     let running =
-        write_animation_set_with_image("test_npc/running", "player/running", 64, 64, fixed(8, 50))?;
+        write_animation_set_with_image("test/running", "player/running", 64, 64, fixed(8, 50))?;
     animation_map.insert(ActionStateCodec::Running, running.into());
 
     let sprinting = write_animation_set_with_image(
-        "test_npc/sprinting",
+        "test/sprinting",
         "player/running",
         64,
         64,
@@ -40,7 +40,7 @@ pub fn generate_test_npc() -> Result<(), WriteError> {
     animation_map.insert(ActionStateCodec::Sprinting, sprinting.into());
 
     let dodging = write_animation_set_with_image(
-        "test_npc/rolling",
+        "test/rolling",
         "player/rolling",
         48,
         48,
@@ -52,7 +52,7 @@ pub fn generate_test_npc() -> Result<(), WriteError> {
 
     let mut attacks = Vec::new();
 
-    let basic_attack_loc = "test_npc/basic_attack";
+    let basic_attack_loc = "test/basic_attack";
 
     let basic_attack = basic_attack(basic_attack_loc, true);
     attacks.push(basic_attack);
@@ -86,7 +86,7 @@ pub fn generate_test_npc() -> Result<(), WriteError> {
 
     let animation_list = CharacterAnimationListCodec::new(animation_map, attack_animation_map);
 
-    let data = CharacterData::new("test_npc", collider)
+    let data = CharacterData::new("test", collider)
         .with_animations(animation_list)
         .with_attack_set(attack_set);
     // No AI params means use default
