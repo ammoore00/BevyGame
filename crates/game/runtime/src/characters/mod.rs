@@ -161,7 +161,7 @@ impl PrototypeBuilder for CharacterBuilder {
             .standard_animations()
             .get(&TypeId::of::<Idle>())
             .cloned()
-            .expect("Failed to find idle animation for player characters");
+            .ok_or(BevyError::error(format!("Failed to find idle animation for character {}", data_loc.0)))?;
         
         let idle_animation_loc = idle_animation.get(Facing::default());
         let idle_animation_asset = context.animation_context.get_asset(idle_animation_loc)
