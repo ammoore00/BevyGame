@@ -8,6 +8,7 @@ assets = { workspace = true }
 common = { workspace = true, features = ["dev"] }
 controls = { workspace = true }
 physics = { workspace = true, features = ["dev"] }
+render_api = { workspace = true }
 runtime = { workspace = true, features = ["dev"] }
 widgets = { workspace = true }
 

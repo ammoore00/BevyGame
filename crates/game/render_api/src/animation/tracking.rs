@@ -29,6 +29,7 @@ pub struct AnimationTracker {
     /// Used only as a comparison for event triggers or for debug display.
     ///
     /// Favor `handle` for all other purposes.
+    #[getset(get = "pub")]
     loc: ResourceLocation<AnimationResource>,
 
     /// Timer for tracking the current frame.
@@ -36,6 +37,7 @@ pub struct AnimationTracker {
 
     /// Counter for tracking the current index relative to the frame data list from the animation.
     /// This is used to calculate the current frame index, but does not itself directly relate to tile sheet indices.
+    #[getset(get = "pub")]
     frame_counter: usize,
 
     /// Settings set during the initial event trigger controlling behavior of the animation.

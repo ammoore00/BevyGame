@@ -6,6 +6,8 @@ use bevy::prelude::*;
 
 pub use events::*;
 
+pub use tracking::AnimationTracker;
+
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((sprite::plugin, tracking::plugin));
 

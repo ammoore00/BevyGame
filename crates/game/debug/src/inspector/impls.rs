@@ -4,6 +4,7 @@ use assets::action_states::{ReflectActionState, ReflectTimedActionState};
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
 use controls::InputBuffer;
+use render_api::animation::AnimationTracker;
 use runtime::prelude::{AiState, GoalList, GoalState, Health, Npc, Player, ReflectPathfindStrategy, SensedTargets};
 
 pub(super) fn plugin(app: &mut App) {
@@ -16,7 +17,7 @@ fn inspect_player(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout 
         .with_title("Player")
         .section({
             let time = world.resource::<Time>();
-            
+
             let input_buffer = world
                 .resource::<InputBuffer>()
                 .inputs()
@@ -24,21 +25,21 @@ fn inspect_player(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout 
                 .filter_map(|(kind, buffer)| buffer.map(|buffer| {
                     let expiration = *buffer.expiration_timestamp();
                     let remaining = expiration - time.elapsed().min(expiration);
-                    
+
                     format!("{kind}: {}", remaining.as_secs_f32())
                 }))
                 .collect::<Vec<_>>();
-            
+
             let mut section = ReadoutSection::new("Input Buffer");
-            
+
             if input_buffer.is_empty() {
                 section = section.item("Empty");
             }
-            
+
             for input in input_buffer {
                 section = section.item(input);
             }
-            
+
             section
         })
 }
@@ -66,7 +67,7 @@ fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
                 .subsection({
                     let goal_list = entity.get::<GoalList>();
                     let goal_state = entity.get::<GoalState>();
-                    
+
                     let goal_display = goal_list.map(|goals| format!("List: {}", goals));
                     let scores = goal_state
                         .map(|goal_state| {
@@ -78,7 +79,7 @@ fn inspect_npc(entity: EntityRef, world: &DeferredWorld) -> InspectorReadout {
                                         Some(score) => score.to_string(),
                                         None => "None".to_string(),
                                     };
-                                    
+
                                     format!("{}: {}", goal, score_out)
                                 })
                                 .collect::<Vec<_>>()
@@ -105,7 +106,7 @@ fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReado
                 .and_then(|_| {
                     let type_registry = world.resource::<AppTypeRegistry>().clone();
                     let type_registry = type_registry.read();
-                    
+
                     for component_id in entity.archetype().components() {
                         // Get the component's info
                         if let Some(info) = world.components().get_info(*component_id)
@@ -124,18 +125,25 @@ fn inspect_character(entity: EntityRef, world: &DeferredWorld) -> InspectorReado
                         {
                             let time_left = timed_state.time_left().as_secs_f32();
                             let total_time = timed_state.total_time().as_secs_f32();
-                            
-                            return Some((time_left, total_time))
+
+                            return Some((time_left, total_time));
                         }
                     }
-                    
+
                     None
                 });
-            
+
             ReadoutSection::new("Generic")
                 .item(format!("Health: {} / {}", health.current, health.max))
                 .item(format!("Action State: {}", action_state))
                 .maybe_item(timed_action_state.map(|time_left| format!("Time Left in Action: {:.3} / {:.3}", time_left.0, time_left.1)))
+        })
+        .section({
+            let animation = entity.get::<AnimationTracker>();
+            ReadoutSection::new("Animation")
+                .maybe_item(animation.map(|animation| format!("Animation: {}", animation.loc())))
+                .maybe_item(animation.map(|animation| format!("Frame Counter: {}", animation.frame_counter())))
+                .maybe_item(animation.map(|animation| format!("Atlas Index: {}", animation.current_index())))
         })
 }
 
@@ -170,7 +178,7 @@ fn get_reflected_component<TraitRegistration: Clone + Send + Sync + 'static>(
     world: &DeferredWorld,
 ) -> Option<TraitRegistration> {
     let type_registry = world.resource::<AppTypeRegistry>().read();
-    
+
     for component_id in entity.archetype().components() {
         if let Some(info) = world.components().get_info(*component_id)
             && let Some(type_id) = info.type_id()
@@ -180,6 +188,6 @@ fn get_reflected_component<TraitRegistration: Clone + Send + Sync + 'static>(
             return Some(data.clone());
         }
     }
-    
+
     None
 }

@@ -2596,6 +2596,7 @@ dependencies = [
  "controls",
  "getset",
  "physics",
+ "render_api",
  "runtime",
  "strum_macros",
  "thiserror 2.0.18",
