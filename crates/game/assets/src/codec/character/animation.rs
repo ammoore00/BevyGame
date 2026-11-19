@@ -10,18 +10,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
-#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, TypePath, derive_new::new)]
 pub struct CharacterAnimationListCodec {
     pub standard_animations: HashMap<ActionStateCodec, CharacterAnimationSetCodec>,
     pub attack_animations: HashMap<ResourceLocation<AttackResource>, CharacterAnimationSetCodec>,
-}
-impl CharacterAnimationListCodec {
-    pub fn new() -> Self {
-        Self {
-            standard_animations: HashMap::new(),
-            attack_animations: HashMap::new(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, TypePath)]

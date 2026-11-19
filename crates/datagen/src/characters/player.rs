@@ -71,7 +71,6 @@ pub(super) fn generate_player() -> Result<(), WriteError> {
     });
 
     let data = CharacterData::new("player", collider)
-        .with_animations(animation_map)
         .with_attack_set(attack_set)
         .with_ai_params(None);
 

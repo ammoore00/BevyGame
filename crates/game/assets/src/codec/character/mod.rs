@@ -62,7 +62,7 @@ impl Default for CharacterCodec {
             },
             health_params: HealthCodec::default(),
             allowed_states: None.into(),
-            animations: CharacterAnimationListCodec::new(),
+            animations: CharacterAnimationListCodec::default(),
 
             attack_set: None.into(),
 

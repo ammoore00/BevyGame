@@ -1,25 +1,15 @@
-use crate::{WriteError, create_dir, write_data};
+use crate::{WriteError, write_data};
 use assets::codec::RoomCodec;
-use assets::resource::level::{
-    ConnectionFacing, ConnectionSize, RoomConnection, RoomResource, TileResource,
-};
+use assets::resource::level::{RoomConnection, RoomResource, TileResource};
 use data::prelude::*;
 
-pub fn generate_rooms() -> Result<(), WriteError> {
-    create_dir(RoomResource::ROOT_DIR)?;
-
-    create_room_data(basic_room())?;
-
-    Ok(())
-}
-
-fn create_room_data(room_data: RoomData) -> Result<(), WriteError> {
+pub fn create_room_data(room_data: RoomData) -> Result<(), WriteError> {
     let loc = room_data.loc.clone();
     let codec = RoomCodec::from(room_data);
     write_data(loc, &codec)
 }
 
-struct RoomData {
+pub struct RoomData {
     loc: ResourceLocation<RoomResource>,
     tile_palette: Vec<ResourceLocation<TileResource>>,
     /// Stored in YZX order (outer to inner)
@@ -27,14 +17,12 @@ struct RoomData {
     connections: Vec<RoomConnection>,
 }
 impl RoomData {
-    fn new(
+    pub fn new(
         loc: &str,
         tile_palette: Vec<ResourceLocation<TileResource>>,
         tiles: Vec<Vec<Vec<u8>>>,
         connections: Vec<RoomConnection>,
     ) -> Self {
-        
-        
         Self {
             loc: loc.parse().unwrap(),
             tile_palette,
@@ -55,97 +43,3 @@ impl From<RoomData> for RoomCodec {
 }
 
 const LATEST_FORMAT: u8 = 1;
-
-fn basic_room() -> RoomData {
-    const SIZE: usize = 7;
-    const HALF_SIZE: usize = SIZE / 2;
-    const HEIGHT: usize = 2;
-
-    let layout = vec![
-        vec![0,  0,  0,  16, 0,  0,  0],
-        vec![0,  13, 8,  28, 8,  14, 0],
-        vec![0,  7,  28, 28, 28, 3,  0],
-        vec![18, 28, 28, 28, 28, 28, 18],
-        vec![0,  7,  28, 28, 28, 3,  0],
-        vec![0,  11, 5,  28, 5,  9,  0],
-        vec![0,  0,  0,  16, 0,  0,  0],
-    ];
-    
-    let layout = vec![
-        vec![0,  0,  0,  0,  0,  7,  28, 3,  0,  0,  0,  0,  0],
-        vec![0,  13, 8,  8,  8,  28, 28, 28, 8,  8,  8,  14, 0],
-        vec![0,  7,  28, 28, 28, 28, 28, 28, 28, 28, 28, 3,  0],
-        vec![0,  7,  28, 28, 28, 28, 28, 28, 28, 28, 28, 3,  0],
-        vec![0,  7,  28, 28, 28, 28, 28, 28, 28, 28, 28, 3,  0],
-        vec![8,  28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 8],
-        vec![28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
-        vec![5,  28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 5],
-        vec![0,  7,  28, 28, 28, 28, 28, 28, 28, 28, 28, 3,  0],
-        vec![0,  7,  28, 28, 28, 28, 28, 28, 28, 28, 28, 3,  0],
-        vec![0,  7,  28, 28, 28, 28, 28, 28, 28, 28, 28, 3,  0],
-        vec![0,  11, 5,  5,  5,  28, 28, 28, 5,  5,  5,  9,  0],
-        vec![0,  0,  0,  0,  0,  7,  28, 3,  0,  0,  0,  0,  0],
-    ];
-
-    let basic_connections = vec![
-        RoomConnection::new(
-            [HALF_SIZE as i32, 0, 0].into(),
-            ConnectionSize::Small,
-            ConnectionFacing::North,
-        ),
-        RoomConnection::new(
-            [SIZE as i32, 0, HALF_SIZE as i32].into(),
-            ConnectionSize::Small,
-            ConnectionFacing::East,
-        ),
-        RoomConnection::new(
-            [HALF_SIZE as i32, 0, SIZE as i32].into(),
-            ConnectionSize::Small,
-            ConnectionFacing::South,
-        ),
-        RoomConnection::new(
-            [0, 0, HALF_SIZE as i32].into(),
-            ConnectionSize::Small,
-            ConnectionFacing::West,
-        ),
-    ];
-
-    use crate::tiles::*;
-    
-    let loc = "basic_grass";
-    RoomData::new(
-        loc,
-        vec![
-            GRASS_ALL_OUTLINE.parse().unwrap(),
-            GRASS_ALL.parse().unwrap(),
-            GRASS_S_OUTLINE.parse().unwrap(),
-            GRASS_S.parse().unwrap(),
-            GRASS_SW_OUTLINE.parse().unwrap(),
-            GRASS_SW.parse().unwrap(),
-            GRASS_W_OUTLINE.parse().unwrap(),
-            GRASS_W.parse().unwrap(),
-            GRASS_NW_OUTLINE.parse().unwrap(),
-            GRASS_NW.parse().unwrap(),
-            GRASS_N.parse().unwrap(),
-            GRASS_NE.parse().unwrap(),
-            GRASS_E.parse().unwrap(),
-            GRASS_SE_OUTLINE.parse().unwrap(),
-            GRASS_SE.parse().unwrap(),
-            GRASS_NS_OUTLINE.parse().unwrap(),
-            GRASS_NS.parse().unwrap(),
-            GRASS_EW_OUTLINE.parse().unwrap(),
-            GRASS_EW.parse().unwrap(),
-            GRASS_NOT_S_OUTLINE.parse().unwrap(),
-            GRASS_NOT_S.parse().unwrap(),
-            GRASS_NOT_W_OUTLINE.parse().unwrap(),
-            GRASS_NOT_W.parse().unwrap(),
-            GRASS_NOT_N_OUTLINE.parse().unwrap(),
-            GRASS_NOT_N.parse().unwrap(),
-            GRASS_NOT_E_OUTLINE.parse().unwrap(),
-            GRASS_NOT_E.parse().unwrap(),
-            GRASS.parse().unwrap(),
-        ],
-        vec![layout],
-        basic_connections,
-    )
-}

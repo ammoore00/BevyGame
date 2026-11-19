@@ -1,34 +1,25 @@
-use crate::characters::generate_characters;
-use crate::room::generate_rooms;
-use crate::tiles::generate_tiles;
+
 use data::prelude::*;
 use serde::Serialize;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
-use tracing::{error, info};
+use tracing::info;
+use crate::defs::generate_all;
 
 mod characters;
 pub mod room;
 mod sprite;
 pub mod tiles;
+mod defs;
 
 static GENERATED_ASSETS: LazyLock<PathBuf> =
     LazyLock::new(|| PathBuf::from(Path::new("../../assets/generated")));
 pub static ROOT: LazyLock<PathBuf> = LazyLock::new(|| GENERATED_ASSETS.join("base"));
 
 fn main() {
-    // Clean the directory if it exists
-    if GENERATED_ASSETS.exists() {
-        std::fs::remove_dir_all(GENERATED_ASSETS.as_path())
-            .expect("Failed to remove existing generated directory");
-    }
-    std::fs::create_dir_all(GENERATED_ASSETS.join("base")).expect("Failed to create directory");
-
-    generate_characters().expect("Failed to generate characters");
-    generate_tiles().expect("Failed to generate tiles");
-    generate_rooms().expect("Failed to generate rooms");
+    generate_all().expect("Failed to generate assets")
 }
 
 pub fn create_dir(dir: impl AsRef<Path>) -> Result<(), std::io::Error> {

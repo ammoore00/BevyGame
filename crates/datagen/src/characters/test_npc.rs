@@ -65,7 +65,6 @@ pub(super) fn generate_test_npc() -> Result<(), WriteError> {
     });
 
     let data = CharacterData::new("test", collider)
-        .with_animations(animation_map)
         .with_attack_set(attack_set);
 
     create_character(data)

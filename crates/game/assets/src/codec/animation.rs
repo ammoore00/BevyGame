@@ -48,6 +48,27 @@ impl FrameDataCodec {
             FrameDataCodec::Distinct(distinct) => distinct.indices.len(),
         }
     }
+    
+    /// Shifts all indices by the given offset
+    pub fn offset(&mut self, offset: usize) {
+        match self {
+            FrameDataCodec::FixedInterval(fixed) => fixed.indices.iter_mut().for_each(|i| *i += offset),
+            FrameDataCodec::Distinct(distinct) => distinct.indices.iter_mut().for_each(|i| i.0 += offset),
+        }
+    }
+    
+    /// Clones the codec and shifts all indices by the given offset
+    pub fn clone_with_offset(&self, offset: usize) -> Self {
+        match self {
+            FrameDataCodec::FixedInterval(fixed) => FrameDataCodec::FixedInterval(FixedIntervalCodec {
+                interval: fixed.interval,
+                indices: fixed.indices.iter().map(|i| i + offset).collect(),
+            }),
+            FrameDataCodec::Distinct(distinct) => FrameDataCodec::Distinct(DistinctCodec {
+                indices: distinct.indices.iter().map(|(i, _)| (i + offset, distinct.indices[*i].1)).collect(),
+            }),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -56,21 +77,21 @@ pub struct FixedIntervalCodec {
     pub indices: Vec<usize>,
 }
 impl FixedIntervalCodec {
-    pub fn new(interval: u64, num_frames: usize) -> Self {
+    pub fn new(num_frames: usize, interval: u64) -> Self {
         Self {
             interval,
             indices: (0..num_frames).collect(),
         }
     }
     
-    pub fn with_range(interval: u64, start_index: usize, num_frames: usize) -> Self {
+    pub fn with_range(start_index: usize, num_frames: usize, interval: u64) -> Self {
         Self {
             interval,
             indices: (start_index..start_index + num_frames).collect(),
         }
     }
     
-    pub fn with_indices(interval: u64, indices: Vec<usize>) -> Self {
+    pub fn with_indices(indices: Vec<usize>, interval: u64) -> Self {
         Self {
             interval,
             indices,
@@ -91,7 +112,7 @@ impl DistinctCodec {
         Self { indices }
     }
     
-    pub fn with_range(intervals: Vec<u64>, start_index: usize, num_frames: usize) -> Self {
+    pub fn with_range(start_index: usize, num_frames: usize, intervals: Vec<u64>) -> Self {
         let mut indices = Vec::new();
         for index in start_index..start_index + num_frames {
             indices.push((index, intervals[index - start_index]));

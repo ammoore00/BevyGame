@@ -1,60 +1,27 @@
+mod attack;
 mod player;
 mod test_npc;
-mod attack;
 
-use crate::characters::player::generate_player;
-use crate::characters::test_npc::generate_test_npc;
 use crate::sprite::TextureAtlasData;
-use crate::{WriteError, create_dir, write_data};
+use crate::{WriteError, write_data};
 use assets::DefaultOption;
-use assets::codec::{ActionStateCodec, AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterAnimationListCodec, CharacterAnimationSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec, HealthCodec, KeyFrameCodec, TextureAtlasCodec};
+use assets::codec::{
+    AllowedStatesCodec, AnimationCodec, AttackCodec, AttackSetCodec, CharacterAnimationListCodec,
+    CharacterAnimationSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec,
+    HealthCodec, KeyFrameCodec, TextureAtlasCodec,
+};
 use assets::resource::AnimationResource;
 use assets::resource::characters::{
-    AiResource, AttackResource, AttackSetResource, CharacterResource,
-    CharacterSpriteResource,
+    AiResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource,
 };
 use common::Facing;
 use data::prelude::*;
-use enum_map::{EnumMap, enum_map};
-use std::collections::HashMap;
+use enum_map::EnumMap;
 
-pub fn generate_characters() -> Result<(), WriteError> {
-    create_dir(CharacterResource::ROOT_DIR)?;
-    create_dir(AnimationResource::ROOT_DIR)?;
-    create_dir(AttackResource::ROOT_DIR)?;
-    create_dir(AttackSetResource::ROOT_DIR)?;
-    create_dir(AiResource::ROOT_DIR)?;
-
-    /*
-    write_data(
-        "default".parse::<ResourceLocation<AiResource>>().unwrap(),
-        &AiCodec::default(),
-    )?;
-    */
-
-    generate_player()?;
-    generate_test_npc()?;
-
-    Ok(())
-}
-
-fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
+pub fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
     let attack_set = character_data.attack_set.clone();
 
-    let animations = character_data.animations.clone();
-    let mut animations_list = animations.into_values().collect::<Vec<_>>();
-
     if let Some(attack_set) = attack_set {
-        // Add attack animations to the list of animations which need to be registered
-        /*
-        let mut attack_animations = attack_set
-            .attacks
-            .iter()
-            .map(|attack_data| attack_data.animation.clone())
-            .collect::<Vec<_>>();
-        animations_list.append(&mut attack_animations);
-         */
-        
         // Write attack set data to disk
         let loc = attack_set.loc.clone();
         let codec = AttackSetCodec::from(attack_set.clone());
@@ -70,14 +37,6 @@ fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
         }
     }
 
-    // Write collected state and attack animations to disk
-    for animation_data in animations_list {
-        let loc = animation_data.loc.clone();
-        let codec = AnimationCodec::from(animation_data.clone());
-        println!("Writing animation data to: {}", loc.as_path().display());
-        write_data(loc, &codec)?;
-    }
-
     // Write the characters data to disk
     let loc = character_data.loc.clone();
     let codec = CharacterCodec::from(character_data);
@@ -88,29 +47,29 @@ fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
 }
 
 #[derive(getset::WithSetters)]
-struct CharacterData {
+pub struct CharacterData {
     loc: ResourceLocation<CharacterResource>,
 
     collider: ColliderDataCodec,
     health_params: HealthCodec,
     #[getset(set_with)]
     allowed_states: AllowedStatesCodec,
-    #[getset(set_with)]
-    animations: HashMap<ActionStateCodec, AnimationData>,
+    #[getset(set_with = "pub")]
+    animations: CharacterAnimationListCodec,
 
     attack_set: Option<AttackSetData>,
 
     ai_params: DefaultOption<ResourceLocation<AiResource>>,
 }
 impl CharacterData {
-    fn new(loc: &str, collider: ColliderDataCodec) -> Self {
+    pub fn new(loc: &str, collider: ColliderDataCodec) -> Self {
         Self {
             loc: loc.parse().unwrap(),
 
             collider,
             health_params: HealthCodec::default(),
             allowed_states: AllowedStatesCodec::default(),
-            animations: HashMap::new(),
+            animations: CharacterAnimationListCodec::default(),
 
             attack_set: None,
 
@@ -136,29 +95,6 @@ impl From<CharacterData> for CharacterCodec {
     fn from(value: CharacterData) -> Self {
         let attack_set = value.attack_set.map(|attack_set| attack_set.loc);
 
-        let animations = value
-            .animations
-            .into_iter()
-            .map(|(action, animation)| {
-                let map = enum_map! {
-                    Facing::NorthWest => format!("{}/northwest", animation.loc),
-                    Facing::West => format!("{}/west", animation.loc),
-                    Facing::SouthWest => format!("{}/southwest", animation.loc),
-                    Facing::South => format!("{}/south", animation.loc),
-                    Facing::SouthEast => format!("{}/southeast", animation.loc),
-                    Facing::East => format!("{}/east", animation.loc),
-                    Facing::NorthEast => format!("{}/northeast", animation.loc),
-                    Facing::North => format!("{}/north", animation.loc),
-                };
-                
-                let character_animation_set = CharacterAnimationSetData(map);
-                (action, character_animation_set.into())
-            })
-            .collect();
-        
-        let mut animation_list = CharacterAnimationListCodec::new();
-        animation_list.standard_animations = animations;
-
         let collider = ColliderCodec {
             format: LATEST_COLLIDER_FORMAT,
             collider: value.collider,
@@ -170,7 +106,7 @@ impl From<CharacterData> for CharacterCodec {
             collider,
             health_params: value.health_params,
             allowed_states: Some(value.allowed_states).into(),
-            animations: animation_list,
+            animations: value.animations,
 
             attack_set: attack_set.into(),
 
@@ -179,7 +115,7 @@ impl From<CharacterData> for CharacterCodec {
     }
 }
 
-struct CharacterAnimationSetData(EnumMap<Facing, String>);
+pub struct CharacterAnimationSetData(pub EnumMap<Facing, String>);
 impl From<CharacterAnimationSetData> for CharacterAnimationSetCodec {
     fn from(value: CharacterAnimationSetData) -> Self {
         CharacterAnimationSetCodec(value.0.map(|facing, loc| loc.parse().unwrap()))
@@ -187,15 +123,20 @@ impl From<CharacterAnimationSetData> for CharacterAnimationSetCodec {
 }
 
 #[derive(Debug, Clone)]
-struct AnimationData {
-    loc: ResourceLocation<AnimationResource>,
-    image: ResourceLocation<CharacterSpriteResource>,
-    atlas: TextureAtlasCodec,
-    frame_data: FrameDataCodec,
+pub struct AnimationData {
+    pub loc: ResourceLocation<AnimationResource>,
+    pub image: ResourceLocation<CharacterSpriteResource>,
+    pub atlas: TextureAtlasCodec,
+    pub frame_data: FrameDataCodec,
 }
 impl AnimationData {
-    fn new(loc: &str, width: u32, height: u32, frame_data: FrameDataCodec) -> Self {
-        let atlas = TextureAtlasData::new(width, height, frame_data.num_frames() as u32, ANIMATION_ROWS);
+    pub fn new(loc: &str, width: u32, height: u32, frame_data: FrameDataCodec) -> Self {
+        let atlas = TextureAtlasData::new(
+            width,
+            height,
+            frame_data.num_frames() as u32,
+            ANIMATION_ROWS,
+        );
 
         Self {
             loc: loc.parse().unwrap(),
@@ -205,7 +146,7 @@ impl AnimationData {
         }
     }
 
-    fn with_image(self, loc: &str) -> Self {
+    pub fn with_image(self, loc: &str) -> Self {
         Self {
             image: loc.parse().unwrap(),
             ..self
@@ -224,7 +165,7 @@ impl From<AnimationData> for AnimationCodec {
 }
 
 #[derive(Debug, Clone)]
-struct AttackData {
+pub struct AttackData {
     loc: ResourceLocation<AttackResource>,
     duration: u64,
     stamina_cost: u32,
@@ -241,7 +182,7 @@ impl From<AttackData> for AttackCodec {
     }
 }
 impl AttackData {
-    fn new(
+    pub fn new(
         loc: &str,
         duration: u64,
         stamina_cost: u32,
@@ -257,7 +198,7 @@ impl AttackData {
 }
 
 #[derive(Debug, Clone)]
-struct AttackSetData {
+pub struct AttackSetData {
     loc: ResourceLocation<AttackSetResource>,
     attacks: Vec<AttackData>,
 }
@@ -272,7 +213,7 @@ impl From<AttackSetData> for AttackSetCodec {
     }
 }
 impl AttackSetData {
-    fn new(loc: &str, attacks: Vec<AttackData>) -> Self {
+    pub fn new(loc: &str, attacks: Vec<AttackData>) -> Self {
         Self {
             loc: loc.parse().unwrap(),
             attacks,
