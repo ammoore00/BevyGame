@@ -1,0 +1,6 @@
+(
+    format: 1,
+    attacks: [
+        "base:test_npc/basic_attack",
+    ],
+)

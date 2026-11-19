@@ -1,6 +1,9 @@
 use crate::WriteError;
-use crate::characters::{AttackSetData, CharacterData, create_character};
-use crate::defs::characters::{basic_attack, write_animation_set, write_animation_set_with_image};
+use crate::character::{
+    AttackSetData, CharacterData, create_character, write_animation_set,
+    write_animation_set_with_image,
+};
+use crate::defs::characters::basic_attack;
 use assets::codec::{
     ActionStateCodec, CapsuleCodec, CharacterAnimationListCodec, ColliderDataCodec, DistinctCodec,
     FixedIntervalCodec, FrameDataCodec,
@@ -59,7 +62,7 @@ pub fn generate_player() -> Result<(), WriteError> {
     );
 
     let attack_set = AttackSetData::new(basic_attack_loc, attacks);
-    
+
     // Finish
 
     let collider = ColliderDataCodec::Capsule(CapsuleCodec::Vertical {

@@ -8,10 +8,10 @@ use std::sync::LazyLock;
 use tracing::info;
 use crate::defs::generate_all;
 
-mod characters;
+mod character;
 pub mod room;
 mod sprite;
-pub mod tiles;
+pub mod tile;
 mod defs;
 
 static GENERATED_ASSETS: LazyLock<PathBuf> =

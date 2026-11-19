@@ -1,0 +1,22 @@
+(
+    format: 1,
+    image: "base:player/basic_attack",
+    atlas: (
+        format: 1,
+        size: (96, 96),
+        columns: 8,
+        rows: 8,
+    ),
+    frame_data: (
+        indices: [
+            (24, 50),
+            (25, 200),
+            (26, 50),
+            (27, 50),
+            (28, 50),
+            (29, 50),
+            (30, 50),
+            (31, 50),
+        ],
+    ),
+)

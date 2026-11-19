@@ -1,7 +1,3 @@
-mod attack;
-mod player;
-mod test_npc;
-
 use crate::sprite::TextureAtlasData;
 use crate::{WriteError, write_data};
 use assets::DefaultOption;
@@ -16,7 +12,7 @@ use assets::resource::characters::{
 };
 use common::Facing;
 use data::prelude::*;
-use enum_map::EnumMap;
+use enum_map::{enum_map, EnumMap};
 
 pub fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
     let attack_set = character_data.attack_set.clone();
@@ -228,3 +224,46 @@ const LATEST_ATTACK_SET_FORMAT: u8 = 1;
 const LATEST_COLLIDER_FORMAT: u8 = 1;
 
 const ANIMATION_ROWS: u32 = 8;
+
+pub fn write_animation_set(
+    loc: &str,
+    width: u32,
+    height: u32,
+    frame_data: FrameDataCodec,
+) -> Result<CharacterAnimationSetData, WriteError> {
+    write_animation_set_with_image(loc, loc, width, height, frame_data)
+}
+
+pub fn write_animation_set_with_image(
+    loc: &str,
+    image_loc: &str,
+    width: u32,
+    height: u32,
+    frame_data: FrameDataCodec,
+) -> Result<CharacterAnimationSetData, WriteError> {
+    let num_frames = frame_data.num_frames();
+
+    let map = enum_map! {
+        Facing::NorthWest => "northwest",
+        Facing::North => "north",
+        Facing::NorthEast => "northeast",
+        Facing::East => "east",
+        Facing::SouthEast => "southeast",
+        Facing::South => "south",
+        Facing::SouthWest => "southwest",
+        Facing::West => "west",
+    }
+        .map(|_, s| format!("{}/{}", loc, s));
+
+    map.iter().try_for_each(|(facing, ext)| {
+        let frame_data = frame_data.clone_with_offset(facing as usize * num_frames);
+        let loc = format!("{}/{}", loc, ext);
+
+        let animation =
+            AnimationData::new(loc.as_str(), width, height, frame_data).with_image(image_loc);
+
+        write_data(animation.loc.clone(), &AnimationCodec::from(animation))
+    })?;
+
+    Ok(CharacterAnimationSetData(map))
+}

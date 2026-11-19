@@ -1,0 +1,14 @@
+(
+    format: 1,
+    image: "base:player/rolling",
+    atlas: (
+        format: 1,
+        size: (48, 48),
+        columns: 11,
+        rows: 8,
+    ),
+    frame_data: (
+        interval: 35,
+        indices: [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+    ),
+)

@@ -1,7 +1,7 @@
 use assets::resource::level::TileResource;
 use data::prelude::ResourceKind;
 use crate::{create_dir, WriteError};
-use crate::tiles::{create_tile_data, TileData};
+use crate::tile::{create_tile_data, TileData};
 
 const GRASS_SPRITE_SHEET: &str = "grass";
 
