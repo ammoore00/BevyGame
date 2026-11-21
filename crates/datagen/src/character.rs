@@ -6,13 +6,13 @@ use assets::codec::{
     CharacterAnimationSetCodec, CharacterCodec, ColliderCodec, ColliderDataCodec, FrameDataCodec,
     HealthCodec, KeyFrameCodec, TextureAtlasCodec,
 };
-use assets::resource::AnimationResource;
 use assets::resource::characters::{
-    AiResource, AttackResource, AttackSetResource, CharacterResource, CharacterSpriteResource,
+    AiResource, AttackResource, AttackSetResource, CharacterResource,
 };
+use assets::resource::{AnimationResource, SpriteResource};
 use common::Facing;
 use data::prelude::*;
-use enum_map::{enum_map, EnumMap};
+use enum_map::{EnumMap, enum_map};
 
 pub fn create_character(character_data: CharacterData) -> Result<(), WriteError> {
     let attack_set = character_data.attack_set.clone();
@@ -121,7 +121,7 @@ impl From<CharacterAnimationSetData> for CharacterAnimationSetCodec {
 #[derive(Debug, Clone)]
 pub struct AnimationData {
     pub loc: ResourceLocation<AnimationResource>,
-    pub image: ResourceLocation<CharacterSpriteResource>,
+    pub image: ResourceLocation<SpriteResource>,
     pub atlas: TextureAtlasCodec,
     pub frame_data: FrameDataCodec,
 }
@@ -258,11 +258,16 @@ pub fn write_animation_set_with_image(
         let frame_data = frame_data.clone_with_offset(facing as usize * num_frames);
         let loc = format!("{}/{}", loc, ext);
 
-        let animation =
-            AnimationData::new(loc.as_str(), width, height, frame_data).with_image(image_loc);
+        // Animation expects generic sprite location, so prepend the characters directory
+        let image_loc = format!("characters/{}", image_loc);
+
+        let animation = AnimationData::new(loc.as_str(), width, height, frame_data)
+            .with_image(image_loc.as_str());
 
         write_data(animation.loc.clone(), &AnimationCodec::from(animation))
     })?;
 
-    Ok(CharacterAnimationSetData(map.map(|_, s| format!("{}/{}", loc, s))))
+    Ok(CharacterAnimationSetData(
+        map.map(|_, s| format!("{}/{}", loc, s)),
+    ))
 }

@@ -1,6 +1,6 @@
 (
     format: 1,
-    image: "base:player/running",
+    image: "base:characters/player/running",
     atlas: (
         format: 1,
         size: (64, 64),

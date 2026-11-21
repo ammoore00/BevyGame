@@ -1,6 +1,6 @@
 (
     format: 1,
-    image: "base:player/walking",
+    image: "base:characters/player/walking",
     atlas: (
         format: 1,
         size: (64, 64),

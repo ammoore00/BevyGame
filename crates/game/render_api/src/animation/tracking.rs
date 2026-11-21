@@ -2,12 +2,11 @@ use crate::animation::AnimationSystems;
 use crate::animation::events::{
     AnimationFinished, AnimationSettings, PlayAnimation, StopAnimation,
 };
-use assets::resource::{AnimationData, AnimationResource, ResolvedAnimationData};
+use assets::resource::{AnimationData, AnimationResource, ResolvedAnimationData, SpriteResource};
 use bevy::prelude::*;
 use data::prelude::{ResourceLocation, SystemRegistry};
 use getset::{CopyGetters, Getters};
 use std::fmt::{Display, Formatter};
-use assets::resource::characters::CharacterSpriteResource;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_tracking.in_set(AnimationSystems::Tracking));
@@ -32,12 +31,12 @@ pub struct AnimationTracker {
     /// Favor `handle` for all other purposes.
     #[getset(get = "pub")]
     loc: ResourceLocation<AnimationResource>,
-    
+
     /// Stores the name of the current sprite obtained from the current animation.
     ///
     /// This is purely used for debugging and display purposes.
     #[getset(get = "pub")]
-    image: ResourceLocation<CharacterSpriteResource>,
+    image: ResourceLocation<SpriteResource>,
 
     /// Timer for tracking the current frame.
     frame_timer: Timer,
@@ -93,7 +92,7 @@ impl AnimationTracker {
             handle,
             current_index: first_index,
             loc: loc.clone(),
-            image: animation.image_loc().clone().into(),
+            image: animation.image_loc().clone(),
             frame_timer,
             frame_counter: 0,
             settings,
@@ -172,9 +171,9 @@ fn update_tracking(
             if tracker.frame_timer.duration() != next_frame_duration {
                 tracker.frame_timer.set_duration(next_frame_duration);
             }
-            
+
             // Update the image tracker for debug purposes
-            tracker.image = animation.image_loc().clone().into()
+            tracker.image = animation.image_loc().clone()
         }
     }
 }
@@ -213,12 +212,12 @@ fn on_play_animation(
                 return;
             }
         };
-    
+
     if let Some((current_frame, current_timer)) = existing_data {
         tracker.frame_counter = current_frame;
         tracker.frame_timer = current_timer;
     }
-    
+
     commands.entity(event.entity).insert(tracker);
 }
 

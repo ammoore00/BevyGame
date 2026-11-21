@@ -7,7 +7,7 @@ use data::resource::{ResolvableData, ResourceVisitError, resource_kind};
 use getset::{CloneGetters, Getters};
 use std::time::Duration;
 use tracing::info;
-use data::loc::AnyResourceLocation;
+use crate::resource::{SpriteRegistry, SpriteResource};
 
 pub(in crate::resource) fn plugin(app: &mut App) {
     app.init_asset::<AnimationData>();
@@ -29,7 +29,7 @@ impl AnimationResource {
             "Animation has already been resolved".to_string(),
         ))?;
 
-        let sprite_registry = world.resource::<CharacterSpriteRegistry>();
+        let sprite_registry = world.resource::<SpriteRegistry>();
 
         let image = sprite_registry
             .get(&animation.image)
@@ -69,7 +69,7 @@ pub struct ResolvedAnimationData {
     #[getset(get_clone = "pub")]
     image: Handle<Image>,
     #[getset(get = "pub")]
-    image_loc: AnyResourceLocation,
+    image_loc: ResourceLocation<SpriteResource>,
     #[getset(get = "pub")]
     atlas: TextureAtlas,
     #[getset(get = "pub")]
@@ -174,7 +174,7 @@ impl From<DistinctCodec> for Distinct {
 /// Stores the sprite and frame data for an animation
 #[derive(Debug, Clone, PartialEq, Asset, TypePath)]
 pub struct PartialAnimationData {
-    image: ResourceLocation<CharacterSpriteResource>,
+    image: ResourceLocation<SpriteResource>,
     atlas: TextureAtlasLayout,
     frame_data: FrameData,
     resolved: bool,

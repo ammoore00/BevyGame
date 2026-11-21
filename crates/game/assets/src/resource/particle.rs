@@ -12,7 +12,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_registry_with_discovery::<ParticleSpriteResource>();
 }
 
-#[resource_kind(path = "characters/attacks", asset_kind = ParticleDefinition)]
+#[resource_kind(path = "particles", asset_kind = ParticleDefinition)]
 pub struct ParticleResource;
 
 #[resource_kind(path = "images/particles", asset_kind = Image, file_type = ResourceFileType::Image)]

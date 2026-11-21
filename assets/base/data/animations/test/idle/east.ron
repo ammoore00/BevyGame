@@ -1,6 +1,6 @@
 (
     format: 1,
-    image: "base:player/idle",
+    image: "base:characters/player/idle",
     atlas: (
         format: 1,
         size: (64, 64),

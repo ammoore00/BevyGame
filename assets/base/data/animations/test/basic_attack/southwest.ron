@@ -1,6 +1,6 @@
 (
     format: 1,
-    image: "base:player/basic_attack",
+    image: "base:characters/player/basic_attack",
     atlas: (
         format: 1,
         size: (96, 96),
