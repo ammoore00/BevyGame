@@ -1,6 +1,7 @@
 pub mod animation;
 mod character;
 mod collider;
+mod particle;
 mod room;
 mod sprite;
 mod tile;
@@ -19,6 +20,7 @@ pub use crate::codec::{
         },
     },
     collider::{CapsuleCodec, ColliderCodec, ColliderDataCodec},
+    particle::{AnimatedParticleCodec, ParticleCodec, ParticleImageCodec, StaticParticleCodec},
     room::RoomCodec,
     sprite::TextureAtlasCodec,
     tile::TileCodec,

@@ -7,6 +7,7 @@ mod ui;
 pub mod characters;
 pub mod level;
 mod animation;
+mod particle;
 
 pub use {
     animation::{
@@ -14,6 +15,7 @@ pub use {
     },
     audio::{AudioRegistry, AudioResource},
     font::FontBuilder,
+    particle::{ParticleDefinition, ParticleResource, ParticleSpriteResource},
     ui::{
         CurrentTranslation, TranslationRegistry, TranslationResource, Translations, Translator,
         UiSpriteRegistry, UiSpriteResource, UiTextResource,
@@ -27,6 +29,7 @@ pub(super) fn plugin(app: &mut App) {
         characters::plugin,
         font::plugin,
         level::plugin,
+        particle::plugin,
         ui::plugin,
     ));
 }
