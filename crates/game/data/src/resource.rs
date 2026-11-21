@@ -11,7 +11,12 @@ pub trait ResourceKind: Debug + Reflect + Clone + Hash + Eq + Send + Sync + 'sta
     const ROOT_DIR: &'static str;
     const FILE_TYPE: ResourceFileType;
 
-    /// Perform any post-processing on the resource after loading has finished
+    /// Perform any post-processing on the resource after loading has finished.
+    ///
+    /// `visit` is intended for game-defined data assets that require dependency
+    /// resolution. It should remain a no-op for Bevy-native asset types such as
+    /// `Image`, because multiple resource kinds may intentionally alias the same
+    /// underlying asset path.
     fn visit(
         _loc: ResourceLocation<Self>,
         asset: Self::AssetKind,
